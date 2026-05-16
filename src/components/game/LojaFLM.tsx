@@ -316,8 +316,8 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   };
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-4 overflow-y-auto scrollbar-hide">
-      <div className="relative rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
+    <div className="space-y-4 sm:space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-2 sm:p-4 overflow-y-auto scrollbar-hide">
+      <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-3 sm:p-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
         <div className="absolute top-4 right-6 opacity-10">
           <ShoppingBag className="h-24 w-24 text-emerald-400" />
         </div>
@@ -604,7 +604,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
 
           <TabsContent value="history" className="space-y-4 outline-none">
             <Card className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-              <CardHeader className="border-b border-white/5 bg-white/5 px-6 py-4">
+              <CardHeader className="border-b border-white/5 bg-white/5 px-3 sm:px-6 py-3 sm:py-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2">
                     <History className="h-4 w-4 text-emerald-400" /> Histórico de Compras
@@ -614,7 +614,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 {purchaseHistory.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
                     <div className="bg-white/5 p-4 rounded-full">
