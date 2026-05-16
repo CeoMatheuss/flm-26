@@ -12,7 +12,7 @@ import {
   PlayerStatus,
   statusMeta,
   ovrTier,
-  positionColors,
+  getPositionColor,
   flagFor,
   getPlayerStatus,
   attrConfig,
@@ -261,7 +261,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1">
-             <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", positionColors[player.position])}>
+              <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", getPositionColor(player.position))}>
                {player.position}
              </span>
              {player.potential && player.potential >= 88 && (
