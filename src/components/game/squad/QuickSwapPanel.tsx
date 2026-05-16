@@ -120,11 +120,11 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
 
         <div className="p-4">
           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 h-10 bg-black/40 border-white/5 p-1 rounded-xl mb-4">
-              <TabsTrigger value="all" className="text-[9px] font-black uppercase tracking-tighter rounded-lg">Todos</TabsTrigger>
-              <TabsTrigger value="starters" className="text-[9px] font-black uppercase tracking-tighter rounded-lg">Titulares</TabsTrigger>
-              <TabsTrigger value="reserves" className="text-[9px] font-black uppercase tracking-tighter rounded-lg">Reservas</TabsTrigger>
-              <TabsTrigger value="youth" className="text-[9px] font-black uppercase tracking-tighter rounded-lg">Base</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-4 h-12 bg-black/40 border border-white/5 p-1.5 rounded-xl mb-6 shadow-inner">
+              <TabsTrigger value="all" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Todos</TabsTrigger>
+              <TabsTrigger value="starters" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Titulares</TabsTrigger>
+              <TabsTrigger value="reserves" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Reservas</TabsTrigger>
+              <TabsTrigger value="youth" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Base</TabsTrigger>
             </TabsList>
 
             <ScrollArea className="h-[400px] pr-4">
