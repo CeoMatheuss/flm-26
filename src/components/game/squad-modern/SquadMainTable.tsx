@@ -28,6 +28,7 @@ interface Props {
   userId: string;
   onRest: (id: string) => void;
   pendingSwapId?: string | null;
+  onOpenQuickSwap?: () => void;
 }
 
 export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId }: Props) {
