@@ -182,6 +182,8 @@ export function SquadModernLayout({
         season={season} 
         viewMode={viewMode} 
         onViewModeChange={(mode) => setViewMode(mode as any)} 
+        pendingSwap={pendingSwap ? { id: pendingSwap.id, name: pendingSwap.name } : null}
+        onCancelSwap={() => setPendingSwap(null)}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
