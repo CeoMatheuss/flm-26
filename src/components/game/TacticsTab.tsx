@@ -195,7 +195,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-8 space-y-4">
-          <Card className="border-primary/20 bg-slate-950/60 backdrop-blur-xl overflow-hidden relative shadow-2xl">
+          <Card className="border-primary/20 bg-slate-900/40 rounded-[2.5rem] overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
               <Shield className="w-32 h-32 text-primary rotate-12" />
             </div>
