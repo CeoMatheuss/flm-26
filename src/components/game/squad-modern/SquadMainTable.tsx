@@ -270,14 +270,17 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
   );
 }
 
-function MiniStat({ value, icon, color }: { value: number; icon: React.ReactNode; color: string }) {
+function MiniStat({ value, icon, color, label }: { value: number; icon: React.ReactNode; color: string; label?: string }) {
   const v = Math.round(value || 0);
   return (
     <div className="flex items-center gap-1.5 min-w-[40px]">
       <div className={cn(color, "opacity-50")}>{icon}</div>
-      <span className={cn("text-[10px] font-black tabular-nums", v < 40 ? 'text-red-400' : v < 70 ? 'text-amber-400' : 'text-white/80')}>
-        {v}
-      </span>
+      <div className="flex flex-col">
+        {label && <span className="text-[7px] font-black text-white/20 uppercase tracking-tighter -mb-0.5">{label}</span>}
+        <span className={cn("text-[10px] font-black tabular-nums", v < 40 ? 'text-red-400' : v < 70 ? 'text-amber-400' : 'text-white/80')}>
+          {v}
+        </span>
+      </div>
     </div>
   );
 }
