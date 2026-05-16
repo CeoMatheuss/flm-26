@@ -806,7 +806,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`w-full lg:w-[320px] shrink-0 ${activeTacticalView === 'pitch' ? 'block' : 'hidden lg:block'}`}
+                  className="w-full lg:w-[320px] shrink-0"
                 >
                   <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-4 backdrop-blur-xl">
                     <div className="flex items-center justify-between mb-4">
