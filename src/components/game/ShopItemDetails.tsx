@@ -284,7 +284,7 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
                   <div className="flex items-center justify-center gap-2 relative z-10">
                     <CreditCard className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                    <span>{isFree ? 'RESGATAR AGORA' : (item.category === 'sponsorship' ? 'ADQUIRIR PATROCÍNIO' : 'COMPRAR AGORA')}</span>
+                    <span>{item.category === 'sponsorship' ? 'ADQUIRIR PATROCÍNIO' : 'COMPRAR AGORA'}</span>
                     <Sparkles className="h-4 w-4 text-emerald-300 animate-pulse" />
                   </div>
                 </Button>
