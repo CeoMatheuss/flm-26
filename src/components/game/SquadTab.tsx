@@ -881,7 +881,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 </div>
               </div>
 
-
               <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
                 {(['overall', 'age', 'value'] as const).map(s => (
                   <button
@@ -904,6 +903,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   ))}
                 </div>
               </div>
+
               <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
                 {([
                   { v: 'all', label: 'Todos' },
@@ -913,175 +913,126 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   { v: '60-69', label: '60-69' },
                   { v: '<60', label: '< 60' },
                 ] as const).map(({ v, label }) => {
-              const count = v === 'all' ? players.length : players.filter(p => {
-                if (v === '90+') return p.overall >= 90;
-                if (v === '80-89') return p.overall >= 80 && p.overall < 90;
-                if (v === '70-79') return p.overall >= 70 && p.overall < 80;
-                if (v === '60-69') return p.overall >= 60 && p.overall < 70;
-                return p.overall < 60;
-              }).length;
-              const active = filterOvr === v;
-              return (
-                <button
-                  key={v}
-                  className={`shrink-0 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70 border border-transparent'}`}
-                  onClick={() => setFilterOvr(v)}
-                  disabled={count === 0 && v !== 'all'}
-                >
-                  {label} <span className="opacity-60">({count})</span>
-                </button>
-              );
-            })}
-          </div>
-
-
-
-          {pendingSwap && (
-            <div className="sticky top-0 z-30 rounded-xl border-2 border-primary/50 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur p-3 flex items-center gap-3 shadow-lg">
-              <div className="shrink-0 w-9 h-9 rounded-lg flex flex-col items-center justify-center bg-primary/20 border border-primary/40">
-                <Zap className="h-4 w-4 text-primary" />
+                  const count = v === 'all' ? players.length : players.filter(p => {
+                    if (v === '90+') return p.overall >= 90;
+                    if (v === '80-89') return p.overall >= 80 && p.overall < 90;
+                    if (v === '70-79') return p.overall >= 70 && p.overall < 80;
+                    if (v === '60-69') return p.overall >= 60 && p.overall < 70;
+                    return p.overall < 60;
+                  }).length;
+                  const active = filterOvr === v;
+                  return (
+                    <button
+                      key={v}
+                      className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-bold transition-all ${active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-white/5 text-muted-foreground hover:bg-white/10 border border-transparent'}`}
+                      onClick={() => setFilterOvr(v)}
+                      disabled={count === 0 && v !== 'all'}
+                    >
+                      {label} <span className="opacity-60">({count})</span>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-primary font-bold">⚡ Trocando</p>
-                <p className="text-xs font-bold text-foreground truncate">
-                  <Badge className={`text-[8px] px-1 mr-1 h-3.5 ${posColors[pendingSwap.player.position]}`} variant="outline">{pendingSwap.player.position}</Badge>
-                  {pendingSwap.player.name} ({pendingSwap.player.overall})
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  Toque em quem {pendingSwap.from === 'starters' ? 'entra no time' : 'sai do time'}
-                </p>
-              </div>
-              <Button size="sm" variant="ghost" className="h-8 px-2 text-[10px] gap-1 text-muted-foreground hover:text-destructive shrink-0" onClick={() => setPendingSwap(null)}>
-                <X className="h-3.5 w-3.5" /> Cancelar
-              </Button>
+
+              {pendingSwap && (
+                <div className="sticky top-0 z-30 rounded-xl border-2 border-primary/50 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur p-2 flex items-center gap-2 shadow-lg">
+                  <div className="shrink-0 w-8 h-8 rounded-lg flex flex-col items-center justify-center bg-primary/20 border border-primary/40">
+                    <Zap className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[8px] uppercase tracking-wider text-primary font-bold">Trocando</p>
+                    <p className="text-[10px] font-bold text-foreground truncate">
+                      {pendingSwap.player.name}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[9px] text-muted-foreground hover:text-destructive shrink-0" onClick={() => setPendingSwap(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+
+              <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as 'starters' | 'reserves' | 'out')} className="w-full">
+                <TabsList className="grid grid-cols-3 w-full rounded-xl h-9 p-1 bg-black/20">
+                  <TabsTrigger value="starters" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
+                    TITULARES
+                  </TabsTrigger>
+                  <TabsTrigger value="reserves" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400">
+                    BANCO
+                  </TabsTrigger>
+                  <TabsTrigger value="out" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-muted data-[state=active]:text-foreground">
+                    FORA
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="starters" className="mt-2 space-y-1.5">
+                  {startersList.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Nenhum titular encontrado</div>
+                  ) : (
+                    startersList.map(({ player }) => (
+                      <SquadCard 
+                        key={player.id} 
+                        player={player} 
+                        onClick={() => {
+                          if (pendingSwap && pendingSwap.from !== 'starters') {
+                            completeSwap(player.id);
+                          } else {
+                            setViewingPlayer(player);
+                          }
+                        }}
+                        onSwap={(p) => startSwap(p, 'starters')}
+                        isPendingSwap={pendingSwap?.player.id === player.id}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="reserves" className="mt-2 space-y-1.5">
+                  {reservesList.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Banco vazio</div>
+                  ) : (
+                    reservesList.map(({ player }) => (
+                      <SquadCard 
+                        key={player.id} 
+                        player={player} 
+                        onClick={() => {
+                          if (pendingSwap && pendingSwap.from === 'starters') {
+                            completeSwap(player.id);
+                          } else {
+                            setViewingPlayer(player);
+                          }
+                        }}
+                        onSwap={(p) => startSwap(p, 'reserves')}
+                        isPendingSwap={pendingSwap?.player.id === player.id}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="out" className="mt-2 space-y-1.5">
+                  {outList.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Vazio</div>
+                  ) : (
+                    outList.map(({ player }) => (
+                      <SquadCard 
+                        key={player.id} 
+                        player={player} 
+                        onClick={() => {
+                          if (pendingSwap && pendingSwap.from === 'starters') {
+                            completeSwap(player.id);
+                          } else {
+                            setViewingPlayer(player);
+                          }
+                        }}
+                        onSwap={(p) => startSwap(p, 'out')}
+                        isPendingSwap={pendingSwap?.player.id === player.id}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
-          )}
-
-          <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as 'starters' | 'reserves' | 'out')} className="w-full">
-            <TabsList className="grid grid-cols-3 w-full rounded-xl h-11 p-1">
-              <TabsTrigger value="starters" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400">
-                <div className="flex items-center gap-1">
-                  <Shirt className="h-3 w-3" /> <span className="font-bold">Titulares</span>
-                </div>
-                <span className="text-[9px] opacity-70">{groupedPlayers.starters.length}/11</span>
-              </TabsTrigger>
-              <TabsTrigger value="reserves" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-blue-500/15 data-[state=active]:text-blue-400">
-                <div className="flex items-center gap-1">
-                  <Armchair className="h-3 w-3" /> <span className="font-bold">Banco</span>
-                </div>
-                <span className="text-[9px] opacity-70">{groupedPlayers.reserves.length} reservas</span>
-              </TabsTrigger>
-              <TabsTrigger value="out" className="text-[11px] gap-0.5 rounded-lg flex-col h-full data-[state=active]:bg-muted data-[state=active]:text-foreground">
-                <div className="flex items-center gap-1">
-                  <Package className="h-3 w-3" /> <span className="font-bold">Fora</span>
-                </div>
-                <span className="text-[9px] opacity-70">{groupedPlayers.out.length} jogadores</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="starters" className="mt-3 space-y-2">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <Shirt className="h-4 w-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Time Titular</span>
-                </div>
-                {/* Rotation button removed from squad tab as per request */}
-              </div>
-              <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-2 flex items-start gap-2">
-                <Shirt className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  <span className="text-emerald-400 font-bold">11 titulares</span> que começam as partidas. Listados primeiro na escalação tática.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                {startersList.length === 0 ? (
-                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum titular {filterPos && `na posição ${filterPos}`}.</div>
-                ) : (
-                  startersList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => {
-                        if (pendingSwap && pendingSwap.from !== 'starters') {
-                          completeSwap(player.id);
-                        } else {
-                          setViewingPlayer(player);
-                        }
-                      }}
-                      onSwap={(p) => startSwap(p, 'starters')}
-                      isPendingSwap={pendingSwap?.player.id === player.id}
-                    />
-                  ))
-
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="reserves" className="mt-3 space-y-2">
-              <div className="rounded-lg bg-blue-500/5 border border-blue-500/15 p-2 flex items-start gap-2">
-                <Armchair className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  <span className="text-blue-400 font-bold">Banco de reservas</span> — disponíveis para substituições durante o jogo.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                {reservesList.length === 0 ? (
-                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum reserva {filterPos && `na posição ${filterPos}`}.</div>
-                ) : (
-                  reservesList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => {
-                        if (pendingSwap && pendingSwap.from === 'starters') {
-                          completeSwap(player.id);
-                        } else {
-                          setViewingPlayer(player);
-                        }
-                      }}
-                      onSwap={(p) => startSwap(p, 'reserves')}
-                      isPendingSwap={pendingSwap?.player.id === player.id}
-                    />
-                  ))
-
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="out" className="mt-3 space-y-2">
-              <div className="rounded-lg bg-muted/30 border border-border/20 p-2 flex items-start gap-2">
-                <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  <span className="text-foreground font-bold">Fora do elenco</span> — não convocados para os jogos. Treinam normalmente.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                {outList.length === 0 ? (
-                  <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
-                ) : (
-                outList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => {
-                        if (pendingSwap && pendingSwap.from === 'starters') {
-                          completeSwap(player.id);
-                        } else {
-                          setViewingPlayer(player);
-                        }
-                      }}
-                      onSwap={(p) => startSwap(p, 'out')}
-                      isPendingSwap={pendingSwap?.player.id === player.id}
-                    />
-                  ))
-
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </TabsContent>
+          </div>
+        </TabsContent>
 
         <TabsContent value="contracts" className="space-y-3 mt-3">
           {expiringPlayers.length > 0 && (
