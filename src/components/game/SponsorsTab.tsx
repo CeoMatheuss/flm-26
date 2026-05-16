@@ -150,53 +150,56 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
             {offers.map(offer => {
               const eligible = reputation >= offer.minReputation && !atLimit;
               return (
-                <div key={offer.id} className="p-3 bg-accent/20 rounded-lg border border-border/30 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <Badge className="text-xs shrink-0">{sponsorTypeLabels[offer.type]}</Badge>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm truncate">{offer.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {offer.duration} temporada(s) · Rep. mín: {offer.minReputation}
-                        {' · '}
-                        <span className="text-primary font-semibold">
-                          {offer.payMode === 'monthly'
-                            ? `${fmtBRL(offer.monthlyPay)}/parcela`
-                            : 'Pago ao concluir objetivo'}
-                        </span>
-                      </p>
+                <div key={offer.id} className="p-3 bg-accent/20 rounded-lg border border-border/30 space-y-3 flex flex-col justify-between h-full">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Badge className="text-xs shrink-0">{sponsorTypeLabels[offer.type]}</Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{offer.name}</p>
+                      </div>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => onAccept(offer)}
-                      disabled={!eligible}
-                      className="shrink-0"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      {atLimit ? 'Limite' : reputation < offer.minReputation ? 'Rep. baixa' : 'Aceitar'}
-                    </Button>
+
+                    <div className="text-[11px] text-muted-foreground">
+                      {offer.duration} temp. · Rep. mín: {offer.minReputation}
+                      <div className="text-primary font-bold mt-0.5">
+                        {offer.payMode === 'monthly'
+                          ? `${fmtBRL(offer.monthlyPay)}/parcela`
+                          : 'Pago ao concluir objetivo'}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                      <div className="bg-primary/10 rounded p-1.5 border border-primary/20 text-center">
+                        <div className="text-[8px] text-muted-foreground uppercase leading-none mb-1">Total</div>
+                        <div className="font-bold text-primary truncate">{fmtBRL(offer.totalValue)}</div>
+                      </div>
+                      <div className="bg-yellow-500/10 rounded p-1.5 border border-yellow-500/20 text-center flex flex-col justify-center">
+                        <div className="text-[8px] text-muted-foreground uppercase leading-none mb-1">Objetivo</div>
+                        <div className="font-bold text-yellow-500 text-[9px] leading-tight truncate">{offer.objective?.label ?? '—'}</div>
+                      </div>
+                      <div className="bg-destructive/10 rounded p-1.5 border border-destructive/20 text-center">
+                        <div className="text-[8px] text-muted-foreground uppercase leading-none mb-1">Multa</div>
+                        <div className="font-bold text-destructive truncate">{fmtBRL(offer.penalty)}</div>
+                      </div>
+                    </div>
+
+                    {offer.payMode === 'on_complete' && (
+                      <div className="flex items-center gap-2 text-[9px] text-yellow-300 bg-yellow-500/5 rounded px-2 py-1 border border-yellow-500/20">
+                        <Trophy className="h-3 w-3 shrink-0" />
+                        <span className="leading-tight">Pagamento integral no fim</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-[11px]">
-                    <div className="bg-primary/10 rounded px-2 py-1.5 border border-primary/20">
-                      <div className="text-[9px] text-muted-foreground uppercase">Valor total</div>
-                      <div className="font-bold text-primary">{fmtBRL(offer.totalValue)}</div>
-                    </div>
-                    <div className="bg-yellow-500/10 rounded px-2 py-1.5 border border-yellow-500/20">
-                      <div className="text-[9px] text-muted-foreground uppercase">Objetivo</div>
-                      <div className="font-bold text-yellow-400 text-[10px] leading-tight">{offer.objective?.label ?? '—'}</div>
-                    </div>
-                    <div className="bg-destructive/10 rounded px-2 py-1.5 border border-destructive/20">
-                      <div className="text-[9px] text-muted-foreground uppercase">Multa</div>
-                      <div className="font-bold text-destructive">{fmtBRL(offer.penalty)}</div>
-                    </div>
-                  </div>
-
-                  {offer.payMode === 'on_complete' && (
-                    <div className="flex items-center gap-2 text-[10px] text-yellow-300 bg-yellow-500/5 rounded px-2 py-1 border border-yellow-500/20">
-                      <Trophy className="h-3 w-3 shrink-0" />
-                      Pagamento integral apenas se objetivo for cumprido
-                    </div>
-                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => onAccept(offer)}
+                    disabled={!eligible}
+                    className="w-full mt-2 h-8 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    {atLimit ? 'Limite' : reputation < offer.minReputation ? 'Rep. baixa' : 'Aceitar Contrato'}
+                  </Button>
                 </div>
               );
             })}
