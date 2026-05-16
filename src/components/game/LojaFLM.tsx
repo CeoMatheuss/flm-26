@@ -316,10 +316,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
           </div>
         </div>
         
-        <h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none mb-1 relative z-10">
+        <h1 className="text-2xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none mb-1 relative z-10">
           Loja <span className="text-emerald-500">FLM 26</span>
         </h1>
-        <p className="text-emerald-100/60 text-xs font-medium relative z-10">Overhaul completo: estratégia, torcida e benefícios exclusivos.</p>
+        <p className="text-emerald-100/60 text-[9px] sm:text-xs font-medium relative z-10 uppercase tracking-widest">Estratégia e benefícios exclusivos.</p>
         
         <div className="flex flex-wrap gap-2 sm:gap-4 mt-6 sm:mt-8 relative z-10">
           <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-white/5 flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px]">
