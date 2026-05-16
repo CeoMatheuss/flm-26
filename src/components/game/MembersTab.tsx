@@ -30,6 +30,7 @@ interface MemberPlan {
 interface Props {
   totalFans: number;
   reputation: number;
+  totalMembersFromDB?: number;
   /** Estatísticas da temporada — alimentam o crescimento/perda dinâmica de sócios. */
   wins?: number;
   draws?: number;
