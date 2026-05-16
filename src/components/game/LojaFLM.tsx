@@ -9,7 +9,8 @@ import {
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
   Loader2, History, Info, TrendingUp, Building2, 
   UserCog, AlertCircle, RefreshCw, Star, Shirt,
-  LayoutDashboard, ArrowUpRight
+  LayoutDashboard, ArrowUpRight, X, Mail, QrCode, CreditCard,
+  Check, Copy, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
