@@ -492,6 +492,55 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             </>
           )}
 
+          <TabsContent value="socio" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Card className="bg-slate-900/40 border border-amber-500/20 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
+              <CardHeader className="p-8 pb-0">
+                <CardTitle className="text-2xl font-black uppercase italic flex items-center gap-3 text-amber-400">
+                  <Crown className="h-6 w-6" /> Planos de Sócio Torcedor
+                </CardTitle>
+                <p className="text-white/60 text-sm">Aumente sua receita recorrente e o engajamento da torcida com planos exclusivos.</p>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {items.filter(i => i.category === 'members' || i.id.includes('socio')).map((plan, idx) => (
+                    <motion.div 
+                      key={plan.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col hover:border-amber-500/30 transition-all group"
+                    >
+                      <div className="bg-amber-500/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Crown className="h-6 w-6 text-amber-400" />
+                      </div>
+                      <h3 className="text-xl font-black uppercase italic mb-2">{plan.name}</h3>
+                      <p className="text-xs text-white/40 mb-6 flex-1">{plan.description}</p>
+                      
+                      <div className="space-y-3 mb-6">
+                         <div className="flex justify-between text-[10px] uppercase font-black">
+                            <span className="text-white/40">Mensalidade</span>
+                            <span className="text-emerald-400">{formatMoney(plan.price_cents / 100)}</span>
+                         </div>
+                         <div className="flex justify-between text-[10px] uppercase font-black">
+                            <span className="text-white/40">Bônus Hype</span>
+                            <span className="text-amber-400">+{plan.bonus_data?.hype_bonus || 5}%</span>
+                         </div>
+                      </div>
+
+                      <Button 
+                        onClick={() => handlePurchase(plan)}
+                        disabled={isActive(plan.id)}
+                        className={`w-full rounded-2xl font-black uppercase italic ${isActive(plan.id) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500 hover:bg-amber-400 text-black'}`}
+                      >
+                        {isActive(plan.id) ? 'Plano Ativo' : 'Assinar Plano'}
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="history" className="space-y-4 outline-none">
             <Card className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
               <CardHeader className="border-b border-white/5 bg-white/5 px-6 py-4">
