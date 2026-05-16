@@ -227,7 +227,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
+            <span className="text-sm font-black text-white truncate sm:overflow-visible sm:whitespace-normal group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
               {player.name}
             </span>
             <span className="text-sm">{flagFor((player as any).country)}</span>
@@ -270,15 +270,15 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       </div>
 
       {/* Contract & Market Value */}
-      <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
+      <div className="col-span-11 sm:col-span-4 flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
         <div className="flex flex-col items-end">
           <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
           <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end">
-            <span className="text-xs font-black text-emerald-400 italic leading-none">{formatMoney(value)}</span>
-            <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mt-1">Mkt Value</span>
+            <span className="text-xs font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(value)}</span>
+            <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.1em] mt-1">Mkt Value</span>
           </div>
           <ChevronRight className={cn("w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1", isPendingSwap && "text-primary animate-bounce")} />
         </div>
