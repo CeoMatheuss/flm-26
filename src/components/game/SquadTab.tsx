@@ -1163,7 +1163,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
       </Tabs>
 
       {/* Tactics summary widget */}
-      <TacticsSummaryWidget tactics={tactics} players={players} avgOvr={avgOvr} />
+      {/* TacticsSummaryWidget removed from squad tab as per request */}
 
       {/* Rescind modal */}
       {onRescindPlayer && (
