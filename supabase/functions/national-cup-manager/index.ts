@@ -15,8 +15,11 @@ serve(async (req) => {
     
     // For automatic calls, we might want to skip password but keep it for manual
     const isInternal = req.headers.get('x-internal-call') === 'true'
-    const requiresAdmin = ['generate_all_national_cups', 'advance_phase', 'reset_cups'].includes(action)
-    
+    // Only truly destructive actions require admin password.
+    // `advance_phase` / `check_overdue_cups` / `generate_all_national_cups` rodam em fluxo
+    // automático a partir de qualquer cliente logado, então não podem retornar 403.
+    const requiresAdmin = ['reset_cups'].includes(action)
+
     if (requiresAdmin && !isInternal && password !== adminPassword) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
