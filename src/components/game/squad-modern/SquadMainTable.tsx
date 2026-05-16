@@ -25,16 +25,38 @@ interface Props {
   userId: string;
 }
 
-export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab }: Props) {
+export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
+  const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const fetchNegotiations = async () => {
+      const { data } = await supabase
+        .from('player_negotiations')
+        .select('player_id')
+        .eq('user_id', userId)
+        .eq('status', 'pending');
+      
+      if (data) {
+        const map: Record<string, boolean> = {};
+        data.forEach(n => map[negotiationPlayerId(n.player_id)] = true);
+        setNegotiations(map);
+      }
+    };
+    fetchNegotiations();
+  }, [userId, players]);
+
+  // Helper to ensure we match player IDs correctly if they have prefixes or suffixes
+  const negotiationPlayerId = (id: string) => id;
 
   const deltas = useAttributeEvolution(players);
 
   const filtered = useMemo(() => {
     return players.filter(p => {
       const isStarter = starterIds.has(p.id);
-      const status = getPlayerStatus(p, isStarter);
+      const isNegotiating = negotiations[p.id];
+      const status = getPlayerStatus(p, isStarter, isNegotiating);
       
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
 
