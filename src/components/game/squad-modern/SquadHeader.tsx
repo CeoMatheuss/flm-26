@@ -115,6 +115,20 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
+          {/* Tactics Button */}
+          <button 
+            onClick={onToggleTactics}
+            className={cn(
+              "hidden xl:flex h-12 px-6 rounded-2xl border transition-all gap-3 font-black uppercase text-[10px] tracking-widest group shadow-lg",
+              isTacticsOpen 
+                ? "bg-zinc-900 border-white/5 text-white/40 hover:text-red-400 hover:border-red-400/20" 
+                : "bg-emerald-500 border-emerald-400/50 text-zinc-950 hover:bg-emerald-400"
+            )}
+          >
+            {isTacticsOpen ? <X className="w-4 h-4" /> : <LayoutDashboard className="w-4 h-4" />}
+            {isTacticsOpen ? 'Fechar Tático' : 'Abrir Tático'}
+          </button>
+
           {/* Optimization Toggle */}
           <TooltipProvider>
             <Tooltip>
@@ -133,37 +147,26 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
           {/* Mobile View Toggle */}
           <div className="flex xl:hidden bg-white/5 border border-white/10 p-1 rounded-2xl h-10 gap-1">
              <button 
-               onClick={() => onViewModeChange('list')}
-               className={cn(
-                 "px-3 rounded-xl flex items-center gap-2 transition-all",
-                 viewMode === 'list' ? "bg-emerald-500 text-zinc-950 shadow-lg" : "text-white/40"
-               )}
+                onClick={() => onViewModeChange('list')}
+                className={cn(
+                  "px-3 rounded-xl flex items-center gap-2 transition-all",
+                  viewMode === 'list' ? "bg-emerald-500 text-zinc-950 shadow-lg" : "text-white/40"
+                )}
              >
-               <Users className="w-4 h-4" />
-               <span className="hidden sm:inline text-[10px] font-black uppercase">Lista</span>
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline text-[10px] font-black uppercase">Lista</span>
              </button>
              <button 
-               onClick={() => onViewModeChange('pitch')}
-               className={cn(
-                 "px-3 rounded-xl flex items-center gap-2 transition-all",
-                 viewMode === 'pitch' ? "bg-emerald-500 text-zinc-950 shadow-lg" : "text-white/40"
-               )}
+                onClick={() => onViewModeChange('pitch')}
+                className={cn(
+                  "px-3 rounded-xl flex items-center gap-2 transition-all",
+                  viewMode === 'pitch' ? "bg-emerald-500 text-zinc-950 shadow-lg" : "text-white/40"
+                )}
              >
-               <LayoutDashboard className="w-4 h-4" />
-               <span className="hidden sm:inline text-[10px] font-black uppercase">Tático</span>
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline text-[10px] font-black uppercase">Tático</span>
              </button>
           </div>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                 <button className="hidden sm:flex w-12 h-12 rounded-2xl bg-white/5 border border-white/10 items-center justify-center text-white/40 hover:text-white transition-all">
-                   <Info className="w-4 h-4" />
-                 </button>
-              </TooltipTrigger>
-              <TooltipContent>Informações do Clube</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
 
           <button
             onClick={handleMenu}
