@@ -118,7 +118,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
         <div className="col-span-1">#</div>
         <div className="col-span-4">Jogador / Posição</div>
         <div className="col-span-1 text-center">Idade</div>
-        <div className="col-span-3 text-center">Atributos Principais</div>
+        <div className="col-span-3 text-center">Atributos</div>
         <div className="col-span-3 text-right">Contrato / Valor</div>
       </div>
 
