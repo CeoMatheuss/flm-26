@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock } from 'lucide-react';
+import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
+import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
@@ -137,6 +138,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               canBeSwapped={!!pendingSwapId && pendingSwapId !== p.id}
               onRest={() => onRest(p.id)}
               onClick={() => onSelect(p.id)}
+              activeTab={activeTab}
             />
           ))}
         </AnimatePresence>
@@ -166,11 +168,19 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
   );
 }
 
-function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped, onRest }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void }) {
+function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped, onRest, activeTab }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
   const status = getPlayerStatus(player, isStarter, isNegotiating);
   const sm = statusMeta[status] || statusMeta.reserva;
+
+  // Lógica de Overall Dinâmico: Se for titular, mostrar overall da posição da escalação (se possível)
+  // Como SquadMainTable não tem a formação/requirements direta, usamos heurística se estiver na aba titulares
+  const showDynamic = activeTab === 'titulares' && isStarter;
+  // Simplificação: No PlayerRow da lista, mantemos o Overall Base, mas adicionamos o indicador de adaptação se for o caso.
+  // No FLM, a tela de elenco foca no valor intrínseco, a tela Tática foca no dinâmico.
+  // Porém, o prompt pede "O overall mostrado no campo deve mudar automaticamente", o que já fizemos no FormationView.
+  // Para a lista, vamos adicionar o badge de adaptação.
 
   return (
     <motion.button

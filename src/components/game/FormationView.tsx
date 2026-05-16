@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { validateLineup } from '@/utils/lineupManager';
-import { Zap, Heart, Activity, Star, TrendingUp, TrendingDown, Minus, Crown, Sparkles, UserCircle2, ArrowRightLeft } from 'lucide-react';
+import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
+import { Zap, Heart, Activity, Star, TrendingUp, TrendingDown, Minus, Crown, Sparkles, UserCircle2, ArrowRightLeft, AlertTriangle } from 'lucide-react';
 
 interface Props {
   formation: Formation;
@@ -316,7 +317,7 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
                 >
                   <div className="flex flex-col items-center -space-y-1">
                     <span className={`text-xl sm:text-4xl font-black tracking-tighter drop-shadow-md ${posTextColors[slot.position] || 'text-white'}`}>
-                      {player ? player.overall : ''}
+                      {player ? getDynamicOverall(player, slot.position as Player['position']) : ''}
                     </span>
                     <span className={`text-[8px] sm:text-[14px] font-bold uppercase opacity-80 ${posTextColors[slot.position] || 'text-white'}`}>
                       {slot.position}
@@ -324,6 +325,11 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
                   </div>
                   
                   <div className="absolute -top-1 -right-1 flex flex-col gap-1 z-30">
+                    {player && player.position !== slot.position && player.secondaryPosition !== slot.position && (
+                      <div className="bg-red-500 text-white rounded-full w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg border-2 border-white" title="Fora de Posição">
+                        <AlertTriangle className="w-2 h-2 sm:w-3.5 sm:h-3.5" />
+                      </div>
+                    )}
                     {isPendingSwap && (
                       <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-10 sm:h-10 flex items-center justify-center shadow-[0_0_15px_rgba(var(--primary),0.8)] border-2 border-white animate-bounce">
                         <ArrowRightLeft className="w-4 h-4 sm:w-6 sm:h-6" />

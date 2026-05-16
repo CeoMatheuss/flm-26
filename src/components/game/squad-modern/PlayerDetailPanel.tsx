@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
+import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
 import { cn } from '@/lib/utils';
 import {
   PlayerStatus, statusMeta, ovrTier, positionColors, attrConfig, getAttrValue, attrColorClass, flagFor,
@@ -155,10 +156,35 @@ function PlayerDetailContent({
             <InfoTile icon={<Award className="h-4 w-4" />} label="Contrato" value={`${player.contract} Anos`} accent="text-sky-300" />
           </div>
 
-          {/* Vitals */}
-          <section className="space-y-4">
-            <BarBlock icon={<Activity className="h-4 w-4 text-emerald-400" />} label="Energia" value={player.stamina} color="from-emerald-400 to-emerald-500" />
-            <BarBlock icon={<Heart className="h-4 w-4 text-pink-400" />} label="Moral" value={player.morale} color="from-pink-400 to-pink-500" />
+          {/* Vitals & Position Analysis */}
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <BarBlock icon={<Activity className="h-4 w-4 text-emerald-400" />} label="Energia" value={player.stamina} color="from-emerald-400 to-emerald-500" />
+              <BarBlock icon={<Heart className="h-4 w-4 text-pink-400" />} label="Moral" value={player.morale} color="from-pink-400 to-pink-500" />
+            </div>
+            
+            <div className="p-5 rounded-3xl bg-zinc-900/50 border border-white/5 space-y-4">
+               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Target className="w-3.5 h-3.5" /> Análise de Versatilidade
+               </h3>
+               <div className="grid grid-cols-2 gap-3">
+                  {(['ZAG', 'LAT', 'VOL', 'MEI', 'ATA'] as Player['position'][]).map(pos => {
+                    const dynamicOvr = getDynamicOverall(player, pos);
+                    const adaptation = getAdaptationLevel(dynamicOvr / player.overall);
+                    const color = getAdaptationColor(adaptation);
+                    
+                    return (
+                      <div key={pos} className="bg-white/5 p-2 rounded-xl flex items-center justify-between border border-white/5 hover:border-white/10 transition-all">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-white/60">{pos}</span>
+                          <span className={cn("text-[8px] font-bold uppercase", color)}>{adaptation}</span>
+                        </div>
+                        <span className="text-sm font-black text-white">{dynamicOvr}</span>
+                      </div>
+                    );
+                  })}
+               </div>
+            </div>
           </section>
 
           {/* Attributes Grid */}
