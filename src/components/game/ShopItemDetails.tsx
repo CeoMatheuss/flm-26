@@ -183,62 +183,62 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="absolute top-6 right-6 z-30 bg-black/40 hover:bg-black/60 rounded-full text-white"
+                className="absolute top-3 right-3 z-30 bg-black/40 hover:bg-black/60 rounded-full text-white h-8 w-8"
               >
-                <X className="h-6 w-6" />
+                <X className="h-4 w-4" />
               </Button>
 
-              <div className="absolute bottom-8 left-8 right-8 space-y-2">
-                <Badge className={`border-none uppercase font-black text-[10px] px-3 py-1 ${
+              <div className="absolute bottom-4 left-5 right-5 space-y-1">
+                <Badge className={`border-none uppercase font-black text-[9px] px-2 py-0.5 ${
                   item.rarity === 'legendary' ? 'bg-amber-500 text-black' :
                   item.rarity === 'epic' ? 'bg-purple-500 text-white' :
                   'bg-emerald-500 text-white'
                 }`}>
-                  <Star className="h-3 w-3 mr-1 fill-current" />
+                  <Star className="h-2.5 w-2.5 mr-1 fill-current" />
                   {item.rarity || 'Especial'}
                 </Badge>
-                <h2 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-xl">
+                <h2 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-xl">
                   {item.name}
                 </h2>
               </div>
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 p-8 md:p-12 space-y-8 overflow-y-auto scrollbar-hide">
-              <div className="space-y-4">
+            <div className="flex-1 p-5 md:p-6 space-y-4 overflow-y-auto scrollbar-hide">
+              <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Info className="h-4 w-4 text-emerald-400" />
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-white/30">O que este produto faz</h3>
+                  <Info className="h-3 w-3 text-emerald-400" />
+                  <h3 className="text-[9px] font-black uppercase tracking-widest text-white/30">O que este produto faz</h3>
                 </div>
-                <p className="text-xl md:text-2xl text-white/90 leading-relaxed font-medium italic">
+                <p className="text-sm md:text-base text-white/90 leading-relaxed font-medium italic">
                   "{item.description}"
                 </p>
               </div>
 
               {/* Benefits Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 {benefits.map((benefit, idx) => (
-                  <div key={idx} className="bg-white/5 border border-white/5 p-6 rounded-2xl flex items-center gap-5">
-                    <div className={`p-4 rounded-xl bg-white/5 ${benefit.color}`}>
-                      <benefit.icon className="h-6 w-6" />
+                  <div key={idx} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center gap-3">
+                    <div className={`p-2 rounded-lg bg-white/5 ${benefit.color}`}>
+                      <benefit.icon className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">{benefit.label}</p>
-                      <p className="text-lg font-black text-white italic">{benefit.value}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-0.5">{benefit.label}</p>
+                      <p className="text-sm font-black text-white italic">{benefit.value}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Requirements & Action */}
-              <div className="pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Investimento Necessário</p>
-                  <div className="flex items-center gap-3">
-                    <p className="text-4xl font-black text-emerald-400 italic">R$ {price.toLocaleString()}</p>
+              <div className="pt-3 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Investimento Necessário</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-2xl font-black text-emerald-400 italic">R$ 0,01</p>
                     {isBlocked && (
-                      <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/20 uppercase font-black text-[10px] py-1">
-                        <Users className="h-3 w-3 mr-1" /> Requer {item.min_fans.toLocaleString()} fãs
+                      <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/20 uppercase font-black text-[9px] py-0.5">
+                        <Users className="h-2.5 w-2.5 mr-1" /> Requer {item.min_fans.toLocaleString()} fãs
                       </Badge>
                     )}
                   </div>
@@ -247,7 +247,7 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
                 <Button 
                   disabled={isBlocked} 
                   onClick={onPurchase}
-                  className={`w-full md:w-auto min-w-[240px] h-16 rounded-2xl font-black uppercase italic text-lg shadow-2xl transition-all active:scale-95 ${
+                  className={`w-full md:w-auto min-w-[180px] h-11 rounded-xl font-black uppercase italic text-sm shadow-2xl transition-all active:scale-95 ${
                     isBlocked 
                       ? 'bg-white/5 text-white/20 border border-white/5' 
                       : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40'
