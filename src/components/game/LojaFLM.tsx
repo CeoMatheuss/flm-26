@@ -410,6 +410,21 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             </ScrollArea>
           </div>
 
+          <TabsContent value="dashboard" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <StoreDashboard stats={storeManager.stats} />
+          </TabsContent>
+
+          <TabsContent value="stickers" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <PacotinhosTab 
+              budget={club.budget} 
+              userId={userId}
+              onBuyPack={(players, cost) => {
+                // Already handles in PacotinhosTab, but we sync budget
+                window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+              }} 
+            />
+          </TabsContent>
+
           {loading && (
             <div className="flex flex-col items-center justify-center py-24 space-y-4">
               <div className="relative">
