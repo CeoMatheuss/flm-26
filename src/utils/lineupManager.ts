@@ -39,12 +39,27 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const used = new Set<string>();
   const starters: (Player | null)[] = new Array(11).fill(null);
 
-  const getPlayerScoreForPos = (player: Player, targetPos: string) => {
+  const getPlayerScoreForPos = (player: Player, targetPos: Player['position']) => {
     if (player.injury) return -1000;
+    
+    // Usar o overall dinâmico para pontuar a escalação
+    const dynamicOvr = import.meta.env.DEV ? player.overall : player.overall; // Placeholder
+    // Importando dinamicamente ou usando lógica local para evitar problemas de dependência circular imediata
     let score = player.overall;
     if (player.position === targetPos) score += 20;
-    else if (player.secondaryPosition === targetPos) score += 10;
-    else score -= 15;
+    else if (player.secondaryPosition === targetPos) score += 12; // Aumentado para valorizar secundárias
+    else {
+      // Penalidade baseada em "distância" de posição
+      const penalties: Record<string, Record<string, number>> = {
+        GOL: { ZAG: -60, LAT: -60, VOL: -60, MEI: -60, ATA: -60 },
+        ZAG: { GOL: -80, LAT: -5, VOL: -10, MEI: -30, ATA: -40 },
+        LAT: { GOL: -80, ZAG: -5, VOL: -15, MEI: -20, ATA: -25 },
+        VOL: { GOL: -80, ZAG: -10, LAT: -15, MEI: -10, ATA: -30 },
+        MEI: { GOL: -80, ZAG: -40, LAT: -30, VOL: -10, ATA: -15 },
+        ATA: { GOL: -80, ZAG: -50, LAT: -40, VOL: -40, MEI: -15 }
+      };
+      score += (penalties[player.position]?.[targetPos] || -30);
+    }
 
     // Favor balanced physical state
     score += (player.stamina / 10);
