@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { FormationView } from './FormationView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, Zap, Target, Users, Star, Info, Lock, Sparkles, Heart, Activity, LayoutGrid, TrendingUp, TrendingDown, Minus, Crown } from 'lucide-react';
+import { Shield, Zap, Target, Users, Star, Info, Lock, Sparkles, Heart, Activity, LayoutGrid, TrendingUp, TrendingDown, Minus, Crown, ArrowRightLeft } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { SeasonStartWidget } from './SeasonStartWidget';
