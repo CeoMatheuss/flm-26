@@ -10,7 +10,7 @@ import {
   Loader2, History, Info, TrendingUp, Building2, 
   Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
   Eye, QrCode, Copy, Check, X, CreditCard, Mail, Star,
-  LineChart, LayoutDashboard, ArrowUpRight
+  LineChart, LayoutDashboard, ArrowUpRight, Shirt
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,9 +31,10 @@ const CATEGORIES = [
   { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, db: 'dashboard' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
+  { id: 'stickers', name: 'Figurinhas', icon: Package, db: 'stickers' },
+  { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'infra', name: 'Estrutura', icon: Building2, db: 'infrastructure' },
   { id: 'staff', name: 'Equipe', icon: UserCog, db: 'staff' },
-  { id: 'saude', name: 'Saúde', icon: Stethoscope, db: 'physio' },
   { id: 'history', name: 'Histórico', icon: History, db: 'history' },
 ];
 
@@ -813,16 +814,39 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
           </div>
         )}
 
-        {item.category === 'sponsorship' && !isBlocked && (
-          <div className="grid grid-cols-2 gap-2 py-1">
-            <div className="bg-white/5 p-2 rounded-xl text-center border border-white/5 group-hover:border-emerald-500/20 transition-colors">
-               <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest">Imediato</p>
-               <p className="text-sm font-black text-emerald-400">R$ {((item.bonus_data?.immediate_cash || 0)/1000).toLocaleString()}k</p>
-            </div>
-            <div className="bg-white/5 p-2 rounded-xl text-center border border-white/5 group-hover:border-emerald-500/20 transition-colors">
-               <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest">Bônus</p>
-               <p className="text-sm font-black text-emerald-400">R$ {((item.bonus_data?.daily_cash || 0)/1000).toLocaleString()}k</p>
-            </div>
+        {!isBlocked && (
+          <div className="space-y-2">
+            {/* Benefício Principal Simples */}
+            {item.bonus_data?.torcidaPorDia && (
+              <div className="flex items-center gap-2 text-[11px] font-black text-blue-400 uppercase italic">
+                <Users className="h-3 w-3" />
+                +{item.bonus_data.torcidaPorDia.toLocaleString()} torcedores/dia
+              </div>
+            )}
+            {item.bonus_data?.dinheiroSemanal && (
+              <div className="flex items-center gap-2 text-[11px] font-black text-emerald-400 uppercase italic">
+                <DollarSign className="h-3 w-3" />
+                +R$ {(item.bonus_data.dinheiroSemanal/1000).toLocaleString()}k/semana
+              </div>
+            )}
+            {item.bonus_data?.daily_cash && !item.bonus_data?.dinheiroSemanal && (
+              <div className="flex items-center gap-2 text-[11px] font-black text-emerald-400 uppercase italic">
+                <DollarSign className="h-3 w-3" />
+                +R$ {(item.bonus_data.daily_cash * 7 / 1000).toLocaleString()}k/semana
+              </div>
+            )}
+            {item.bonus_data?.desbloqueiaJogador && (
+              <div className="flex items-center gap-2 text-[11px] font-black text-amber-400 uppercase italic">
+                <Star className="h-3 w-3" />
+                Desbloqueia Jogador
+              </div>
+            )}
+            {item.bonus_data?.aumentaVendas && (
+              <div className="flex items-center gap-2 text-[11px] font-black text-purple-400 uppercase italic">
+                <Shirt className="h-3 w-3" />
+                Aumenta Vendas da Loja
+              </div>
+            )}
           </div>
         )}
 
