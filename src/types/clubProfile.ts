@@ -15,6 +15,8 @@ export interface ClubProfile {
   trophies?: Trophy[];
   /** When true, user can edit club name, stadium name, and shield. Unlocked via R$10 payment. */
   customizationUnlocked?: boolean;
+  /** When true, user can save/launch uniforms. Unlocked via separate payment in Loja FLM. */
+  uniformsUnlocked?: boolean;
 }
 
 export const defaultClubProfile: ClubProfile = {
@@ -26,4 +28,5 @@ export const defaultClubProfile: ClubProfile = {
   motto: '',
   trophies: [],
   customizationUnlocked: false,
+  uniformsUnlocked: false,
 };
