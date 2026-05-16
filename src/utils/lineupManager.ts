@@ -63,16 +63,6 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     return score;
   };
 
-    // Favor balanced physical state
-    score += (player.stamina / 10);
-    score += (player.morale / 20);
-    
-    // Favor form
-    if (player.matchRating) score += (player.matchRating * 2);
-    
-    return score;
-  };
-
   // 1. Assign Goalkeeper
   const bestGK = allPlayers
     .filter(p => !p.injury && p.position === 'GOL')
