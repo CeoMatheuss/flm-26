@@ -218,10 +218,15 @@ export function SquadModernLayout({
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsTacticsOpen(!isTacticsOpen)}
-                className="hidden xl:flex h-10 px-4 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 text-white/60 hover:text-emerald-400 transition-all gap-2 font-black uppercase text-[10px] tracking-widest"
+                className={cn(
+                  "hidden xl:flex h-11 px-6 rounded-2xl border transition-all gap-3 font-black uppercase text-[10px] tracking-widest group shadow-lg",
+                  isTacticsOpen 
+                    ? "bg-zinc-900 border-white/5 text-white/40 hover:text-red-400 hover:border-red-400/20" 
+                    : "bg-emerald-500 border-emerald-400/50 text-zinc-950 hover:bg-emerald-400"
+                )}
               >
-                {isTacticsOpen ? <LayoutDashboard className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
-                {isTacticsOpen ? 'Fechar Tático' : 'Abrir Tático'}
+                {isTacticsOpen ? <X className="w-4 h-4 group-hover:rotate-90 transition-transform" /> : <LayoutDashboard className="w-4 h-4 group-hover:scale-110 transition-transform" />}
+                {isTacticsOpen ? 'Fechar Centro Tático' : 'Abrir Centro Tático'}
               </Button>
             </div>
 
