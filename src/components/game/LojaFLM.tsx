@@ -866,7 +866,7 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
               e.stopPropagation();
               onPurchase();
             }}
-            className={`flex-1 font-black uppercase italic h-12 rounded-2xl transition-all duration-300 shadow-lg ${
+            className={`flex-1 font-black uppercase italic h-10 sm:h-12 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-lg text-xs sm:text-sm ${
               isBlocked 
                 ? 'bg-white/5 text-white/40 border border-white/5' 
                 : isFree 
@@ -875,8 +875,8 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
             }`}
           >
             {isFree ? 'Assinar' : (
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-sm">R$ {price.toLocaleString()}</span>
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                <span>R$ {price.toLocaleString()}</span>
               </div>
             )}
           </Button>
