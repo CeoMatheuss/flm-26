@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,15 +8,17 @@ import {
   ShoppingBag, DollarSign, Users, Crown, Package, 
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
   Loader2, History, Info, TrendingUp, Building2, 
-  Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
-  Eye, QrCode, Copy, Check, X, CreditCard, Mail, Star,
-  LineChart, LayoutDashboard, ArrowUpRight, Shirt
+  UserCog, AlertCircle, RefreshCw, Star, Shirt,
+  LayoutDashboard, ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ShopItemDetails } from './ShopItemDetails';
-import { ShopFinanceDashboard } from './ShopFinanceDashboard';
+import { StoreDashboard } from './shop/StoreDashboard';
+import { useStoreManager } from '@/hooks/useStoreManager';
+import { formatMoney } from '@/lib/formatMoney';
+import { PacotinhosTab } from './PacotinhosTab';
 
 interface LojaProps {
   club: any;
