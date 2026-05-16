@@ -6,6 +6,7 @@ import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { ChampionshipsTab } from '@/components/game/ChampionshipsTab';
+import { ScoutsTab } from '@/components/game/ScoutsTab';
 
 import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
