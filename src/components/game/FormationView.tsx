@@ -228,7 +228,7 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
   }, [pendingSwapId, onSwapPlayers, onPlayerClick, isInteractive]);
 
   return (
-    <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] xl:aspect-[16/10] mx-auto bg-[#0a1f0f] rounded-[2.5rem] overflow-hidden border-[6px] border-emerald-900/40 shadow-[0_0_50px_rgba(0,0,0,0.5)] select-none">
+    <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] xl:aspect-[16/8] max-h-[460px] mx-auto bg-[#0a1f0f] rounded-[2.5rem] overflow-hidden border-[6px] border-emerald-900/40 shadow-[0_0_50px_rgba(0,0,0,0.5)] select-none">
        <div className="relative w-full h-full p-4">
          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grass.png')] opacity-20 pointer-events-none" />
          <div className="absolute inset-0 flex pointer-events-none">
