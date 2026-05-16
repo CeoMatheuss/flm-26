@@ -1,10 +1,10 @@
-import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users, Zap, Shield } from 'lucide-react';
+import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users, Zap, Shield, ArrowLeftRight, X } from 'lucide-react';
 import { ClubShield } from '../ClubShield';
 import { Club } from '@/types/game';
 import { SeasonData } from '@/types/infrastructure';
 import { formatMoney } from '@/lib/formatMoney';
 import { avgStamina } from './squadHelpers';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -15,9 +15,11 @@ interface Props {
   onMenu?: () => void;
   viewMode: 'list' | 'pitch';
   onViewModeChange: (mode: 'list' | 'pitch') => void;
+  pendingSwap?: { id: string; name: string } | null;
+  onCancelSwap?: () => void;
 }
 
-export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewModeChange }: Props) {
+export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewModeChange, pendingSwap, onCancelSwap }: Props) {
   const energy = avgStamina(club.players);
   const energyColor = energy >= 70 ? 'text-emerald-400' : energy >= 40 ? 'text-amber-400' : 'text-red-400';
 
@@ -64,21 +66,49 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
           </div>
         </div>
 
-        {/* Center/Right: Stats */}
-        <div className="hidden md:flex items-center gap-6">
-          <StatItem 
-            icon={<Wallet className="w-3.5 h-3.5" />} 
-            label="Orçamento" 
-            value={formatMoney(club.budget)} 
-            color="text-emerald-400" 
-          />
-          <div className="h-8 w-px bg-white/10" />
-          <StatItem 
-            icon={<Activity className="w-3.5 h-3.5" />} 
-            label="Energia Média" 
-            value={`${energy}%`} 
-            color={energyColor} 
-          />
+        {/* Center: Swap Info or Stats */}
+        <div className="flex-1 flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            {pendingSwap ? (
+              <motion.div 
+                key="swap-info"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="bg-primary/20 border border-primary/30 px-4 py-2 rounded-2xl flex items-center gap-3 animate-pulse shadow-[0_0_20px_rgba(var(--primary),0.2)]"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                  <ArrowLeftRight className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/70">Trocando {pendingSwap.name}</span>
+                  <span className="text-xs font-black text-white uppercase italic">Selecione o substituto...</span>
+                </div>
+                <button 
+                  onClick={onCancelSwap}
+                  className="ml-2 w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-3 h-3 text-white" />
+                </button>
+              </motion.div>
+            ) : (
+              <div className="hidden md:flex items-center gap-6">
+                <StatItem 
+                  icon={<Wallet className="w-3.5 h-3.5" />} 
+                  label="Orçamento" 
+                  value={formatMoney(club.budget)} 
+                  color="text-emerald-400" 
+                />
+                <div className="h-8 w-px bg-white/10" />
+                <StatItem 
+                  icon={<Activity className="w-3.5 h-3.5" />} 
+                  label="Energia Média" 
+                  value={`${energy}%`} 
+                  color={energyColor} 
+                />
+              </div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Right: Actions */}

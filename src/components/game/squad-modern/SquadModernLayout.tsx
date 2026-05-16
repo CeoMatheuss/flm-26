@@ -40,7 +40,7 @@ interface SquadModernProps {
 }
 
 export function SquadModernLayout({
-  club, season, players, tactics, onUpdatePlayers, onUpdateTactics,
+  club, season, players, tactics, onUpdatePlayers, onUpdateTactics, onRest,
   youthProspects, onPromoteYouth, onSellYouth, onEnrollCopinha, onUpgradeAcademy,
   youthInvestment, onSetYouthInvestment,
   userId, infrastructure, lastYouthGenAt, isPremium
@@ -49,6 +49,7 @@ export function SquadModernLayout({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list');
+  const [pendingSwap, setPendingSwap] = useState<Player | null>(null);
 
   const deltas = useAttributeEvolution(players);
 
@@ -62,6 +63,14 @@ export function SquadModernLayout({
     window.addEventListener('flm:auto-lineup', handler);
     return () => window.removeEventListener('flm:auto-lineup', handler);
   }, [players, tactics.formation, onUpdatePlayers]);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      handleSwap(e.detail.idA, e.detail.idB);
+    };
+    window.addEventListener('flm:swap-players', handler);
+    return () => window.removeEventListener('flm:swap-players', handler);
+  }, [players, onUpdatePlayers]);
 
   // Sync youth prospects count to tab
   useEffect(() => {
@@ -97,12 +106,46 @@ export function SquadModernLayout({
   }, [players]);
 
   const handleSelect = (id: string) => {
+    if (pendingSwap && id !== pendingSwap.id) {
+      handleSwap(pendingSwap.id, id);
+      return;
+    }
     setSelectedId(id);
     setPanelOpen(true);
   };
 
-  const handleAction = (action: string, p: Player) => {
+  const handleSwap = (idA: string, idB: string) => {
+    const idxA = players.findIndex(p => p.id === idA);
+    const idxB = players.findIndex(p => p.id === idB);
+    if (idxA < 0 || idxB < 0) return;
+
+    const newPlayers = [...players];
+    [newPlayers[idxA], newPlayers[idxB]] = [newPlayers[idxB], newPlayers[idxA]];
+    
+    onUpdatePlayers(newPlayers);
+    setPendingSwap(null);
+    setPanelOpen(false);
+    toast.success('Troca realizada com sucesso!', {
+      description: `${players[idxA].name} ↔ ${players[idxB].name}`
+    });
+  };
+
+  const handleAction = (action: 'lineup' | 'bench' | 'transfer' | 'renew' | 'train' | 'medical' | 'captain' | 'swap', p: Player) => {
     switch (action) {
+      case 'swap':
+        setPendingSwap(p);
+        setPanelOpen(false);
+        // Priorizar aba de reservas para facilitar a troca se o jogador for titular
+        if (starterIds.has(p.id)) {
+          setActiveTab('reservas');
+        } else {
+          setActiveTab('titulares');
+        }
+        toast.info(`Selecione um jogador para trocar por ${p.name}`, {
+          description: "Clique em outro jogador na lista para completar a troca.",
+          duration: 5000,
+        });
+        break;
       case 'lineup':
       case 'bench':
         toast.info(`${p.name} — abra a aba Tático para alterar a escalação.`);
@@ -122,12 +165,14 @@ export function SquadModernLayout({
       case 'captain':
         toast.success(`${p.name} é o novo capitão!`);
         break;
-      case 'auto-lineup':
-        const nextPlayers = autoLineup(players, tactics.formation);
-        onUpdatePlayers(nextPlayers);
-        toast.success('Escalação e banco otimizados automaticamente!');
-        break;
+      // removido case manual para usar apenas handleAction
     }
+  };
+
+  const handleAutoLineup = () => {
+    const nextPlayers = autoLineup(players, tactics.formation);
+    onUpdatePlayers(nextPlayers);
+    toast.success('Escalação e banco otimizados automaticamente!');
   };
 
   return (
@@ -137,6 +182,8 @@ export function SquadModernLayout({
         season={season} 
         viewMode={viewMode} 
         onViewModeChange={(mode) => setViewMode(mode as any)} 
+        pendingSwap={pendingSwap ? { id: pendingSwap.id, name: pendingSwap.name } : null}
+        onCancelSwap={() => setPendingSwap(null)}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
@@ -190,10 +237,12 @@ export function SquadModernLayout({
                       <SquadMainTable 
                         players={players} 
                         starterIds={starterIds}
-                        selectedId={selectedId}
-                        onSelect={handleSelect}
-                        activeTab={activeTab}
-                        userId={userId}
+                         selectedId={selectedId}
+                         onSelect={handleSelect}
+                         activeTab={activeTab}
+                         userId={userId}
+                         onRest={onRest}
+                         pendingSwapId={pendingSwap?.id}
                       />
                     )}
                   </motion.div>
@@ -241,16 +290,11 @@ export function SquadModernLayout({
            {/* Quick Actions Footer */}
            <div className="p-6 border-t border-white/5 bg-zinc-950/80">
               <button 
-                 onClick={() => {
-                   const requirements = (actualFormation as any).split('-').map(Number);
-                   toast.success(`Formação Real: ${actualFormation}`, {
-                     description: `O time está jogando com ${requirements[0]} defensores, ${requirements[1]} meias e ${requirements[2]} atacantes.`
-                   });
-                 }}
+                 onClick={handleAutoLineup}
                  className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-3"
               >
                  <Sparkles className="w-5 h-5" />
-                 Analisar Tática
+                 Auto-Escalar Time
               </button>
            </div>
         </div>
