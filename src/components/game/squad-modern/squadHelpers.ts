@@ -89,6 +89,10 @@ export const positionColors: Record<string, string> = {
   ATA: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
 };
 
+export const getPositionColor = (position?: string) => (
+  positionColors[position || ''] || 'bg-muted/30 text-muted-foreground border-border/30'
+);
+
 export const ovrTier = (ovr: number) => {
   if (ovr >= 85) return { 
     label: 'Elite', 
