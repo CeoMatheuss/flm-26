@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
+import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
 import { cn } from '@/lib/utils';
 import {
   PlayerStatus, statusMeta, ovrTier, positionColors, attrConfig, getAttrValue, attrColorClass, flagFor,
