@@ -122,6 +122,23 @@ export function useMatchState(initialState: any, userId?: string) {
       const stadiumFanBonus = Math.min(20, (deps.infrastructure?.stadium?.level || 1) * 5);
       const repBonus = prev.reputation >= 70 ? 10 : prev.reputation <= 30 ? -10 : 0;
 
+      let fanChange: number;
+      if (isWin) {
+        fanChange = 50 + Math.floor(Math.random() * 51);
+      } else if (isDraw) {
+        fanChange = 20 + Math.floor(Math.random() * 31);
+      } else {
+        fanChange = Math.floor(Math.random() * 21);
+      }
+      fanChange += stadiumFanBonus + repBonus;
+      fanChange = Math.max(-50, Math.min(fanChange, 100));
+
+      const isRout = isHome ? (homeGoals - awayGoals) >= 3 : (awayGoals - homeGoals) >= 3;
+      const isBigLoss = isHome ? (homeGoals - awayGoals) <= -3 : (awayGoals - homeGoals) <= -3;
+      const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
+
+      const stadiumPenaltyFine = penalties.reduce((s, p) => s + p.fine, 0);
+      const stadiumPenaltyRep = penalties.reduce((s, p) => s + p.reputationLoss, 0);
 
       const prizeMsg = leaguePrize > 0 ? ` | +R$${(leaguePrize/1000).toFixed(0)}k liga` : '';
       const penMsg = stadiumPenaltyFine > 0 ? ` | -R$${(stadiumPenaltyFine/1000).toFixed(0)}k multa estádio` : '';
@@ -131,7 +148,6 @@ export function useMatchState(initialState: any, userId?: string) {
       });
 
       if (userId) {
-        // Obter destaques e artilheiros (simulado para a notificação)
         const highlights = isWin ? "Ataque eficiente e defesa sólida." : isDraw ? "Equilíbrio em campo." : "Erros individuais custaram caro.";
         const scorer = (isHome ? homeGoals : awayGoals) > 0 ? "Artilheiro da rodada" : "Nenhum gol";
         
@@ -155,6 +171,8 @@ export function useMatchState(initialState: any, userId?: string) {
         deps.setSeason((s: any) => ({ ...s, currentWeek: Math.min(s.totalWeeks || 38, s.currentWeek + 1) }));
       }
 
+      const totalMatchRevenue = deps.isFriendly ? 0 : (prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine);
+
       return {
         ...prev,
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
@@ -171,7 +189,7 @@ export function useMatchState(initialState: any, userId?: string) {
             gamesPlayed: p.gamesPlayed + 1,
           };
         }),
-        budget: prev.budget + (deps.isFriendly ? 0 : (prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine)),
+        budget: prev.budget + totalMatchRevenue,
         fans: Math.max(1000, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
         stats: {
@@ -184,6 +202,7 @@ export function useMatchState(initialState: any, userId?: string) {
         },
       };
     });
+
   }, [userId]);
 
   const generateFriendly = useCallback(async (
