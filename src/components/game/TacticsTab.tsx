@@ -200,7 +200,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   <p className="text-[10px] sm:text-[12px] font-black text-primary uppercase tracking-[0.2em] mb-2">CENTRO TÁTICO PROFISSIONAL</p>
                   <div className="flex items-center gap-4">
                     <select 
-                      className="bg-transparent text-3xl sm:text-5xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-all duration-300"
+                      className="bg-transparent text-2xl sm:text-3xl lg:text-5xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-all duration-300 max-w-full"
                       value={tactics.formation}
                       onChange={(e) => setField('formation', e.target.value as any)}
                     >
@@ -212,7 +212,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-6 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
+                <div className="flex items-center gap-3 sm:gap-6 bg-white/5 p-3 sm:p-4 rounded-2xl border border-white/10 backdrop-blur-md">
                   <div className="text-center px-2">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">GERAL</p>
                     <p className="text-3xl font-black text-white tracking-tighter">
@@ -366,7 +366,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ].map(ctrl => (
                     <div key={ctrl.label}>
                       <SectionLabel icon={ctrl.icon} label={ctrl.label} />
-                      <div className="flex gap-1.5">
+                      <div className="flex flex-wrap gap-1.5">
                         {ctrl.options.map(opt => (
                           <TacticButton key={opt} value={opt} current={tactics[ctrl.key] as string} label={opt} onClick={v => setField(ctrl.key, v as any)} />
                         ))}
