@@ -833,7 +833,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </AnimatePresence>
 
             {/* Lado Direito: Lista de Jogadores */}
-            <div className={`flex-1 space-y-4 ${activeTacticalView === 'list' || window.innerWidth > 1024 ? 'block' : 'hidden lg:block'}`}>
+            <div className="flex-1 space-y-4">
               <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/40 p-2 rounded-2xl border border-white/5">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide">
                   {(['starters', 'reserves', 'out'] as const).map((tab) => (
