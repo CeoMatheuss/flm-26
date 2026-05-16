@@ -849,16 +849,16 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
           </div>
         )}
 
-        <div className="pt-2 mt-auto flex gap-2">
+        <div className="pt-2 mt-auto flex gap-1.5 sm:gap-2">
           <Button 
             variant="outline"
             onClick={(e) => {
               e.stopPropagation();
               onViewDetails();
             }}
-            className="flex-none w-12 h-12 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white p-0"
+            className="flex-none w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white p-0"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           <Button 
             disabled={isBlocked} 
