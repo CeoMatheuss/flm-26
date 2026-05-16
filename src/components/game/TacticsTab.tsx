@@ -398,7 +398,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ].map(ctrl => (
                     <div key={ctrl.label}>
                       <SectionLabel icon={ctrl.icon} label={ctrl.label} />
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {ctrl.options.map(opt => (
                           <TacticButton key={opt} value={opt} current={tactics[ctrl.key] as string} label={opt} onClick={v => setField(ctrl.key, v as any)} />
                         ))}
