@@ -160,10 +160,10 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
             initial={{ scale: 0.95, y: 20, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 20, opacity: 0 }}
-            className="w-full h-full md:h-auto md:max-w-4xl bg-[#050810] border-0 md:border md:border-white/10 md:rounded-[2.5rem] overflow-hidden flex flex-col relative shadow-2xl"
+            className="w-full h-full md:h-auto md:max-w-2xl bg-[#050810] border-0 md:border md:border-white/10 md:rounded-[2rem] overflow-hidden flex flex-col relative shadow-2xl"
           >
             {/* Header / Image Area */}
-            <div className="relative h-[200px] md:h-[260px] overflow-hidden">
+            <div className="relative h-[140px] md:h-[180px] overflow-hidden">
               {item.image_url ? (
                 <img 
                   src={item.image_url} 
