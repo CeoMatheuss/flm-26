@@ -769,7 +769,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   );
 }
 
-function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any) {
+function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDetails }: any) {
   const isBlocked = (clubFans || 0) < (item.min_fans || 0);
   const price = item.price_cents / 100;
   const isFree = item.price_cents === 0;
