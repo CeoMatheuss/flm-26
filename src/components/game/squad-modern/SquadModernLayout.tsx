@@ -134,7 +134,7 @@ export function SquadModernLayout({
     toast.success('Troca realizada com sucesso!', {
       description: `${players[idxA].name} ↔ ${players[idxB].name}`
     });
-  };
+  }, [players, onUpdatePlayers]);
 
   const handleAction = (action: 'lineup' | 'bench' | 'transfer' | 'renew' | 'train' | 'medical' | 'captain' | 'swap', p: Player) => {
     switch (action) {
