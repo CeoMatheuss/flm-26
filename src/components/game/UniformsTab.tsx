@@ -442,6 +442,10 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   };
 
   const handleLaunch = async () => {
+    if (!customizationUnlocked) {
+      toast.error('🔒 Desbloqueie a personalização do clube (R$10) na aba "Perfil do Clube" para lançar uniformes.');
+      return;
+    }
     try {
       setIsLaunching(true);
       const { data: { user } } = await supabase.auth.getUser();
