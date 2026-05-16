@@ -384,17 +384,17 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
 
       <div className="flex flex-col gap-6">
         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-          <div className="bg-black/20 p-1.5 rounded-2xl border border-white/5 mb-6">
+          <div className="bg-black/20 p-1 rounded-2xl border border-white/5 mb-4 sm:mb-6">
             <ScrollArea className="w-full whitespace-nowrap">
-              <TabsList className="bg-transparent gap-2 h-auto p-0">
+              <TabsList className="bg-transparent gap-1 sm:gap-2 h-auto p-0 flex">
                 {CATEGORIES.map(cat => (
                   <TabsTrigger 
                     key={cat.id} value={cat.id}
-                    className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl bg-transparent text-white/60 border border-transparent data-[state=active]:border-emerald-400/30 px-5 py-2.5 transition-all"
+                    className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl bg-transparent text-white/60 border border-transparent data-[state=active]:border-emerald-400/30 px-3 sm:px-5 py-2 sm:py-2.5 transition-all flex-1 min-w-[100px]"
                   >
-                    <div className="flex items-center gap-2">
-                       <cat.icon className="h-4 w-4" />
-                       <span className="text-xs font-black uppercase italic">{cat.name}</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                       <cat.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                       <span className="text-[9px] sm:text-xs font-black uppercase italic">{cat.name}</span>
                     </div>
                   </TabsTrigger>
                 ))}
