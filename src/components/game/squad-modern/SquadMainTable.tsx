@@ -141,6 +141,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               canBeSwapped={!!pendingSwapId && pendingSwapId !== p.id}
               onRest={() => onRest(p.id)}
               onClick={() => onSelect(p.id)}
+              onOpenQuickSwap={onOpenQuickSwap}
               activeTab={activeTab}
             />
           ))}
