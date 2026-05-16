@@ -104,8 +104,19 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       })
       .subscribe();
       
+    const handleOpenCheckout = (e: any) => {
+      const { item } = e.detail;
+      if (item) {
+        setSelectedItem(item);
+        setShowCheckoutModal(true);
+      }
+    };
+
+    window.addEventListener('flm:open-checkout', handleOpenCheckout);
+      
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('flm:open-checkout', handleOpenCheckout);
     };
     }
   }, [userId, currentOrderId, pixData]);
@@ -738,11 +749,22 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               <div className="pt-2">
                 <Button 
                   onClick={executePayment}
-                  className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase italic rounded-2xl shadow-xl shadow-emerald-900/20 group transition-all duration-300 active:scale-95"
+                  disabled={loading}
+                  className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase italic rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.4)] group transition-all duration-300 active:scale-95 relative overflow-hidden"
                 >
-                  <span className="flex items-center gap-2">
-                    {checkoutMethod === 'pix' ? 'Gerar PIX para Pagamento' : 'Prosseguir para o Cartão'}
-                    <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
+                  <span className="flex items-center justify-center gap-2 relative z-10">
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>Processando pagamento...</span>
+                      </>
+                    ) : (
+                      <>
+                        {checkoutMethod === 'pix' ? 'GERAR PIX PARA PAGAMENTO' : 'REALIZAR PAGAMENTO'}
+                        <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
                   </span>
                 </Button>
               </div>
@@ -932,24 +954,33 @@ function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDeta
             <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           <Button 
-            disabled={isBlocked} 
+            disabled={isBlocked || isActive} 
             onClick={(e) => {
               e.stopPropagation();
               onPurchase();
             }}
-            className={`flex-1 font-black uppercase italic h-10 sm:h-12 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-lg text-xs sm:text-sm ${
+            className={`flex-1 font-black uppercase italic h-10 sm:h-12 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-lg text-xs sm:text-sm relative overflow-hidden group ${
               isBlocked 
                 ? 'bg-white/5 text-white/40 border border-white/5' 
-                : isFree 
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20' 
-                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 group-hover:scale-[1.02] active:scale-95'
+                : isActive 
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] group-hover:scale-[1.02] active:scale-95'
             }`}
           >
-            {isFree ? 'Assinar' : (
-              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                <span>R$ {price.toLocaleString()}</span>
-              </div>
-            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 relative z-10">
+              {isActive ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>CONCLUÍDO</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="h-3.5 w-3.5" />
+                  <span>{isFree ? 'RESGATAR' : `R$ ${price.toLocaleString()}`}</span>
+                </>
+              )}
+            </div>
           </Button>
         </div>
       </div>

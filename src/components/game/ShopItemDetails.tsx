@@ -24,7 +24,8 @@ import {
   Target,
   Lock,
   Shirt,
-  Sparkles
+  Sparkles,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -247,13 +248,18 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
                 <Button 
                   disabled={isBlocked} 
                   onClick={onPurchase}
-                  className={`w-full md:w-auto min-w-[180px] h-11 rounded-xl font-black uppercase italic text-sm shadow-2xl transition-all active:scale-95 ${
+                  className={`w-full md:w-auto min-w-[220px] h-14 rounded-2xl font-black uppercase italic text-base tracking-tighter shadow-2xl transition-all active:scale-95 group relative overflow-hidden ${
                     isBlocked 
                       ? 'bg-white/5 text-white/20 border border-white/5' 
-                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1'
                   }`}
                 >
-                  {isFree ? 'Resgatar Agora' : 'Comprar Produto'}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
+                  <div className="flex items-center justify-center gap-2 relative z-10">
+                    <CreditCard className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                    <span>{isFree ? 'RESGATAR AGORA' : (item.category === 'sponsorship' ? 'ADQUIRIR PATROCÍNIO' : 'COMPRAR AGORA')}</span>
+                    <Sparkles className="h-4 w-4 text-emerald-300 animate-pulse" />
+                  </div>
                 </Button>
               </div>
             </div>
