@@ -809,8 +809,8 @@ function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDeta
               <Lock className="h-3.5 w-3.5 text-red-400" />
             </div>
           ) : (
-            isPremium && item.id === 'premium-pass' ? (
-              <Badge className="bg-emerald-500 text-white font-black text-[8px] uppercase">Ativo</Badge>
+            (isPremium && item.id === 'premium-pass') || isActive ? (
+              <Badge className="bg-emerald-500 text-white border-none font-black text-[8px] uppercase tracking-wider px-2 py-0.5 animate-pulse">Ativo</Badge>
             ) : null
           )}
         </div>
