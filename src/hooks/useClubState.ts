@@ -526,10 +526,9 @@ export function useClubState(initialState: any, userId?: string) {
 
   const rotateSquad = useCallback(() => {
     setClub(prev => {
-      // Regra de rotação: coloca os mais cansados no final e os mais descansados no início
-      const sorted = [...prev.players].sort((a, b) => b.stamina - a.stamina);
-      toast.success('Elenco rotacionado por condição física.');
-      return { ...prev, players: sorted };
+      const nextPlayers = autoLineup(prev.players, (prev as any).tactics?.formation || '4-4-2');
+      toast.success('Escalação otimizada automaticamente!');
+      return { ...prev, players: nextPlayers };
     });
   }, []);
 
