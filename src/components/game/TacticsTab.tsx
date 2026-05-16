@@ -324,7 +324,8 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
           </div>
         </div>
 
-        <div className="xl:col-span-4 space-y-6 min-w-0">
+        {isSidePanelOpen && (
+        <div className="xl:col-span-4 space-y-6 min-w-0 animate-in fade-in slide-in-from-right-4 duration-300">
           <Tabs defaultValue="style" className="w-full">
             <TabsList className="w-full grid grid-cols-3 h-14 bg-zinc-950/50 border border-white/5 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
               <TabsTrigger value="style" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
