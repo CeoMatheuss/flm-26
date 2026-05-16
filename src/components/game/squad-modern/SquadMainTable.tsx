@@ -234,23 +234,29 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
         <span className="text-xs font-bold text-white/50">{player.age}a</span>
       </div>
 
-      {/* Fitness / Morale */}
-      <div className="col-span-2 flex items-center justify-center gap-4">
-        <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" />
-        <MiniStat value={player.morale} icon={<Heart className="w-3 h-3" />} color="text-pink-400" />
+      {/* Attributes (Compact Row View) */}
+      <div className="col-span-3 hidden lg:flex items-center justify-center gap-4">
+        {attrConfig.slice(0, 4).map(attr => {
+          const { value: val } = getAttrValue(player, attr.from as any);
+          return (
+            <div key={attr.key} className="flex flex-col items-center min-w-[32px]">
+              <span className="text-[8px] font-black text-white/20 uppercase mb-0.5">{attr.key}</span>
+              <span className={cn(
+                "text-[10px] font-black tabular-nums italic",
+                val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
+              )}>{val}</span>
+            </div>
+          );
+        })}
+        <div className="h-6 w-px bg-white/5 mx-1" />
+        <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" />
       </div>
 
-      {/* Contract info */}
-      <div className="hidden sm:flex col-span-2 flex-col items-end">
-         <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
-         <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos</span>
-      </div>
-
-      {/* Market Value */}
-      <div className="col-span-11 sm:col-span-2 flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-        <div className="flex sm:hidden flex-col">
+      {/* Contract & Market Value */}
+      <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
+        <div className="flex flex-col items-end">
           <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
-          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos • {player.age}a</span>
+          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end">
