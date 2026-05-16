@@ -9,12 +9,14 @@ import {
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
   Loader2, History, Info, TrendingUp, Building2, 
   Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
-  Eye, QrCode, Copy, Check, X, CreditCard, Mail
+  Eye, QrCode, Copy, Check, X, CreditCard, Mail, Star,
+  LineChart, LayoutDashboard, ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ShopItemDetails } from './ShopItemDetails';
+import { ShopFinanceDashboard } from './ShopFinanceDashboard';
 
 interface LojaProps {
   club: any;
@@ -26,6 +28,7 @@ interface LojaProps {
 }
 
 const CATEGORIES = [
+  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, db: 'dashboard' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
   { id: 'infra', name: 'Estrutura', icon: Building2, db: 'infrastructure' },
@@ -35,7 +38,7 @@ const CATEGORIES = [
 ];
 
 export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
-  const [activeCategory, setActiveCategory] = useState('patrocinios');
+  const [activeCategory, setActiveCategory] = useState('dashboard');
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [showPremium, setShowPremium] = useState(false);
@@ -52,6 +55,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   const [checkoutFullName, setCheckoutFullName] = useState('');
   const [checkoutCpf, setCheckoutCpf] = useState('');
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [shopStats, setShopStats] = useState<any>(null);
+  const [shopProducts, setShopProducts] = useState<any[]>([]);
+  const [upgrading, setUpgrading] = useState(false);
 
 
   useEffect(() => {
@@ -101,13 +107,17 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
     try {
       setLoading(true);
       setError(null);
-      const { data, error: fetchErr } = await supabase
-        .from('shop_items')
-        .select('*')
-        .order('price_cents', { ascending: true });
+      
+      const [itemsRes, statsRes, productsRes] = await Promise.all([
+        supabase.from('shop_items').select('*').order('price_cents', { ascending: true }),
+        supabase.from('club_shop_stats').select('*').eq('club_id', club.id).single(),
+        supabase.from('club_shop_products').select('*').order('min_level', { ascending: true })
+      ]);
         
-      if (fetchErr) throw fetchErr;
-      if (data) setItems(data);
+      if (itemsRes.error) throw itemsRes.error;
+      if (itemsRes.data) setItems(itemsRes.data);
+      if (statsRes.data) setShopStats(statsRes.data);
+      if (productsRes.data) setShopProducts(productsRes.data);
     } catch (e: any) {
       console.error('Error fetching shop items:', e);
       setError('Erro ao carregar itens da loja. Tente novamente.');
@@ -116,6 +126,27 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       setLoading(false);
     }
   }
+
+  const handleUpgrade = async () => {
+    try {
+      setUpgrading(true);
+      const { data, error } = await supabase.rpc('upgrade_club_shop', { p_club_id: club.id });
+      if (error) throw error;
+      
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Loja evoluída para o Nível ${result.new_level}!`);
+        fetchItems();
+        window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+      } else {
+        toast.error(result?.error || 'Erro ao realizar upgrade.');
+      }
+    } catch (e: any) {
+      toast.error('Erro ao processar upgrade.');
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   async function fetchHistory() {
     try {
@@ -270,8 +301,47 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               <p className="font-black text-lg">{(club.fans || 0).toLocaleString()}</p>
             </div>
           </div>
+          {shopStats && (
+            <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-emerald-500/20 flex items-center gap-3 shadow-inner">
+              <div className="bg-emerald-500/20 p-2 rounded-lg">
+                <TrendingUp className="text-emerald-400 h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Ganhos Diários (Loja)</p>
+                <p className="font-black text-lg text-emerald-400">R$ {(shopStats.daily_revenue / 100).toLocaleString()}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {shopStats && (
+        <div className="flex flex-col md:flex-row gap-4 mb-2">
+          <Button 
+            onClick={handleUpgrade}
+            disabled={upgrading}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl h-14 px-8 font-black uppercase italic tracking-tighter shadow-lg shadow-emerald-900/20 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex-1"
+          >
+            {upgrading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <ArrowUpRight className="mr-2 h-5 w-5" />
+                Upgrade da Loja (Nível {shopStats.level} → {shopStats.level + 1})
+                <Badge className="ml-3 bg-black/30 border-none">R$ {(500 * Math.pow(3, shopStats.level - 1)).toLocaleString()}</Badge>
+              </>
+            )}
+          </Button>
+          <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl flex items-center gap-3 md:w-80">
+            <div className="bg-emerald-500/20 p-2 rounded-lg">
+              <Star className="text-emerald-400 h-4 w-4" />
+            </div>
+            <p className="text-[10px] text-emerald-100 font-bold leading-tight">
+              Aumentar o nível da loja desbloqueia novos produtos e melhora a taxa de conversão dos torcedores.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-6">
         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
@@ -315,37 +385,51 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             </div>
           )}
 
-          {!loading && !error && CATEGORIES.filter(cat => cat.id !== 'history').map(cat => (
-            <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 outline-none">
-              <AnimatePresence mode="popLayout">
-                {items
-                  .filter(i => i.category === cat.db)
-                  .map((item, idx) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                    >
-                      <StoreCard 
-                        item={item} 
-                        clubFans={club.fans || 0} 
-                        isPremium={isPremium}
-                        onPurchase={() => handlePurchase(item)} 
-                        onViewDetails={() => openDetails(item)}
-                      />
-                    </motion.div>
-                  ))}
-              </AnimatePresence>
-              
-              {items.filter(i => i.category === cat.db).length === 0 && (
-                <div className="col-span-full py-20 text-center">
-                   <Package className="h-12 w-12 text-white/10 mx-auto mb-3" />
-                   <p className="text-sm text-white/40 font-medium italic">Nenhum item disponível nesta categoria no momento.</p>
-                </div>
-              )}
-            </TabsContent>
-          ))}
+          {!loading && !error && (
+            <>
+              <TabsContent value="dashboard" className="outline-none">
+                {shopStats && (
+                  <ShopFinanceDashboard 
+                    stats={shopStats} 
+                    club={club} 
+                    products={shopProducts} 
+                  />
+                )}
+              </TabsContent>
+
+              {CATEGORIES.filter(cat => cat.id !== 'history' && cat.id !== 'dashboard').map(cat => (
+                <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 outline-none">
+                  <AnimatePresence mode="popLayout">
+                    {items
+                      .filter(i => i.category === cat.db)
+                      .map((item, idx) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                        >
+                          <StoreCard 
+                            item={item} 
+                            clubFans={club.fans || 0} 
+                            isPremium={isPremium}
+                            onPurchase={() => handlePurchase(item)} 
+                            onViewDetails={() => openDetails(item)}
+                          />
+                        </motion.div>
+                      ))}
+                  </AnimatePresence>
+                  
+                  {items.filter(i => i.category === cat.db).length === 0 && (
+                    <div className="col-span-full py-20 text-center">
+                       <Package className="h-12 w-12 text-white/10 mx-auto mb-3" />
+                       <p className="text-sm text-white/40 font-medium italic">Nenhum item disponível nesta categoria no momento.</p>
+                    </div>
+                  )}
+                </TabsContent>
+              ))}
+            </>
+          )}
 
           <TabsContent value="history" className="space-y-4 outline-none">
             <Card className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">

@@ -357,6 +357,101 @@ export type Database = {
           },
         ]
       }
+      club_shop_products: {
+        Row: {
+          base_price_cents: number
+          category: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          min_level: number
+          name: string
+        }
+        Insert: {
+          base_price_cents: number
+          category: string
+          created_at?: string | null
+          id: string
+          image_url?: string | null
+          min_level?: number
+          name: string
+        }
+        Update: {
+          base_price_cents?: number
+          category?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          min_level?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      club_shop_stats: {
+        Row: {
+          buying_fans: number
+          club_id: string
+          created_at: string | null
+          daily_revenue: number
+          daily_sales_avg: number
+          id: string
+          last_update: string | null
+          level: number
+          monthly_revenue: number
+          popularity: number
+          revenue_history: Json
+          total_profit: number
+          total_revenue: number
+          total_sales: number
+          updated_at: string | null
+          weekly_revenue: number
+        }
+        Insert: {
+          buying_fans?: number
+          club_id: string
+          created_at?: string | null
+          daily_revenue?: number
+          daily_sales_avg?: number
+          id?: string
+          last_update?: string | null
+          level?: number
+          monthly_revenue?: number
+          popularity?: number
+          revenue_history?: Json
+          total_profit?: number
+          total_revenue?: number
+          total_sales?: number
+          updated_at?: string | null
+          weekly_revenue?: number
+        }
+        Update: {
+          buying_fans?: number
+          club_id?: string
+          created_at?: string | null
+          daily_revenue?: number
+          daily_sales_avg?: number
+          id?: string
+          last_update?: string | null
+          level?: number
+          monthly_revenue?: number
+          popularity?: number
+          revenue_history?: Json
+          total_profit?: number
+          total_revenue?: number
+          total_sales?: number
+          updated_at?: string | null
+          weekly_revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shop_stats_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: true
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           budget: number | null
@@ -5308,6 +5403,7 @@ export type Database = {
         Args: { _amount: number; _auction_id: string }
         Returns: Json
       }
+      process_club_shop_daily: { Args: { p_club_id: string }; Returns: Json }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
       process_daily_shop_bonuses: { Args: { p_user_id: string }; Returns: Json }
       process_expired_auctions: { Args: never; Returns: undefined }
@@ -5444,6 +5540,7 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      upgrade_club_shop: { Args: { p_club_id: string }; Returns: Json }
       upsert_player_stats: {
         Args: {
           _comp_id: string
