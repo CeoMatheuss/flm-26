@@ -10,7 +10,7 @@ import {
   Loader2, History, Info, TrendingUp, Building2, 
   Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
   Eye, QrCode, Copy, Check, X, CreditCard, Mail, Star,
-  LineChart, LayoutDashboard, ArrowUpRight
+  LineChart, LayoutDashboard, ArrowUpRight, Shirt
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
