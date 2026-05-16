@@ -26,6 +26,7 @@ interface Props {
   onChangePosition?: (playerId: string, newPos: Player['position'], side?: 'L' | 'R' | 'C') => void;
   season?: number;
   userId?: string;
+  hideSwapButton?: boolean;
 }
 
 const allFormations: Formation[] = [
@@ -38,7 +39,7 @@ function TacticButton<T extends string>({ value, current, label, onClick }: { va
   const isActive = current === value;
   return (
     <button
-      className={`flex-1 capitalize text-[10px] sm:text-xs min-w-0 px-2 py-1.5 sm:py-2 rounded-md font-medium transition-all ${
+      className={`flex-1 capitalize text-[11px] sm:text-sm min-w-0 px-3 py-2.5 sm:py-3 rounded-xl font-bold transition-all ${
         isActive
           ? 'bg-primary text-primary-foreground shadow-sm'
           : 'bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground'
@@ -109,7 +110,7 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
   );
 }
 
-export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season, userId }: Props) {
+export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season, userId, hideSwapButton }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
 
@@ -179,7 +180,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 pb-20">
       <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
 
       {isInLiveMatch && (
@@ -193,14 +194,14 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-8 space-y-4">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        <div className="xl:col-span-8 space-y-6">
           <Card className="border-primary/20 bg-slate-900/40 rounded-[2.5rem] overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
               <Shield className="w-32 h-32 text-primary rotate-12" />
             </div>
             
-            <CardContent className="p-6 space-y-6 relative">
+            <CardContent className="p-8 space-y-8 relative">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] sm:text-[12px] font-black text-primary uppercase tracking-[0.2em] mb-2">CENTRO TÁTICO PROFISSIONAL</p>
@@ -301,9 +302,9 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
           </div>
         </div>
 
-        <div className="lg:col-span-4 space-y-4">
+        <div className="xl:col-span-4 space-y-6 min-w-0 xl:min-w-[380px]">
           <Tabs defaultValue="style" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-14 bg-slate-900/60 border border-white/5 p-1 rounded-2xl">
+            <TabsList className="w-full grid grid-cols-3 h-14 bg-slate-900/80 border border-white/10 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
               <TabsTrigger value="style" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
                 <Target className="w-4 h-4" />Estilo
               </TabsTrigger>
@@ -321,7 +322,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   {tacticsPresets.map(preset => (
                     <button
                       key={preset.name}
-                      className={`text-[10px] font-black px-4 py-3 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
+                      className={`text-[11px] font-black px-4 py-4 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
                         ${tactics.playStyle === preset.config.playStyle 
                           ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)]' 
                           : 'bg-slate-900/60 border-white/5 text-muted-foreground hover:border-white/20 hover:bg-slate-800'}`}
@@ -335,12 +336,12 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                 <div className="space-y-4">
                   <div>
                     <SectionLabel icon={Target} label="Filosofia de Jogo" />
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       {MAIN_PLAY_STYLES.map(s => (
                         <button
                           key={s}
                           onClick={() => setField('playStyle', s)}
-                          className={`text-[10px] py-3 rounded-xl font-black transition-all border-2 ${
+                          className={`text-[11px] py-4 rounded-xl font-black transition-all border-2 ${
                             tactics.playStyle === s ? 'bg-primary border-primary text-primary-foreground' : 'bg-slate-900/40 text-muted-foreground border-white/5'
                           }`}
                         >
@@ -372,7 +373,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ].map(ctrl => (
                     <div key={ctrl.label}>
                       <SectionLabel icon={ctrl.icon} label={ctrl.label} />
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {ctrl.options.map(opt => (
                           <TacticButton key={opt} value={opt} current={tactics[ctrl.key] as string} label={opt} onClick={v => setField(ctrl.key, v as any)} />
                         ))}
@@ -534,19 +535,24 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         </DialogContent>
       </Dialog>
 
-      <QuickSwapPanel
-        isOpen={isQuickSwapOpen}
-        onClose={() => setIsQuickSwapOpen(false)}
-        players={players}
-        onSwap={swapPlayers}
-      />
+      {!hideSwapButton && (
+        <>
+          <QuickSwapPanel
+            isOpen={isQuickSwapOpen}
+            onClose={() => setIsQuickSwapOpen(false)}
+            players={players}
+            onSwap={swapPlayers}
+          />
 
-      <Button
-        onClick={() => setIsQuickSwapOpen(true)}
-        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground z-40 border-4 border-white/20 animate-bounce hover:animate-none group"
-      >
-        <Repeat className="w-7 h-7 group-hover:rotate-180 transition-transform duration-500" />
-      </Button>
+          <Button
+            onClick={() => setIsQuickSwapOpen(true)}
+            className="fixed bottom-24 right-6 h-16 px-6 rounded-2xl shadow-2xl bg-emerald-600 hover:bg-emerald-500 text-white z-40 border-4 border-white/10 flex items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 group shadow-emerald-500/20"
+          >
+            <ArrowRightLeft className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
+            <span className="font-black uppercase tracking-tighter text-sm">🔄 Trocar Jogador</span>
+          </Button>
+        </>
+      )}
     </div>
   );
 }

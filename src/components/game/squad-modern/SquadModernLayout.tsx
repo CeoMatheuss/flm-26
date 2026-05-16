@@ -16,7 +16,7 @@ import { useAttributeEvolution } from './useAttributeEvolution';
 import { getPlayerStatus, avgStamina } from './squadHelpers';
 import { detectActualFormation, autoLineup } from '@/utils/lineupManager';
 import { toast } from 'sonner';
-import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard } from 'lucide-react';
+import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard, ArrowRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -211,7 +211,7 @@ export function SquadModernLayout({
               </TabsList>
             </div>
 
-            <div className="flex-1 overflow-hidden relative">
+            <div className="flex-1 overflow-x-auto custom-scrollbar relative">
               <AnimatePresence mode="wait">
                 <TabsContent key={activeTab} value={activeTab} className="h-full m-0 outline-none">
                   <motion.div
@@ -260,7 +260,7 @@ export function SquadModernLayout({
 
         {/* Tactical Panel (Desktop Right Side or Mobile Overlay) */}
         <div className={cn(
-          "w-full xl:w-[480px] flex-col border border-white/5 bg-zinc-900/30 rounded-[2.5rem] overflow-hidden relative group transition-all duration-500",
+          "w-full xl:w-[480px] flex-col border border-white/5 bg-zinc-900/30 rounded-[2.5rem] overflow-hidden relative group transition-all duration-500 shrink-0",
           viewMode === 'pitch' ? "flex" : "hidden xl:flex"
         )}>
            {/* Section Header */}
@@ -290,6 +290,7 @@ export function SquadModernLayout({
                 onUpdate={onUpdateTactics || (() => {})} 
                 season={season?.currentSeason}
                 userId={userId}
+                hideSwapButton={true}
               />
            </div>
 
@@ -324,9 +325,10 @@ export function SquadModernLayout({
 
       <Button
         onClick={() => setIsQuickSwapOpen(true)}
-        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 z-40 border-4 border-white/20 animate-bounce hover:animate-none group"
+        className="fixed bottom-24 right-6 h-16 px-6 rounded-2xl shadow-2xl bg-emerald-600 hover:bg-emerald-500 text-white z-40 border-4 border-white/10 flex items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 group shadow-emerald-500/20"
       >
-        <Repeat className="w-7 h-7 group-hover:rotate-180 transition-transform duration-500" />
+        <ArrowRightLeft className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
+        <span className="font-black uppercase tracking-tighter text-sm">🔄 Trocar Jogador</span>
       </Button>
     </div>
   );

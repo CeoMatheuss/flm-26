@@ -36,7 +36,7 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
       onClick={onClick}
       className={cn(
         'group w-full text-left rounded-2xl border transition-all duration-300',
-        'flex items-center gap-4 px-4 py-3',
+        'flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 min-h-[72px] overflow-hidden',
         selected
           ? 'bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.1)]'
           : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10',
@@ -60,19 +60,19 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
       </div>
 
       {/* Info */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors truncate">
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-2 mb-1 overflow-hidden">
+          <span className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors truncate block">
             {player.name}
           </span>
           <span className="text-sm filter grayscale group-hover:grayscale-0 transition-all">{flagFor((player as any).country)}</span>
           {status === 'titular' && <Shield className="w-3 h-3 text-emerald-400" />}
         </div>
-        <div className="flex items-center gap-2 text-[10px] font-bold text-white/30 uppercase tracking-widest">
+        <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-widest overflow-hidden">
           <span className={cn('px-2 py-0.5 rounded-lg border', positionColors[player.position])}>
             {player.position}
           </span>
-          <span>{player.age} ANOS</span>
+          <span className="shrink-0">{player.age} ANOS</span>
           <span className="w-1 h-1 rounded-full bg-white/10" />
           <span className="truncate">{formatMoney(player.salary)}/SEM</span>
         </div>
@@ -85,9 +85,9 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
       </div>
 
       {/* Market Value */}
-      <div className="hidden sm:flex flex-col items-end shrink-0 min-w-[100px]">
-        <span className="text-[9px] uppercase font-black tracking-[0.2em] text-white/20">Valor de Mercado</span>
-        <span className="text-sm font-black text-emerald-400 italic">
+      <div className="hidden sm:flex flex-col items-end shrink-0 min-w-[90px] sm:min-w-[110px] ml-auto overflow-hidden">
+        <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em] text-white/20 whitespace-nowrap">Valor de Mercado</span>
+        <span className="text-xs sm:text-sm font-black text-emerald-400 italic whitespace-nowrap">
           {formatMoney(value)}
         </span>
       </div>
