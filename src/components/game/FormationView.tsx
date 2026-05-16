@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { validateLineup } from '@/utils/lineupManager';
 import { getDynamicOverall } from '@/utils/positionUtils';
-import { Zap, Heart, Activity, Star, TrendingUp, TrendingDown, Crown, Sparkles, ArrowRightLeft, AlertTriangle } from 'lucide-react';
+import { Zap, Heart, Activity, Star, TrendingUp, TrendingDown, Crown, Sparkles, ArrowRightLeft, AlertTriangle, Minus } from 'lucide-react';
 
 interface Props {
   formation: Formation;
