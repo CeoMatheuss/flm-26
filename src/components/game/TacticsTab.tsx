@@ -321,7 +321,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   {tacticsPresets.map(preset => (
                     <button
                       key={preset.name}
-                      className={`text-[10px] font-black px-4 py-3 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
+                      className={`text-[11px] font-black px-4 py-4 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
                         ${tactics.playStyle === preset.config.playStyle 
                           ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)]' 
                           : 'bg-slate-900/60 border-white/5 text-muted-foreground hover:border-white/20 hover:bg-slate-800'}`}
