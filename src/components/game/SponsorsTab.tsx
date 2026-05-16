@@ -43,11 +43,11 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
       {/* ─── Contratos Ativos ───────────────────────────────────── */}
       <Card className="border-primary/30">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center justify-between">
+          <CardTitle className="text-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="flex items-center gap-2">
-              <Handshake className="h-5 w-5" /> Patrocínios Ativos ({sponsors.length}/3)
+              <Handshake className="h-5 w-5 text-primary" /> Patrocínios Ativos ({sponsors.length}/3)
             </span>
-            <span className="text-sm font-normal text-muted-foreground">
+            <span className="text-xs sm:text-sm font-normal text-muted-foreground bg-muted/50 px-3 py-1 rounded-full border border-border/40 w-fit">
               Receita mensal: <span className="text-primary font-bold">{fmtBRL(totalMonthly)}</span>
             </span>
           </CardTitle>
