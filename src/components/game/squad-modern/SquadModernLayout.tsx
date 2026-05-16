@@ -111,6 +111,11 @@ export function SquadModernLayout({
       case 'captain':
         toast.success(`${p.name} é o novo capitão!`);
         break;
+      case 'auto-lineup':
+        const nextPlayers = autoLineup(players, tactics.formation);
+        onUpdatePlayers(nextPlayers);
+        toast.success('Escalação e banco otimizados automaticamente!');
+        break;
     }
   };
 
