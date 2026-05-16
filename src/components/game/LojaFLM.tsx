@@ -31,18 +31,21 @@ interface LojaProps {
 }
 
 const CATEGORIES = [
-  { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
+  { id: 'dashboard', name: 'Painel', icon: LayoutDashboard, db: 'all' },
   { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
-  { id: 'stickers', name: 'Figurinhas', icon: Package, db: 'stickers' },
+  { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
+  { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
+  { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
   { id: 'infra', name: 'Estrutura', icon: Building2, db: 'infrastructure' },
   { id: 'staff', name: 'Equipe', icon: UserCog, db: 'staff' },
   { id: 'history', name: 'Histórico', icon: History, db: 'history' },
 ];
 
 export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState('dashboard');
+  const storeManager = useStoreManager(club, userId);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [showPremium, setShowPremium] = useState(false);
