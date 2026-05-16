@@ -436,8 +436,8 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                 )}
               </TabsContent>
 
-              {CATEGORIES.filter(cat => cat.id !== 'history' && cat.id !== 'dashboard').map(cat => (
-                <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 outline-none">
+              {CATEGORIES.filter(cat => cat.id !== 'history').map(cat => (
+                <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 outline-none">
                   <AnimatePresence mode="popLayout">
                     {items
                       .filter(i => i.category === cat.db)
