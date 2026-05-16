@@ -46,9 +46,9 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
       setLoading(true);
       const [myScoutsRes, marketScoutsRes, missionsRes, reportsRes] = await Promise.all([
         supabase.from('scouts').select('*').eq('user_id', userId),
-        supabase.from('scouts').select('*').eq('is_free_agent', true),
+        supabase.from('scouts').select('*').eq('is_free_agent', true).limit(6),
         supabase.from('scout_missions').select('*').eq('user_id', userId).eq('status', 'em_andamento'),
-        supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+        supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20)
       ]);
 
       if (myScoutsRes.data) setMyScouts(myScoutsRes.data as ScoutV3[]);
