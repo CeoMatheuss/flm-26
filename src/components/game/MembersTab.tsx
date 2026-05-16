@@ -57,12 +57,19 @@ const muralNames = [
   'Rafael O.', 'Camila Z.', 'Bruno P.', 'Larissa H.', 'Diego A.',
 ];
 
-export function MembersTab({ totalFans, reputation, wins = 0, draws = 0, losses = 0 }: Props) {
+export function MembersTab({ totalFans, reputation, totalMembersFromDB = 0, wins = 0, draws = 0, losses = 0 }: Props) {
   const [plans, setPlans] = useState<MemberPlan[]>(() => {
     // Fonte ÚNICA da verdade — mesmo número exibido em FansTab > Sócios.
     const sTotalFans = safeNumber(totalFans);
     const sReputation = safeNumber(reputation);
-    const totalMembers = calculateTotalMembers({ totalFans: sTotalFans, reputation: sReputation, wins, draws, losses });
+    const totalMembers = calculateTotalMembers({ 
+      totalFans: sTotalFans, 
+      reputation: sReputation, 
+      wins, 
+      draws, 
+      losses,
+      manualMembers: totalMembersFromDB
+    });
     return defaultPlans.map((p, i) => ({
       ...p,
       subscribers: Math.max(0, Math.floor(totalMembers * (MEMBER_TIER_RATIOS[i] ?? 0))),
