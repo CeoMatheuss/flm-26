@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Shirt, Palette, Save, Sparkles, ShoppingBag, TrendingUp, Trophy, History, BarChart3, Info, Rocket, ArrowUpRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
