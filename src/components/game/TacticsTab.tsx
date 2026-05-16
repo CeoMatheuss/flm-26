@@ -420,8 +420,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                         ))
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
               </TabsContent>
 
               <TabsContent value="details" className="m-0 space-y-3">
