@@ -12,20 +12,22 @@ interface ModernPlayerCardProps {
 export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPlayerCardProps & { onOpenQuickSwap?: () => void }) {
   const rawTier = (player as any).potentialTier || getPotentialTier((player as any).potential || 60, player.overall);
   const potTier: PotentialTier = (potentialTierInfo as any)[rawTier] ? rawTier : 'comum';
-  const tierInfo = potentialTierInfo[potTier];
+  const tierInfo = potentialTierInfo[potTier] || potentialTierInfo.comum;
+  const tierColor = tierInfo.color || potentialTierInfo.comum.color;
+  const tierBorder = tierInfo.border || potentialTierInfo.comum.border;
 
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`relative p-4 rounded-3xl bg-[#0a0c14] border ${tierInfo.border} overflow-hidden cursor-pointer group hover:border-[#8b5cf6]/50 transition-all shadow-xl`}
+      className={`relative p-4 rounded-3xl bg-[#0a0c14] border ${tierBorder} overflow-hidden cursor-pointer group hover:border-[#8b5cf6]/50 transition-all shadow-xl`}
     >
-      <div className={`absolute inset-0 bg-gradient-to-br ${tierInfo.color.replace('text', 'from')}/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${tierColor.replace('text', 'from')}/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
       
       <div className="flex justify-between items-start mb-4 relative z-10">
         <div className="flex flex-col gap-2">
-          <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 font-black text-xl italic ${tierInfo.color}`}>
+          <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 font-black text-xl italic ${tierColor}`}>
             {player.overall}
           </div>
           <button
@@ -42,8 +44,8 @@ export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPla
         <div className="text-right">
           <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider italic">{player.position}</p>
           <div className="flex items-center gap-1 mt-1">
-             <span className={`text-[8px] font-black uppercase italic ${tierInfo.color}`}>{tierInfo.label}</span>
-             {potTier !== 'comum' && <Sparkles className={`w-2.5 h-2.5 ${tierInfo.color}`} />}
+             <span className={`text-[8px] font-black uppercase italic ${tierColor}`}>{tierInfo.label}</span>
+             {potTier !== 'comum' && <Sparkles className={`w-2.5 h-2.5 ${tierColor}`} />}
           </div>
         </div>
       </div>
