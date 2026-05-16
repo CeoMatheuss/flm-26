@@ -193,6 +193,7 @@ export function SquadModernLayout({
                         selectedId={selectedId}
                         onSelect={handleSelect}
                         activeTab={activeTab}
+                        userId={userId}
                       />
                     )}
                   </motion.div>

@@ -1,4 +1,4 @@
-import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users, Zap } from 'lucide-react';
+import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users, Zap, Shield } from 'lucide-react';
 import { ClubShield } from '../ClubShield';
 import { Club } from '@/types/game';
 import { SeasonData } from '@/types/infrastructure';
@@ -46,24 +46,14 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
           </button>
 
           <div className="flex items-center gap-3 min-w-0">
-            <motion.div 
-              initial={{ rotate: -10, scale: 0.8 }}
-              animate={{ rotate: 0, scale: 1 }}
-              className="relative"
-            >
-              <ClubShield club={club as any} size={44} className="drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]" />
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-zinc-950 border border-white/10 rounded-full flex items-center justify-center">
-                <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-              </div>
-            </motion.div>
-            
             <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-black text-white truncate leading-none tracking-tight">
+              <h1 className="text-base sm:text-lg font-black text-white truncate leading-none tracking-tight flex items-center gap-2">
+                <Shield className="w-5 h-5 text-emerald-400" />
                 {club.name}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.15em] text-emerald-400/80">
-                  Série A
+                   {club.country || 'Brasil'}
                 </span>
                 <span className="w-1 h-1 rounded-full bg-white/20" />
                 <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">

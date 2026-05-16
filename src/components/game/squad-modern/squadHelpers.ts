@@ -1,6 +1,6 @@
 import { Player } from '@/types/game';
 
-export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'indisponivel' | 'emprestado' | 'afastado' | 'fora';
+export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'indisponivel' | 'emprestado' | 'afastado' | 'fora' | 'negociando';
 
 export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {
   titular: { 
@@ -73,6 +73,13 @@ export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg
     border: 'border-zinc-500/20',
     dot: 'bg-zinc-500 shadow-[0_0_8px_rgba(113,113,122,0.5)]'
   },
+  negociando: { 
+    label: 'Análise', 
+    color: 'text-amber-400', 
+    bg: 'bg-amber-400/10', 
+    border: 'border-amber-400/20',
+    dot: 'bg-amber-400 animate-pulse'
+  },
 };
 
 export const positionColors: Record<string, string> = {
@@ -116,17 +123,14 @@ export const ovrTier = (ovr: number) => {
 };
 
 export const attrConfig = [
-  { key: 'atk', label: 'Ataque', from: 'attacking' },
-  { key: 'tec', label: 'Técnica', from: 'technical' },
-  { key: 'tac', label: 'Tática', from: 'tactical' },
-  { key: 'def', label: 'Defesa', from: 'defensive' },
-  { key: 'fis', label: 'Físico', from: 'physical' },
-  { key: 'men', label: 'Mental', from: 'mental' },
-  { key: 'dri', label: 'Drible', from: 'dribbling' },
-  { key: 'pas', label: 'Passe', from: 'passing' },
-  { key: 'fin', label: 'Finaliz.', from: 'finishing' },
-  { key: 'vel', label: 'Veloc.', from: 'pace' },
-  { key: 'res', label: 'Resist.', from: 'stamina' },
+  { key: 'vel', label: 'Veloc.', from: 'speed', icon: '⚡' },
+  { key: 'fin', label: 'Finaliz.', from: 'shooting', icon: '🎯' },
+  { key: 'def', label: 'Defesa', from: 'defending', icon: '🛡️' },
+  { key: 'tec', label: 'Técnica', from: 'dribbling', icon: '🎨' },
+  { key: 'tac', label: 'Tática', from: 'positioning', icon: '🧠' },
+  { key: 'fis', label: 'Físico', from: 'physical', icon: '💪' },
+  { key: 'pas', label: 'Passe', from: 'passing', icon: '📐' },
+  { key: 'res', label: 'Resist.', from: 'workRate', icon: '🫁' },
 ];
 
 export const getAttrValue = (player: Player, key: string) => {
@@ -135,14 +139,13 @@ export const getAttrValue = (player: Player, key: string) => {
 };
 
 export const attrColorClass = (val: number) => {
-  if (val >= 85) return 'from-amber-400 to-amber-500 shadow-[0_0_8px_rgba(251,191,36,0.5)]';
-  if (val >= 75) return 'from-emerald-400 to-emerald-500';
+  if (val >= 80) return 'from-emerald-400 to-emerald-500';
   if (val >= 60) return 'from-sky-400 to-sky-500';
-  if (val >= 40) return 'from-orange-400 to-orange-500';
   return 'from-red-400 to-red-500';
 };
 
-export const getPlayerStatus = (p: Player, isStarter: boolean): PlayerStatus => {
+export const getPlayerStatus = (p: Player, isStarter: boolean, isNegotiating?: boolean): PlayerStatus => {
+  if (isNegotiating) return 'negociando';
   if ((p as any).isLoaned) return 'emprestado';
   if ((p as any).isInjured || p.injury) return 'lesionado';
   if ((p as any).isSuspended) return 'suspenso';

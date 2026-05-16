@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter } from 'lucide-react';
+import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
+import { supabase } from '@/integrations/supabase/client';
 import {
   PlayerStatus,
   statusMeta,
@@ -13,6 +14,8 @@ import {
   positionColors,
   flagFor,
   getPlayerStatus,
+  attrConfig,
+  getAttrValue,
 } from './squadHelpers';
 
 interface Props {
@@ -21,18 +24,41 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   activeTab: string;
+  userId: string;
 }
 
-export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab }: Props) {
+export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
+  const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const fetchNegotiations = async () => {
+      const { data } = await supabase
+        .from('player_negotiations')
+        .select('player_id')
+        .eq('user_id', userId)
+        .eq('status', 'pending');
+      
+      if (data) {
+        const map: Record<string, boolean> = {};
+        data.forEach(n => map[negotiationPlayerId(n.player_id)] = true);
+        setNegotiations(map);
+      }
+    };
+    fetchNegotiations();
+  }, [userId, players]);
+
+  // Helper to ensure we match player IDs correctly if they have prefixes or suffixes
+  const negotiationPlayerId = (id: string) => id;
 
   const deltas = useAttributeEvolution(players);
 
   const filtered = useMemo(() => {
     return players.filter(p => {
       const isStarter = starterIds.has(p.id);
-      const status = getPlayerStatus(p, isStarter);
+      const isNegotiating = negotiations[p.id];
+      const status = getPlayerStatus(p, isStarter, isNegotiating);
       
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
 
@@ -89,9 +115,8 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
         <div className="col-span-1">#</div>
         <div className="col-span-4">Jogador / Posição</div>
         <div className="col-span-1 text-center">Idade</div>
-        <div className="col-span-2 text-center">Fis / Mor</div>
-        <div className="col-span-2 text-right">Contrato</div>
-        <div className="col-span-2 text-right">Valor</div>
+        <div className="col-span-3 text-center">Atributos Principais</div>
+        <div className="col-span-3 text-right">Contrato / Valor</div>
       </div>
 
       {/* List Content */}
@@ -103,6 +128,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               player={p} 
               idx={idx + 1}
               isStarter={starterIds.has(p.id)}
+              isNegotiating={negotiations[p.id]}
               delta={deltas[p.id]?.overall || 0}
               selected={selectedId === p.id}
               onClick={() => onSelect(p.id)}
@@ -135,10 +161,10 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
   );
 }
 
-function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { player: Player; idx: number; isStarter: boolean; delta: number; selected: boolean; onClick: () => void }) {
+function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
-  const status = getPlayerStatus(player, isStarter);
+  const status = getPlayerStatus(player, isStarter, isNegotiating);
   const sm = statusMeta[status] || statusMeta.reserva;
 
   return (
@@ -168,7 +194,7 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
       {/* Name & Position */}
       <div className="col-span-11 sm:col-span-4 flex items-center gap-3">
           <div className={cn(
-            "shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
+            "shrink-0 w-11 h-11 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
             tier.ring, tier.glow, "bg-zinc-950/80"
           )}>
             <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
@@ -176,25 +202,28 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
             {delta !== 0 && (
                <span className="absolute -top-1 -right-1 p-0.5 z-10">
                  {delta > 0 ? (
-                   <ArrowUp className="w-3 h-3 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+                   <ArrowUp className="w-3.5 h-3.5 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
                  ) : (
-                   <ArrowDown className="w-3 h-3 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
+                   <ArrowDown className="w-3.5 h-3.5 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
                  )}
                </span>
             )}
           </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-white truncate group-hover:text-emerald-400 transition-colors">
+            <span className="text-sm font-black text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
               {player.name}
             </span>
             <span className="text-sm">{flagFor((player as any).country)}</span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex items-center gap-2 mt-1">
              <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", positionColors[player.position])}>
                {player.position}
              </span>
+             {player.potential && player.potential >= 88 && (
+                <span className="text-[8px] font-black text-amber-400 uppercase tracking-tighter">💎 JOIA</span>
+             )}
              <span className={cn("text-[8px] font-black uppercase tracking-widest opacity-60", sm.color)}>
                {sm.label}
              </span>
@@ -207,23 +236,29 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
         <span className="text-xs font-bold text-white/50">{player.age}a</span>
       </div>
 
-      {/* Fitness / Morale */}
-      <div className="col-span-2 flex items-center justify-center gap-4">
-        <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" />
-        <MiniStat value={player.morale} icon={<Heart className="w-3 h-3" />} color="text-pink-400" />
+      {/* Attributes (Compact Row View) */}
+      <div className="col-span-3 hidden lg:flex items-center justify-center gap-4">
+        {attrConfig.slice(0, 4).map(attr => {
+          const { value: val } = getAttrValue(player, attr.from as any);
+          return (
+            <div key={attr.key} className="flex flex-col items-center min-w-[32px]">
+              <span className="text-[8px] font-black text-white/20 uppercase mb-0.5">{attr.key}</span>
+              <span className={cn(
+                "text-[10px] font-black tabular-nums italic",
+                val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
+              )}>{val}</span>
+            </div>
+          );
+        })}
+        <div className="h-6 w-px bg-white/5 mx-1" />
+        <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" />
       </div>
 
-      {/* Contract info */}
-      <div className="hidden sm:flex col-span-2 flex-col items-end">
-         <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
-         <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos</span>
-      </div>
-
-      {/* Market Value */}
-      <div className="col-span-11 sm:col-span-2 flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-        <div className="flex sm:hidden flex-col">
+      {/* Contract & Market Value */}
+      <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
+        <div className="flex flex-col items-end">
           <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
-          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos • {player.age}a</span>
+          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end">
@@ -237,14 +272,17 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
   );
 }
 
-function MiniStat({ value, icon, color }: { value: number; icon: React.ReactNode; color: string }) {
+function MiniStat({ value, icon, color, label }: { value: number; icon: React.ReactNode; color: string; label?: string }) {
   const v = Math.round(value || 0);
   return (
     <div className="flex items-center gap-1.5 min-w-[40px]">
       <div className={cn(color, "opacity-50")}>{icon}</div>
-      <span className={cn("text-[10px] font-black tabular-nums", v < 40 ? 'text-red-400' : v < 70 ? 'text-amber-400' : 'text-white/80')}>
-        {v}
-      </span>
+      <div className="flex flex-col">
+        {label && <span className="text-[7px] font-black text-white/20 uppercase tracking-tighter -mb-0.5">{label}</span>}
+        <span className={cn("text-[10px] font-black tabular-nums", v < 40 ? 'text-red-400' : v < 70 ? 'text-amber-400' : 'text-white/80')}>
+          {v}
+        </span>
+      </div>
     </div>
   );
 }

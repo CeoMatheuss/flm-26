@@ -164,9 +164,9 @@ function PlayerDetailContent({
           {/* Attributes Grid */}
           <section>
             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-              <Zap className="w-4 h-4" /> Atributos Detalhados
+              <Zap className="w-4 h-4" /> Atributos Principais
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
               {attrConfig.map((cfg) => {
                 const { value: val, sourceKey } = getAttrValue(player, cfg.from as any);
                 const d = (delta as any)[sourceKey] ?? 0;
@@ -174,16 +174,22 @@ function PlayerDetailContent({
                   <Tooltip key={cfg.key as string}>
                     <TooltipTrigger asChild>
                       <div className="cursor-help group">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[11px] font-bold text-white/60 uppercase tracking-wider group-hover:text-white transition-colors">{cfg.label}</span>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{cfg.icon}</span>
+                            <span className="text-[11px] font-bold text-white/60 uppercase tracking-wider group-hover:text-white transition-colors">{cfg.label}</span>
+                          </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-black text-white tabular-nums">{val}</span>
+                            <span className={cn(
+                              "text-xs font-black tabular-nums",
+                              val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
+                            )}>{val}</span>
                             {d !== 0 && (
                               <span className={cn(
                                 'text-[10px] font-black',
                                 d > 0 ? 'text-emerald-400' : 'text-red-400'
                               )}>
-                                {d > 0 ? '+' : ''}{d}
+                                {d > 0 ? <ArrowUp className="w-2.5 h-2.5 inline" /> : <ArrowDown className="w-2.5 h-2.5 inline" />}
                               </span>
                             )}
                           </div>
