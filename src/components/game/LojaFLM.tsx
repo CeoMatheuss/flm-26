@@ -31,20 +31,17 @@ interface LojaProps {
 }
 
 const CATEGORIES = [
-  { id: 'dashboard', name: 'Painel', icon: LayoutDashboard, db: 'all' },
   { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
   { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
   { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
   { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
-  { id: 'infra', name: 'Estrutura', icon: Building2, db: 'infrastructure' },
-  { id: 'staff', name: 'Equipe', icon: UserCog, db: 'staff' },
   { id: 'history', name: 'Histórico', icon: History, db: 'history' },
 ];
 
 export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
-  const [activeCategory, setActiveCategory] = useState('dashboard');
+  const [activeCategory, setActiveCategory] = useState('uniform');
   const storeManager = useStoreManager(club, userId);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
@@ -366,47 +363,11 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               <p className="font-black text-sm sm:text-lg italic">{(club.fans || 0).toLocaleString()}</p>
             </div>
           </div>
-          {shopStats && (
-            <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-emerald-500/20 flex items-center gap-2 sm:gap-3 shadow-inner w-full sm:w-auto flex-grow sm:flex-grow-0">
-              <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg">
-                <TrendingUp className="text-emerald-400 h-4 w-4 sm:h-5 sm:w-5" />
-              </div>
-              <div>
-                <p className="text-[8px] sm:text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Ganhos Diários (Loja)</p>
-                <p className="font-black text-sm sm:text-lg text-emerald-400 italic">R$ {(shopStats.daily_revenue / 100).toLocaleString()}</p>
-              </div>
-            </div>
-          )}
+          {/* Ganhos diários removidos */}
         </div>
       </div>
 
-      {shopStats && (
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-2">
-          <Button 
-            onClick={handleUpgrade}
-            disabled={upgrading}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl h-12 sm:h-14 px-4 sm:px-8 font-black uppercase italic tracking-tighter shadow-lg shadow-emerald-900/20 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex-1"
-          >
-            {upgrading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <div className="flex items-center justify-center gap-2 text-[10px] sm:text-sm">
-                <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>Upgrade Loja (Nv.{shopStats.level} → {shopStats.level + 1})</span>
-                <Badge className="bg-black/30 border-none text-[9px] sm:text-xs">R$ {(500 * Math.pow(3, shopStats.level - 1)).toLocaleString()}</Badge>
-              </div>
-            )}
-          </Button>
-          <div className="bg-emerald-500/10 border border-emerald-500/20 p-2 sm:p-3 rounded-2xl flex items-center gap-2 sm:gap-3 sm:w-80">
-            <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg shrink-0">
-              <Star className="text-emerald-400 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </div>
-            <p className="text-[8px] sm:text-[10px] text-emerald-100 font-bold leading-tight">
-              Aumentar o nível desbloqueia novos produtos e melhora a conversão.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Upgrade e stats da loja removidos conforme solicitado */}
 
       <div className="flex flex-col gap-6">
         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
@@ -429,9 +390,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             </ScrollArea>
           </div>
 
-          <TabsContent value="dashboard" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <StoreDashboard stats={storeManager.stats} />
-          </TabsContent>
+          {/* Dashboard removido conforme solicitado */}
 
           <TabsContent value="stickers" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <PacotinhosTab 
