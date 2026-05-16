@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { FinanceEntry, createFinanceEntry } from '@/types/finance';
+import { useState, useCallback, useMemo } from 'react';
+import { FinanceEntry, createFinanceEntry, FinanceType, FinanceCategory } from '@/types/finance';
 import {
   Sponsor, SponsorOffer, SeasonContext,
   generateSponsorOffers, isObjectiveMet,
@@ -10,7 +10,6 @@ export function useFinanceState(initialState: any) {
   const [finances, setFinances] = useState<FinanceEntry[]>(initialState?.finances ?? []);
   const [sponsors, setSponsors] = useState<Sponsor[]>(() => {
     const raw: any[] = initialState?.sponsors ?? [];
-    // Migração leve: contratos antigos viram contratos V2 simples
     return raw.map(s => ({
       id: s.id,
       name: s.name,
@@ -35,9 +34,33 @@ export function useFinanceState(initialState: any) {
     initialState?.sponsorOffers ?? generateSponsorOffers(65, 4)
   );
 
-  const addFinance = useCallback((type: 'receita' | 'despesa', category: string, amount: number, desc: string) => {
-    setFinances(prev => [...prev, createFinanceEntry(type, category, amount, desc)]);
+  const addFinance = useCallback((type: FinanceType, category: FinanceCategory, amount: number, desc: string) => {
+    setFinances(prev => {
+      const entry = createFinanceEntry(type, category, amount, desc);
+      return [entry, ...prev].slice(0, 500); // Keep last 500 entries
+    });
   }, []);
+
+  const financialSummary = useMemo(() => {
+    const now = Date.now();
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    const lastMonth = finances.filter(f => now - f.timestamp < thirtyDays);
+    
+    const revenue = lastMonth.filter(f => f.type === 'receita' || f.type === 'premiação')
+      .reduce((sum, f) => sum + f.amount, 0);
+    const expenses = lastMonth.filter(f => f.type === 'despesa' || f.type === 'investimento')
+      .reduce((sum, f) => sum + f.amount, 0);
+    
+    return {
+      monthlyRevenue: revenue,
+      monthlyExpenses: expenses,
+      netProfit: revenue - expenses,
+      byCategory: lastMonth.reduce((acc, f) => {
+        acc[f.category] = (acc[f.category] || 0) + (f.type === 'receita' || f.type === 'premiação' ? f.amount : -f.amount);
+        return acc;
+      }, {} as Record<string, number>)
+    };
+  }, [finances]);
 
   const acceptSponsor = useCallback((
     offer: SponsorOffer,
@@ -52,14 +75,13 @@ export function useFinanceState(initialState: any) {
     setSponsors(prev => [...prev, signed]);
     setSponsorOffers(prev => prev.filter(o => o.id !== offer.id));
     toast.success(`Patrocínio aceito: ${offer.name} — Objetivo: ${offer.objective.label}`);
-    // Não credita nada agora; pagamento começa pela próxima parcela.
-  }, [sponsors.length]);
+    addFinance('receita', 'Patrocínio', 0, `Contrato assinado: ${offer.name}`);
+  }, [sponsors.length, addFinance]);
 
   const refreshSponsorOffers = useCallback((reputation: number) => {
     setSponsorOffers(generateSponsorOffers(reputation, 4));
   }, []);
 
-  /** Paga próxima parcela mensal (chamada por timer/calendário). */
   const payNextInstallment = useCallback((
     sponsorId: string,
     setBudget: (fn: (b: number) => number) => void,
@@ -76,7 +98,6 @@ export function useFinanceState(initialState: any) {
     }));
   }, [addFinance]);
 
-  /** Incrementa contador de vitórias para objetivos win_n_matches. */
   const trackOfficialWin = useCallback(() => {
     setSponsors(prev => prev.map(sp =>
       sp.status === 'active' && sp.objective.kind === 'win_n_matches'
@@ -85,7 +106,6 @@ export function useFinanceState(initialState: any) {
     ));
   }, []);
 
-  /** Avalia objetivos no fim da temporada — credita bônus on_complete OU aplica multa. */
   const evaluateSponsorsEndOfSeason = useCallback((
     ctx: SeasonContext,
     setBudget: (fn: (b: number) => number) => void,
@@ -101,54 +121,84 @@ export function useFinanceState(initialState: any) {
             : ctx;
         const met = isObjectiveMet(sp.objective, evalCtx);
 
-        // Reduz duração; só avalia/encerra quando duração chega a 0
         const newDuration = sp.duration - 1;
 
         if (newDuration > 0) {
-          // Patrocínio multi-temporada — não fecha ainda, mas zera contador de vitórias
           next.push({ ...sp, duration: newDuration, winsTracked: 0 });
           continue;
         }
 
         if (met) {
-          // Pagamento on_complete: credita o restante (se houver)
           if (sp.payMode === 'on_complete') {
             const value = sp.totalValue;
             setBudget(b => b + value);
-            addFinance('receita', 'Patrocínio (Bônus)', value, `Bônus por cumprir objetivo — ${sp.name}`);
+            addFinance('receita', 'Patrocínio', value, `Bônus por cumprir objetivo — ${sp.name}`);
           } else {
-            // Bônus de cumprimento: 10% do total como agradecimento
             const bonus = Math.floor(sp.totalValue * 0.1);
             if (bonus > 0) {
               setBudget(b => b + bonus);
-              addFinance('receita', 'Patrocínio (Bônus)', bonus, `Bônus por cumprir objetivo — ${sp.name}`);
+              addFinance('receita', 'Patrocínio', bonus, `Bônus por cumprir objetivo — ${sp.name}`);
             }
           }
           toast.success(`✅ ${sp.name}: objetivo cumprido!`);
           next.push({ ...sp, status: 'completed', duration: 0 });
         } else {
-          // Aplica multa — pode levar à falência (orçamento negativo permitido)
           const fine = sp.penalty;
           setBudget(b => b - fine);
-          addFinance('despesa', 'Multa Patrocinador', fine, `Objetivo não cumprido — ${sp.name}: ${sp.objective.label}`);
+          addFinance('despesa', 'Patrocínio', fine, `Multa por objetivo não cumprido — ${sp.name}`);
           toast.error(`❌ ${sp.name}: objetivo NÃO cumprido. Multa: R$ ${(fine/1000).toFixed(0)}k`, { duration: 8000 });
           next.push({ ...sp, status: 'failed', duration: 0 });
         }
       }
-      // Remove contratos finalizados (completed/failed) após processar
       return next.filter(sp => sp.status === 'active');
     });
+  }, [addFinance]);
+
+  const processMonthlyFinance = useCallback((
+    clubBudget: number,
+    setBudget: (fn: (b: number) => number) => void,
+    totalSalaries: number,
+    infrastructureMaintenance: number,
+    scoutCosts: number
+  ) => {
+    const totalExpenses = totalSalaries + infrastructureMaintenance + scoutCosts;
+    
+    // Process Salaries
+    if (totalSalaries > 0) {
+      addFinance('despesa', 'Salários', totalSalaries, 'Pagamento mensal de salários do elenco');
+    }
+    
+    // Process Maintenance
+    if (infrastructureMaintenance > 0) {
+      addFinance('despesa', 'Infraestrutura', infrastructureMaintenance, 'Manutenção mensal do CT e Estádio');
+    }
+
+    // Process Scouts
+    if (scoutCosts > 0) {
+      addFinance('despesa', 'Olheiros', scoutCosts, 'Salários da equipe de observação');
+    }
+
+    setBudget(b => b - totalExpenses);
+    
+    if (clubBudget - totalExpenses < 0) {
+      toast.error('O clube está no vermelho! Providencie receitas urgentes.');
+    } else {
+      toast.info(`Folha mensal processada: -R$ ${(totalExpenses/1000).toFixed(0)}k`);
+    }
   }, [addFinance]);
 
   return {
     finances, setFinances,
     sponsors, setSponsors,
     sponsorOffers, setSponsorOffers,
+    financialSummary,
     addFinance,
     acceptSponsor,
     refreshSponsorOffers,
     payNextInstallment,
     trackOfficialWin,
     evaluateSponsorsEndOfSeason,
+    processMonthlyFinance
   };
 }
+
