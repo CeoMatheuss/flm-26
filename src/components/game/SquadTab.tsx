@@ -982,16 +982,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   <Shirt className="h-4 w-4 text-emerald-400" />
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Time Titular</span>
                 </div>
-                {onRotateSquad && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-7 text-[10px] gap-1.5 border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10"
-                    onClick={onRotateSquad}
-                  >
-                    <Repeat className="h-3 w-3" /> Rotacionar por Stamina
-                  </Button>
-                )}
+                {/* Rotation button removed from squad tab as per request */}
               </div>
               <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-2 flex items-start gap-2">
                 <Shirt className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
