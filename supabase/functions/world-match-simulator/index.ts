@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     const { data: wMatches } = await sb.from("world_matches").select(`*, 
       home_team:world_teams!world_matches_home_team_id_fkey(id, name, strength, user_id),
       away_team:world_teams!world_matches_away_team_id_fkey(id, name, strength, user_id)
-    `).eq("status", "scheduled").lte("scheduled_at", tolerance.toISOString()).limit(20);
+    `).eq("status", "scheduled").lte("kickoff_at", tolerance.toISOString()).limit(20);
 
     if (wMatches) {
       for (const m of wMatches) {
