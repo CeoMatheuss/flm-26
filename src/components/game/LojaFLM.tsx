@@ -759,7 +759,7 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
   return (
     <div 
       onClick={onViewDetails}
-      className={`group relative overflow-hidden rounded-[2rem] border transition-all duration-500 flex flex-col h-full cursor-pointer ${
+      className={`group relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] border transition-all duration-500 flex flex-col h-full cursor-pointer ${
       isBlocked 
         ? 'border-white/5 bg-black/40 grayscale' 
         : `border-white/10 bg-[#0A0D14] hover:border-emerald-500/50 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(16,185,129,0.1)]`
