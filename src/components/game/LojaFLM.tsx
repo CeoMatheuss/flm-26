@@ -469,6 +469,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                             item={item} 
                             clubFans={club.fans || 0} 
                             isPremium={isPremium}
+                            isActive={isActive(item.id)}
                             onPurchase={() => handlePurchase(item)} 
                             onViewDetails={() => openDetails(item)}
                           />
