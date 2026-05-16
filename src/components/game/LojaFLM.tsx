@@ -80,8 +80,8 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       }, (payload: any) => {
         fetchHistory();
         // Se o status mudou para 'approved' e for o pedido atual (ou do PIX)
-        if (payload.new.status === 'approved' && 
-           (payload.new.id === currentOrderId || (pixData && payload.new.id === pixData.orderId))) {
+        if (payload.new?.status === 'approved' && 
+           (payload.new?.id === currentOrderId || (pixData && payload.new?.id === pixData.orderId))) {
           
           setShowPixModal(false);
           setShowPremium(true);
