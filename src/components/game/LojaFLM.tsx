@@ -954,7 +954,7 @@ function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDeta
             <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           <Button 
-            disabled={isBlocked} 
+            disabled={isBlocked || isActive} 
             onClick={(e) => {
               e.stopPropagation();
               onPurchase();
@@ -962,13 +962,24 @@ function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDeta
             className={`flex-1 font-black uppercase italic h-10 sm:h-12 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-lg text-xs sm:text-sm relative overflow-hidden group ${
               isBlocked 
                 ? 'bg-white/5 text-white/40 border border-white/5' 
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] group-hover:scale-[1.02] active:scale-95'
+                : isActive 
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] group-hover:scale-[1.02] active:scale-95'
             }`}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
             <div className="flex items-center justify-center gap-1.5 sm:gap-2 relative z-10">
-              <ShoppingBag className="h-3.5 w-3.5" />
-              <span>{isFree ? 'RESGATAR' : `R$ ${price.toLocaleString()}`}</span>
+              {isActive ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>CONCLUÍDO</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="h-3.5 w-3.5" />
+                  <span>{isFree ? 'RESGATAR' : `R$ ${price.toLocaleString()}`}</span>
+                </>
+              )}
             </div>
           </Button>
         </div>
