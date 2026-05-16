@@ -37,6 +37,7 @@ const CATEGORIES = [
   { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
   { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
   { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
+  { id: 'ganhos', name: 'Ganhos', icon: TrendingUp, db: 'ganhos' },
   { id: 'history', name: 'Histórico', icon: History, db: 'history' },
 ];
 
