@@ -90,6 +90,16 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
                  <Sparkles className="w-3 h-3" />
                </div>
              )}
+             <button
+               onClick={(e) => {
+                 e.stopPropagation();
+                 onOpenQuickSwap?.();
+               }}
+               className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30 hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
+               title="Troca Rápida"
+             >
+               <span className="text-[10px] block">🔄</span>
+             </button>
              {isStarter && (
                <div className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30">
                  <Shield className="w-3 h-3 text-emerald-400" />
