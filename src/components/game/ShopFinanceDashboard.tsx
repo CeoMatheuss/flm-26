@@ -21,40 +21,44 @@ export function ShopFinanceDashboard({ stats, club, products }: ShopFinanceDashb
   
   const metrics = [
     { 
-      label: 'Renda Hoje', 
+      label: 'Ganhos Diários', 
       value: `R$ ${(stats.daily_revenue / 100).toLocaleString()}`, 
       icon: DollarSign, 
       color: 'text-emerald-400', 
       bg: 'bg-emerald-500/10',
       trend: stats.daily_revenue > 0 ? '+12%' : '0%',
-      trendUp: true
+      trendUp: true,
+      sub: 'Renda passiva'
     },
     { 
-      label: 'Renda Semanal', 
-      value: `R$ ${(stats.weekly_revenue / 100).toLocaleString()}`, 
+      label: 'Ganhos Mensais (Proj)', 
+      value: `R$ ${((stats.daily_revenue * 30) / 100).toLocaleString()}`, 
       icon: BarChart3, 
       color: 'text-blue-400', 
       bg: 'bg-blue-500/10',
       trend: '+5%',
-      trendUp: true
+      trendUp: true,
+      sub: 'Baseado no atual'
     },
     { 
-      label: 'Lucro Total', 
+      label: 'Lucro Total do Clube', 
       value: `R$ ${(stats.total_profit / 100).toLocaleString()}`, 
       icon: TrendingUp, 
       color: 'text-amber-400', 
       bg: 'bg-amber-500/10',
       trend: '+18%',
-      trendUp: true
+      trendUp: true,
+      sub: 'Desde a fundação'
     },
     { 
-      label: 'Torcedores Compradores', 
-      value: stats.buying_fans?.toLocaleString() || '0', 
+      label: 'Conversão de Marca', 
+      value: `${((stats.buying_fans / (club.fans || 1)) * 100).toFixed(1)}%`, 
       icon: Users, 
       color: 'text-purple-400', 
       bg: 'bg-purple-500/10',
-      trend: 'Ativos',
-      trendUp: true
+      trend: 'Alta',
+      trendUp: true,
+      sub: 'Fãs compradores'
     }
   ];
 
