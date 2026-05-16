@@ -26,6 +26,7 @@ interface Props {
   onChangePosition?: (playerId: string, newPos: Player['position'], side?: 'L' | 'R' | 'C') => void;
   season?: number;
   userId?: string;
+  hideSwapButton?: boolean;
 }
 
 const allFormations: Formation[] = [
@@ -109,7 +110,7 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
   );
 }
 
-export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season, userId }: Props) {
+export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season, userId, hideSwapButton }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
 
@@ -534,20 +535,24 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         </DialogContent>
       </Dialog>
 
-      <QuickSwapPanel
-        isOpen={isQuickSwapOpen}
-        onClose={() => setIsQuickSwapOpen(false)}
-        players={players}
-        onSwap={swapPlayers}
-      />
+      {!hideSwapButton && (
+        <>
+          <QuickSwapPanel
+            isOpen={isQuickSwapOpen}
+            onClose={() => setIsQuickSwapOpen(false)}
+            players={players}
+            onSwap={swapPlayers}
+          />
 
-      <Button
-        onClick={() => setIsQuickSwapOpen(true)}
-        className="fixed bottom-24 right-6 h-16 px-6 rounded-2xl shadow-2xl bg-emerald-600 hover:bg-emerald-500 text-white z-40 border-4 border-white/10 flex items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 group shadow-emerald-500/20"
-      >
-        <ArrowRightLeft className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
-        <span className="font-black uppercase tracking-tighter text-sm">🔄 Trocar Jogador</span>
-      </Button>
+          <Button
+            onClick={() => setIsQuickSwapOpen(true)}
+            className="fixed bottom-24 right-6 h-16 px-6 rounded-2xl shadow-2xl bg-emerald-600 hover:bg-emerald-500 text-white z-40 border-4 border-white/10 flex items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 group shadow-emerald-500/20"
+          >
+            <ArrowRightLeft className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
+            <span className="font-black uppercase tracking-tighter text-sm">🔄 Trocar Jogador</span>
+          </Button>
+        </>
+      )}
     </div>
   );
 }
