@@ -115,7 +115,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
             <X className="w-4 h-4 mr-2" /> Sair
           </Button>
         </div>
-      </div>
+      </div>}
 
       <div className="flex-1 overflow-hidden p-4 sm:p-8 flex flex-col lg:flex-row gap-6 sm:gap-8">
         {/* Campo Tático - Estilo Moderno Compacto */}
