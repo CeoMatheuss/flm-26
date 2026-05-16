@@ -28,7 +28,6 @@ interface LojaProps {
 }
 
 const CATEGORIES = [
-  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, db: 'dashboard' },
   { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
