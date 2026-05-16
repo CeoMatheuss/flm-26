@@ -317,15 +317,15 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
             </TabsList>
 
             <div className="mt-4">
-              <TabsContent value="style" className="m-0 space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {tacticsPresets.map(preset => (
+              <TabsContent value="style" className="m-0 space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="grid grid-cols-2 gap-3">
+                  {tacticsPresets.slice(0, 4).map(preset => (
                     <button
                       key={preset.name}
-                      className={`text-[11px] font-black px-4 py-4 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
+                      className={`text-[10px] font-black px-4 py-4 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
                         ${tactics.playStyle === preset.config.playStyle 
-                          ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)]' 
-                          : 'bg-slate-900/60 border-white/5 text-muted-foreground hover:border-white/20 hover:bg-slate-800'}`}
+                          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                          : 'bg-zinc-900/40 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'}`}
                       onClick={() => applyPreset(preset)}
                     >
                       {preset.name}
@@ -333,7 +333,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ))}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
                     <SectionLabel icon={Target} label="Filosofia de Jogo" />
                     <div className="grid grid-cols-2 gap-3">
@@ -341,8 +341,10 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                         <button
                           key={s}
                           onClick={() => setField('playStyle', s)}
-                          className={`text-[11px] py-4 rounded-xl font-black transition-all border-2 ${
-                            tactics.playStyle === s ? 'bg-primary border-primary text-primary-foreground' : 'bg-slate-900/40 text-muted-foreground border-white/5'
+                          className={`text-[10px] py-4 rounded-xl font-black transition-all border-2 uppercase tracking-widest ${
+                            tactics.playStyle === s 
+                              ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                              : 'bg-zinc-900/40 text-white/40 border-white/5 hover:border-white/10'
                           }`}
                         >
                           {playStyleEffects[s].label}
