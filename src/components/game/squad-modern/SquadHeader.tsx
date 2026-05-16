@@ -190,9 +190,9 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
 function StatItem({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string; color: string }) {
   return (
     <div className="flex flex-col items-end">
-      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-0.5">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className={cn('text-sm font-black tracking-tight', color)}>{value}</span>
+      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/30 mb-1">{label}</span>
+      <div className="flex items-center gap-3">
+        <span className={cn('text-lg font-black tracking-tighter', color)}>{value}</span>
         <div className={cn('p-1 rounded-lg bg-white/5 border border-white/5', color.replace('text', 'text'))}>
           {icon}
         </div>
