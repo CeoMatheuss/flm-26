@@ -211,7 +211,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-4">
       {/* Hidden Auto-Lineup Logic (Internal) */}
       {!tactics.autoUpdateLineup && (
          <div className="hidden">
@@ -234,114 +234,175 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
         </Card>
       )}
 
-      {/* Tactical Hub - Side Panel Style */}
-      <div className="grid grid-cols-1 gap-3">
-        <Card className="border-primary/20 bg-slate-950/40 backdrop-blur-sm overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-2 opacity-10">
-            <Shield className="w-16 h-16 text-primary rotate-12" />
-          </div>
-          
-          <CardContent className="p-4 space-y-4 relative">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Formação & Estilo</p>
-                <div className="flex items-center gap-2">
-                  <select 
-                    className="bg-transparent text-2xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-colors"
-                    value={tactics.formation}
-                    onChange={(e) => setField('formation', e.target.value as any)}
-                  >
-                    {allFormations.map(f => <option key={f} value={f} className="bg-slate-900 text-sm font-sans">{f}</option>)}
-                  </select>
-                  <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20 uppercase font-black">{tactics.playStyle}</Badge>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Força do Time</p>
-                <p className="text-2xl font-black text-primary tracking-tighter">
-                  {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
-                </p>
-              </div>
+      {/* Main Tactical Grid (Responsive) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left/Main Column: Pitch View */}
+        <div className="lg:col-span-8 space-y-4">
+          {/* Tactical Hub Header */}
+          <Card className="border-primary/20 bg-slate-950/60 backdrop-blur-xl overflow-hidden relative shadow-2xl">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <Shield className="w-32 h-32 text-primary rotate-12" />
             </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-tight">
-                  <span className="text-muted-foreground">Organização</span>
-                  <span className="text-primary">{getTacticalRating()}%</span>
+            
+            <CardContent className="p-6 space-y-6 relative">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] sm:text-[12px] font-black text-primary uppercase tracking-[0.2em] mb-2 drop-shadow-sm">CENTRO TÁTICO PROFISSIONAL</p>
+                  <div className="flex items-center gap-4">
+                    <select 
+                      className="bg-transparent text-3xl sm:text-5xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-all duration-300"
+                      value={tactics.formation}
+                      onChange={(e) => setField('formation', e.target.value as any)}
+                    >
+                      {allFormations.map(f => <option key={f} value={f} className="bg-slate-900 text-sm font-sans">{f}</option>)}
+                    </select>
+                    <Badge className="bg-primary/20 text-primary border-primary/30 py-1.5 px-3 text-xs uppercase font-black tracking-wider ring-1 ring-primary/50 shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                      {tactics.playStyle}
+                    </Badge>
+                  </div>
                 </div>
-                <Progress value={getTacticalRating()} className="h-1.5 bg-white/5" />
+                
+                <div className="flex items-center gap-6 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
+                  <div className="text-center px-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">GERAL</p>
+                    <p className="text-3xl font-black text-white tracking-tighter">
+                      {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
+                    </p>
+                  </div>
+                  <div className="w-[1px] h-10 bg-white/10" />
+                  <div className="text-center px-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">REPUTAÇÃO</p>
+                    <p className="text-3xl font-black text-primary tracking-tighter">
+                      {getTacticalRating()}<span className="text-xs">%</span>
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-tight">
-                  <span className="text-muted-foreground">Entrosamento</span>
-                  <span className="text-emerald-400">
-                    {Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))}%
-                  </span>
+
+              <div className="grid grid-cols-2 gap-6 pt-2">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                    <span className="text-muted-foreground">ORGANIZAÇÃO TÁTICA</span>
+                    <span className="text-primary">{getTacticalRating()}%</span>
+                  </div>
+                  <div className="h-2 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
+                    <Progress value={getTacticalRating()} className="h-full bg-gradient-to-r from-primary/50 to-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                  </div>
                 </div>
-                <Progress 
-                  value={Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))} 
-                  className="h-1.5 bg-white/5" 
-                />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                    <span className="text-muted-foreground">ENTROSAMENTO</span>
+                    <span className="text-emerald-400">
+                      {Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
+                    <Progress 
+                      value={Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))} 
+                      className="h-full bg-gradient-to-r from-emerald-600/50 to-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" 
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Large Pitch Area */}
+          <div className="relative group">
+            <FormationView
+              formation={tactics.formation}
+              players={players}
+              captainId={tactics.captainId}
+              onPlayerClick={setSelectedPlayer}
+              onSwapPlayers={swapPlayers}
+              isInteractive={!isInLiveMatch}
+            />
+            
+            {/* Legend / Overlay Hint */}
+            <div className="absolute top-4 left-4 flex gap-2 pointer-events-none">
+              <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[10px] font-black text-white/70 uppercase tracking-tighter">
+                MODO: {isInLiveMatch ? 'VISUALIZAÇÃO' : 'EDIÇÃO'}
               </div>
             </div>
             
-            <div className="flex items-center gap-3 pt-1">
-               <div className="flex -space-x-2">
-                 {players.slice(0, 5).map((p, i) => (
-                   <div key={p.id} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-black overflow-hidden">
-                     {p.name.charAt(0)}
-                   </div>
-                 ))}
-                 {players.length > 5 && (
-                   <div className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-700 flex items-center justify-center text-[8px] font-black text-white/50">
-                     +{players.length - 5}
-                   </div>
-                 )}
-               </div>
-               <p className="text-[10px] text-muted-foreground font-medium">Elenco ativo: <span className="text-white">{players.length} jogadores</span></p>
-               {injuredCount > 0 && (
-                 <Badge variant="destructive" className="ml-auto text-[9px] px-1.5 py-0 h-4 font-black">🏥 {injuredCount}</Badge>
-               )}
+            <div className="absolute bottom-6 right-6 pointer-events-none">
+              <div className="bg-emerald-500/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-emerald-500/20 text-[10px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
+                SISTEMA 2D REALISTA
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+          
+          {/* Quick Stats Summary */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card className="bg-slate-900/40 border-white/5">
+              <CardContent className="p-3 text-center">
+                <p className="text-[9px] font-bold text-muted-foreground uppercase">Média de Idade</p>
+                <p className="text-lg font-black text-white">
+                  {(players.slice(0, 11).reduce((s, p) => s + p.age, 0) / 11).toFixed(1)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-900/40 border-white/5">
+              <CardContent className="p-3 text-center">
+                <p className="text-[9px] font-bold text-muted-foreground uppercase">Vigor Médio</p>
+                <p className="text-lg font-black text-emerald-400">
+                  {Math.round(players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11)}%
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-900/40 border-white/5">
+              <CardContent className="p-3 text-center">
+                <p className="text-[9px] font-bold text-muted-foreground uppercase">Valor Elenco</p>
+                <p className="text-lg font-black text-primary">
+                  ${(players.reduce((s, p) => s + (p.marketValue || 0), 0) / 1000000).toFixed(1)}M
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-900/40 border-white/5">
+              <CardContent className="p-3 text-center">
+                <p className="text-[9px] font-bold text-muted-foreground uppercase">Base/Juniores</p>
+                <p className="text-lg font-black text-blue-400">
+                  {players.filter(p => p.isYouth).length}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
-      {/* Presets - compact horizontal scroll */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-        {tacticsPresets.map(preset => (
-          <button
-            key={preset.name}
-            className="shrink-0 text-[9px] sm:text-[10px] px-2.5 py-1.5 rounded-full border border-border bg-card hover:bg-primary/10 hover:border-primary/30 transition-all font-medium whitespace-nowrap"
-            onClick={() => applyPreset(preset)}
-          >
-            {preset.name}
-          </button>
-        ))}
-      </div>
+        {/* Right Column: Tactical Settings & Bench */}
+        <div className="lg:col-span-4 space-y-4">
+          <Tabs defaultValue="formation" className="w-full">
+            <TabsList className="w-full grid grid-cols-3 h-12 bg-slate-950/40 border-white/5 p-1 rounded-xl">
+              <TabsTrigger value="formation" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+                <LayoutGrid className="w-4 h-4" />Formação
+              </TabsTrigger>
+              <TabsTrigger value="style" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+                <Target className="w-4 h-4" />Estilo
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+                <Users className="w-4 h-4" />Banco
+              </TabsTrigger>
+            </TabsList>
 
-      {/* 2D Formation View */}
-      <Card>
-        <CardContent className="p-3 sm:p-4">
-          <FormationView
-            formation={tactics.formation}
-            players={players}
-            captainId={tactics.captainId}
-            onPlayerClick={setSelectedPlayer}
-            onSwapPlayers={swapPlayers}
-            isInteractive={!isInLiveMatch}
-          />
-          <p className="text-[8px] sm:text-[10px] text-muted-foreground mt-2 text-center">Toque em um jogador para atribuir funções</p>
-        </CardContent>
-      </Card>
-
-      <Tabs defaultValue="formation" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 h-9">
-          <TabsTrigger value="formation" className="text-[10px] sm:text-xs gap-1"><Shield className="w-3 h-3" />Formação</TabsTrigger>
-          <TabsTrigger value="style" className="text-[10px] sm:text-xs gap-1"><Target className="w-3 h-3" />Estilo</TabsTrigger>
-          <TabsTrigger value="roles" className="text-[10px] sm:text-xs gap-1"><Users className="w-3 h-3" />Funções</TabsTrigger>
-        </TabsList>
+            <div className="mt-4">
+              {/* Formation Tab */}
+              <TabsContent value="formation" className="m-0 space-y-4">
+                {/* Presets Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {tacticsPresets.map(preset => (
+                    <button
+                      key={preset.name}
+                      className={`text-[10px] font-black px-4 py-3 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
+                        ${tactics.playStyle === preset.config.playStyle 
+                          ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)]' 
+                          : 'bg-slate-900/60 border-white/5 text-muted-foreground hover:border-white/20 hover:bg-slate-800'}`}
+                      onClick={() => applyPreset(preset)}
+                    >
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
 
         {/* Formation Tab */}
         <TabsContent value="formation">
