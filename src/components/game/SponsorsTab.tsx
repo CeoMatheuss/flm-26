@@ -141,7 +141,7 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
           </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {offers.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhuma oferta no momento.</p>
             )}
