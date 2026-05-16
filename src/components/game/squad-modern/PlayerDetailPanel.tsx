@@ -119,7 +119,7 @@ function PlayerDetailContent({
               <motion.h2 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-2xl sm:text-3xl font-black text-white italic truncate leading-none uppercase tracking-tighter"
+                className="text-xl sm:text-2xl lg:text-3xl font-black text-white italic leading-tight uppercase tracking-tighter line-clamp-2"
               >
                 {player.name}
               </motion.h2>
@@ -153,7 +153,7 @@ function PlayerDetailContent({
           <div className="grid grid-cols-3 gap-3">
             <InfoTile icon={<TrendingUp className="h-4 w-4" />} label="Valor" value={formatMoney(value)} accent="text-emerald-400" />
             <InfoTile icon={<FileText className="h-4 w-4" />} label="Salário" value={`${formatMoney(player.salary)}/s`} accent="text-amber-300" />
-            <InfoTile icon={<Award className="h-4 w-4" />} label="Contrato" value={`${player.contract} Anos`} accent="text-sky-300" />
+            <InfoTile icon={<Award className="h-4 w-4" />} label="Contrato" value={`${player.contract}a`} accent="text-sky-300" />
           </div>
 
           {/* Vitals & Position Analysis */}
