@@ -165,12 +165,14 @@ export function SquadModernLayout({
       case 'captain':
         toast.success(`${p.name} é o novo capitão!`);
         break;
-      case 'auto-lineup':
-        const nextPlayers = autoLineup(players, tactics.formation);
-        onUpdatePlayers(nextPlayers);
-        toast.success('Escalação e banco otimizados automaticamente!');
-        break;
+      // removido case manual para usar apenas handleAction
     }
+  };
+
+  const handleAutoLineup = () => {
+    const nextPlayers = autoLineup(players, tactics.formation);
+    onUpdatePlayers(nextPlayers);
+    toast.success('Escalação e banco otimizados automaticamente!');
   };
 
   return (
@@ -285,12 +287,7 @@ export function SquadModernLayout({
            {/* Quick Actions Footer */}
            <div className="p-6 border-t border-white/5 bg-zinc-950/80">
               <button 
-                 onClick={() => {
-                   const requirements = (actualFormation as any).split('-').map(Number);
-                   toast.success(`Formação Real: ${actualFormation}`, {
-                     description: `O time está jogando com ${requirements[0]} defensores, ${requirements[1]} meias e ${requirements[2]} atacantes.`
-                   });
-                 }}
+                 onClick={handleAutoLineup}
                  className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-3"
               >
                  <Sparkles className="w-5 h-5" />

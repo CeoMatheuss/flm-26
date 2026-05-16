@@ -6,7 +6,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   X, ArrowUp, ArrowDown, Star, Target, Zap, Trophy, Activity,
   Heart, FileText, TrendingUp, Award, Flag, Footprints, Ruler,
-  Shield, ArrowUpRight, Bandage, ArrowDownRight, BedDouble, ShoppingCart, Crown,
+  Shield, ArrowUpRight, Bandage, ArrowDownRight, BedDouble, ShoppingCart, Crown, ArrowLeftRight,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
