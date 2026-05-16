@@ -324,7 +324,7 @@ export function SquadModernLayout({
 
       <Button
         onClick={() => setIsQuickSwapOpen(true)}
-        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 z-[100] border-4 border-white/20 animate-bounce hover:animate-none group"
+        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 z-40 border-4 border-white/20 animate-bounce hover:animate-none group"
       >
         <Repeat className="w-7 h-7 group-hover:rotate-180 transition-transform duration-500" />
       </Button>
