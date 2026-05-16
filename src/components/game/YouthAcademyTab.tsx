@@ -99,7 +99,6 @@ export function YouthAcademyTab({
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <TabsList className="bg-muted/50 p-1">
             <TabsTrigger value="list" className="gap-2"><GraduationCap className="h-4 w-4" /> Elenco da Base</TabsTrigger>
-            <TabsTrigger value="investment" className="gap-2"><Coins className="h-4 w-4" /> Investimento</TabsTrigger>
             <TabsTrigger value="copinha" className="gap-2"><Trophy className="h-4 w-4" /> Copinha</TabsTrigger>
             <TabsTrigger value="news" className="gap-2"><Newspaper className="h-4 w-4" /> Notícias</TabsTrigger>
           </TabsList>
@@ -178,58 +177,6 @@ export function YouthAcademyTab({
               </AnimatePresence>
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="investment" className="space-y-6 m-0 animate-in fade-in slide-in-from-bottom-2">
-          <Card className="game-card overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b border-border/20">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Coins className="h-5 w-5 text-primary" />
-                Plano de Investimento da Academia
-              </CardTitle>
-              <CardDescription>
-                A qualidade dos jovens depende do Nível da Base. O investimento mensal determina a quantidade de talentos gerados.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {youthInvestmentTiers.map((t, idx) => {
-                  const isActive = currentTier.tier === t.tier;
-                  return (
-                    <motion.button
-                      key={t.tier}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: idx * 0.05 }}
-                      onClick={() => onSetInvestment(t.monthlyCost)}
-                      className={`flex flex-col text-left rounded-2xl border transition-all p-5 relative overflow-hidden group ${
-                        isActive
-                          ? 'bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_20px_rgba(37,99,235,0.15)]'
-                          : 'bg-card/40 border-border/30 hover:border-primary/50 hover:bg-card/60'
-                      }`}
-                    >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-2xl ${isActive ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 transition-colors'}`}>
-                        {t.emoji}
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{t.label}</span>
-                      <span className="text-xl font-black mb-1">
-                        {formatMoney(t.monthlyCost)}
-                        <span className="text-[10px] font-normal text-muted-foreground ml-1">/mês</span>
-                      </span>
-                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">{t.description}</p>
-                      
-                      <div className="mt-auto pt-4 border-t border-border/10 flex items-center justify-between">
-                         <span className="text-[10px] font-bold text-primary flex items-center gap-1.5">
-                            <TrendingUp className="h-3 w-3" /> +{t.qualityBonus}% Qualidade
-                         </span>
-                         {isActive && <Badge className="bg-primary text-primary-foreground text-[8px] font-bold px-2 py-0.5">ATIVO</Badge>}
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="copinha" className="m-0 animate-in fade-in slide-in-from-bottom-2">
