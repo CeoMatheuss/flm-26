@@ -92,12 +92,12 @@ function TacticInfoCard({ category, value }: { category: string; value: string }
   const info = tacticInfo[category]?.[value];
   if (!info) return null;
   return (
-    <div className="mt-1.5 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-md p-2 space-y-1">
-      <p className="text-[10px] sm:text-[11px] font-bold text-primary">{info.title}</p>
-      <p className="text-[9px] sm:text-[10px] text-foreground/80 italic leading-tight">{info.desc}</p>
-      <div className="flex flex-col gap-0.5 pt-0.5">
-        <p className="text-[9px] text-success leading-tight">{info.pros}</p>
-        <p className="text-[9px] text-warning leading-tight">{info.cons}</p>
+    <div className="mt-1 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-md p-1.5 space-y-0.5">
+      <p className="text-[9px] sm:text-[10px] font-bold text-primary">{info.title}</p>
+      <p className="text-[8px] sm:text-[9px] text-foreground/80 italic leading-tight">{info.desc}</p>
+      <div className="flex flex-col gap-0 pt-0.5">
+        <p className="text-[8px] text-success leading-tight">{info.pros}</p>
+        <p className="text-[8px] text-warning leading-tight">{info.cons}</p>
       </div>
     </div>
   );
@@ -382,7 +382,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                       <AccordionContent>
                         <div className="grid grid-cols-2 gap-2">
                           {ADVANCED_PLAY_STYLES.map(s => (
-                            <button key={s} onClick={() => setField('playStyle', s)} className={`text-[10px] py-2 rounded-lg font-bold border ${tactics.playStyle === s ? 'bg-primary border-primary' : 'bg-slate-900 border-white/5 text-muted-foreground'}`}>
+                            <button key={s} onClick={() => setField('playStyle', s)} className={`text-[9px] py-1.5 rounded-lg font-bold border ${tactics.playStyle === s ? 'bg-primary border-primary text-primary-foreground' : 'bg-slate-900 border-white/5 text-muted-foreground'}`}>
                               {playStyleEffects[s].label}
                             </button>
                           ))}
