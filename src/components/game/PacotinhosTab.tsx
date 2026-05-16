@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { Player } from '@/types/game';
 import { generateFreeAgents } from '@/utils/playerGenerator';
-import { Gift, Star, Sparkles, Crown, Lock, Unlock, Zap, HelpCircle } from 'lucide-react';
+import { Gift, Star, Sparkles, Crown, Lock, Unlock, Zap, HelpCircle, Loader2 } from 'lucide-react';
 import stickerPackImg from '@/assets/sticker-pack.png';
 import { supabase } from '@/integrations/supabase/client';
 import { useLiveMatchGuard } from './LiveMatchGuard';
