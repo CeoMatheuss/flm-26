@@ -29,10 +29,10 @@ interface LojaProps {
 
 const CATEGORIES = [
   { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, db: 'dashboard' },
+  { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
   { id: 'stickers', name: 'Figurinhas', icon: Package, db: 'stickers' },
-  { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'infra', name: 'Estrutura', icon: Building2, db: 'infrastructure' },
   { id: 'staff', name: 'Equipe', icon: UserCog, db: 'staff' },
   { id: 'history', name: 'Histórico', icon: History, db: 'history' },
