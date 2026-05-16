@@ -589,29 +589,44 @@ export function useClubState(initialState: any, userId?: string) {
     return { salary };
   }, []);
 
-  const renewContract = useCallback((playerId: string, newSalary: number, newDuration?: number) => {
+  const renewContract = useCallback(async (playerId: string, newSalary: number, newDuration?: number) => {
     const duration = newDuration || 2;
-    setClub(prev => {
-      const player = prev.players.find(p => p.id === playerId);
-      if (!player) return prev;
-      if (newSalary < player.salary) {
-        toast.error(`${player.name} recusou! Oferça mais que R$${(player.salary / 1000).toFixed(0)}k.`);
-        return prev;
-      }
-      const renewalCost = newSalary * duration * 12;
-      if (prev.budget < renewalCost) {
-        toast.error('Orçamento insuficiente para renovação!');
-        return prev;
-      }
-      toast.success(`${player.name} renovou por +${duration} anos! Novo salário: R$${(newSalary / 1000).toFixed(0)}k/mês`);
-      return {
-        ...prev,
-        budget: prev.budget - renewalCost,
-        players: prev.players.map(p => p.id === playerId ? { ...p, salary: newSalary, contract: p.contract + duration } : p),
-      };
+    const player = club.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    if (newSalary < player.salary) {
+      toast.error(`${player.name} recusou! Oferça mais que R$${(player.salary / 1000).toFixed(0)}k.`);
+      return;
+    }
+
+    const responseAt = new Date();
+    responseAt.setHours(responseAt.getHours() + 7);
+
+    const { error } = await supabase.from('player_negotiations').insert({
+      user_id: userId,
+      club_id: club.id,
+      player_id: playerId,
+      player_name: player.name,
+      offered_salary: newSalary,
+      offered_duration: duration,
+      status: 'pending',
+      response_at: responseAt.toISOString()
     });
+
+    if (error) {
+      toast.error('Erro ao enviar proposta de renovação.');
+      return;
+    }
+
+    toast.info(`🕒 Proposta enviada! Aguardando resposta de ${player.name} e seu empresário...`, {
+      description: "A análise leva aproximadamente 7 horas."
+    });
+    
+    // Refresh shop/club stats to show "Negotiating" status
+    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+    
     return { duration };
-  }, []);
+  }, [club, userId]);
 
   const listForSale = useCallback((playerId: string) => {
     setClub(prev => {
