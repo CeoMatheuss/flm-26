@@ -37,6 +37,7 @@ const CATEGORIES = [
   { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
   { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
   { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
+  { id: 'ganhos', name: 'Ganhos', icon: TrendingUp, db: 'ganhos' },
   { id: 'history', name: 'Histórico', icon: History, db: 'history' },
 ];
 
@@ -511,6 +512,94 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="ganhos" className="space-y-4 outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {(() => {
+              const approved = purchaseHistory.filter((p: any) => p.status === 'approved' || p.delivered);
+              const totalSpent = approved.reduce((s: number, p: any) => s + (p.amount_cents || 0), 0) / 100;
+              const totalCount = approved.length;
+              const byItem = approved.reduce((acc: Record<string, { name: string; count: number; total: number; last: string }>, p: any) => {
+                const name = p.shop_items?.name || (p.metadata as any)?.item_name || 'Item';
+                if (!acc[name]) acc[name] = { name, count: 0, total: 0, last: p.created_at };
+                acc[name].count += 1;
+                acc[name].total += (p.amount_cents || 0) / 100;
+                if (new Date(p.created_at) > new Date(acc[name].last)) acc[name].last = p.created_at;
+                return acc;
+              }, {});
+              const items = Object.values(byItem).sort((a: any, b: any) => b.total - a.total);
+
+              return (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Card className="bg-emerald-500/10 border-emerald-500/30 rounded-2xl">
+                      <CardContent className="p-4">
+                        <p className="text-[10px] font-black uppercase italic text-emerald-400/80">Total Investido</p>
+                        <p className="text-xl sm:text-2xl font-black italic text-white mt-1">R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-amber-500/10 border-amber-500/30 rounded-2xl">
+                      <CardContent className="p-4">
+                        <p className="text-[10px] font-black uppercase italic text-amber-400/80">Compras Aprovadas</p>
+                        <p className="text-xl sm:text-2xl font-black italic text-white mt-1">{totalCount}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-blue-500/10 border-blue-500/30 rounded-2xl">
+                      <CardContent className="p-4">
+                        <p className="text-[10px] font-black uppercase italic text-blue-400/80">Itens Únicos</p>
+                        <p className="text-xl sm:text-2xl font-black italic text-white mt-1">{items.length}</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                    <CardHeader className="border-b border-white/5 bg-white/5 px-4 sm:px-6 py-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-emerald-400" /> Ganhos por Produto
+                        </CardTitle>
+                        <Button variant="ghost" size="sm" onClick={fetchHistory} className="h-8 text-[10px] font-black uppercase italic text-emerald-400">
+                          Atualizar
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 sm:p-6">
+                      {items.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+                          <div className="bg-white/5 p-4 rounded-full">
+                            <TrendingUp className="h-8 w-8 text-white/10" />
+                          </div>
+                          <p className="text-xs text-muted-foreground italic">Nenhum produto premium adquirido ainda.</p>
+                          <p className="text-[10px] text-white/40 italic">Compre algo na loja para ver os benefícios aqui.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 sm:space-y-3">
+                          {items.map((it: any) => (
+                            <div key={it.name} className="flex items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/5">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="p-2 sm:p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0">
+                                  <Star className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs sm:text-sm font-black uppercase italic truncate">{it.name}</p>
+                                  <p className="text-[9px] sm:text-[10px] text-white/40 font-medium">
+                                    {it.count}x · última {new Date(it.last).toLocaleDateString('pt-BR')}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-sm sm:text-base font-black text-emerald-400">R$ {it.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                <p className="text-[9px] text-white/40 uppercase font-black tracking-wider">Investido</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4 outline-none">
