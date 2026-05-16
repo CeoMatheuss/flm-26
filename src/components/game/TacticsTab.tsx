@@ -478,6 +478,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
             </div>
           </Tabs>
         </div>
+        )}
       </div>
 
       <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
