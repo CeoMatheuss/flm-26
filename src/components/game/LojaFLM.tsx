@@ -347,13 +347,13 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         <p className="text-emerald-100/60 text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] relative z-10 opacity-70">Official Club Provider</p>
         
         <div className="flex flex-wrap gap-2 sm:gap-4 mt-6 sm:mt-8 relative z-10">
-          <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-white/5 flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px]">
-            <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg">
-              <DollarSign className="text-emerald-400 h-4 w-4 sm:h-5 sm:w-5" />
+          <div className={`bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px] ${club.budget >= 0 ? 'border-white/5' : 'border-red-500/30'}`}>
+            <div className={`p-1.5 sm:p-2 rounded-lg ${club.budget >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'}`}>
+              <DollarSign className={`h-4 w-4 sm:h-5 sm:w-5 ${club.budget >= 0 ? 'text-emerald-400' : 'text-red-400'}`} />
             </div>
             <div>
-              <p className="text-[8px] sm:text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Orçamento</p>
-              <p className="font-black text-sm sm:text-lg italic">R$ {(club.budget || 0).toLocaleString()}</p>
+              <p className={`text-[8px] sm:text-[10px] font-black uppercase tracking-wider ${club.budget >= 0 ? 'text-emerald-400/60' : 'text-red-400/60'}`}>Orçamento</p>
+              <p className={`font-black text-sm sm:text-lg italic ${club.budget >= 0 ? 'text-white' : 'text-red-400'}`}>R$ {(club.budget || 0).toLocaleString()}</p>
             </div>
           </div>
           <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-white/5 flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px]">
@@ -365,8 +365,8 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               <p className="font-black text-sm sm:text-lg italic">{(club.fans || 0).toLocaleString()}</p>
             </div>
           </div>
-          {/* Ganhos diários removidos */}
         </div>
+
       </div>
 
       {/* Upgrade e stats da loja removidos conforme solicitado */}
