@@ -157,6 +157,35 @@ serve(async (req) => {
             console.error('[PREMIUM] Exceção ao ativar:', e);
           }
 
+          // 4.6 DESBLOQUEIO DE UNIFORMES: se o item comprado é de uniforme, liberar uniformsUnlocked
+          try {
+            const itemName = (orderData.metadata?.item_name || '').toString().toLowerCase();
+            const itemId = (orderData.item_id || '').toString().toLowerCase();
+            const isUniformItem = itemName.includes('uniform') || itemId.includes('uniform');
+            if (isUniformItem) {
+              const { data: saveRow } = await supabaseAdmin
+                .from('game_saves')
+                .select('id, club_data')
+                .eq('user_id', orderData.user_id)
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              if (saveRow) {
+                const clubData = (saveRow.club_data || {}) as Record<string, any>;
+                const clubProfile = { ...(clubData.clubProfile || {}) };
+                clubProfile.uniformsUnlocked = true;
+                clubData.clubProfile = clubProfile;
+                await supabaseAdmin
+                  .from('game_saves')
+                  .update({ club_data: clubData, updated_at: new Date().toISOString() })
+                  .eq('id', saveRow.id);
+                console.log(`[UNIFORMS] Desbloqueado para user_id=${orderData.user_id}`);
+              }
+            }
+          } catch (e) {
+            console.error('[UNIFORMS] Exceção ao desbloquear:', e);
+          }
+
           // 5. Notify user about payment and release in Real-Time
           if (orderData) {
             // First notification: Payment received
