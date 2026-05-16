@@ -191,7 +191,7 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {myScouts.map(scout => {
                 const activeMission = missions.find(m => m.scout_id === scout.id);
                 return (
