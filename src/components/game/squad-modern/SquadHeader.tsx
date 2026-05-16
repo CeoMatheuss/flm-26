@@ -38,27 +38,27 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
       <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-2xl border-b border-white/5" />
       
       <div className="relative px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-        {/* Left: Back & Club */}
-        <div className="flex items-center gap-4 min-w-0">
-          <button
-            onClick={handleBack}
-            className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all active:scale-95"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+        {/* Left: Club & Stats */}
+        <div className="flex items-center gap-6 min-w-0">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleBack}
+              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all active:scale-95"
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </button>
 
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-black text-white truncate leading-none tracking-tight flex items-center gap-2">
-                <Shield className="w-5 h-5 text-emerald-400" />
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-xl sm:text-2xl font-black text-white truncate leading-none tracking-tighter flex items-center gap-3">
+                <Shield className="w-6 h-6 text-emerald-400" />
                 {club.name}
               </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-emerald-400/80">
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-400/80">
                    {club.country || 'Brasil'}
                 </span>
-                <span className="w-1 h-1 rounded-full bg-white/20" />
-                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">
                   Temporada {season?.currentSeason ?? 1}
                 </span>
               </div>
