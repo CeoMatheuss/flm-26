@@ -798,10 +798,10 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
         </div>
         
         <div className="space-y-1">
-          <h3 className="text-xl font-black uppercase italic tracking-tighter leading-tight group-hover:text-emerald-400 transition-colors">
+          <h3 className="text-lg sm:text-xl font-black uppercase italic tracking-tighter leading-tight group-hover:text-emerald-400 transition-colors">
             {item.name}
           </h3>
-          <p className="text-[11px] text-muted-foreground/80 leading-relaxed font-medium line-clamp-3">
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 leading-relaxed font-medium line-clamp-2 sm:line-clamp-3">
             {item.description}
           </p>
         </div>
