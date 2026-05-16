@@ -1,5 +1,3 @@
-import { Player } from '@/types/game';
-
 export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'indisponivel' | 'emprestado' | 'afastado' | 'fora' | 'negociando';
 
 export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {
@@ -133,8 +131,8 @@ export const attrConfig = [
   { key: 'res', label: 'Resist.', from: 'workRate', icon: '🫁' },
 ];
 
-export const getAttrValue = (player: Player, key: string) => {
-  const val = (player as any)[key] || (player as any).attributes?.[key] || 50;
+export const getAttrValue = (player: any, key: string) => {
+  const val = player[key] || player.attributes?.[key] || 50;
   return { value: val, sourceKey: key };
 };
 
@@ -144,19 +142,19 @@ export const attrColorClass = (val: number) => {
   return 'from-red-400 to-red-500';
 };
 
-export const getPlayerStatus = (p: Player, isStarter: boolean, isNegotiating?: boolean): PlayerStatus => {
+export const getPlayerStatus = (p: any, isStarter: boolean, isNegotiating?: boolean): PlayerStatus => {
   if (isNegotiating) return 'negociando';
-  if ((p as any).isLoaned) return 'emprestado';
-  if ((p as any).isInjured || p.injury) return 'lesionado';
-  if ((p as any).isSuspended) return 'suspenso';
-  if ((p as any).onTransferList) return 'lista-transferencia';
-  if ((p as any).isAfastado) return 'afastado';
+  if (p.isLoaned) return 'emprestado';
+  if (p.isInjured || p.injury) return 'lesionado';
+  if (p.isSuspended) return 'suspenso';
+  if (p.onTransferList) return 'lista-transferencia';
+  if (p.isAfastado) return 'afastado';
   if (isStarter) return 'titular';
   if (p.age <= 20 && p.overall >= 70) return 'promessa';
   return 'reserva';
 };
 
-export const avgStamina = (players: Player[]) => {
+export const avgStamina = (players: any[]) => {
   if (!players.length) return 0;
   return Math.round(players.reduce((acc, p) => acc + (p.stamina || 0), 0) / players.length);
 };
