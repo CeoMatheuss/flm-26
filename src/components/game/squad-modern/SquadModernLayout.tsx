@@ -298,7 +298,7 @@ export function SquadModernLayout({
               exit={{ opacity: 0, x: 50, width: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={cn(
-                "w-full xl:w-[480px] flex-col border border-white/5 bg-zinc-900/30 rounded-[2.5rem] overflow-hidden relative group shrink-0",
+                "w-full xl:w-[400px] 2xl:w-[450px] flex-col border border-white/5 bg-zinc-900/30 rounded-[2.5rem] overflow-hidden relative group shrink-0",
                 viewMode === 'pitch' ? "flex" : "hidden xl:flex"
               )}
             >
