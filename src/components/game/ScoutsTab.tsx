@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoutV3, ScoutMissionV3, ScoutReportV3, ScoutLevel, ScoutSpecialization, MissionType } from '@/types/scoutingV3';
-import { Search, UserPlus, Trash2, MapPin, Globe, Target, Star, Shield, Clock, Play, FileText, CheckCircle2, AlertCircle, X, ChevronRight, User } from 'lucide-react';
+import { Search, UserPlus, Trash2, MapPin, Globe, Target, Star, Shield, Clock, Play, FileText, CheckCircle2, AlertCircle, X, ChevronRight, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
