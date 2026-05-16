@@ -263,21 +263,21 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
                                    <span className="text-white/40">Retorno Financeiro</span>
                                    <span className="text-emerald-400">Excelente</span>
                                 </div>
-                                <Progress value={95} className="h-1 bg-white/5" indicatorClassName="bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                <Progress value={95} className="h-1 bg-white/5" />
                              </div>
                              <div className="space-y-2">
                                 <div className="flex justify-between text-[10px] font-black uppercase">
                                    <span className="text-white/40">Engajamento Social</span>
                                    <span className="text-blue-400">Moderado</span>
                                 </div>
-                                <Progress value={65} className="h-1 bg-white/5" indicatorClassName="bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                                <Progress value={65} className="h-1 bg-white/5" />
                              </div>
                              <div className="space-y-2">
                                 <div className="flex justify-between text-[10px] font-black uppercase">
                                    <span className="text-white/40">Eficiência Operacional</span>
                                    <span className="text-amber-400">Alto</span>
                                 </div>
-                                <Progress value={85} className="h-1 bg-white/5" indicatorClassName="bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                                <Progress value={85} className="h-1 bg-white/5" />
                              </div>
                           </div>
                        </div>
