@@ -238,6 +238,22 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   const executePayment = async () => {
     if (!selectedItem) return;
     
+    // Para itens grátis (ex: renovação básica ou promoções 0,00)
+    if (selectedItem.price_cents === 0) {
+      setLoading(true);
+      try {
+        await storeManager.activateItem(selectedItem);
+        setShowCheckoutModal(false);
+        toast.success(`Item "${selectedItem.name}" ativado com sucesso!`);
+        fetchHistory();
+      } catch (e) {
+        toast.error('Erro ao ativar item gratuito.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!checkoutEmail.includes('@')) {
       toast.error('Por favor, insira um e-mail válido para receber o comprovante.');
       return;
@@ -254,7 +270,6 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       }
     }
 
-
     setLoading(true);
     setShowCheckoutModal(false);
     
@@ -269,7 +284,6 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         }
       });
 
-
       if (error) throw error;
 
       if (data?.pix_qr_code) {
@@ -282,18 +296,6 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       } else if (data?.init_point) {
         setCurrentOrderId(data.order_id);
         window.location.href = data.init_point;
-      } else if (data?.status === 'approved' || selectedItem.price_cents === 0) {
-
-        setShowPremium(true);
-        toast.success(`Compra concluída: ${selectedItem.name}!`);
-        
-        // Ativa o item no sistema FLM
-        await storeManager.activateItem(selectedItem);
-        
-        const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
-        audio.volume = 0.3;
-        audio.play().catch(() => {});
-        fetchHistory();
       }
     } catch (e: any) {
       console.error(e);
