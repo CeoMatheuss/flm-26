@@ -432,7 +432,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                 <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 outline-none">
                   <AnimatePresence mode="popLayout">
                     {items
-                      .filter(i => i.category === cat.db)
+                      .filter(i => cat.id === 'all' ? true : i.category === cat.db)
                       .map((item, idx) => (
                         <motion.div
                           key={item.id}
@@ -451,7 +451,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                       ))}
                   </AnimatePresence>
                   
-                  {items.filter(i => i.category === cat.db).length === 0 && (
+                  {items.filter(i => cat.id === 'all' ? items.length > 0 : i.category === cat.db).length === 0 && (
                     <div className="col-span-full py-20 text-center">
                        <Package className="h-12 w-12 text-white/10 mx-auto mb-3" />
                        <p className="text-sm text-white/40 font-medium italic">Nenhum item disponível nesta categoria no momento.</p>
