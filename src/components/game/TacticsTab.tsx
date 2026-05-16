@@ -40,9 +40,9 @@ function TacticButton<T extends string>({ value, current, label, onClick }: { va
   const isActive = current === value;
   return (
     <button
-      className={`flex-1 capitalize text-[10px] font-black min-w-[70px] px-2 py-3 rounded-xl transition-all border-2 ${
+      className={`capitalize text-[9px] font-black px-2 py-2.5 rounded-lg transition-all border w-full min-w-0 truncate ${
         isActive
-          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
           : 'bg-zinc-900/60 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'
       }`}
       onClick={() => onClick(value)}
@@ -398,7 +398,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ].map(ctrl => (
                     <div key={ctrl.label}>
                       <SectionLabel icon={ctrl.icon} label={ctrl.label} />
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {ctrl.options.map(opt => (
                           <TacticButton key={opt} value={opt} current={tactics[ctrl.key] as string} label={opt} onClick={v => setField(ctrl.key, v as any)} />
                         ))}
