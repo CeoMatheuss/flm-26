@@ -13,7 +13,7 @@ import { getPlayerValue } from '@/utils/playerGenerator';
 import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
 import { cn } from '@/lib/utils';
 import {
-  PlayerStatus, statusMeta, ovrTier, positionColors, attrConfig, getAttrValue, attrColorClass, flagFor,
+  PlayerStatus, statusMeta, ovrTier, getPositionColor, attrConfig, getAttrValue, attrColorClass, flagFor,
 } from './squadHelpers';
 import { AttrDelta, evolutionReason } from './useAttributeEvolution';
 import { motion } from 'framer-motion';
@@ -125,7 +125,7 @@ function PlayerDetailContent({
               </motion.h2>
               
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                <span className={cn('px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest', positionColors[player.position])}>
+                <span className={cn('px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest', getPositionColor(player.position))}>
                   {player.position}
                 </span>
                 <span className={cn('px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest', sm.bg, sm.border, sm.color)}>
