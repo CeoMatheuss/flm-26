@@ -9,6 +9,7 @@ import { formatMoney } from '@/lib/formatMoney';
 interface SquadCardProps {
   player: Player;
   onClick?: () => void;
+  onSwap?: (player: Player) => void;
   isPendingSwap?: boolean;
 }
 
