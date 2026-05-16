@@ -190,7 +190,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       exit={{ opacity: 0, scale: 0.95 }}
       onClick={onClick}
       className={cn(
-        "w-full text-left rounded-2xl border flex flex-col sm:grid sm:grid-cols-12 sm:items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3 transition-all duration-300 group relative overflow-hidden",
+        "w-full text-left rounded-2xl border flex flex-col sm:grid sm:grid-cols-12 sm:items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3 transition-all duration-300 group relative overflow-hidden min-h-[80px]",
         selected 
           ? (isPendingSwap ? "bg-primary/20 border-primary ring-2 ring-primary/50 animate-pulse" : "bg-emerald-500/10 border-emerald-500/30 shadow-xl")
           : (canBeSwapped ? "bg-white/[0.05] border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10")
@@ -225,9 +225,9 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             )}
           </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-black text-white truncate sm:overflow-visible sm:whitespace-normal group-hover:text-emerald-400 transition-colors uppercase tracking-tighter">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <div className="flex items-center gap-2 max-w-full">
+            <span className="text-sm sm:text-base font-black text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tighter block">
               {player.name}
             </span>
             <span className="text-sm">{flagFor((player as any).country)}</span>
@@ -252,33 +252,35 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       </div>
 
       {/* Attributes (Compact Row View) */}
-      <div className="col-span-3 hidden lg:flex items-center justify-center gap-4">
+      <div className="col-span-3 hidden xl:flex items-center justify-center gap-2 sm:gap-4 overflow-hidden px-2">
         {attrConfig.slice(0, 4).map(attr => {
           const { value: val } = getAttrValue(player, attr.from as any);
           return (
-            <div key={attr.key} className="flex flex-col items-center min-w-[32px]">
-              <span className="text-[8px] font-black text-white/20 uppercase mb-0.5">{attr.key}</span>
+            <div key={attr.key} className="flex flex-col items-center min-w-[28px] sm:min-w-[32px] shrink-0">
+              <span className="text-[7px] sm:text-[8px] font-black text-white/20 uppercase mb-0.5">{attr.key}</span>
               <span className={cn(
-                "text-[10px] font-black tabular-nums italic",
+                "text-[9px] sm:text-[10px] font-black tabular-nums italic",
                 val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
               )}>{val}</span>
             </div>
           );
         })}
-        <div className="h-6 w-px bg-white/5 mx-1" />
-        <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" onRest={onRest} />
+        <div className="h-6 w-px bg-white/5 mx-0.5 sm:mx-1 shrink-0" />
+        <div className="shrink-0">
+          <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" onRest={onRest} />
+        </div>
       </div>
 
       {/* Contract & Market Value */}
-      <div className="col-span-11 sm:col-span-4 flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-        <div className="flex flex-col items-end">
-          <span className="text-[11px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
-          <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{player.contract} Anos</span>
+      <div className="col-span-11 sm:col-span-4 flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 overflow-hidden">
+        <div className="flex flex-col items-end shrink-0">
+          <span className="text-[10px] sm:text-[11px] font-black text-white/80 italic whitespace-nowrap">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
+          <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{player.contract} Anos</span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col items-end">
-            <span className="text-sm font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(value)}</span>
-            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex flex-col items-end min-w-[80px] sm:min-w-[100px]">
+            <span className="text-xs sm:text-sm font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(value)}</span>
+            <span className="text-[8px] sm:text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
           </div>
           <ChevronRight className={cn("w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1", isPendingSwap && "text-primary animate-bounce")} />
         </div>
