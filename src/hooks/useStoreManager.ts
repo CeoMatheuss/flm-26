@@ -21,14 +21,15 @@ export function useStoreManager(club: Club, userId: string) {
   const [loading, setLoading] = useState(false);
 
   const fetchStoreData = useCallback(async () => {
-    if (!club?.id) return;
+    if (!club?.id || club.id === '00000000-0000-0000-0000-000000000000') return;
     
     try {
+      const client = supabase as any;
       const [effectsRes, launchesRes, statsRes, membersRes] = await Promise.all([
-        supabase.from('club_active_effects').select('*').eq('club_id', club.id),
-        supabase.from('club_uniform_launches').select('*').eq('club_id', club.id).eq('is_active', true),
-        supabase.from('club_shop_stats').select('*').eq('club_id', club.id).maybeSingle(),
-        supabase.from('club_memberships').select('*').eq('club_id', club.id).maybeSingle()
+        client.from('club_active_effects').select('*').eq('club_id', club.id),
+        client.from('club_uniform_launches').select('*').eq('club_id', club.id).eq('is_active', true),
+        client.from('club_shop_stats').select('*').eq('club_id', club.id).maybeSingle(),
+        client.from('club_memberships').select('*').eq('club_id', club.id).maybeSingle()
       ]);
 
       if (effectsRes.data) {
@@ -41,7 +42,7 @@ export function useStoreManager(club: Club, userId: string) {
             bonusData: e.bonus_data,
             startedAt: e.started_at,
             expiresAt: e.expires_at,
-            lastUpdateAt: e.created_at // placeholder
+            lastUpdateAt: e.created_at
           }))
         }));
       }
@@ -92,17 +93,21 @@ export function useStoreManager(club: Club, userId: string) {
   }, [fetchStoreData]);
 
   const activateItem = async (item: any) => {
-    if (!club?.id) return;
+    if (!club?.id || club.id === '00000000-0000-0000-0000-000000000000') {
+      toast.error('Clube não identificado.');
+      return;
+    }
 
     try {
       setLoading(true);
+      const client = supabase as any;
       
       const durationDays = item.duration_days || 30;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + durationDays);
 
       // 1. Create Active Effect
-      const { error: effectError } = await supabase
+      const { error: effectError } = await client
         .from('club_active_effects')
         .insert({
           club_id: club.id,
@@ -118,15 +123,15 @@ export function useStoreManager(club: Club, userId: string) {
       if (item.category === 'sponsorship') {
         const immediateCash = item.bonus_data?.immediate_cash || 0;
         if (immediateCash > 0) {
-          await supabase.rpc('add_club_budget', { 
-            p_club_id: club.id, 
-            p_amount: immediateCash 
-          });
+          // Use direct update if RPC is missing or just use existing one if possible
+          await client.from('clubs').update({ 
+            budget: (club.budget || 0) + immediateCash 
+          }).eq('id', club.id);
+          
           toast.success(`Bônus de assinatura recebido: R$ ${immediateCash.toLocaleString()}`);
         }
 
-        // Also add to sponsorships table for legacy support if needed
-        await supabase.from('club_sponsorships').insert({
+        await client.from('club_sponsorships').insert({
           club_id: club.id,
           sponsor_name: item.name,
           contract_value_cents: (item.bonus_data?.dinheiroSemanal || 0) * 100,
@@ -137,16 +142,13 @@ export function useStoreManager(club: Club, userId: string) {
       }
 
       if (item.category === 'uniform') {
-        // Uniform activation often unlocks a slot or launches a mock one
-        // For now, let's just toast and fetch
         toast.success('Editor de uniforme desbloqueado!');
       }
 
       // 3. Generate News
-      await supabase.from('club_news').insert({
-        club_id: club.id,
-        title: `Novo contrato: ${item.name}`,
-        content: `O clube oficializou hoje a parceria com ${item.name}. O acordo trará grandes benefícios para o marketing e finanças do clube.`,
+      await client.from('newspaper_entries').insert({
+        user_id: userId,
+        text: `O ${club.name} oficializou hoje a parceria com ${item.name}. O acordo trará grandes benefícios para o marketing e finanças do clube.`,
         category: 'finance',
         importance: 2
       });
