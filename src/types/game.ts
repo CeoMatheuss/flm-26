@@ -168,6 +168,7 @@ export interface TeamStats {
 }
 
 export interface Club {
+  id: string;
   name: string;
   stadiumName: string;
   ticketPrice: number;

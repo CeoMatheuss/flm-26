@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,15 +8,18 @@ import {
   ShoppingBag, DollarSign, Users, Crown, Package, 
   CheckCircle2, Lock, Zap, ChevronRight, Rocket, 
   Loader2, History, Info, TrendingUp, Building2, 
-  Stethoscope, HardHat, UserCog, AlertCircle, RefreshCw,
-  Eye, QrCode, Copy, Check, X, CreditCard, Mail, Star,
-  LineChart, LayoutDashboard, ArrowUpRight, Shirt
+  UserCog, AlertCircle, RefreshCw, Star, Shirt,
+  LayoutDashboard, ArrowUpRight, X, Mail, QrCode, CreditCard,
+  Check, Copy, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ShopItemDetails } from './ShopItemDetails';
-import { ShopFinanceDashboard } from './ShopFinanceDashboard';
+import { StoreDashboard } from './shop/StoreDashboard';
+import { useStoreManager } from '@/hooks/useStoreManager';
+import { formatMoney } from '@/lib/formatMoney';
+import { PacotinhosTab } from './PacotinhosTab';
 
 interface LojaProps {
   club: any;
@@ -28,18 +31,21 @@ interface LojaProps {
 }
 
 const CATEGORIES = [
-  { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
+  { id: 'dashboard', name: 'Painel', icon: LayoutDashboard, db: 'all' },
   { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
-  { id: 'stickers', name: 'Figurinhas', icon: Package, db: 'stickers' },
+  { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
+  { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
+  { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
   { id: 'infra', name: 'Estrutura', icon: Building2, db: 'infrastructure' },
   { id: 'staff', name: 'Equipe', icon: UserCog, db: 'staff' },
   { id: 'history', name: 'Histórico', icon: History, db: 'history' },
 ];
 
 export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState('dashboard');
+  const storeManager = useStoreManager(club, userId);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [showPremium, setShowPremium] = useState(false);
@@ -272,6 +278,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
 
         setShowPremium(true);
         toast.success(`Compra concluída: ${selectedItem.name}!`);
+        
+        // Ativa o item no sistema FLM
+        await storeManager.activateItem(selectedItem);
+        
         const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
         audio.volume = 0.3;
         audio.play().catch(() => {});
@@ -288,6 +298,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   const openDetails = (item: any) => {
     setSelectedItem(item);
     setIsDetailsOpen(true);
+  };
+
+  const isActive = (itemId: string) => {
+    return storeManager.stats.activeEffects.some(e => e.itemId === itemId);
   };
 
   return (
@@ -404,6 +418,21 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             </ScrollArea>
           </div>
 
+          <TabsContent value="dashboard" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <StoreDashboard stats={storeManager.stats} />
+          </TabsContent>
+
+          <TabsContent value="stickers" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <PacotinhosTab 
+              budget={club.budget} 
+              userId={userId}
+              onBuyPack={(players, cost) => {
+                // Already handles in PacotinhosTab, but we sync budget
+                window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+              }} 
+            />
+          </TabsContent>
+
           {loading && (
             <div className="flex flex-col items-center justify-center py-24 space-y-4">
               <div className="relative">
@@ -444,6 +473,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                             item={item} 
                             clubFans={club.fans || 0} 
                             isPremium={isPremium}
+                            isActive={isActive(item.id)}
                             onPurchase={() => handlePurchase(item)} 
                             onViewDetails={() => openDetails(item)}
                           />
@@ -461,6 +491,55 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               ))}
             </>
           )}
+
+          <TabsContent value="socio" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Card className="bg-slate-900/40 border border-amber-500/20 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
+              <CardHeader className="p-8 pb-0">
+                <CardTitle className="text-2xl font-black uppercase italic flex items-center gap-3 text-amber-400">
+                  <Crown className="h-6 w-6" /> Planos de Sócio Torcedor
+                </CardTitle>
+                <p className="text-white/60 text-sm">Aumente sua receita recorrente e o engajamento da torcida com planos exclusivos.</p>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {items.filter(i => i.category === 'members' || i.id.includes('socio')).map((plan, idx) => (
+                    <motion.div 
+                      key={plan.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col hover:border-amber-500/30 transition-all group"
+                    >
+                      <div className="bg-amber-500/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Crown className="h-6 w-6 text-amber-400" />
+                      </div>
+                      <h3 className="text-xl font-black uppercase italic mb-2">{plan.name}</h3>
+                      <p className="text-xs text-white/40 mb-6 flex-1">{plan.description}</p>
+                      
+                      <div className="space-y-3 mb-6">
+                         <div className="flex justify-between text-[10px] uppercase font-black">
+                            <span className="text-white/40">Mensalidade</span>
+                            <span className="text-emerald-400">{formatMoney(plan.price_cents / 100)}</span>
+                         </div>
+                         <div className="flex justify-between text-[10px] uppercase font-black">
+                            <span className="text-white/40">Bônus Hype</span>
+                            <span className="text-amber-400">+{plan.bonus_data?.hype_bonus || 5}%</span>
+                         </div>
+                      </div>
+
+                      <Button 
+                        onClick={() => handlePurchase(plan)}
+                        disabled={isActive(plan.id)}
+                        className={`w-full rounded-2xl font-black uppercase italic ${isActive(plan.id) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500 hover:bg-amber-400 text-black'}`}
+                      >
+                        {isActive(plan.id) ? 'Plano Ativo' : 'Assinar Plano'}
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="history" className="space-y-4 outline-none">
             <Card className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
@@ -743,7 +822,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   );
 }
 
-function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any) {
+function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDetails }: any) {
   const isBlocked = (clubFans || 0) < (item.min_fans || 0);
   const price = item.price_cents / 100;
   const isFree = item.price_cents === 0;
@@ -783,8 +862,8 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
               <Lock className="h-3.5 w-3.5 text-red-400" />
             </div>
           ) : (
-            isPremium && item.id === 'premium-pass' ? (
-              <Badge className="bg-emerald-500 text-white font-black text-[8px] uppercase">Ativo</Badge>
+            (isPremium && item.id === 'premium-pass') || isActive ? (
+              <Badge className="bg-emerald-500 text-white border-none font-black text-[8px] uppercase tracking-wider px-2 py-0.5 animate-pulse">Ativo</Badge>
             ) : null
           )}
         </div>

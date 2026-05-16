@@ -18,6 +18,7 @@ export function generateSeasonMatches(country?: string): Match[] {
 export const initialPlayers = generateInitialSquad();
 
 export const initialClub: Club = {
+  id: '00000000-0000-0000-0000-000000000000',
   name: 'FLM 26',
   stadiumName: 'Arena FLM',
   ticketPrice: 30,
