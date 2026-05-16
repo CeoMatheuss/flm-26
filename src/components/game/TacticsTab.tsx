@@ -506,9 +506,17 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ))}
                 </div>
 
-                <div className="flex gap-3">
-                   <button className="flex-1 bg-primary text-primary-foreground py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">
-                     TREINAMENTO
+                <div className="flex flex-col sm:flex-row gap-3">
+                   <button 
+                     onClick={() => {
+                       // Logic to initiate swap from modal if needed
+                       // For now, we use the field-based swap, but we can add a shortcut here
+                       toast.info("Para trocar, selecione o jogador no campo e depois o substituto.");
+                       setSelectedPlayer(null);
+                     }}
+                     className="flex-1 bg-primary text-primary-foreground py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2"
+                   >
+                     <ArrowRightLeft className="w-5 h-5" /> TROCAR JOGADOR
                    </button>
                    <button className="flex-1 bg-white/10 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10">
                      RENOVAÇÃO
