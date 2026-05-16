@@ -207,7 +207,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
     try {
       const { data, error: histErr } = await supabase
         .from('payment_orders')
-        .select('*, shop_items(name)')
+        .select('*, shop_items(name, category)')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(20);
