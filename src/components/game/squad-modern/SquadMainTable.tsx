@@ -291,7 +291,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       </div>
 
       {/* Contract & Market Value */}
-      <div className="col-span-11 sm:col-span-4 flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 overflow-hidden">
+      <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 overflow-hidden">
         <div className="flex flex-col items-end shrink-0">
           <span className="text-[10px] sm:text-[11px] font-black text-white/80 italic whitespace-nowrap">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{player.contract} Anos</span>
