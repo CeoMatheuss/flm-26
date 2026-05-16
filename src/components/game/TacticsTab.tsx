@@ -195,8 +195,28 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         </Card>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-        <div className="xl:col-span-8 space-y-6">
+      {!hideSwapButton && (
+        <div className="hidden xl:flex justify-end">
+          <button
+            onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
+            className={cn(
+              "h-11 px-5 rounded-2xl border transition-all gap-3 font-black uppercase text-[10px] tracking-widest flex items-center shadow-lg",
+              isSidePanelOpen
+                ? "bg-zinc-900/80 border-white/10 text-white/60 hover:text-red-400 hover:border-red-400/30"
+                : "bg-emerald-500 border-emerald-400/50 text-zinc-950 hover:bg-emerald-400"
+            )}
+          >
+            {isSidePanelOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+            {isSidePanelOpen ? 'Fechar Painel Tático' : 'Abrir Painel Tático'}
+          </button>
+        </div>
+      )}
+
+      <div className={cn(
+        "grid grid-cols-1 gap-8 items-start transition-all duration-500",
+        isSidePanelOpen ? "xl:grid-cols-12" : "xl:grid-cols-1"
+      )}>
+        <div className={cn("space-y-6 min-w-0", isSidePanelOpen ? "xl:col-span-8" : "xl:col-span-1")}>
           <Card className="border-primary/20 bg-slate-900/40 rounded-[2.5rem] overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
               <Shield className="w-32 h-32 text-primary rotate-12" />
