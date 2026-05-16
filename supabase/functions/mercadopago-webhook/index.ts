@@ -81,60 +81,83 @@ serve(async (req) => {
       })
       const paymentData = await mpResponse.json()
 
-      if (paymentData.status === 'approved') {
+      if (paymentData.status === 'approved' || paymentData.status === 'paid') {
         const orderId = paymentData.external_reference
         
-        // Get order details to get user_id and item name
-        const { data: orderData } = await supabaseAdmin
+        console.log(`[PAGAMENTO CONFIRMADO] Payment ID: ${id}, Order ID: ${orderId}`)
+
+        // 1. Get order details and ensure it exists
+        const { data: orderData, error: orderFetchError } = await supabaseAdmin
           .from('payment_orders')
-          .select('user_id, metadata, item_id')
+          .select('user_id, metadata, item_id, delivered, status')
           .eq('id', orderId)
           .single();
 
-        // Update order status first to ensure we don't process twice if delivery is slow
-        await supabaseAdmin.from('payment_orders').update({
-          status: 'approved',
-          payment_id: id.toString(),
-          updated_at: new Date().toISOString()
-        }).eq('id', orderId)
+        if (orderFetchError || !orderData) {
+          console.error(`Order ${orderId} not found for payment ${id}`);
+          throw new Error(`Order ${orderId} not found`);
+        }
 
-        if (orderData) {
-          // Notify payment approval
-          await supabaseAdmin.from('user_notifications').insert({
-            user_id: orderData.user_id,
-            type: 'success',
-            category: 'Financeiro',
-            priority: 'high',
-            title: 'Pagamento Confirmado',
-            message: `Recebemos seu pagamento para "${orderData.metadata?.item_name || 'Item'}".`,
-            icon: '✅',
-            data: { order_id: orderId, payment_id: id }
+        // 2. Anti-duplication check: if already delivered, just stop
+        if (orderData.delivered) {
+          console.log(`[DUPLICIDADE EVITADA] Order ${orderId} already delivered.`);
+          return new Response(JSON.stringify({ received: true, already_processed: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
           });
         }
 
-        // Deliver item via RPC
-        const { data: deliverData, error: rpcError } = await supabaseAdmin.rpc('deliver_shop_item', { p_order_id: orderId })
+        // 3. Update order status to 'approved' if not already
+        if (orderData.status !== 'approved' && orderData.status !== 'paid') {
+          await supabaseAdmin.from('payment_orders').update({
+            status: 'approved',
+            payment_id: id.toString(),
+            updated_at: new Date().toISOString()
+          }).eq('id', orderId);
+        }
+
+        // 4. Deliver product via database RPC (ConfirmPaymentAndReleaseProduct Logic)
+        console.log(`[LIBERANDO PRODUTO] Order ID: ${orderId}`);
+        const { data: deliverResult, error: rpcError } = await supabaseAdmin.rpc('deliver_shop_item', { 
+          p_order_id: orderId 
+        });
         
         if (rpcError) {
-          console.error(`Error delivering item for order ${orderId}:`, rpcError)
+          console.error(`[FALHA NA LIBERAÇÃO] Error for order ${orderId}:`, rpcError);
+          // Don't throw here so we can still notify about payment if needed
         } else {
-          console.log(`Item delivered successfully for order ${orderId}:`, deliverData)
+          console.log(`[PRODUTO LIBERADO] Result for order ${orderId}:`, deliverResult);
+          
+          // 5. Notify user about payment and release in Real-Time
           if (orderData) {
-            // Notify item release
+            // First notification: Payment received
+            await supabaseAdmin.from('user_notifications').insert({
+              user_id: orderData.user_id,
+              type: 'success',
+              category: 'Financeiro',
+              priority: 'high',
+              title: 'Pagamento Confirmado',
+              message: `Recebemos seu pagamento para "${orderData.metadata?.item_name || 'Item'}".`,
+              icon: '✅',
+              data: { order_id: orderId, payment_id: id, status: 'PAID' }
+            });
+
+            // Second notification: Product delivered
             await supabaseAdmin.from('user_notifications').insert({
               user_id: orderData.user_id,
               type: 'success',
               category: 'Clube',
               priority: 'ultra',
-              title: 'Benefícios Liberados!',
-              message: `Seu item "${orderData.metadata?.item_name || 'Premium'}" já está ativo no seu clube.`,
+              title: 'Acesso Liberado!',
+              message: `Seu item "${orderData.metadata?.item_name || 'Premium'}" foi liberado automaticamente.`,
               icon: '🚀',
-              data: { order_id: orderId, item_id: orderData.item_id }
+              data: { order_id: orderId, item_id: orderData.item_id, delivered: true }
             });
           }
         }
       } else {
-        // Update status for non-approved
+        // Update status for non-approved payments (pending, rejected, etc)
+        console.log(`[STATUS ATUALIZADO] Payment ${id} status: ${paymentData.status}`);
         await supabaseAdmin.from('payment_orders').update({
           status: paymentData.status,
           payment_id: id.toString(),

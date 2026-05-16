@@ -5160,7 +5160,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      deliver_shop_item: { Args: { p_order_id: string }; Returns: undefined }
+      deliver_shop_item: { Args: { p_order_id: string }; Returns: Json }
       end_season_redistribute: {
         Args: { _league_id: string }
         Returns: undefined
