@@ -303,7 +303,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
 
         <div className="lg:col-span-4 space-y-4">
           <Tabs defaultValue="style" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-12 bg-slate-950/40 border-white/5 p-1 rounded-xl">
+            <TabsList className="w-full grid grid-cols-3 h-14 bg-slate-900/60 border border-white/5 p-1 rounded-2xl">
               <TabsTrigger value="style" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
                 <Target className="w-4 h-4" />Estilo
               </TabsTrigger>
