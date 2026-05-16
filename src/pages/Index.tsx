@@ -320,7 +320,17 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         console.log('[Shop] Daily bonuses processed:', data);
       }
     });
-  }, [userId, game.enrollWorldLeague]);
+    // Process monthly finance on the first of the month
+    if (day === 1) {
+      const lastMonthProcessed = localStorage.getItem(`finance_month_${today.getMonth()}_${today.getFullYear()}`);
+      if (!lastMonthProcessed) {
+        console.log('[FinanceManager] First day of the month. Processing monthly salaries and maintenance...');
+        game.processMonthlyFinance();
+        localStorage.setItem(`finance_month_${today.getMonth()}_${today.getFullYear()}`, 'done');
+      }
+    }
+  }, [userId, game.enrollWorldLeague, game.processMonthlyFinance]);
+
 
   // Check maintenance mode + tutorial status
   useEffect(() => {
