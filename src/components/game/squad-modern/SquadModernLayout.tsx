@@ -191,6 +191,8 @@ export function SquadModernLayout({
         onViewModeChange={(mode) => setViewMode(mode as any)} 
         pendingSwap={pendingSwap ? { id: pendingSwap.id, name: pendingSwap.name } : null}
         onCancelSwap={() => setPendingSwap(null)}
+        isTacticsOpen={isTacticsOpen}
+        onToggleTactics={() => setIsTacticsOpen(!isTacticsOpen)}
         onBack={() => {
           if (viewMode === 'pitch') {
             setViewMode('list');
