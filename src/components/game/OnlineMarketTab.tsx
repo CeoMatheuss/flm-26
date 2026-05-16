@@ -120,6 +120,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
   const [loanListings, setLoanListings] = useState<any[]>([]);
+  const [myRenewals, setMyRenewals] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [offerDialogId, setOfferDialogId] = useState<string | null>(null);
   const [viewingSellerId, setViewingSellerId] = useState<{ id: string; name: string; shield?: any } | null>(null);
@@ -201,6 +202,15 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       .order('listed_at', { ascending: false });
     if (data) setLoanListings(data);
   }, []);
+
+  const loadMyRenewals = useCallback(async () => {
+    const { data } = await supabase
+      .from('player_negotiations')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (data) setMyRenewals(data);
+  }, [userId]);
 
   // Resolve pending 6h decisions on load
   const resolveDecisions = useCallback(async () => {
@@ -1042,6 +1052,49 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                         {timeLeft && <p className="text-[9px] text-blue-400 mt-0.5 flex items-center gap-1"><Timer className="h-3 w-3" /> {timeLeft}</p>}
                         {offer.rejection_reason && (
                           <p className="text-[9px] text-orange-400 mt-1 leading-relaxed">💬 {offer.rejection_reason}</p>
+                        )}
+                      </div>
+                      <Badge className={`text-[8px] ${sc.bg} ${sc.text} border-0 shrink-0`}>{sc.label}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Renovas (Próprios Jogadores) */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-emerald-400" /> Renovas Oferecidas
+              <Badge variant="outline" className="text-[9px]">{myRenewals.length}</Badge>
+            </h3>
+
+            {myRenewals.length === 0 ? (
+              <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+                Nenhuma proposta de renovação ativa.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {myRenewals.map(negotiation => {
+                  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+                    pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Analisando...' },
+                    accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Renovado!' },
+                    rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
+                  };
+                  const sc = statusConfig[negotiation.status] || statusConfig.pending;
+                  
+                  return (
+                    <div key={negotiation.id} className="rounded-xl border border-border/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate">{negotiation.player_name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Sal: R${negotiation.offered_salary}/mês • {negotiation.offered_duration} anos
+                        </p>
+                        {negotiation.status === 'pending' && negotiation.response_at && (
+                          <p className="text-[9px] text-blue-400 mt-1 flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> 
+                            Resposta em: {new Date(negotiation.response_at).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         )}
                       </div>
                       <Badge className={`text-[8px] ${sc.bg} ${sc.text} border-0 shrink-0`}>{sc.label}</Badge>
