@@ -440,7 +440,10 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
           isYouth: true,
           squadRole: contractDetails?.squadRole ?? 'promessa',
           marketValue: prospect.overall * 100000, // Value increases after turning pro
+          potential: prospect.potential,
         };
+
+        // Automatic Lineup Optimization will be triggered by useGame's useEffect
         addPlayerToClub(player);
         setYouthPromotedCount((c: number) => c + 1);
         toast.success(`🎉 ${prospect.name} agora é profissional!`, {
