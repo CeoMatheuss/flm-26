@@ -1,20 +1,17 @@
 import { useState } from 'react';
-import { TacticsConfig, Formation, formationDescriptions, tacticsPresets, PlayStyle, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width, playStyleEffects, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES } from '@/types/tactics';
-import { formationRequirements, validateLineup, canChangePosition } from '@/utils/lineupManager';
+import { TacticsConfig, Formation, formationDescriptions, tacticsPresets, Pressing, Tempo, Marking, PassingStyle, DefenseLine, Width, playStyleEffects, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES } from '@/types/tactics';
+import { formationRequirements, validateLineup } from '@/utils/lineupManager';
 import { Player } from '@/types/game';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FormationView } from './FormationView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, Zap, Target, Users, Star, Info, ChevronRight, Lock, Sparkles, ArrowRightLeft, Heart, Activity, UserPlus, Trash2, ListFilter, LayoutGrid } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Shield, Zap, Target, Users, Star, Info, Lock, Sparkles, Heart, Activity, LayoutGrid, TrendingUp, TrendingDown, Minus, Crown } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { useActiveMatch } from '@/hooks/useActiveMatch';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 interface Props {
@@ -49,7 +46,6 @@ function TacticButton<T extends string>({ value, current, label, onClick }: { va
   );
 }
 
-// Descrições contextuais para cada opção tática
 const tacticInfo: Record<string, Record<string, { title: string; desc: string; pros: string; cons: string }>> = {
   pressing: {
     'baixo': { title: '🛡️ Pressão Baixa', desc: 'Time recua e espera o adversário no campo defensivo.', pros: '+ Economiza fôlego, fecha espaços', cons: '- Cede posse, ataque lento' },
@@ -109,11 +105,10 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
   );
 }
 
-export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChangePosition, season, userId }: Props) {
+export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season, userId }: Props) {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const { isInLiveMatch } = useActiveMatch();
 
-  // Implement swap players directly in TacticsTab
   const swapPlayers = (playerAId: string, playerBId: string) => {
     if (!onUpdatePlayers) return;
     const idxA = players.findIndex(p => p.id === playerAId);
@@ -123,13 +118,10 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
     const newOrder = [...players];
     [newOrder[idxA], newOrder[idxB]] = [newOrder[idxB], newOrder[idxA]];
     
-    // Position Protection Validation
     const validation = validateLineup(newOrder);
     if (!validation.valid) {
       toast.error(validation.message);
-      if (validation.autoFix) {
-        onUpdatePlayers(validation.autoFix);
-      }
+      if (validation.autoFix) onUpdatePlayers(validation.autoFix);
       return;
     }
 
@@ -140,30 +132,15 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
   };
 
   const activePlayers = players.filter(p => !p.injury);
+  const starters = players.slice(0, 11);
+  const reserves = players.slice(11);
   const injuredCount = players.length - activePlayers.length;
 
-  // Block permanent tactical changes during a live match.
-  // Quick changes via "⚡ Aplicar Tática" inside MatchPage remain allowed (separate handler).
   const guardedUpdate = (next: TacticsConfig) => {
     if (isInLiveMatch) {
-      toast.error('🔒 Ação indisponível durante a partida', {
-        description: 'Use o botão "⚡ Aplicar Tática" dentro da partida para mudanças rápidas.',
-      });
+      toast.error('🔒 Ação indisponível durante a partida');
       return;
     }
-    
-    // Validation for formation changes
-    const validation = validateLineup(players);
-    if (!validation.valid && next.formation !== tactics.formation) {
-       // If it's a formation change, we check if the current lineup is valid for it
-       // In this context, validateLineup mostly checks for GOL count which is formation-independent (always 1)
-       toast.error(validation.message);
-       if (validation.autoFix) {
-         // This is tricky because we don't have onReorderPlayers here
-         // But we can at least block the change or show a warning
-       }
-    }
-
     onUpdate(next);
   };
 
@@ -175,16 +152,8 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
     guardedUpdate({ ...tactics, ...preset.config });
   };
 
-  const setSpecialRole = (role: 'captainId' | 'freeKickTakerId' | 'penaltyTakerId' | 'cornerTakerId', playerId: string) => {
-    guardedUpdate({ ...tactics, [role]: playerId });
-    setSelectedPlayer(null);
-  };
-
-  // Tactical rating based on config
   const getTacticalRating = () => {
-    let rating = 30; // Base rating
-    
-    // Positional alignment (Starters are first 11)
+    let rating = 30;
     const starters = players.slice(0, 11);
     const requirements = formationRequirements[tactics.formation];
     if (requirements) {
@@ -193,36 +162,20 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
         if (p.position === requirements[i]) alignedCount++;
         else if (p.secondaryPosition === requirements[i]) alignedCount += 0.5;
       });
-      rating += (alignedCount / 11) * 40; // Max 40 points from alignment
+      rating += (alignedCount / 11) * 40;
     }
-
     if (tactics.playStyle === 'equilibrado') rating += 5;
     if (tactics.pressing === 'alto') rating += 5;
     if (tactics.captainId) rating += 5;
-    if (tactics.freeKickTakerId) rating += 3;
-    if (tactics.penaltyTakerId) rating += 3;
-    if (tactics.cornerTakerId) rating += 3;
-    
-    // Chemistry based on age diversity and stamina
     const avgStamina = starters.reduce((s, p) => s + p.stamina, 0) / 11;
     rating += (avgStamina / 100) * 10;
-
     return Math.min(100, Math.round(rating));
   };
 
   return (
     <div className="space-y-4">
-      {/* Hidden Auto-Lineup Logic (Internal) */}
-      {!tactics.autoUpdateLineup && (
-         <div className="hidden">
-           {/* Logic to keep it active internally if requested by user, but here we just hide the toggle */}
-         </div>
-      )}
-
-      {/* Season Start Widget — shows countdown / current season info */}
       <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
 
-      {/* Live match lock banner */}
       {isInLiveMatch && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardContent className="p-3 flex items-center gap-2">
@@ -234,12 +187,8 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
         </Card>
       )}
 
-      {/* Main Tactical Grid (Responsive) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left/Main Column: Pitch View */}
         <div className="lg:col-span-8 space-y-4">
-          {/* Tactical Hub Header */}
           <Card className="border-primary/20 bg-slate-950/60 backdrop-blur-xl overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
               <Shield className="w-32 h-32 text-primary rotate-12" />
@@ -248,7 +197,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
             <CardContent className="p-6 space-y-6 relative">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <p className="text-[10px] sm:text-[12px] font-black text-primary uppercase tracking-[0.2em] mb-2 drop-shadow-sm">CENTRO TÁTICO PROFISSIONAL</p>
+                  <p className="text-[10px] sm:text-[12px] font-black text-primary uppercase tracking-[0.2em] mb-2">CENTRO TÁTICO PROFISSIONAL</p>
                   <div className="flex items-center gap-4">
                     <select 
                       className="bg-transparent text-3xl sm:text-5xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-all duration-300"
@@ -267,7 +216,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
                   <div className="text-center px-2">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">GERAL</p>
                     <p className="text-3xl font-black text-white tracking-tighter">
-                      {players.length >= 11 ? Math.round(players.slice(0, 11).reduce((s, p) => s + p.overall, 0) / 11) : '—'}
+                      {players.length >= 11 ? Math.round(starters.reduce((s, p) => s + p.overall, 0) / 11) : '—'}
                     </p>
                   </div>
                   <div className="w-[1px] h-10 bg-white/10" />
@@ -287,19 +236,19 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
                     <span className="text-primary">{getTacticalRating()}%</span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
-                    <Progress value={getTacticalRating()} className="h-full bg-gradient-to-r from-primary/50 to-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                    <Progress value={getTacticalRating()} className="h-full bg-gradient-to-r from-primary/50 to-primary" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
                     <span className="text-muted-foreground">ENTROSAMENTO</span>
                     <span className="text-emerald-400">
-                      {Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))}%
+                      {Math.min(100, Math.round((getTacticalRating() * 0.7) + (starters.reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))}%
                     </span>
                   </div>
                   <div className="h-2 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
                     <Progress 
-                      value={Math.min(100, Math.round((getTacticalRating() * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))} 
+                      value={Math.min(100, Math.round((getTacticalRating() * 0.7) + (starters.reduce((s, p) => s + p.stamina, 0) / 11) * 0.3))} 
                       className="h-full bg-gradient-to-r from-emerald-600/50 to-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" 
                     />
                   </div>
@@ -308,7 +257,6 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
             </CardContent>
           </Card>
 
-          {/* Large Pitch Area */}
           <div className="relative group">
             <FormationView
               formation={tactics.formation}
@@ -318,14 +266,11 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
               onSwapPlayers={swapPlayers}
               isInteractive={!isInLiveMatch}
             />
-            
-            {/* Legend / Overlay Hint */}
             <div className="absolute top-4 left-4 flex gap-2 pointer-events-none">
               <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[10px] font-black text-white/70 uppercase tracking-tighter">
                 MODO: {isInLiveMatch ? 'VISUALIZAÇÃO' : 'EDIÇÃO'}
               </div>
             </div>
-            
             <div className="absolute bottom-6 right-6 pointer-events-none">
               <div className="bg-emerald-500/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-emerald-500/20 text-[10px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
                 SISTEMA 2D REALISTA
@@ -333,62 +278,39 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
             </div>
           </div>
           
-          {/* Quick Stats Summary */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card className="bg-slate-900/40 border-white/5">
-              <CardContent className="p-3 text-center">
-                <p className="text-[9px] font-bold text-muted-foreground uppercase">Média de Idade</p>
-                <p className="text-lg font-black text-white">
-                  {(players.slice(0, 11).reduce((s, p) => s + p.age, 0) / 11).toFixed(1)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-slate-900/40 border-white/5">
-              <CardContent className="p-3 text-center">
-                <p className="text-[9px] font-bold text-muted-foreground uppercase">Vigor Médio</p>
-                <p className="text-lg font-black text-emerald-400">
-                  {Math.round(players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11)}%
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-slate-900/40 border-white/5">
-              <CardContent className="p-3 text-center">
-                <p className="text-[9px] font-bold text-muted-foreground uppercase">Valor Elenco</p>
-                <p className="text-lg font-black text-primary">
-                  ${(players.reduce((s, p) => s + (p.marketValue || 0), 0) / 1000000).toFixed(1)}M
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-slate-900/40 border-white/5">
-              <CardContent className="p-3 text-center">
-                <p className="text-[9px] font-bold text-muted-foreground uppercase">Base/Juniores</p>
-                <p className="text-lg font-black text-blue-400">
-                  {players.filter(p => p.isYouth).length}
-                </p>
-              </CardContent>
-            </Card>
+            {[
+              { label: 'Idade Média', val: (starters.reduce((s, p) => s + p.age, 0) / 11).toFixed(1), color: 'text-white' },
+              { label: 'Vigor Médio', val: `${Math.round(starters.reduce((s, p) => s + p.stamina, 0) / 11)}%`, color: 'text-emerald-400' },
+              { label: 'Valor Elenco', val: `$${(players.reduce((s, p) => s + (p.marketValue || 0), 0) / 1000000).toFixed(1)}M`, color: 'text-primary' },
+              { label: 'Base/Juniores', val: players.filter(p => p.isYouth).length, color: 'text-blue-400' }
+            ].map(stat => (
+              <Card key={stat.label} className="bg-slate-900/40 border-white/5">
+                <CardContent className="p-3 text-center">
+                  <p className="text-[9px] font-bold text-muted-foreground uppercase">{stat.label}</p>
+                  <p className={`text-lg font-black ${stat.color}`}>{stat.val}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
-        {/* Right Column: Tactical Settings & Bench */}
         <div className="lg:col-span-4 space-y-4">
-          <Tabs defaultValue="formation" className="w-full">
+          <Tabs defaultValue="style" className="w-full">
             <TabsList className="w-full grid grid-cols-3 h-12 bg-slate-950/40 border-white/5 p-1 rounded-xl">
-              <TabsTrigger value="formation" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
-                <LayoutGrid className="w-4 h-4" />Formação
-              </TabsTrigger>
               <TabsTrigger value="style" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
                 <Target className="w-4 h-4" />Estilo
               </TabsTrigger>
               <TabsTrigger value="roles" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
                 <Users className="w-4 h-4" />Banco
               </TabsTrigger>
+              <TabsTrigger value="details" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+                <LayoutGrid className="w-4 h-4" />Funções
+              </TabsTrigger>
             </TabsList>
 
             <div className="mt-4">
-              {/* Formation Tab */}
-              <TabsContent value="formation" className="m-0 space-y-4">
-                {/* Presets Grid */}
+              <TabsContent value="style" className="m-0 space-y-6">
                 <div className="grid grid-cols-2 gap-2">
                   {tacticsPresets.map(preset => (
                     <button
@@ -404,361 +326,197 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, onChan
                   ))}
                 </div>
 
-        {/* Formation Tab */}
-        <TabsContent value="formation">
-          <Card>
-            <CardContent className="pt-3 px-3 sm:px-4 pb-3 space-y-3">
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
-                {allFormations.map(f => (
-                  <button
-                    key={f}
-                    className={`text-[10px] sm:text-xs py-2 rounded-md font-mono font-bold transition-all ${
-                      tactics.formation === f
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-muted/30 text-muted-foreground hover:bg-muted/60'
-                    }`}
-                    onClick={() => setField('formation', f)}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-              <div className="bg-muted/30 rounded-lg p-2.5 flex items-start gap-2 border border-border/50">
-                <Info className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                <p className="text-[9px] sm:text-[11px] text-muted-foreground leading-relaxed">{formationDescriptions[tactics.formation]}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <div className="space-y-4">
+                  <div>
+                    <SectionLabel icon={Target} label="Filosofia de Jogo" />
+                    <div className="grid grid-cols-3 gap-2">
+                      {MAIN_PLAY_STYLES.map(s => (
+                        <button
+                          key={s}
+                          onClick={() => setField('playStyle', s)}
+                          className={`text-[10px] py-3 rounded-xl font-black transition-all border-2 ${
+                            tactics.playStyle === s ? 'bg-primary border-primary text-primary-foreground' : 'bg-slate-900/40 text-muted-foreground border-white/5'
+                          }`}
+                        >
+                          {playStyleEffects[s].label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-        {/* Style Tab */}
-        <TabsContent value="style">
-          <Card>
-            <CardContent className="space-y-3 pt-3 px-3 sm:px-4 pb-3">
-              <div>
-                <SectionLabel icon={Target} label="Mentalidade / Estilo Principal" />
-                <div className="grid grid-cols-3 gap-1.5">
-                  {MAIN_PLAY_STYLES.map(s => {
-                    const eff = playStyleEffects[s];
-                    const isActive = tactics.playStyle === s;
-                    return (
-                      <button
-                        key={s}
-                        onClick={() => setField('playStyle', s)}
-                        className={`text-[10px] py-2 px-1 rounded-md font-medium transition-all flex flex-col items-center justify-center gap-0.5 min-w-0 border ${
-                          isActive
-                            ? 'bg-primary text-primary-foreground shadow-md border-primary scale-[1.02]'
-                            : 'bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground border-border/40'
-                        }`}
-                      >
-                        <span className="text-base">{eff.icon}</span>
-                        <span className="truncate w-full text-center leading-tight">{eff.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Descriptive card */}
-                {(() => {
-                  const eff = playStyleEffects[tactics.playStyle];
-                  return (
-                    <div className="mt-2 bg-primary/5 border border-primary/20 rounded-md p-2.5 space-y-1">
-                      <p className="text-[11px] font-bold flex items-center gap-1.5">
-                        <span className="text-base">{eff.icon}</span>{eff.label}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground italic leading-tight">{eff.philosophy}</p>
-                      <div className="space-y-0.5">
-                        {eff.bullets.map((b, i) => (
-                          <p key={i} className="text-[10px] text-foreground/80">{b}</p>
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="advanced" className="border-white/5">
+                      <AccordionTrigger className="text-xs font-black uppercase tracking-widest hover:no-underline">Estilos Avançados</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-2 gap-2">
+                          {ADVANCED_PLAY_STYLES.map(s => (
+                            <button key={s} onClick={() => setField('playStyle', s)} className={`text-[10px] py-2 rounded-lg font-bold border ${tactics.playStyle === s ? 'bg-primary border-primary' : 'bg-slate-900 border-white/5 text-muted-foreground'}`}>
+                              {playStyleEffects[s].label}
+                            </button>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+
+                  {[
+                    { label: 'Pressão', icon: Zap, key: 'pressing' as const, options: ['baixo', 'medio', 'alto', 'ultra-alto'] },
+                    { label: 'Ritmo', icon: Zap, key: 'tempo' as const, options: ['lento', 'normal', 'rapido', 'muito-rapido'] },
+                    { label: 'Passe', icon: Target, key: 'passingStyle' as const, options: ['curto', 'misto', 'longo', 'direto'] }
+                  ].map(ctrl => (
+                    <div key={ctrl.label}>
+                      <SectionLabel icon={ctrl.icon} label={ctrl.label} />
+                      <div className="flex gap-1.5">
+                        {ctrl.options.map(opt => (
+                          <TacticButton key={opt} value={opt} current={tactics[ctrl.key] as string} label={opt} onClick={v => setField(ctrl.key, v as any)} />
                         ))}
                       </div>
+                      <TacticInfoCard category={ctrl.key} value={tactics[ctrl.key] as string} />
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="roles" className="m-0">
+                <Card className="bg-slate-950/40 border-white/5">
+                  <CardContent className="p-4 space-y-3">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <Users className="w-3 h-3 text-blue-400" /> BANCO DE RESERVAS ({reserves.length})
+                    </p>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
+                      {reserves.length === 0 ? (
+                        <p className="text-[10px] text-muted-foreground italic text-center py-4">Nenhum reserva disponível</p>
+                      ) : (
+                        reserves.map((p, idx) => (
+                          <div 
+                            key={p.id} 
+                            onClick={() => setSelectedPlayer(p)}
+                            className="flex items-center justify-between bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-white/5 transition-all cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] border-2 border-white/10 ${p.injury ? 'grayscale opacity-50 bg-slate-800' : 'bg-slate-800'}`}>
+                                {p.overall}
+                              </div>
+                              <div>
+                                <p className="text-[11px] font-black text-white group-hover:text-primary transition-colors">{p.name}</p>
+                                <p className="text-[9px] text-muted-foreground font-bold">{p.position} • {p.age} anos</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {p.injury && <Activity className="w-3 h-3 text-red-500" />}
+                              <div className="w-12 h-1.5 bg-black/40 rounded-full overflow-hidden">
+                                <div className={`h-full ${p.stamina < 50 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${p.stamina}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="details" className="m-0 space-y-3">
+                {[
+                  { label: 'Capitão', key: 'captainId' as const, icon: '©️' },
+                  { label: 'Faltas', key: 'freeKickTakerId' as const, icon: '🎯' },
+                  { label: 'Pênaltis', key: 'penaltyTakerId' as const, icon: '⚽' },
+                  { label: 'Escanteios', key: 'cornerTakerId' as const, icon: '🚩' },
+                ].map(role => {
+                  const assigned = players.find(p => p.id === tactics[role.key]);
+                  return (
+                    <div key={role.key} className="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{role.icon}</span>
+                        <div>
+                          <p className="text-[10px] font-black text-muted-foreground uppercase">{role.label}</p>
+                          <p className="text-xs font-bold text-white">{assigned?.name || 'Não definido'}</p>
+                        </div>
+                      </div>
+                      <select
+                        className="bg-slate-800 text-[10px] font-bold border-white/10 rounded-lg px-2 py-1.5 text-white"
+                        value={tactics[role.key] || ''}
+                        onChange={e => setField(role.key, e.target.value || undefined)}
+                      >
+                        <option value="">SELECIONAR...</option>
+                        {starters.map(p => <option key={p.id} value={p.id}>{p.name} ({p.overall})</option>)}
+                      </select>
                     </div>
                   );
-                })()}
+                })}
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </div>
 
-                {/* Advanced styles accordion */}
-                <Accordion type="single" collapsible className="mt-2">
-                  <AccordionItem value="advanced" className="border border-border/40 rounded-md">
-                    <AccordionTrigger className="text-[10px] px-2.5 py-2 hover:no-underline">
-                      <span className="flex items-center gap-1.5">
-                        <Star className="w-3 h-3 text-primary" />
-                        Estilos Avançados ({ADVANCED_PLAY_STYLES.length})
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-2 pb-2">
-                      <div className="grid grid-cols-3 gap-1">
-                        {ADVANCED_PLAY_STYLES.map(s => {
-                          const eff = playStyleEffects[s];
-                          const isActive = tactics.playStyle === s;
-                          return (
-                            <button
-                              key={s}
-                              onClick={() => setField('playStyle', s)}
-                              className={`text-[9px] py-1.5 px-1 rounded-md font-medium transition-all flex items-center justify-center gap-1 min-w-0 ${
-                                isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/40 text-muted-foreground hover:bg-muted/70'
-                              }`}
-                            >
-                              <span>{eff.icon}</span>
-                              <span className="truncate">{eff.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
-              <div>
-                <SectionLabel icon={Zap} label="Pressão" />
-                <div className="flex gap-1">
-                  {(['baixo', 'medio', 'alto', 'ultra-alto'] as Pressing[]).map(p => (
-                    <TacticButton key={p} value={p} current={tactics.pressing} label={p === 'ultra-alto' ? 'ultra' : p} onClick={v => setField('pressing', v)} />
-                  ))}
-                </div>
-                <TacticInfoCard category="pressing" value={tactics.pressing} />
-              </div>
-              <div>
-                <SectionLabel icon={Zap} label="Ritmo" />
-                <div className="flex gap-1">
-                  {(['lento', 'normal', 'rapido', 'muito-rapido'] as Tempo[]).map(t => (
-                    <TacticButton key={t} value={t} current={tactics.tempo} label={t === 'rapido' ? 'rápido' : t === 'muito-rapido' ? 'intenso' : t} onClick={v => setField('tempo', v)} />
-                  ))}
-                </div>
-                <TacticInfoCard category="tempo" value={tactics.tempo} />
-              </div>
-              <div>
-                <SectionLabel icon={Shield} label="Marcação" />
-                <div className="flex gap-1">
-                  {(['zona', 'misto', 'individual'] as Marking[]).map(m => (
-                    <TacticButton key={m} value={m} current={tactics.marking} onClick={v => setField('marking', v)} />
-                  ))}
-                </div>
-                <TacticInfoCard category="marking" value={tactics.marking} />
-              </div>
-              <div>
-                <SectionLabel icon={Target} label="Passe" />
-                <div className="flex gap-1">
-                  {(['curto', 'misto', 'longo', 'direto'] as PassingStyle[]).map(p => (
-                    <TacticButton key={p} value={p} current={tactics.passingStyle} onClick={v => setField('passingStyle', v)} />
-                  ))}
-                </div>
-                <TacticInfoCard category="passingStyle" value={tactics.passingStyle} />
-              </div>
-              <div>
-                <SectionLabel icon={Shield} label="Linha Defensiva" />
-                <div className="flex gap-1">
-                  {(['baixa', 'media', 'alta'] as DefenseLine[]).map(d => (
-                    <TacticButton key={d} value={d} current={tactics.defenseLine} label={d === 'media' ? 'média' : d} onClick={v => setField('defenseLine', v)} />
-                  ))}
-                </div>
-                <TacticInfoCard category="defenseLine" value={tactics.defenseLine} />
-              </div>
-              <div>
-                <SectionLabel icon={Users} label="Largura" />
-                <div className="flex gap-1">
-                  {(['estreita', 'normal', 'larga'] as Width[]).map(w => (
-                    <TacticButton key={w} value={w} current={tactics.width} onClick={v => setField('width', v)} />
-                  ))}
-                </div>
-                <TacticInfoCard category="width" value={tactics.width} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Roles Tab */}
-        <TabsContent value="roles">
-          <Card>
-            <CardContent className="space-y-2 pt-3 px-3 sm:px-4 pb-3">
-              {[
-                { label: 'Capitão', key: 'captainId' as const, icon: '©️' },
-                { label: 'Cobrador de Falta', key: 'freeKickTakerId' as const, icon: '🎯' },
-                { label: 'Cobrador de Pênalti', key: 'penaltyTakerId' as const, icon: '⚽' },
-                { label: 'Cobrador de Escanteio', key: 'cornerTakerId' as const, icon: '🚩' },
-              ].map(role => {
-                const assigned = players.find(p => p.id === tactics[role.key]);
-                return (
-                  <div key={role.key} className="flex items-center justify-between bg-muted/30 rounded-lg p-2.5 border border-border/50">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{role.icon}</span>
-                      <div>
-                        <p className="text-[10px] sm:text-xs font-semibold">{role.label}</p>
-                        <p className="text-[9px] sm:text-[10px] text-muted-foreground">
-                          {assigned ? (
-                            <span className="text-primary font-medium">{assigned.name} <span className="text-muted-foreground">(OVR {assigned.overall})</span></span>
-                          ) : (
-                            <span className="text-destructive/70">Não definido</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <select
-                      className="text-[9px] sm:text-[10px] bg-background border border-border rounded-md px-1.5 py-1 max-w-[110px] sm:max-w-[160px]"
-                      value={tactics[role.key] || ''}
-                      onChange={e => setField(role.key, e.target.value || undefined)}
-                    >
-                      <option value="">Selecionar...</option>
-                      {players.filter(p => !p.injury).map(p => (
-                        <option key={p.id} value={p.id}>{p.name} ({p.position} {p.overall})</option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Tactical Summary - compact */}
-      <Card className="border-primary/10">
-        <CardContent className="p-3 sm:p-4">
-          <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-            <Star className="w-3 h-3 text-primary" /> Resumo Tático
-          </p>
-          <div className="flex flex-wrap gap-1">
-            <Badge className="text-[9px] sm:text-[10px]">{tactics.formation}</Badge>
-            <Badge variant="secondary" className="text-[9px] sm:text-[10px] capitalize">{tactics.playStyle}</Badge>
-            <Badge variant="outline" className="text-[9px] sm:text-[10px]">⬆ {tactics.pressing}</Badge>
-            <Badge variant="outline" className="text-[9px] sm:text-[10px]">⏱ {tactics.tempo === 'rapido' ? 'rápido' : tactics.tempo === 'muito-rapido' ? 'intenso' : tactics.tempo}</Badge>
-            <Badge variant="outline" className="text-[9px] sm:text-[10px]">🛡 {tactics.marking}</Badge>
-            <Badge variant="outline" className="text-[9px] sm:text-[10px]">📐 {tactics.passingStyle}</Badge>
-            <Badge variant="outline" className="text-[9px] sm:text-[10px]">📏 {tactics.defenseLine}</Badge>
-            <Badge variant="outline" className="text-[9px] sm:text-[10px]">↔ {tactics.width}</Badge>
-          </div>
-          {tactics.captainId && (
-            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1.5">
-              ©️ {players.find(p => p.id === tactics.captainId)?.name ?? '—'}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Player detail dialog */}
       <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
-        <DialogContent className="max-w-xs border-primary/20 bg-slate-900/95 backdrop-blur-xl p-0 overflow-hidden">
-          <div className="bg-primary/20 p-4 border-b border-white/10 flex items-center justify-between">
-            <div>
-               <h3 className="text-base font-black text-white uppercase tracking-tight">{selectedPlayer?.name}</h3>
-               <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{selectedPlayer?.position} • OVR {selectedPlayer?.overall}</p>
-            </div>
-            <Badge className="bg-white/10 text-white border-white/20">#{selectedPlayer?.shirtNumber || '—'}</Badge>
-          </div>
-          {selectedPlayer && (() => {
-            const attrLabels: Record<string, { label: string; icon: string }> = {
-              speed: { label: 'Velocidade', icon: '⚡' },
-              shooting: { label: 'Finalização', icon: '🎯' },
-              passing: { label: 'Passe', icon: '📐' },
-              defending: { label: 'Defesa', icon: '🛡️' },
-              physical: { label: 'Físico', icon: '💪' },
-              dribbling: { label: 'Drible', icon: '🎨' },
-              setPieces: { label: 'Bola Parada', icon: '🎱' },
-              positioning: { label: 'Posicionamento', icon: '📍' },
-              heading: { label: 'Cabeceio', icon: '🗣️' },
-              marking: { label: 'Marcação', icon: '🔒' },
-              vision: { label: 'Visão de Jogo', icon: '👁️' },
-              crossing: { label: 'Cruzamento', icon: '🎯' },
-              longShots: { label: 'Chute de Longe', icon: '🚀' },
-              workRate: { label: 'Intensidade', icon: '🔥' },
-              composure: { label: 'Compostura', icon: '🧠' },
-              aggression: { label: 'Agressividade', icon: '⚔️' },
-              goalkeeping: { label: 'Defesa de Goleiro', icon: '🧤' },
-            };
-            const getAttrColor = (val: number) => {
-              if (val >= 80) return 'text-emerald-400';
-              if (val >= 60) return 'text-primary';
-              if (val >= 40) return 'text-yellow-400';
-              return 'text-red-400';
-            };
-            return (
-            <div className="p-4 space-y-4">
-              {/* Energia e Moral */}
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: 'Energia', icon: <Zap className="w-3 h-3" />, value: selectedPlayer.stamina ?? 100, color: 'text-yellow-400' },
-                  { label: 'Moral', icon: <Heart className="w-3 h-3" />, value: selectedPlayer.morale ?? 50, color: 'text-emerald-400' },
-                ].map(stat => (
-                  <div key={stat.label} className="bg-white/5 rounded-xl p-2.5 border border-white/10">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1">{stat.icon} {stat.label}</span>
-                      <span className={`text-[10px] font-black ${stat.color}`}>{stat.value}%</span>
-                    </div>
-                    <Progress value={stat.value} className="h-1.5 bg-white/5" />
-                  </div>
-                ))}
-              </div>
-
-              {/* Goalkeeping highlight for GK */}
-              {selectedPlayer.position === 'GOL' && selectedPlayer.attributes.goalkeeping != null && (
-                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1">🧤 Defesa de Goleiro</span>
-                    <span className={`text-sm font-black ${getAttrColor(selectedPlayer.attributes.goalkeeping)}`}>{selectedPlayer.attributes.goalkeeping}</span>
-                  </div>
-                  <Progress value={selectedPlayer.attributes.goalkeeping} className="h-1.5" />
+        <DialogContent className="max-w-md border-primary/20 bg-slate-900/95 backdrop-blur-xl p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+          {selectedPlayer && (
+            <div className="flex flex-col">
+              <div className="bg-gradient-to-br from-primary/30 to-slate-900 p-8 border-b border-white/10 relative">
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                  <Star className="w-32 h-32 text-primary" />
                 </div>
-              )}
-              <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                {Object.entries(selectedPlayer.attributes)
-                  .filter(([key, val]) => val != null && !(selectedPlayer.position === 'GOL' && key === 'goalkeeping'))
-                  .sort((a, b) => (b[1] as number) - (a[1] as number)) // Sort by value
-                  .map(([key, val]) => (
-                  <div key={key} className="bg-white/5 rounded-lg p-2 border border-white/5">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[8px] font-bold text-white/30 uppercase tracking-widest truncate max-w-[50px]">{attrLabels[key]?.label || key}</span>
-                      <span className={`text-[10px] font-black ${getAttrColor(val as number)}`}>{val}</span>
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-6">
+                    <div className="w-24 h-24 rounded-full bg-slate-800 border-4 border-white/20 flex items-center justify-center text-5xl font-black text-white shadow-2xl">
+                      {selectedPlayer.overall}
                     </div>
-                    <Progress value={val as number} className="h-1 bg-white/5" />
+                    <div>
+                      <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">{selectedPlayer.name}</h2>
+                      <div className="flex items-center gap-3 mt-3">
+                        <Badge className="bg-primary/20 text-primary border-primary/30 text-xs font-black px-3 py-1">{selectedPlayer.position}</Badge>
+                        <Badge variant="outline" className="text-white/60 text-xs font-bold px-3 py-1">#{selectedPlayer.shirtNumber || '--'}</Badge>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-border/50">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-primary" /> Alterar Posição (Experimental)
-                </p>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(pos => (
-                    <Button
-                      key={pos}
-                      size="sm"
-                      variant={selectedPlayer.position === pos ? 'default' : 'outline'}
-                      className={`h-8 text-[10px] font-bold ${selectedPlayer.position === pos ? 'shadow-md shadow-primary/20' : ''}`}
-                      onClick={() => {
-                        onChangePosition?.(selectedPlayer.id, pos as any);
-                        setSelectedPlayer(prev => prev ? { ...prev, position: pos as any } : null);
-                      }}
-                    >
-                      {pos}
-                    </Button>
-                  ))}
                 </div>
               </div>
 
-              <div className="space-y-1.5 pt-2 border-t border-border/50">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-primary" /> Atribuir função no time
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
+              <div className="p-8 space-y-8">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-[11px] font-black uppercase text-muted-foreground">
+                      <span>VIGOR FÍSICO</span>
+                      <span className="text-emerald-400">{selectedPlayer.stamina}%</span>
+                    </div>
+                    <Progress value={selectedPlayer.stamina} className="h-2 bg-white/5" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-[11px] font-black uppercase text-muted-foreground">
+                      <span>MORAL</span>
+                      <span className="text-primary">{selectedPlayer.morale}%</span>
+                    </div>
+                    <Progress value={selectedPlayer.morale} className="h-2 bg-white/5" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: '©️ Capitão', key: 'captainId' as const },
-                    { label: '🎯 Falta', key: 'freeKickTakerId' as const },
-                    { label: '⚽ Pênalti', key: 'penaltyTakerId' as const },
-                    { label: '🚩 Escanteio', key: 'cornerTakerId' as const },
-                  ].map(role => (
-                    <Button
-                      key={role.key}
-                      size="sm"
-                      variant={tactics[role.key] === selectedPlayer.id ? 'default' : 'outline'}
-                      className="text-[10px] h-8 justify-center font-medium"
-                      onClick={() => setSpecialRole(role.key, selectedPlayer.id)}
-                    >
-                      {role.label} {tactics[role.key] === selectedPlayer.id && '✓'}
-                    </Button>
+                    { label: 'IDADE', val: `${selectedPlayer.age} anos`, icon: <Users className="w-4 h-4 text-blue-400" /> },
+                    { label: 'VALOR', val: `$${((selectedPlayer.marketValue || 0) / 1000000).toFixed(1)}M`, icon: <Zap className="w-4 h-4 text-primary" /> },
+                    { label: 'STATUS', val: selectedPlayer.evolutionTrend === 'up' ? 'EM ALTA' : 'ESTÁVEL', icon: <TrendingUp className="w-4 h-4 text-emerald-400" /> }
+                  ].map(card => (
+                    <div key={card.label} className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center">
+                      <div className="flex justify-center mb-2">{card.icon}</div>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase">{card.label}</p>
+                      <p className="text-sm font-black text-white">{card.val}</p>
+                    </div>
                   ))}
+                </div>
+
+                <div className="flex gap-3">
+                   <button className="flex-1 bg-primary text-primary-foreground py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">
+                     TREINAMENTO
+                   </button>
+                   <button className="flex-1 bg-white/10 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10">
+                     RENOVAÇÃO
+                   </button>
                 </div>
               </div>
             </div>
-            );
-          })()}
+          )}
         </DialogContent>
       </Dialog>
     </div>
