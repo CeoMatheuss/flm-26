@@ -223,6 +223,9 @@ export interface Club {
     bannerColor?: string;
   };
   uniform_launches_available?: number;
+  total_members?: number;
+  engagement_rate?: number;
+  sales_bonus_multiplier?: number;
 }
 
 export interface StaffMember {
