@@ -801,7 +801,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Lado Esquerdo: Pitch (Exclusivo Mobile View ou Desktop Sidebar) */}
             <AnimatePresence mode="wait">
-              {(activeTacticalView === 'pitch' || window.innerWidth > 1024) && (
+              {true && (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
