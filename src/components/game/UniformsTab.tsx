@@ -346,7 +346,7 @@ function generateShirtSales(players?: Props['players'], reputation?: number): Sh
   return sorted.slice(0, 10);
 }
 
-export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sponsors, players, clubReputation }: Props) {
+export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sponsors, players, clubReputation, customizationUnlocked }: Props) {
   const [activeKit, setActiveKit] = useState<'home' | 'away' | 'third' | 'goalkeeper'>('home');
   const [kits, setKits] = useState<UniformsData>(uniforms || {
     home: { ...defaultHome, shirtColor: primaryColor || defaultHome.shirtColor, shirtSecondaryColor: secondaryColor || defaultHome.shirtSecondaryColor },
