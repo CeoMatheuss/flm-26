@@ -904,13 +904,15 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   ))}
                 </div>
               </div>
-              { v: 'all', label: 'Todos' },
-              { v: '90+', label: '90+' },
-              { v: '80-89', label: '80-89' },
-              { v: '70-79', label: '70-79' },
-              { v: '60-69', label: '60-69' },
-              { v: '<60', label: '< 60' },
-            ] as const).map(({ v, label }) => {
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
+                {([
+                  { v: 'all', label: 'Todos' },
+                  { v: '90+', label: '90+' },
+                  { v: '80-89', label: '80-89' },
+                  { v: '70-79', label: '70-79' },
+                  { v: '60-69', label: '60-69' },
+                  { v: '<60', label: '< 60' },
+                ] as const).map(({ v, label }) => {
               const count = v === 'all' ? players.length : players.filter(p => {
                 if (v === '90+') return p.overall >= 90;
                 if (v === '80-89') return p.overall >= 80 && p.overall < 90;
