@@ -152,12 +152,13 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
 
   const stats = [
-    { label: 'Saldo', value: formatMoneyShort(club.budget), icon: DollarSign, color: 'text-emerald-400' },
+    { label: 'Saldo', value: formatMoneyShort(club.budget), icon: DollarSign, color: club.budget >= 0 ? 'text-emerald-400' : 'text-red-400' },
     { label: 'Torcida', value: (club.fans || 0) >= 1000 ? `${((club.fans || 0) / 1000).toFixed(0)}k` : (club.fans || 0).toLocaleString(), icon: Users, color: 'text-foreground' },
     { label: 'Pontos', value: club.stats.points.toString(), icon: Trophy, color: 'text-foreground' },
     { label: 'Aproveit.', value: `${winRate}%`, icon: TrendingUp, color: 'text-foreground' },
     { label: 'Reputação', value: `${club.reputation}`, icon: Star, color: 'text-primary' },
   ];
+
 
   function formatMoneyShort(val: number) {
     return `R$ ${val.toLocaleString('pt-BR')}`;
