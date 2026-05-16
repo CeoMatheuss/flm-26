@@ -8,6 +8,7 @@ import { TrainingFocus } from '@/components/game/TrainingTab';
 import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
 import { getPlayerValue, generateMarketPlayers, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
 import { initialClub } from '@/data/initialData';
+import { autoLineup } from "@/utils/lineupManager";
 import { toast } from 'sonner';
 import {
   buildStadiumModules,
