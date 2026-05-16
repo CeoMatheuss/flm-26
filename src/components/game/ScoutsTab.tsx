@@ -65,7 +65,9 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
   };
 
   useEffect(() => {
-    fetchScoutingData();
+    if (userId) {
+      fetchScoutingData();
+    }
   }, [userId]);
 
   const handleHireScout = async (scout: ScoutV3) => {
