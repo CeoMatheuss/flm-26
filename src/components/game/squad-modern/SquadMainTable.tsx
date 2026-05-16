@@ -227,7 +227,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-white truncate sm:overflow-visible sm:whitespace-normal group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
+            <span className="text-base font-black text-white truncate sm:overflow-visible sm:whitespace-normal group-hover:text-emerald-400 transition-colors uppercase tracking-tighter">
               {player.name}
             </span>
             <span className="text-sm">{flagFor((player as any).country)}</span>
