@@ -39,10 +39,10 @@ function TacticButton<T extends string>({ value, current, label, onClick }: { va
   const isActive = current === value;
   return (
     <button
-      className={`flex-1 capitalize text-[11px] sm:text-sm min-w-0 px-3 py-2.5 sm:py-3 rounded-xl font-bold transition-all ${
+      className={`flex-1 capitalize text-[10px] font-black min-w-[70px] px-2 py-3 rounded-xl transition-all border-2 ${
         isActive
-          ? 'bg-primary text-primary-foreground shadow-sm'
-          : 'bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+          ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+          : 'bg-zinc-900/60 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'
       }`}
       onClick={() => onClick(value)}
     >
