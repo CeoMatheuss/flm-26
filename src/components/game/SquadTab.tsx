@@ -151,7 +151,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
   const [loanSubmitting, setLoanSubmitting] = useState(false);
   const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
-  const [activeTacticalView, setActiveTacticalView] = useState<'list' | 'pitch'>('pitch');
+  // activeTacticalView state removed to show both pitch and list as requested
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
 
