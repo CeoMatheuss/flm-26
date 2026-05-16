@@ -882,50 +882,28 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               </div>
 
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <button
-              className={`shrink-0 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${!filterPos ? 'bg-primary text-primary-foreground' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70'}`}
-              onClick={() => setFilterPos(null)}
-            >
-              Todos ({players.length})
-            </button>
-            {posOrder.map(pos => {
-              const count = players.filter(p => p.position === pos).length;
-              return (
-                <button
-                  key={pos}
-                  className={`shrink-0 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${filterPos === pos ? 'bg-primary text-primary-foreground' : 'bg-accent/40 text-muted-foreground hover:bg-accent/70'}`}
-                  onClick={() => setFilterPos(filterPos === pos ? null : pos)}
-                >
-                  {pos} ({count})
-                </button>
-              );
-            })}
-            <div className="shrink-0 ml-auto flex items-center gap-1 border-l border-border/30 pl-1.5">
-              <span className="text-[9px] text-muted-foreground shrink-0">↕</span>
-              {(['position', 'overall', 'age', 'value', 'salary'] as const).map(s => (
-                <button
-                  key={s}
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${sortBy === s ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                  onClick={() => setSortBy(s)}
-                  title={
-                    s === 'position' ? 'Por posição' :
-                    s === 'overall' ? 'Melhor OVR primeiro' :
-                    s === 'age' ? 'Mais jovem primeiro' :
-                    s === 'value' ? 'Maior valor primeiro' :
-                    'Maior salário primeiro'
-                  }
-                >
-                  {s === 'position' ? 'Pos' : s === 'overall' ? 'OVR ↓' : s === 'age' ? 'Jovem ↑' : s === 'value' ? 'Valor ↓' : 'Salário ↓'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Filtro por faixa de OVR */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <span className="text-[9px] text-muted-foreground shrink-0 uppercase tracking-wider">OVR:</span>
-            {([
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
+                {(['overall', 'age', 'value'] as const).map(s => (
+                  <button
+                    key={s}
+                    className={`px-2 py-1 rounded text-[8px] font-black uppercase transition-colors whitespace-nowrap ${sortBy === s ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-white/5 text-muted-foreground hover:text-white border border-transparent'}`}
+                    onClick={() => setSortBy(s)}
+                  >
+                    {s === 'overall' ? 'OVR ↓' : s === 'age' ? 'IDADE' : 'VALOR'}
+                  </button>
+                ))}
+                <div className="ml-auto flex items-center gap-1">
+                  {posOrder.map(pos => (
+                    <button
+                      key={pos}
+                      className={`w-6 h-6 flex items-center justify-center rounded text-[8px] font-black transition-all ${filterPos === pos ? 'bg-emerald-500 text-zinc-950 shadow-lg' : 'bg-white/5 text-muted-foreground hover:bg-white/10'}`}
+                      onClick={() => setFilterPos(filterPos === pos ? null : pos)}
+                    >
+                      {pos[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
               { v: 'all', label: 'Todos' },
               { v: '90+', label: '90+' },
               { v: '80-89', label: '80-89' },
