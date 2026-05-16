@@ -132,7 +132,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
     const result = clubState.signFreeAgent(player, offeredSalary);
     if (result) {
-      financeState.addFinance('despesa', 'Transferência Livre', result.salary * 3, `Assinatura: ${player.name} (3 meses adiantados)`);
+      financeState.addFinance('despesa', 'Transferência', result.salary * 3, `Assinatura: ${player.name} (3 meses adiantados)`);
     }
   }, [clubState.signFreeAgent, financeState.addFinance]);
 
