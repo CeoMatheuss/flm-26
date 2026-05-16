@@ -278,6 +278,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
 
         setShowPremium(true);
         toast.success(`Compra concluída: ${selectedItem.name}!`);
+        
+        // Ativa o item no sistema FLM
+        await storeManager.activateItem(selectedItem);
+        
         const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
         audio.volume = 0.3;
         audio.play().catch(() => {});
