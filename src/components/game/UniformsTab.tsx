@@ -122,6 +122,7 @@ interface Props {
   sponsors?: Sponsor[];
   players?: Array<{ name: string; position: string; overall: number; goals?: number; gamesPlayed?: number }>;
   clubReputation?: number;
+  customizationUnlocked?: boolean;
 }
 
 function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; sponsorName?: string; size?: 'sm' | 'md' | 'lg' }) {
