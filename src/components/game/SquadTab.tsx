@@ -1067,7 +1067,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {outList.length === 0 ? (
                   <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
                 ) : (
-                  outList.map(({ player }) => (
+                outList.map(({ player }) => (
                     <SquadCard 
                       key={player.id} 
                       player={player} 
@@ -1078,7 +1078,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                           setViewingPlayer(player);
                         }
                       }}
-                      onSwap={(p) => startSwap(p, 'reserves')}
+                      onSwap={(p) => startSwap(p, 'out')}
                       isPendingSwap={pendingSwap?.player.id === player.id}
                     />
                   ))
