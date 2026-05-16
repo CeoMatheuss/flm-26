@@ -119,7 +119,7 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
               <TooltipTrigger asChild>
                 <button 
                   onClick={() => window.dispatchEvent(new CustomEvent('flm:auto-lineup'))}
-                  className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/20 transition-all active:scale-95"
+                  className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/20 transition-all active:scale-95"
                 >
                   <Zap className="w-4 h-4 fill-emerald-400" />
                 </button>
