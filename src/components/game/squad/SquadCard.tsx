@@ -90,8 +90,11 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
               {player.shirtNumber && (
                 <span className="text-xs font-mono font-black text-white/40">#{player.shirtNumber}</span>
               )}
+              {player.position !== 'GOL' && player.attributes.goalkeeping && player.attributes.goalkeeping > 40 && (
+                 <Badge variant="outline" className="text-[8px] bg-red-500/20 text-red-400 border-red-500/30">Fora de Posição</Badge>
+              )}
             </div>
-            <h3 className="text-base font-black text-white uppercase tracking-tight truncate max-w-[140px]">{player.name}</h3>
+            <h3 className="text-base font-black text-white uppercase italic tracking-tighter truncate max-w-[140px]">{player.name}</h3>
             <div className="flex items-center gap-2">
                <span className="text-[10px] font-bold text-white/40 uppercase">{player.age} anos</span>
                {player.personality && <span className="text-xs" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>}
