@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { Player } from '@/types/game';
 import { generateFreeAgents } from '@/utils/playerGenerator';
-import { Gift, Star, Sparkles, Crown, Lock, Unlock, Zap, HelpCircle } from 'lucide-react';
+import { Gift, Star, Sparkles, Crown, Lock, Unlock, Zap, HelpCircle, Loader2 } from 'lucide-react';
 import stickerPackImg from '@/assets/sticker-pack.png';
 import { supabase } from '@/integrations/supabase/client';
 import { useLiveMatchGuard } from './LiveMatchGuard';
@@ -115,6 +115,7 @@ export function PacotinhosTab({ budget, onBuyPack: _onBuyPack, userId }: Props) 
   const [packShake, setPackShake] = useState(false);
   const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const currentPlayer = generatedPlayers[currentPlayerIdx];
 
@@ -222,6 +223,13 @@ export function PacotinhosTab({ budget, onBuyPack: _onBuyPack, userId }: Props) 
     if (val >= 55) return 'bg-primary';
     return 'bg-muted-foreground';
   };
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground animate-pulse font-bold uppercase tracking-widest">Sincronizando Pacotinhos...</p>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
