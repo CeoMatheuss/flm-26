@@ -195,7 +195,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-8 space-y-4">
-          <Card className="border-primary/20 bg-slate-950/60 backdrop-blur-xl overflow-hidden relative shadow-2xl">
+          <Card className="border-primary/20 bg-slate-900/40 rounded-[2.5rem] overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
               <Shield className="w-32 h-32 text-primary rotate-12" />
             </div>
@@ -303,7 +303,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
 
         <div className="lg:col-span-4 space-y-4">
           <Tabs defaultValue="style" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-12 bg-slate-950/40 border-white/5 p-1 rounded-xl">
+            <TabsList className="w-full grid grid-cols-3 h-14 bg-slate-900/60 border border-white/5 p-1 rounded-2xl">
               <TabsTrigger value="style" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
                 <Target className="w-4 h-4" />Estilo
               </TabsTrigger>

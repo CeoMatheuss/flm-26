@@ -192,10 +192,10 @@ export function SquadModernLayout({
         onCancelSwap={() => setPendingSwap(null)}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative gap-6 p-6">
         {/* Main Content Area: Tabs & Tables */}
         <div className={cn(
-          "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500",
+          "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500 bg-zinc-900/30 rounded-[2.5rem] border border-white/5",
           viewMode === 'pitch' ? "hidden xl:flex" : "flex"
         )}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -260,7 +260,7 @@ export function SquadModernLayout({
 
         {/* Tactical Panel (Desktop Right Side or Mobile Overlay) */}
         <div className={cn(
-          "w-full xl:w-[480px] flex-col border-l border-white/5 bg-zinc-950/50 overflow-hidden relative group transition-all duration-500",
+          "w-full xl:w-[480px] flex-col border border-white/5 bg-zinc-900/30 rounded-[2.5rem] overflow-hidden relative group transition-all duration-500",
           viewMode === 'pitch' ? "flex" : "hidden xl:flex"
         )}>
            {/* Section Header */}

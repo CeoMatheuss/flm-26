@@ -91,7 +91,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
   }, [players, starterIds, activeTab, search, sortBy]);
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900/30 rounded-[2rem] border border-white/5 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Search & Filters */}
       <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
         <div className="relative w-full sm:w-64">
@@ -118,7 +118,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
         <div className="col-span-1">#</div>
         <div className="col-span-4">Jogador / Posição</div>
         <div className="col-span-1 text-center">Idade</div>
-        <div className="col-span-3 text-center">Atributos Principais</div>
+        <div className="col-span-3 text-center">Atributos</div>
         <div className="col-span-3 text-right">Contrato / Valor</div>
       </div>
 
@@ -213,7 +213,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             tier.ring, tier.glow, "bg-zinc-950/80"
           )}>
             <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
-            <span className={cn("text-base z-10", tier.color)}>{player.overall}</span>
+            <span className={cn("text-lg z-10 font-black", tier.color)}>{player.overall}</span>
             {delta !== 0 && (
                <span className="absolute -top-1 -right-1 p-0.5 z-10">
                  {delta > 0 ? (
@@ -227,7 +227,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-white truncate sm:overflow-visible sm:whitespace-normal group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
+            <span className="text-base font-black text-white truncate sm:overflow-visible sm:whitespace-normal group-hover:text-emerald-400 transition-colors uppercase tracking-tighter">
               {player.name}
             </span>
             <span className="text-sm">{flagFor((player as any).country)}</span>
@@ -272,13 +272,13 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       {/* Contract & Market Value */}
       <div className="col-span-11 sm:col-span-4 flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
         <div className="flex flex-col items-end">
-          <span className="text-[10px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[8px] opacity-40">/sem</span></span>
-          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{player.contract} Anos</span>
+          <span className="text-[11px] font-black text-white/80 italic">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
+          <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{player.contract} Anos</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end">
-            <span className="text-xs font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(value)}</span>
-            <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.1em] mt-1">Mkt Value</span>
+            <span className="text-sm font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(value)}</span>
+            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
           </div>
           <ChevronRight className={cn("w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1", isPendingSwap && "text-primary animate-bounce")} />
         </div>
