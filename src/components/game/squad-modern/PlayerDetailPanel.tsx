@@ -23,7 +23,7 @@ interface Props {
   delta: AttrDelta;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAction?: (action: 'lineup' | 'bench' | 'transfer' | 'renew' | 'train' | 'medical' | 'captain', player: Player) => void;
+  onAction?: (action: 'lineup' | 'bench' | 'transfer' | 'renew' | 'train' | 'medical' | 'captain' | 'swap', player: Player) => void;
 }
 
 export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, onAction }: Props) {
@@ -256,6 +256,7 @@ function PlayerDetailContent({
           <section className="pb-10">
             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] mb-6">Operações do Clube</h3>
             <div className="grid grid-cols-2 gap-3">
+              <ActionBtn icon={<ArrowLeftRight className="w-4 h-4" />} label="🔄 Substituir" onClick={() => onAction?.('swap', player)} className="col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400" />
               <ActionBtn icon={<Shield className="w-4 h-4" />} label="Escalar" onClick={() => onAction?.('lineup', player)} />
               <ActionBtn icon={<BedDouble className="w-4 h-4" />} label="Banco" onClick={() => onAction?.('bench', player)} />
               <ActionBtn icon={<ShoppingCart className="w-4 h-4" />} label="Negociar" onClick={() => onAction?.('transfer', player)} />

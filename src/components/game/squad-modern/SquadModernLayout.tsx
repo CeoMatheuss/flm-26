@@ -49,6 +49,7 @@ export function SquadModernLayout({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list');
+  const [pendingSwap, setPendingSwap] = useState<Player | null>(null);
 
   const deltas = useAttributeEvolution(players);
 
@@ -62,6 +63,14 @@ export function SquadModernLayout({
     window.addEventListener('flm:auto-lineup', handler);
     return () => window.removeEventListener('flm:auto-lineup', handler);
   }, [players, tactics.formation, onUpdatePlayers]);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      handleSwap(e.detail.idA, e.detail.idB);
+    };
+    window.addEventListener('flm:swap-players', handler);
+    return () => window.removeEventListener('flm:swap-players', handler);
+  }, [players, onUpdatePlayers]);
 
   // Sync youth prospects count to tab
   useEffect(() => {
@@ -97,12 +106,46 @@ export function SquadModernLayout({
   }, [players]);
 
   const handleSelect = (id: string) => {
+    if (pendingSwap && id !== pendingSwap.id) {
+      handleSwap(pendingSwap.id, id);
+      return;
+    }
     setSelectedId(id);
     setPanelOpen(true);
   };
 
-  const handleAction = (action: string, p: Player) => {
+  const handleSwap = (idA: string, idB: string) => {
+    const idxA = players.findIndex(p => p.id === idA);
+    const idxB = players.findIndex(p => p.id === idB);
+    if (idxA < 0 || idxB < 0) return;
+
+    const newPlayers = [...players];
+    [newPlayers[idxA], newPlayers[idxB]] = [newPlayers[idxB], newPlayers[idxA]];
+    
+    onUpdatePlayers(newPlayers);
+    setPendingSwap(null);
+    setPanelOpen(false);
+    toast.success('Troca realizada com sucesso!', {
+      description: `${players[idxA].name} ↔ ${players[idxB].name}`
+    });
+  };
+
+  const handleAction = (action: 'lineup' | 'bench' | 'transfer' | 'renew' | 'train' | 'medical' | 'captain' | 'swap', p: Player) => {
     switch (action) {
+      case 'swap':
+        setPendingSwap(p);
+        setPanelOpen(false);
+        // Priorizar aba de reservas para facilitar a troca se o jogador for titular
+        if (starterIds.has(p.id)) {
+          setActiveTab('reservas');
+        } else {
+          setActiveTab('titulares');
+        }
+        toast.info(`Selecione um jogador para trocar por ${p.name}`, {
+          description: "Clique em outro jogador na lista para completar a troca.",
+          duration: 5000,
+        });
+        break;
       case 'lineup':
       case 'bench':
         toast.info(`${p.name} — abra a aba Tático para alterar a escalação.`);
@@ -194,6 +237,7 @@ export function SquadModernLayout({
                         onSelect={handleSelect}
                         activeTab={activeTab}
                         userId={userId}
+                        pendingSwapId={pendingSwap?.id}
                       />
                     )}
                   </motion.div>

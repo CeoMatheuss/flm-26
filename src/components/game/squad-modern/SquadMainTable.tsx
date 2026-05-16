@@ -25,9 +25,10 @@ interface Props {
   onSelect: (id: string) => void;
   activeTab: string;
   userId: string;
+  pendingSwapId?: string | null;
 }
 
-export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId }: Props) {
+export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, pendingSwapId }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
@@ -130,7 +131,9 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               isStarter={starterIds.has(p.id)}
               isNegotiating={negotiations[p.id]}
               delta={deltas[p.id]?.overall || 0}
-              selected={selectedId === p.id}
+              selected={selectedId === p.id || pendingSwapId === p.id}
+              isPendingSwap={pendingSwapId === p.id}
+              canBeSwapped={!!pendingSwapId && pendingSwapId !== p.id}
               onClick={() => onSelect(p.id)}
             />
           ))}
@@ -161,7 +164,7 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
   );
 }
 
-function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void }) {
+function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
   const status = getPlayerStatus(player, isStarter, isNegotiating);
@@ -177,8 +180,8 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       className={cn(
         "w-full text-left rounded-2xl border flex flex-col sm:grid sm:grid-cols-12 sm:items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3 transition-all duration-300 group relative overflow-hidden",
         selected 
-          ? "bg-emerald-500/10 border-emerald-500/30 shadow-xl" 
-          : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10"
+          ? (isPendingSwap ? "bg-primary/20 border-primary ring-2 ring-primary/50 animate-pulse" : "bg-emerald-500/10 border-emerald-500/30 shadow-xl")
+          : (canBeSwapped ? "bg-white/[0.05] border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10")
       )}
     >
       {/* Decorative Glow */}
@@ -265,7 +268,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             <span className="text-xs font-black text-emerald-400 italic leading-none">{formatMoney(value)}</span>
             <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mt-1">Mkt Value</span>
           </div>
-          <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1" />
+          <ChevronRight className={cn("w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1", isPendingSwap && "text-primary animate-bounce")} />
         </div>
       </div>
     </motion.button>
