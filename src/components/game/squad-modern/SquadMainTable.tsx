@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter } from 'lucide-react';
+import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
+import { supabase } from '@/integrations/supabase/client';
 import {
   PlayerStatus,
   statusMeta,
@@ -21,6 +22,7 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   activeTab: string;
+  userId: string;
 }
 
 export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab }: Props) {
