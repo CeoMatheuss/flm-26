@@ -73,6 +73,13 @@ export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg
     border: 'border-zinc-500/20',
     dot: 'bg-zinc-500 shadow-[0_0_8px_rgba(113,113,122,0.5)]'
   },
+  negociando: { 
+    label: 'Negociando', 
+    color: 'text-amber-400', 
+    bg: 'bg-amber-400/10', 
+    border: 'border-amber-400/20',
+    dot: 'bg-amber-400 animate-pulse'
+  },
 };
 
 export const positionColors: Record<string, string> = {
