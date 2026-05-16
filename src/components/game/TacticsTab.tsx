@@ -79,7 +79,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         : "fixed inset-0 z-[100] bg-zinc-950 flex flex-col overflow-hidden animate-in fade-in duration-300"
     )}>
       {/* Premium Header */}
-      <div className="h-20 border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-10 shrink-0">
+      {!hideSwapButton && <div className="h-20 border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-10 shrink-0">
         <div className="flex items-center gap-6">
           <button 
             onClick={() => setIsOpen(false)}
