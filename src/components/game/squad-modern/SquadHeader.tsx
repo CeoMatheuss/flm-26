@@ -1,4 +1,4 @@
-import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users, Zap } from 'lucide-react';
+import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users, Zap, Shield } from 'lucide-react';
 import { ClubShield } from '../ClubShield';
 import { Club } from '@/types/game';
 import { SeasonData } from '@/types/infrastructure';
