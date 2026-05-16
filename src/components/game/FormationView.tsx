@@ -228,7 +228,7 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
   }, [pendingSwapId, onSwapPlayers, onPlayerClick, isInteractive]);
 
   return (
-    <div className="relative w-full max-w-[1200px] mx-auto aspect-[16/9] sm:aspect-[16/9] bg-[#0a1f0f] rounded-[2.5rem] overflow-hidden border-8 border-emerald-900/50 shadow-[0_0_100px_-20px_rgba(16,185,129,0.5)] select-none">
+    <div className="relative w-full max-w-[1200px] mx-auto aspect-[16/10] sm:aspect-[16/9] bg-[#0a1f0f] rounded-[2.5rem] overflow-hidden border-8 border-emerald-900/50 shadow-[0_0_100px_-20px_rgba(16,185,129,0.5)] select-none">
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grass.png')] opacity-20 pointer-events-none" />
       <div className="absolute inset-0 flex pointer-events-none">
         {[...Array(12)].map((_, i) => (
@@ -309,7 +309,7 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
                 <motion.div 
                   whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0] }}
                   whileTap={{ scale: 0.9 }}
-                  className={`w-14 h-14 sm:w-28 sm:h-28 rounded-full flex flex-col items-center justify-center text-white shadow-2xl border-4 transition-all duration-300 relative z-10
+                  className={`w-16 h-16 sm:w-28 sm:h-28 rounded-full flex flex-col items-center justify-center text-white shadow-2xl border-4 transition-all duration-300 relative z-10
                     ${isInjured ? 'bg-slate-800 grayscale border-slate-700' : (posColors[slot.position] || 'bg-slate-900')}
                     ${isCaptain ? 'border-yellow-400 ring-4 ring-yellow-400/30' : 'border-white/90'}
                     ${isJustUpdated ? 'animate-pulse ring-8 ring-primary/40' : ''}

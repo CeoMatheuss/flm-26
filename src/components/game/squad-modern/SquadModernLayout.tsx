@@ -1,4 +1,8 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { QuickSwapPanel } from '../squad/QuickSwapPanel';
+import { Button } from '@/components/ui/button';
+import { Repeat } from 'lucide-react';
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Player, Club } from '@/types/game';
 import { SeasonData, YouthProspect } from '@/types/infrastructure';
@@ -50,6 +54,8 @@ export function SquadModernLayout({
   const [panelOpen, setPanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list');
   const [pendingSwap, setPendingSwap] = useState<Player | null>(null);
+  const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
+
 
   const deltas = useAttributeEvolution(players);
 
@@ -114,7 +120,7 @@ export function SquadModernLayout({
     setPanelOpen(true);
   };
 
-  const handleSwap = (idA: string, idB: string) => {
+  const handleSwap = useCallback((idA: string, idB: string) => {
     const idxA = players.findIndex(p => p.id === idA);
     const idxB = players.findIndex(p => p.id === idB);
     if (idxA < 0 || idxB < 0) return;
@@ -128,7 +134,7 @@ export function SquadModernLayout({
     toast.success('Troca realizada com sucesso!', {
       description: `${players[idxA].name} ↔ ${players[idxB].name}`
     });
-  };
+  }, [players, onUpdatePlayers]);
 
   const handleAction = (action: 'lineup' | 'bench' | 'transfer' | 'renew' | 'train' | 'medical' | 'captain' | 'swap', p: Player) => {
     switch (action) {
@@ -308,6 +314,20 @@ export function SquadModernLayout({
         onOpenChange={setPanelOpen}
         onAction={handleAction}
       />
+
+      <QuickSwapPanel
+        isOpen={isQuickSwapOpen}
+        onClose={() => setIsQuickSwapOpen(false)}
+        players={players}
+        onSwap={handleSwap}
+      />
+
+      <Button
+        onClick={() => setIsQuickSwapOpen(true)}
+        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 z-40 border-4 border-white/20 animate-bounce hover:animate-none group"
+      >
+        <Repeat className="w-7 h-7 group-hover:rotate-180 transition-transform duration-500" />
+      </Button>
     </div>
   );
 }
