@@ -213,9 +213,6 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
     if (pendingSwapId) {
       if (pendingSwapId !== player.id && onSwapPlayers) {
         onSwapPlayers(pendingSwapId, player.id);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('flm:swap-players', { detail: { idA: pendingSwapId, idB: player.id } }));
-        }
         setPendingSwapId(null);
       } else {
         setPendingSwapId(null);

@@ -40,7 +40,7 @@ interface SquadModernProps {
 }
 
 export function SquadModernLayout({
-  club, season, players, tactics, onUpdatePlayers, onUpdateTactics,
+  club, season, players, tactics, onUpdatePlayers, onUpdateTactics, onRest,
   youthProspects, onPromoteYouth, onSellYouth, onEnrollCopinha, onUpgradeAcademy,
   youthInvestment, onSetYouthInvestment,
   userId, infrastructure, lastYouthGenAt, isPremium
@@ -237,11 +237,12 @@ export function SquadModernLayout({
                       <SquadMainTable 
                         players={players} 
                         starterIds={starterIds}
-                        selectedId={selectedId}
-                        onSelect={handleSelect}
-                        activeTab={activeTab}
-                        userId={userId}
-                        pendingSwapId={pendingSwap?.id}
+                         selectedId={selectedId}
+                         onSelect={handleSelect}
+                         activeTab={activeTab}
+                         userId={userId}
+                         onRest={onRest}
+                         pendingSwapId={pendingSwap?.id}
                       />
                     )}
                   </motion.div>

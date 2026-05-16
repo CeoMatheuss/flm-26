@@ -25,10 +25,11 @@ interface Props {
   onSelect: (id: string) => void;
   activeTab: string;
   userId: string;
+  onRest: (id: string) => void;
   pendingSwapId?: string | null;
 }
 
-export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, pendingSwapId }: Props) {
+export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
@@ -134,6 +135,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               selected={selectedId === p.id || pendingSwapId === p.id}
               isPendingSwap={pendingSwapId === p.id}
               canBeSwapped={!!pendingSwapId && pendingSwapId !== p.id}
+              onRest={() => onRest(p.id)}
               onClick={() => onSelect(p.id)}
             />
           ))}
@@ -164,7 +166,7 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
   );
 }
 
-function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean }) {
+function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped, onRest }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
   const status = getPlayerStatus(player, isStarter, isNegotiating);
@@ -254,7 +256,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
           );
         })}
         <div className="h-6 w-px bg-white/5 mx-1" />
-        <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" />
+        <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" onRest={onRest} />
       </div>
 
       {/* Contract & Market Value */}
@@ -275,11 +277,19 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
   );
 }
 
-function MiniStat({ value, icon, color, label }: { value: number; icon: React.ReactNode; color: string; label?: string }) {
+function MiniStat({ value, icon, color, label, onRest }: { value: number; icon: React.ReactNode; color: string; label?: string; onRest?: () => void }) {
   const v = Math.round(value || 0);
   return (
-    <div className="flex items-center gap-1.5 min-w-[40px]">
-      <div className={cn(color, "opacity-50")}>{icon}</div>
+    <div className="flex items-center gap-1.5 min-w-[40px] group/stat">
+      <div 
+        className={cn(color, "opacity-50 cursor-pointer hover:opacity-100 hover:scale-110 transition-all")}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRest?.();
+        }}
+      >
+        {icon}
+      </div>
       <div className="flex flex-col">
         {label && <span className="text-[7px] font-black text-white/20 uppercase tracking-tighter -mb-0.5">{label}</span>}
         <span className={cn("text-[10px] font-black tabular-nums", v < 40 ? 'text-red-400' : v < 70 ? 'text-amber-400' : 'text-white/80')}>
