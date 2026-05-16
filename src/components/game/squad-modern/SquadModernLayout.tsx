@@ -226,21 +226,6 @@ export function SquadModernLayout({
                 <TabTrigger value="suspensos" icon={<Clock className="w-3.5 h-3.5" />} label="Suspensos" />
                 <TabTrigger value="emprestados" icon={<Share2 className="w-3.5 h-3.5" />} label="Emprestados" />
               </TabsList>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsTacticsOpen(!isTacticsOpen)}
-                className={cn(
-                  "hidden xl:flex h-11 px-6 rounded-2xl border transition-all gap-3 font-black uppercase text-[10px] tracking-widest group shadow-lg",
-                  isTacticsOpen 
-                    ? "bg-zinc-900 border-white/5 text-white/40 hover:text-red-400 hover:border-red-400/20" 
-                    : "bg-emerald-500 border-emerald-400/50 text-zinc-950 hover:bg-emerald-400"
-                )}
-              >
-                {isTacticsOpen ? <X className="w-4 h-4 group-hover:rotate-90 transition-transform" /> : <LayoutDashboard className="w-4 h-4 group-hover:scale-110 transition-transform" />}
-                {isTacticsOpen ? 'Fechar Centro Tático' : 'Abrir Centro Tático'}
-              </Button>
             </div>
 
             <div className="flex-1 overflow-x-auto custom-scrollbar relative">
