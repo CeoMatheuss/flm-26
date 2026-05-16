@@ -309,7 +309,14 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     {standings.map((row, i) => {
                       const isPlayerTeam = row.team_id === leagueInfo.playerTeamId;
                       const diff = (row.goals_for || 0) - (row.goals_against || 0);
-                      const form = (row.last_5_games || '-----').split('');
+                      // Banco salva em W/D/L (Win/Draw/Loss). Convertemos para V/E/D (Vitória/Empate/Derrota).
+                      const rawForm = (row.last_5_games || '-----').padEnd(5, '-').slice(-5);
+                      const form = rawForm.split('').map(c => {
+                        if (c === 'W') return 'V';
+                        if (c === 'D') return 'E'; // Draw = Empate
+                        if (c === 'L') return 'D'; // Loss = Derrota
+                        return c; // já em V/E/D ou '-'
+                      });
                       
                       // Decoration colors
                       let posColor = "text-muted-foreground";
