@@ -497,7 +497,63 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Launch Dashboard */}
+      {activeLaunch && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <Card className="bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Rocket className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-[10px] font-black uppercase text-emerald-500/60">Vendas Hoje</span>
+              </div>
+              <p className="text-xl font-black italic">{salesStats.daily.toLocaleString()} <span className="text-[10px] not-italic font-normal text-muted-foreground">unid.</span></p>
+              <div className="flex items-center gap-1 mt-1">
+                <ArrowUpRight className="h-3 w-3 text-emerald-500" />
+                <span className="text-[10px] text-emerald-500 font-bold">+R$ {(salesStats.revenue).toLocaleString()}</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-muted/10 border-white/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] font-black uppercase text-muted-foreground">Hype Atual</span>
+              </div>
+              <p className="text-xl font-black italic">{salesStats.hype}%</p>
+              <div className="w-full bg-muted rounded-full h-1 mt-2">
+                <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: `${salesStats.hype}%` }} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-muted/10 border-white/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Info className="h-3.5 w-3.5 text-blue-500" />
+                <span className="text-[10px] font-black uppercase text-muted-foreground">Dias de Lançamento</span>
+              </div>
+              <p className="text-xl font-black italic">{salesStats.daysSinceLaunch} <span className="text-[10px] not-italic font-normal text-muted-foreground">dias</span></p>
+              <p className="text-[9px] text-muted-foreground mt-1">
+                {salesStats.daysSinceLaunch < 15 ? '🔥 Fase de Hype Máximo' : '📉 Queda natural de vendas'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-muted/10 border-white/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-[10px] font-black uppercase text-muted-foreground">Vendas Totais</span>
+              </div>
+              <p className="text-xl font-black italic">{(activeLaunch.total_sales_count || 0).toLocaleString()}</p>
+              <p className="text-[10px] text-amber-500 font-bold mt-1">R$ {(activeLaunch.total_revenue_cents / 100 || 0).toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -509,9 +565,20 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
             <p className="text-[10px] text-muted-foreground">Personalize seus 4 kits</p>
           </div>
         </div>
-        <Button size="sm" className="h-8 px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
-          <Save className="h-3 w-3" /> Salvar
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="h-8 px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
+            <Save className="h-3 w-3" /> Salvar
+          </Button>
+          <Button 
+            size="sm" 
+            className="h-8 px-4 text-xs gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500" 
+            onClick={handleLaunch}
+            disabled={isLaunching}
+          >
+            {isLaunching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
+            Lançar Coleção
+          </Button>
+        </div>
       </div>
 
       {/* Kit Selector Tabs */}
