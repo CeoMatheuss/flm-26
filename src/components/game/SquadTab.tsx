@@ -151,7 +151,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
   const [loanSubmitting, setLoanSubmitting] = useState(false);
   const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
-  const [activeTacticalView, setActiveTacticalView] = useState<'list' | 'pitch'>('pitch');
+  // activeTacticalView state removed to show both pitch and list as requested
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
 
@@ -766,25 +766,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </TabsList>
         </Tabs>
 
-        {/* View Toggle - ONLY Mobile */}
-        <div className="flex sm:hidden w-full gap-2 p-1 bg-slate-900/40 border border-white/5 rounded-2xl">
-          <Button 
-            variant={activeTacticalView === 'pitch' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="flex-1 rounded-xl gap-2"
-            onClick={() => setActiveTacticalView('pitch')}
-          >
-            <Layout className="w-4 h-4" /> Tático
-          </Button>
-          <Button 
-            variant={activeTacticalView === 'list' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="flex-1 rounded-xl gap-2"
-            onClick={() => setActiveTacticalView('list')}
-          >
-            <Users className="w-4 h-4" /> Lista
-          </Button>
-        </div>
+        {/* View Toggle removed for cleaner UI */}
       </div>
 
       <Tabs defaultValue="squad" value="squad" className="w-full">
@@ -819,17 +801,17 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Lado Esquerdo: Pitch (Exclusivo Mobile View ou Desktop Sidebar) */}
             <AnimatePresence mode="wait">
-              {(activeTacticalView === 'pitch' || window.innerWidth > 1024) && (
+              {true && (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`w-full lg:w-[400px] shrink-0 ${activeTacticalView === 'pitch' ? 'block' : 'hidden lg:block'}`}
+                  className="w-full lg:w-[320px] shrink-0"
                 >
                   <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-4 backdrop-blur-xl">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                        <Layout className="w-4 h-4 text-primary" /> Painel Tático
+                        <Users className="w-4 h-4 text-emerald-400" /> Escalação
                       </h3>
                       <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-black">
                         {tactics?.formation || '4-4-2'}
@@ -844,16 +826,14 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                       isInteractive={true}
                     />
                     
-                    <div className="mt-4 p-3 bg-white/5 rounded-2xl border border-white/5 text-[10px] text-white/40 font-bold uppercase tracking-wider text-center">
-                      Toque em dois jogadores para trocá-los de posição
-                    </div>
+                    {/* Hint removed for cleaner UI */}
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Lado Direito: Lista de Jogadores */}
-            <div className={`flex-1 space-y-4 ${activeTacticalView === 'list' || window.innerWidth > 1024 ? 'block' : 'hidden lg:block'}`}>
+            <div className="flex-1 space-y-4">
               <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/40 p-2 rounded-2xl border border-white/5">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide">
                   {(['starters', 'reserves', 'out'] as const).map((tab) => (
@@ -1002,16 +982,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   <Shirt className="h-4 w-4 text-emerald-400" />
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Time Titular</span>
                 </div>
-                {onRotateSquad && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-7 text-[10px] gap-1.5 border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10"
-                    onClick={onRotateSquad}
-                  >
-                    <Repeat className="h-3 w-3" /> Rotacionar por Stamina
-                  </Button>
-                )}
+                {/* Rotation button removed from squad tab as per request */}
               </div>
               <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-2 flex items-start gap-2">
                 <Shirt className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
@@ -1034,6 +1005,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                           setViewingPlayer(player);
                         }
                       }}
+                      onSwap={(p) => startSwap(p, 'starters')}
                       isPendingSwap={pendingSwap?.player.id === player.id}
                     />
                   ))
@@ -1064,6 +1036,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                           setViewingPlayer(player);
                         }
                       }}
+                      onSwap={(p) => startSwap(p, 'reserves')}
                       isPendingSwap={pendingSwap?.player.id === player.id}
                     />
                   ))
@@ -1083,7 +1056,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 {outList.length === 0 ? (
                   <div className="text-center py-8 text-xs text-muted-foreground">Nenhum jogador fora do elenco {filterPos && `na posição ${filterPos}`}.</div>
                 ) : (
-                  outList.map(({ player }) => (
+                outList.map(({ player }) => (
                     <SquadCard 
                       key={player.id} 
                       player={player} 
@@ -1094,6 +1067,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                           setViewingPlayer(player);
                         }
                       }}
+                      onSwap={(p) => startSwap(p, 'out')}
                       isPendingSwap={pendingSwap?.player.id === player.id}
                     />
                   ))
@@ -1189,7 +1163,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
       </Tabs>
 
       {/* Tactics summary widget */}
-      <TacticsSummaryWidget tactics={tactics} players={players} avgOvr={avgOvr} />
+      {/* TacticsSummaryWidget removed from squad tab as per request */}
 
       {/* Rescind modal */}
       {onRescindPlayer && (

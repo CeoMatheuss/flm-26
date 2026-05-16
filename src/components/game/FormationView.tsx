@@ -237,7 +237,7 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
   }, [pendingSwapId, onSwapPlayers, onPlayerClick, isInteractive]);
 
   return (
-    <div className="relative w-full max-w-md mx-auto aspect-[3/4] sm:aspect-[4/5] lg:aspect-[2/3] bg-[#07140b] rounded-3xl overflow-hidden border border-emerald-500/30 shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)] select-none">
+    <div className="relative w-full max-w-[300px] mx-auto aspect-[3/4] bg-[#07140b] rounded-3xl overflow-hidden border border-emerald-500/30 shadow-[0_0_40px_-12px_rgba(16,185,129,0.3)] select-none">
       {/* Pitch Pattern (Stripes) */}
       <div className="absolute inset-0 flex flex-col pointer-events-none">
         {[...Array(10)].map((_, i) => (
