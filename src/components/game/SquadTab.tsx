@@ -801,34 +801,34 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </motion.div>
           </div>
 
-          <div className="flex flex-col gap-6">
-            {/* Top Section: Large Pitch View */}
+          <div className="flex flex-col xl:grid xl:grid-cols-12 gap-6 items-start">
+            {/* Left/Top Section: Large Pitch View */}
             <AnimatePresence mode="wait">
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="w-full"
+                className="w-full xl:col-span-8"
               >
-                <Card className="bg-slate-900/40 rounded-[2.5rem] border-white/5 p-6 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+                <Card className="bg-slate-900/40 rounded-[2.5rem] border-white/5 p-4 sm:p-6 backdrop-blur-xl shadow-2xl overflow-hidden relative">
                   <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
                     <Layout className="w-40 h-40 text-primary" />
                   </div>
                   
-                  <div className="flex items-center justify-between mb-6 relative z-10">
+                  <div className="flex items-center justify-between mb-4 relative z-10">
                     <div>
-                      <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
-                        <Users className="w-6 h-6 text-emerald-400" /> CENTRO DE ESCALAÇÃO
+                      <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                        <Users className="w-5 h-5 text-emerald-400" /> ESCALAÇÃO
                       </h3>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Gerencie seu time titular no campo</p>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Time Titular</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="text-[9px] font-black text-muted-foreground uppercase">Formação Atual</p>
-                        <p className="text-lg font-black text-primary">{tactics?.formation || '4-4-2'}</p>
+                        <p className="text-base font-black text-primary">{tactics?.formation || '4-4-2'}</p>
                       </div>
-                      <Badge className="bg-primary/20 text-primary border-primary/30 h-10 px-4 flex items-center justify-center font-black">
-                        MODO EDIÇÃO
+                      <Badge className="bg-primary/20 text-primary border-primary/30 h-8 px-3 flex items-center justify-center font-black text-[10px]">
+                        EDICAO
                       </Badge>
                     </div>
                   </div>
@@ -844,19 +844,19 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               </motion.div>
             </AnimatePresence>
 
-            {/* Bottom Section: Player List */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/40 p-2 rounded-2xl border border-white/5">
+            {/* Right/Bottom Section: Player List */}
+            <div className="space-y-4 xl:col-span-4 w-full">
+              <div className="flex flex-col gap-3 items-center justify-between bg-slate-900/40 p-2 rounded-2xl border border-white/5">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide">
                   {(['starters', 'reserves', 'out'] as const).map((tab) => (
                     <Button
                       key={tab}
                       variant={squadSubTab === tab ? 'default' : 'ghost'}
                       size="sm"
-                      className="rounded-xl px-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+                      className="rounded-xl px-3 h-8 text-[9px] font-black uppercase tracking-wider whitespace-nowrap"
                       onClick={() => setSquadSubTab(tab)}
                     >
-                      {tab === 'starters' ? 'Titulares' : tab === 'reserves' ? 'Reservas' : 'Fora'}
+                      {tab === 'starters' ? 'Titulares' : tab === 'reserves' ? 'Banco' : 'Fora'}
                     </Button>
                   ))}
                 </div>
