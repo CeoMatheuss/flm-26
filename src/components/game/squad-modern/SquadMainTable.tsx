@@ -172,7 +172,7 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
   );
 }
 
-function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped, onRest, activeTab }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string }) {
+function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped, onRest, activeTab, onOpenQuickSwap }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string; onOpenQuickSwap?: () => void }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
   const status = getPlayerStatus(player, isStarter, isNegotiating);
