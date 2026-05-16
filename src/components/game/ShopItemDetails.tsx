@@ -119,7 +119,7 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
     if (data.aumentaVendas) {
       benefits.push({
         label: "Comércio",
-        value: "Aumenta vendas da loja do clube",
+        value: "Libera o lançamento de uma nova coleção de uniformes com vendas automáticas",
         icon: Shirt,
         color: "text-purple-400"
       });
