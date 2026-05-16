@@ -9,7 +9,7 @@ interface ModernPlayerCardProps {
   onClick: () => void;
 }
 
-export function ModernPlayerCard({ player, onClick }: ModernPlayerCardProps) {
+export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPlayerCardProps & { onOpenQuickSwap?: () => void }) {
   const rawTier = (player as any).potentialTier || getPotentialTier((player as any).potential || 60, player.overall);
   const potTier: PotentialTier = (potentialTierInfo as any)[rawTier] ? rawTier : 'comum';
   const tierInfo = potentialTierInfo[potTier];
