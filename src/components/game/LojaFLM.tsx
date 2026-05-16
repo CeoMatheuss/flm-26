@@ -103,6 +103,45 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
     }
   }, [userId, currentOrderId, pixData]);
 
+  // Polling de 5s enquanto o modal do PIX está aberto: verifica status do pagamento
+  // e redireciona o jogador para o início assim que for aprovado.
+  useEffect(() => {
+    if (!showPixModal || !pixData?.orderId) return;
+
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('payment_orders')
+          .select('status, metadata')
+          .eq('id', pixData.orderId)
+          .maybeSingle();
+        if (cancelled || error || !data) return;
+        if (data.status === 'approved') {
+          clearInterval(interval);
+          setShowPixModal(false);
+          const itemName = (data.metadata as any)?.item_name || 'Premium';
+          toast.success(`Pagamento confirmado! Seu item "${itemName}" foi entregue. Redirecionando...`);
+          window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        } else if (['rejected', 'cancelled', 'expired'].includes(data.status)) {
+          clearInterval(interval);
+          setShowPixModal(false);
+          toast.error('Pagamento não concluído. Tente novamente.');
+        }
+      } catch (_) {
+        // silencioso: tentaremos novamente no próximo ciclo
+      }
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [showPixModal, pixData?.orderId]);
+
   async function fetchItems() {
     try {
       setLoading(true);
