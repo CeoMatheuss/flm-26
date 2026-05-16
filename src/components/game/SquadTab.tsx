@@ -775,29 +775,41 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
       <Tabs defaultValue="squad" value="squad" className="w-full">
         <TabsContent value="squad" className="space-y-4 mt-0">
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl" />
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Users className="w-3 h-3" /> Plantel</p>
-              <p className="text-2xl font-black text-white">{players.length}</p>
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Users className="w-3 h-3" /> Plantel</p>
+              <p className="text-xl font-black text-white">{players.length}</p>
             </motion.div>
             
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-500/10 rounded-full blur-xl" />
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Trophy className="w-3 h-3" /> OVR Médio</p>
-              <p className="text-2xl font-black text-emerald-400">{avgOvr}</p>
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Trophy className="w-3 h-3" /> OVR Médio</p>
+              <p className="text-xl font-black text-emerald-400">{avgOvr}</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-500/10 rounded-full blur-xl" />
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Zap className="w-3 h-3" /> Química</p>
+              <p className="text-xl font-black text-blue-400">{Math.round((avgOvr * 0.7) + (players.slice(0, 11).reduce((s, p) => s + p.stamina, 0) / 11) * 0.3)}%</p>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 w-12 h-12 bg-amber-500/10 rounded-full blur-xl" />
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Tag className="w-3 h-3" /> Folha</p>
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Tag className="w-3 h-3" /> Folha</p>
               <p className="text-xl font-black text-amber-400">R${(totalSalary / 1000).toFixed(0)}k</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-4 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl" />
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 flex items-center gap-2"><Activity className="w-3 h-3" /> Lesões</p>
-              <p className={`text-2xl font-black ${injuredCount > 0 ? 'text-red-400' : 'text-white'}`}>{injuredCount}</p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-purple-500/10 rounded-full blur-xl" />
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Activity className="w-3 h-3" /> Idade Média</p>
+              <p className="text-xl font-black text-purple-400">{(players.slice(0, 11).reduce((s, p) => s + p.age, 0) / 11).toFixed(1)}a</p>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-3 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-red-500/10 rounded-full blur-xl" />
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5 flex items-center gap-2"><Heart className="w-3 h-3" /> Lesões</p>
+              <p className={`text-xl font-black ${injuredCount > 0 ? 'text-red-400' : 'text-white'}`}>{injuredCount}</p>
             </motion.div>
           </div>
 
