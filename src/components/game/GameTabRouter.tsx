@@ -16,7 +16,6 @@ import { TrainingCenterTab } from '@/components/game/TrainingCenterTab';
 import { StadiumTab } from '@/components/game/StadiumTab';
 import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
-import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { FansTab } from '@/components/game/FansTab';
 import { MembersTab } from '@/components/game/MembersTab';
 import { InfrastructureWrapper } from '@/components/game/InfrastructureWrapper';
