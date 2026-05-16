@@ -59,13 +59,14 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
             </p>
           ) : (
             <div className="space-y-3">
-              {sponsors.map(sp => {
-                const progress = (sp.installmentsPaid / Math.max(1, sp.installmentsTotal)) * 100;
-                const winsTarget = sp.objective.target ?? 0;
-                const winsTracked = sp.winsTracked ?? 0;
-                const winsProgress = sp.objective.kind === 'win_n_matches'
-                  ? Math.min(100, (winsTracked / Math.max(1, winsTarget)) * 100)
-                  : null;
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sponsors.map(sp => {
+                  const progress = (sp.installmentsPaid / Math.max(1, sp.installmentsTotal)) * 100;
+                  const winsTarget = sp.objective.target ?? 0;
+                  const winsTracked = sp.winsTracked ?? 0;
+                  const winsProgress = sp.objective.kind === 'win_n_matches'
+                    ? Math.min(100, (winsTracked / Math.max(1, winsTarget)) * 100)
+                    : null;
 
                 return (
                   <div key={sp.id} className="p-3 bg-muted/30 rounded-lg border border-border/40 space-y-2">
