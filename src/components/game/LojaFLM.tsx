@@ -777,9 +777,9 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
         </div>
       )}
 
-      <div className="relative z-10 space-y-4 p-5 flex-1 flex flex-col">
+      <div className="relative z-10 space-y-3 sm:space-y-4 p-4 sm:p-5 flex-1 flex flex-col">
         <div className="flex justify-between items-center">
-          <Badge className={`border-none uppercase font-black text-[9px] px-2.5 py-1 ${
+          <Badge className={`border-none uppercase font-black text-[8px] sm:text-[9px] px-2 py-0.5 sm:px-2.5 sm:py-1 ${
             item.rarity === 'legendary' ? 'bg-amber-500/20 text-amber-400' :
             item.rarity === 'epic' ? 'bg-purple-500/20 text-purple-400' :
             'bg-emerald-500/10 text-emerald-400'
