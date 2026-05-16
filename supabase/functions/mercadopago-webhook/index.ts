@@ -84,6 +84,13 @@ serve(async (req) => {
       if (paymentData.status === 'approved') {
         const orderId = paymentData.external_reference
         
+        // Get order details to get user_id and item name
+        const { data: orderData } = await supabaseAdmin
+          .from('payment_orders')
+          .select('user_id, metadata, item_id')
+          .eq('id', orderId)
+          .single();
+
         // Update order
         await supabaseAdmin.from('payment_orders').update({
           status: 'approved',
@@ -91,13 +98,40 @@ serve(async (req) => {
           updated_at: new Date().toISOString()
         }).eq('id', orderId)
 
+        if (orderData) {
+          // Notify payment approval
+          await supabaseAdmin.from('user_notifications').insert({
+            user_id: orderData.user_id,
+            type: 'success',
+            category: 'Financeiro',
+            priority: 'high',
+            title: 'Pagamento Confirmado',
+            message: `Recebemos seu pagamento para "${orderData.metadata?.item_name || 'Item'}".`,
+            icon: '✅',
+            data: { order_id: orderId, payment_id: id }
+          });
+        }
+
         // Deliver item via RPC
-        const { data, error: rpcError } = await supabaseAdmin.rpc('deliver_shop_item', { p_order_id: orderId })
+        const { data: deliverData, error: rpcError } = await supabaseAdmin.rpc('deliver_shop_item', { p_order_id: orderId })
         
         if (rpcError) {
           console.error(`Error delivering item for order ${orderId}:`, rpcError)
         } else {
-          console.log(`Item delivered successfully for order ${orderId}:`, data)
+          console.log(`Item delivered successfully for order ${orderId}:`, deliverData)
+          if (orderData) {
+            // Notify item release
+            await supabaseAdmin.from('user_notifications').insert({
+              user_id: orderData.user_id,
+              type: 'success',
+              category: 'Clube',
+              priority: 'ultra',
+              title: 'Benefícios Liberados!',
+              message: `Seu item "${orderData.metadata?.item_name || 'Premium'}" já está ativo no seu clube.`,
+              icon: '🚀',
+              data: { order_id: orderId, item_id: orderData.item_id }
+            });
+          }
         }
       } else {
         // Update status for non-approved
