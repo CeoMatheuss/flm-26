@@ -206,7 +206,7 @@ export function SquadModernLayout({
         }}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative gap-6 p-4 sm:p-6">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative gap-3 sm:gap-6 p-2 sm:p-6">
         {/* Main Content Area: Tabs & Tables */}
         <motion.div 
           layout
@@ -217,7 +217,7 @@ export function SquadModernLayout({
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             {/* Horizontal Sub-tabs */}
-            <div className="px-4 sm:px-6 py-3 bg-zinc-950/50 border-b border-white/5 overflow-x-auto scrollbar-hide flex items-center justify-between gap-4">
+            <div className="px-3 sm:px-6 py-3 bg-zinc-950/50 border-b border-white/5 overflow-x-auto scrollbar-hide flex items-center justify-between gap-4">
               <TabsList className="bg-white/5 border border-white/5 p-1 h-12 gap-1 rounded-2xl shrink-0">
                 <TabTrigger value="titulares" icon={<Shield className="w-3.5 h-3.5" />} label="Titulares" />
                 <TabTrigger value="reservas" icon={<Users className="w-3.5 h-3.5" />} label="Reservas" />
@@ -235,7 +235,7 @@ export function SquadModernLayout({
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="h-full p-4 sm:p-6"
+                    className="h-full p-2 sm:p-6"
                   >
                     {activeTab === 'base' ? (
                       <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
