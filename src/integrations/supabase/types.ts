@@ -357,6 +357,101 @@ export type Database = {
           },
         ]
       }
+      club_shop_products: {
+        Row: {
+          base_price_cents: number
+          category: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          min_level: number
+          name: string
+        }
+        Insert: {
+          base_price_cents: number
+          category: string
+          created_at?: string | null
+          id: string
+          image_url?: string | null
+          min_level?: number
+          name: string
+        }
+        Update: {
+          base_price_cents?: number
+          category?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          min_level?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      club_shop_stats: {
+        Row: {
+          buying_fans: number
+          club_id: string
+          created_at: string | null
+          daily_revenue: number
+          daily_sales_avg: number
+          id: string
+          last_update: string | null
+          level: number
+          monthly_revenue: number
+          popularity: number
+          revenue_history: Json
+          total_profit: number
+          total_revenue: number
+          total_sales: number
+          updated_at: string | null
+          weekly_revenue: number
+        }
+        Insert: {
+          buying_fans?: number
+          club_id: string
+          created_at?: string | null
+          daily_revenue?: number
+          daily_sales_avg?: number
+          id?: string
+          last_update?: string | null
+          level?: number
+          monthly_revenue?: number
+          popularity?: number
+          revenue_history?: Json
+          total_profit?: number
+          total_revenue?: number
+          total_sales?: number
+          updated_at?: string | null
+          weekly_revenue?: number
+        }
+        Update: {
+          buying_fans?: number
+          club_id?: string
+          created_at?: string | null
+          daily_revenue?: number
+          daily_sales_avg?: number
+          id?: string
+          last_update?: string | null
+          level?: number
+          monthly_revenue?: number
+          popularity?: number
+          revenue_history?: Json
+          total_profit?: number
+          total_revenue?: number
+          total_sales?: number
+          updated_at?: string | null
+          weekly_revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shop_stats_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: true
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           budget: number | null
