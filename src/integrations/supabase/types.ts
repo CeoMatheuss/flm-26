@@ -523,6 +523,7 @@ export type Database = {
           secondary_color: string | null
           shield_config: Json | null
           stadium_name: string | null
+          uniform_launches_available: number | null
           updated_at: string
           user_id: string | null
         }
@@ -543,6 +544,7 @@ export type Database = {
           secondary_color?: string | null
           shield_config?: Json | null
           stadium_name?: string | null
+          uniform_launches_available?: number | null
           updated_at?: string
           user_id?: string | null
         }
@@ -563,6 +565,7 @@ export type Database = {
           secondary_color?: string | null
           shield_config?: Json | null
           stadium_name?: string | null
+          uniform_launches_available?: number | null
           updated_at?: string
           user_id?: string | null
         }
