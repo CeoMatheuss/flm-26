@@ -534,6 +534,21 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
   return (
     <div className="space-y-4">
+      {!customizationUnlocked && (
+        <Card className="border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-transparent">
+          <CardContent className="p-3 flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/20">
+              <Shirt className="h-5 w-5 text-amber-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-500">🔒 Criação de uniformes bloqueada</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Libere a personalização do clube (R$ 10 — Pix <span className="font-mono">flm26@pix.com</span>) para salvar e lançar uniformes. O mesmo desbloqueio também libera nome do clube, estádio e escudo.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Launch Dashboard */}
       {activeLaunch && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
