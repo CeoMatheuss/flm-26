@@ -1,9 +1,10 @@
 import { YouthProspect, potentialTierInfo, evolutionStatusInfo } from '@/types/infrastructure';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, Zap, Heart, Trophy, DollarSign, Crown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Zap, Heart, Trophy, DollarSign, Crown, ArrowUp } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 
 interface Props {
