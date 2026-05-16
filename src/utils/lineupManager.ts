@@ -42,14 +42,10 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const getPlayerScoreForPos = (player: Player, targetPos: Player['position']) => {
     if (player.injury) return -1000;
     
-    // Usar o overall dinâmico para pontuar a escalação
-    const dynamicOvr = import.meta.env.DEV ? player.overall : player.overall; // Placeholder
-    // Importando dinamicamente ou usando lógica local para evitar problemas de dependência circular imediata
     let score = player.overall;
     if (player.position === targetPos) score += 20;
-    else if (player.secondaryPosition === targetPos) score += 12; // Aumentado para valorizar secundárias
+    else if (player.secondaryPosition === targetPos) score += 12; 
     else {
-      // Penalidade baseada em "distância" de posição
       const penalties: Record<string, Record<string, number>> = {
         GOL: { ZAG: -60, LAT: -60, VOL: -60, MEI: -60, ATA: -60 },
         ZAG: { GOL: -80, LAT: -5, VOL: -10, MEI: -30, ATA: -40 },
@@ -60,6 +56,12 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
       };
       score += (penalties[player.position]?.[targetPos] || -30);
     }
+    
+    score += (player.stamina / 10);
+    score += (player.morale / 20);
+    if (player.matchRating) score += (player.matchRating * 2);
+    return score;
+  };
 
     // Favor balanced physical state
     score += (player.stamina / 10);
@@ -83,7 +85,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   // 2. Assign other starters based on formation requirements
   for (let i = 1; i < requirements.length; i++) {
-    const reqPos = requirements[i];
+    const reqPos = requirements[i] as Player['position'];
     const bestPlayer = allPlayers
       .filter(p => !used.has(p.id) && !p.injury)
       .sort((a, b) => getPlayerScoreForPos(b, reqPos) - getPlayerScoreForPos(a, reqPos))[0];
@@ -129,7 +131,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   slots.forEach(slot => {
     const candidates = allPlayers
-      .filter(p => !used.has(p.id) && !p.injury && slot.pos.includes(p.position))
+      .filter(p => !used.has(p.id) && !p.injury && slot.pos.includes(p.position as any))
       .sort((a, b) => b.overall - a.overall);
     
     for (let i = 0; i < slot.count && candidates.length > 0; i++) {
