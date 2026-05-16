@@ -21,7 +21,7 @@ interface Props {
   onToggleTactics: () => void;
 }
 
-export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewModeChange, pendingSwap, onCancelSwap }: Props) {
+export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewModeChange, pendingSwap, onCancelSwap, isTacticsOpen, onToggleTactics }: Props) {
   const energy = avgStamina(club.players);
   const energyColor = energy >= 70 ? 'text-emerald-400' : energy >= 40 ? 'text-amber-400' : 'text-red-400';
 
