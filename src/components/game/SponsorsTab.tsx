@@ -133,8 +133,8 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center justify-between">
-            <span className="flex items-center gap-2"><DollarSign className="h-5 w-5" /> Ofertas Disponíveis</span>
-            <Button size="sm" variant="outline" onClick={onRefreshOffers}>Buscar Novas</Button>
+            <span className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-emerald-500" /> Ofertas Disponíveis</span>
+            <Button size="sm" variant="outline" onClick={onRefreshOffers} className="h-8 text-xs shrink-0">Buscar Novas</Button>
           </CardTitle>
           <p className="text-xs text-muted-foreground">
             Reputação: <span className="text-primary font-semibold">{reputation}</span> — Quanto maior, mais ousados (e lucrativos) os contratos
