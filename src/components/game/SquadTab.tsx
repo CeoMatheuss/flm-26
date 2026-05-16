@@ -856,27 +856,26 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
               </motion.div>
             </AnimatePresence>
 
-            {/* Right/Bottom Section: Player List */}
-            <div className="space-y-4 xl:col-span-4 w-full">
-              <div className="flex flex-col gap-3 items-center justify-between bg-slate-900/40 p-2 rounded-2xl border border-white/5">
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide">
+            <div className="space-y-3 xl:col-span-4 w-full">
+              <div className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-1">
                   {(['starters', 'reserves', 'out'] as const).map((tab) => (
                     <Button
                       key={tab}
                       variant={squadSubTab === tab ? 'default' : 'ghost'}
                       size="sm"
-                      className="rounded-xl px-3 h-8 text-[9px] font-black uppercase tracking-wider whitespace-nowrap"
+                      className="rounded-lg px-2 h-7 text-[8px] font-black uppercase tracking-widest whitespace-nowrap"
                       onClick={() => setSquadSubTab(tab)}
                     >
-                      {tab === 'starters' ? 'Titulares' : tab === 'reserves' ? 'Banco' : 'Fora'}
+                      {tab === 'starters' ? '11' : tab === 'reserves' ? 'BANCO' : 'OUT'}
                     </Button>
                   ))}
                 </div>
                 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
                   <Input 
-                    placeholder="Filtrar..." 
-                    className="h-9 bg-white/5 border-white/10 text-xs rounded-xl"
+                    placeholder="Busca..." 
+                    className="h-7 w-24 bg-white/5 border-white/10 text-[9px] rounded-lg"
                     onChange={(e) => setFilterPos(e.target.value.toUpperCase())}
                   />
                 </div>
