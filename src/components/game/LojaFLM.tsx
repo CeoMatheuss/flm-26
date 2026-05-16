@@ -355,28 +355,28 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       </div>
 
       {shopStats && (
-        <div className="flex flex-col md:flex-row gap-4 mb-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-2">
           <Button 
             onClick={handleUpgrade}
             disabled={upgrading}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl h-14 px-8 font-black uppercase italic tracking-tighter shadow-lg shadow-emerald-900/20 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex-1"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl h-12 sm:h-14 px-4 sm:px-8 font-black uppercase italic tracking-tighter shadow-lg shadow-emerald-900/20 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex-1"
           >
             {upgrading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <>
-                <ArrowUpRight className="mr-2 h-5 w-5" />
-                Upgrade da Loja (Nível {shopStats.level} → {shopStats.level + 1})
-                <Badge className="ml-3 bg-black/30 border-none">R$ {(500 * Math.pow(3, shopStats.level - 1)).toLocaleString()}</Badge>
-              </>
+              <div className="flex items-center justify-center gap-2 text-[10px] sm:text-sm">
+                <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>Upgrade Loja (Nv.{shopStats.level} → {shopStats.level + 1})</span>
+                <Badge className="bg-black/30 border-none text-[9px] sm:text-xs">R$ {(500 * Math.pow(3, shopStats.level - 1)).toLocaleString()}</Badge>
+              </div>
             )}
           </Button>
-          <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl flex items-center gap-3 md:w-80">
-            <div className="bg-emerald-500/20 p-2 rounded-lg">
-              <Star className="text-emerald-400 h-4 w-4" />
+          <div className="bg-emerald-500/10 border border-emerald-500/20 p-2 sm:p-3 rounded-2xl flex items-center gap-2 sm:gap-3 sm:w-80">
+            <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg shrink-0">
+              <Star className="text-emerald-400 h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
-            <p className="text-[10px] text-emerald-100 font-bold leading-tight">
-              Aumentar o nível da loja desbloqueia novos produtos e melhora a taxa de conversão dos torcedores.
+            <p className="text-[8px] sm:text-[10px] text-emerald-100 font-bold leading-tight">
+              Aumentar o nível desbloqueia novos produtos e melhora a conversão.
             </p>
           </div>
         </div>
