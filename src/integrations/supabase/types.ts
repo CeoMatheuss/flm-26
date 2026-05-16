@@ -5403,6 +5403,7 @@ export type Database = {
         Args: { _amount: number; _auction_id: string }
         Returns: Json
       }
+      process_club_shop_daily: { Args: { p_club_id: string }; Returns: Json }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
       process_daily_shop_bonuses: { Args: { p_user_id: string }; Returns: Json }
       process_expired_auctions: { Args: never; Returns: undefined }
@@ -5539,6 +5540,7 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      upgrade_club_shop: { Args: { p_club_id: string }; Returns: Json }
       upsert_player_stats: {
         Args: {
           _comp_id: string
