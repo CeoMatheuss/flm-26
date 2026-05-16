@@ -114,11 +114,13 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
       </div>
 
       {/* Table Header */}
-      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-zinc-950/40 text-[9px] font-black uppercase tracking-[0.2em] text-white/30 border-b border-white/5">
+      <div className="hidden md:grid grid-cols-12 gap-2 px-6 py-3 bg-zinc-950/40 text-[9px] font-black uppercase tracking-[0.2em] text-white/30 border-b border-white/5 items-center">
         <div className="col-span-1">#</div>
-        <div className="col-span-4">Jogador / Posição</div>
+        <div className="col-span-1 text-center">OVR</div>
+        <div className="col-span-3">Jogador / Posição</div>
+        <div className="col-span-1 text-center">País</div>
         <div className="col-span-1 text-center">Idade</div>
-        <div className="col-span-3 text-center">Atributos</div>
+        <div className="col-span-2 text-center">Atributos</div>
         <div className="col-span-3 text-right">Contrato / Valor</div>
       </div>
 
@@ -200,37 +202,49 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       <div className={cn("absolute inset-y-0 left-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity", tier.bg.split(' ')[0])} />
 
       {/* Shirt Number / Index */}
-      <div className="hidden sm:flex col-span-1 items-center gap-2">
+      <div className="hidden sm:flex col-span-1 items-center justify-center">
         <span className="text-[10px] font-black text-white/20 italic tracking-tighter">
           {player.shirtNumber ? String(player.shirtNumber).padStart(2, '0') : String(idx).padStart(2, '0')}
         </span>
       </div>
 
+      {/* Overall */}
+      <div className="hidden sm:flex col-span-1 items-center justify-center">
+        <div className={cn(
+          "shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden shadow-lg",
+          tier.ring, tier.glow, "bg-zinc-950/80"
+        )}>
+          <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
+          <span className={cn("text-base z-10 font-black", tier.color)}>{player.overall}</span>
+          {delta !== 0 && (
+             <span className="absolute -top-1 -right-1 p-0.5 z-10">
+               {delta > 0 ? (
+                 <ArrowUp className="w-3 h-3 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+               ) : (
+                 <ArrowDown className="w-3 h-3 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
+               )}
+             </span>
+          )}
+        </div>
+      </div>
+
       {/* Name & Position */}
-      <div className="col-span-11 sm:col-span-4 flex items-center gap-3">
-          <div className={cn(
-            "shrink-0 w-11 h-11 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
-            tier.ring, tier.glow, "bg-zinc-950/80"
-          )}>
-            <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
-            <span className={cn("text-lg z-10 font-black", tier.color)}>{player.overall}</span>
-            {delta !== 0 && (
-               <span className="absolute -top-1 -right-1 p-0.5 z-10">
-                 {delta > 0 ? (
-                   <ArrowUp className="w-3.5 h-3.5 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-                 ) : (
-                   <ArrowDown className="w-3.5 h-3.5 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
-                 )}
-               </span>
-            )}
-          </div>
+      <div className="col-span-11 sm:col-span-3 flex items-center gap-3">
+        {/* Mobile-only Overall */}
+        <div className={cn(
+          "sm:hidden shrink-0 w-11 h-11 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
+          tier.ring, tier.glow, "bg-zinc-950/80"
+        )}>
+          <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
+          <span className={cn("text-lg z-10 font-black", tier.color)}>{player.overall}</span>
+        </div>
 
         <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex items-center gap-2 max-w-full">
             <span className="text-sm sm:text-base font-black text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tighter block">
               {player.name}
             </span>
-            <span className="text-sm">{flagFor((player as any).country)}</span>
+            <span className="text-[14px]">{flagFor((player as any).country)}</span>
           </div>
           <div className="flex items-center gap-2 mt-1">
              <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", positionColors[player.position])}>
@@ -246,14 +260,19 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
         </div>
       </div>
 
+      {/* Country (Desktop) */}
+      <div className="hidden sm:block col-span-1 text-center">
+        <span className="text-xl filter drop-shadow-sm">{flagFor((player as any).country)}</span>
+      </div>
+
       {/* Age */}
       <div className="hidden sm:block col-span-1 text-center">
-        <span className="text-xs font-bold text-white/50">{player.age}a</span>
+        <span className="text-xs font-bold text-white/60">{player.age}a</span>
       </div>
 
       {/* Attributes (Compact Row View) */}
-      <div className="col-span-3 hidden xl:flex items-center justify-center gap-2 sm:gap-4 overflow-hidden px-2">
-        {attrConfig.slice(0, 4).map(attr => {
+      <div className="col-span-2 hidden xl:flex items-center justify-center gap-3 overflow-hidden px-1">
+        {attrConfig.slice(0, 3).map(attr => {
           const { value: val } = getAttrValue(player, attr.from as any);
           return (
             <div key={attr.key} className="flex flex-col items-center min-w-[28px] sm:min-w-[32px] shrink-0">
