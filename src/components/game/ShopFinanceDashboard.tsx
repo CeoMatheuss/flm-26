@@ -21,40 +21,44 @@ export function ShopFinanceDashboard({ stats, club, products }: ShopFinanceDashb
   
   const metrics = [
     { 
-      label: 'Renda Hoje', 
+      label: 'Ganhos Diários', 
       value: `R$ ${(stats.daily_revenue / 100).toLocaleString()}`, 
       icon: DollarSign, 
       color: 'text-emerald-400', 
       bg: 'bg-emerald-500/10',
       trend: stats.daily_revenue > 0 ? '+12%' : '0%',
-      trendUp: true
+      trendUp: true,
+      sub: 'Renda passiva'
     },
     { 
-      label: 'Renda Semanal', 
-      value: `R$ ${(stats.weekly_revenue / 100).toLocaleString()}`, 
+      label: 'Ganhos Mensais (Proj)', 
+      value: `R$ ${((stats.daily_revenue * 30) / 100).toLocaleString()}`, 
       icon: BarChart3, 
       color: 'text-blue-400', 
       bg: 'bg-blue-500/10',
       trend: '+5%',
-      trendUp: true
+      trendUp: true,
+      sub: 'Baseado no atual'
     },
     { 
-      label: 'Lucro Total', 
+      label: 'Lucro Total do Clube', 
       value: `R$ ${(stats.total_profit / 100).toLocaleString()}`, 
       icon: TrendingUp, 
       color: 'text-amber-400', 
       bg: 'bg-amber-500/10',
       trend: '+18%',
-      trendUp: true
+      trendUp: true,
+      sub: 'Desde a fundação'
     },
     { 
-      label: 'Torcedores Compradores', 
-      value: stats.buying_fans?.toLocaleString() || '0', 
+      label: 'Conversão de Marca', 
+      value: `${((stats.buying_fans / (club.fans || 1)) * 100).toFixed(1)}%`, 
       icon: Users, 
       color: 'text-purple-400', 
       bg: 'bg-purple-500/10',
-      trend: 'Ativos',
-      trendUp: true
+      trend: 'Alta',
+      trendUp: true,
+      sub: 'Fãs compradores'
     }
   ];
 
@@ -83,6 +87,7 @@ export function ShopFinanceDashboard({ stats, club, products }: ShopFinanceDashb
                 <div className="mt-3">
                   <p className="text-[10px] text-white/40 font-black uppercase tracking-wider">{metric.label}</p>
                   <p className="text-lg font-black italic uppercase tracking-tighter text-white">{metric.value}</p>
+                  <p className="text-[9px] text-white/20 font-medium italic mt-0.5">{metric.sub}</p>
                 </div>
               </CardContent>
             </Card>
@@ -148,6 +153,41 @@ export function ShopFinanceDashboard({ stats, club, products }: ShopFinanceDashb
 
         {/* Info & Upgrades */}
         <div className="space-y-6">
+          <Card className="bg-black/40 border-white/5 backdrop-blur-md overflow-hidden">
+            <CardContent className="p-6">
+               <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                     <div className="p-2 rounded-xl bg-purple-500/10">
+                        <Users className="h-4 w-4 text-purple-400" />
+                     </div>
+                     <div>
+                        <h4 className="text-[10px] text-white/40 font-black uppercase tracking-widest">Impacto da Marca</h4>
+                        <p className="text-sm font-black text-white italic">Crescimento da Instituição</p>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="p-4 rounded-[1.5rem] bg-white/5 border border-white/5">
+                        <p className="text-[9px] text-white/30 font-black uppercase tracking-wider mb-1">Reputação</p>
+                        <p className="text-xl font-black text-white italic">{(club.reputation || 0).toFixed(0)}</p>
+                     </div>
+                     <div className="p-4 rounded-[1.5rem] bg-white/5 border border-white/5">
+                        <p className="text-[9px] text-white/30 font-black uppercase tracking-wider mb-1">Engajamento</p>
+                        <p className="text-xl font-black text-white italic">Forte</p>
+                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                     <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                        <span className="text-white/20">Média de Vendas</span>
+                        <span className="text-white/60">R$ {((stats.daily_revenue / (stats.buying_fans || 1)) / 100).toFixed(2)} / torcedor</span>
+                     </div>
+                     <div className="h-1 w-full bg-white/5 rounded-full" />
+                  </div>
+               </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-emerald-600/10 border-emerald-500/20 backdrop-blur-md overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <Star className="h-16 w-16 text-emerald-400" />
