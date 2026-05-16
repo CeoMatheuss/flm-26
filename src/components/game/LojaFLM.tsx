@@ -426,9 +426,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             </ScrollArea>
           </div>
 
-          <TabsContent value="dashboard" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <StoreDashboard stats={storeManager.stats} />
-          </TabsContent>
+          {/* Dashboard removido conforme solicitado */}
 
           <TabsContent value="stickers" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <PacotinhosTab 
