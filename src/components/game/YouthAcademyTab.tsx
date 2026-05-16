@@ -99,7 +99,6 @@ export function YouthAcademyTab({
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <TabsList className="bg-muted/50 p-1">
             <TabsTrigger value="list" className="gap-2"><GraduationCap className="h-4 w-4" /> Elenco da Base</TabsTrigger>
-            <TabsTrigger value="investment" className="gap-2"><Coins className="h-4 w-4" /> Investimento</TabsTrigger>
             <TabsTrigger value="copinha" className="gap-2"><Trophy className="h-4 w-4" /> Copinha</TabsTrigger>
             <TabsTrigger value="news" className="gap-2"><Newspaper className="h-4 w-4" /> Notícias</TabsTrigger>
           </TabsList>
