@@ -168,7 +168,7 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
       {/* Name & Position */}
       <div className="col-span-11 sm:col-span-4 flex items-center gap-3">
           <div className={cn(
-            "shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
+            "shrink-0 w-11 h-11 rounded-xl border-2 flex items-center justify-center font-black italic relative overflow-hidden",
             tier.ring, tier.glow, "bg-zinc-950/80"
           )}>
             <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
@@ -176,25 +176,28 @@ function PlayerListRow({ player, idx, isStarter, delta, selected, onClick }: { p
             {delta !== 0 && (
                <span className="absolute -top-1 -right-1 p-0.5 z-10">
                  {delta > 0 ? (
-                   <ArrowUp className="w-3 h-3 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+                   <ArrowUp className="w-3.5 h-3.5 text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
                  ) : (
-                   <ArrowDown className="w-3 h-3 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
+                   <ArrowDown className="w-3.5 h-3.5 text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
                  )}
                </span>
             )}
           </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-white truncate group-hover:text-emerald-400 transition-colors">
+            <span className="text-sm font-black text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
               {player.name}
             </span>
             <span className="text-sm">{flagFor((player as any).country)}</span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex items-center gap-2 mt-1">
              <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", positionColors[player.position])}>
                {player.position}
              </span>
+             {player.potential && player.potential >= 88 && (
+                <span className="text-[8px] font-black text-amber-400 uppercase tracking-tighter">💎 JOIA</span>
+             )}
              <span className={cn("text-[8px] font-black uppercase tracking-widest opacity-60", sm.color)}>
                {sm.label}
              </span>
