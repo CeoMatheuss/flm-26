@@ -121,10 +121,10 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
                       <AlertTriangle className="h-3 w-3 shrink-0" />
                       <span>Multa por descumprir: <strong>{fmtBRL(sp.penalty)}</strong> — pode falir o clube</span>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                  );
+                })}
+              </div>
           )}
         </CardContent>
       </Card>
