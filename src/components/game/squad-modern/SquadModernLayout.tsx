@@ -212,7 +212,7 @@ export function SquadModernLayout({
           layout
           className={cn(
             "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500 bg-zinc-900/30 rounded-[2.5rem] border border-white/5",
-            viewMode === 'pitch' ? "hidden xl:flex" : "flex"
+            (viewMode === 'pitch' || isTacticsOpen) ? "hidden xl:flex" : "flex"
           )}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -286,7 +286,7 @@ export function SquadModernLayout({
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={cn(
                 "w-full xl:w-[400px] 2xl:w-[450px] flex-col border border-white/5 bg-zinc-900/30 rounded-[2.5rem] overflow-hidden relative group shrink-0",
-                viewMode === 'pitch' ? "flex" : "hidden xl:flex"
+                (viewMode === 'pitch' || isTacticsOpen) ? "flex" : "hidden xl:flex"
               )}
             >
                {/* Section Header */}

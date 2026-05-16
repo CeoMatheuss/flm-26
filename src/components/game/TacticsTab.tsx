@@ -22,7 +22,7 @@ interface Props {
 }
 
 export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season, userId, hideSwapButton }: Props) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   const starters = players.slice(0, 11);
   
@@ -73,9 +73,13 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col overflow-hidden animate-in fade-in duration-300">
+    <div className={cn(
+      hideSwapButton
+        ? "w-full h-full flex flex-col overflow-hidden"
+        : "fixed inset-0 z-[100] bg-zinc-950 flex flex-col overflow-hidden animate-in fade-in duration-300"
+    )}>
       {/* Premium Header */}
-      <div className="h-20 border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-10 shrink-0">
+      {!hideSwapButton && <div className="h-20 border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-10 shrink-0">
         <div className="flex items-center gap-6">
           <button 
             onClick={() => setIsOpen(false)}
@@ -111,7 +115,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
             <X className="w-4 h-4 mr-2" /> Sair
           </Button>
         </div>
-      </div>
+      </div>}
 
       <div className="flex-1 overflow-hidden p-4 sm:p-8 flex flex-col lg:flex-row gap-6 sm:gap-8">
         {/* Campo Tático - Estilo Moderno Compacto */}
