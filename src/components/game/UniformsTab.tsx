@@ -524,6 +524,10 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   const salesStats = useMemo(() => calculateCurrentSales(activeLaunch, clubReputation || 50, clubReputation || 50), [activeLaunch, clubReputation]);
 
   const handleSave = () => {
+    if (!customizationUnlocked) {
+      toast.error('🔒 Desbloqueie a personalização do clube (R$10) na aba "Perfil do Clube".');
+      return;
+    }
     onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
     toast.success('🎽 Uniformes salvos com sucesso!');
   };
