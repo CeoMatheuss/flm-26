@@ -400,6 +400,17 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
         financeState.addFinance,
         (amt: number) => clubState.setClub(prev => ({ ...prev, budget: prev.budget + amt }))
       );
+    },
+    // Export centralized month processing
+    processMonthlyFinance: () => {
+      financeState.processMonthlyFinance(
+        clubState.club.budget,
+        (fn) => clubState.setClub(prev => ({ ...prev, budget: fn(prev.budget) })),
+        clubState.totalSalaries,
+        clubState.club.stadiumOps?.maintenance || 0, // Simplified for now
+        clubState.club.scouts?.reduce((acc: number, s: any) => acc + s.salary, 0) || 0
+      );
     }
+
   };
 }
