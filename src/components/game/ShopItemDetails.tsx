@@ -92,6 +92,8 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
           color: 'blue'
         };
       case 'infrastructure':
+      case 'stadium':
+      case 'ct':
         return {
           type: 'Estrutura / Infra',
           benefit: 'Melhoria nas instalações físicas.',
@@ -116,6 +118,32 @@ export function ShopItemDetails({ item, isOpen, onClose, onPurchase, clubFans }:
             'Gestão de vestiário exemplar'
           ],
           color: 'purple'
+        };
+      case 'youth':
+        return {
+          type: 'Categorias de Base',
+          benefit: 'Desenvolvimento de novos talentos.',
+          impact: 'Geração constante de jogadores promissores.',
+          advantages: [
+            'Peneiras mais eficientes',
+            'Potencial elevado das revelações',
+            'Venda lucrativa de promessas',
+            'Futuro garantido para o elenco'
+          ],
+          color: 'cyan'
+        };
+      case 'finance':
+        return {
+          type: 'Investimento Direto',
+          benefit: 'Injeção imediata de capital.',
+          impact: 'Alavancagem financeira para grandes compras.',
+          advantages: [
+            'Caixa disponível no ato',
+            'Poder de compra imediato',
+            'Estabilidade nas contas',
+            'Reserva para emergências'
+          ],
+          color: 'emerald'
         };
       default:
         return {
