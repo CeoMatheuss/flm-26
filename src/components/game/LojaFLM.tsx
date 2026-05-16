@@ -133,12 +133,13 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       const { data, error } = await supabase.rpc('upgrade_club_shop', { p_club_id: club.id });
       if (error) throw error;
       
-      if (data?.success) {
-        toast.success(`Loja evoluída para o Nível ${data.new_level}!`);
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Loja evoluída para o Nível ${result.new_level}!`);
         fetchItems();
         window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
       } else {
-        toast.error(data?.error || 'Erro ao realizar upgrade.');
+        toast.error(result?.error || 'Erro ao realizar upgrade.');
       }
     } catch (e: any) {
       toast.error('Erro ao processar upgrade.');
