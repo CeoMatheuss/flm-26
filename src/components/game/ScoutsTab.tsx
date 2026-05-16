@@ -45,7 +45,9 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
 
   const fetchScoutingData = async () => {
     try {
+      console.log('[ScoutsTab] Fetching data for user:', userId);
       setLoading(true);
+      
       const [myScoutsRes, marketScoutsRes, missionsRes, reportsRes] = await Promise.all([
         supabase.from('scouts').select('*').eq('user_id', userId),
         supabase.from('scouts').select('*').eq('is_free_agent', true).limit(6),
@@ -53,12 +55,22 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
         supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20)
       ]);
 
+      console.log('[ScoutsTab] Responses:', {
+        myScouts: myScoutsRes.data?.length,
+        market: marketScoutsRes.data?.length,
+        missions: missionsRes.data?.length,
+        reports: reportsRes.data?.length
+      });
+
+      if (myScoutsRes.error) console.error('[ScoutsTab] myScouts error:', myScoutsRes.error);
+      if (marketScoutsRes.error) console.error('[ScoutsTab] market error:', marketScoutsRes.error);
+
       if (myScoutsRes.data) setMyScouts(myScoutsRes.data as ScoutV3[]);
       if (marketScoutsRes.data) setMarketScouts(marketScoutsRes.data as ScoutV3[]);
       if (missionsRes.data) setMissions(missionsRes.data as ScoutMissionV3[]);
       if (reportsRes.data) setReports(reportsRes.data as ScoutReportV3[]);
     } catch (error) {
-      console.error('Error fetching scouting data:', error);
+      console.error('[ScoutsTab] Exception:', error);
       toast.error('Erro ao carregar dados de olheiros');
     } finally {
       setLoading(false);
