@@ -260,7 +260,7 @@ export function SquadModernLayout({
 
         {/* Tactical Panel (Desktop Right Side or Mobile Overlay) */}
         <div className={cn(
-          "w-full xl:w-[480px] flex-col border-l border-white/5 bg-zinc-950/50 overflow-hidden relative group transition-all duration-500",
+          "w-full xl:w-[480px] flex-col border border-white/5 bg-zinc-900/30 rounded-[2.5rem] overflow-hidden relative group transition-all duration-500",
           viewMode === 'pitch' ? "flex" : "hidden xl:flex"
         )}>
            {/* Section Header */}
