@@ -140,7 +140,12 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">Carregando scouting...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground animate-pulse font-bold uppercase tracking-widest">Sincronizando Departamento de Scouting...</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto p-2 sm:p-4">
