@@ -41,8 +41,6 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
   const [showMissionModal, setShowMissionModal] = useState<ScoutV3 | null>(null);
   const [activeTab, setActiveTab] = useState('scouts');
 
-  console.log('[ScoutsTab] Render', { userId, budget });
-
   const fetchScoutingData = async () => {
     try {
       console.log('[ScoutsTab] Fetching data for user:', userId);
