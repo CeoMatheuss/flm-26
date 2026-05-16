@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Wallet, ShoppingCart, Users, Building2, Info } from 'lucide-react';
+import { Wallet, ShoppingCart, Users, Building2, Info, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { formatMoney, formatMoneyFull } from '@/lib/formatMoney';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -12,9 +12,10 @@ interface Props {
 
 /** Calcula breakdown 40/40/20 */
 export function calcBudgetBreakdown(budget: number, totalSalaries: number) {
-  const transferBudget = Math.floor(budget * 0.4);
-  const salaryBudget = Math.floor(budget * 0.4);
-  const reservaBudget = Math.floor(budget * 0.2);
+  const safeBudget = Math.max(0, budget);
+  const transferBudget = Math.floor(safeBudget * 0.4);
+  const salaryBudget = Math.floor(safeBudget * 0.4);
+  const reservaBudget = Math.floor(safeBudget * 0.2);
   const annualSalaries = totalSalaries * 12;
   const salaryUsed = Math.min(salaryBudget, annualSalaries);
   const salaryBudgetRemaining = Math.max(0, salaryBudget - annualSalaries);
@@ -29,6 +30,7 @@ export function calcBudgetBreakdown(budget: number, totalSalaries: number) {
     salaryUsedPercent,
   };
 }
+
 
 function getBarColor(percent: number) {
   if (percent >= 90) return 'bg-destructive';
@@ -81,15 +83,21 @@ export function BudgetBreakdown({ budget, totalSalaries, variant = 'full' }: Pro
         </CardHeader>
         <CardContent className="space-y-3">
           {/* Total */}
-          <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-            <span className="text-xs flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5 text-emerald-400" /> Orçamento Total</span>
+          <div className={`flex items-center justify-between p-2.5 rounded-lg border ${budget >= 0 ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+            <span className="text-xs flex items-center gap-1.5">
+              <Wallet className={`h-3.5 w-3.5 ${budget >= 0 ? 'text-emerald-400' : 'text-red-400'}`} /> 
+              Orçamento Total
+            </span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-base font-black text-emerald-400 cursor-help">{formatMoney(budget)}</span>
+                <span className={`text-base font-black cursor-help ${budget >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatMoney(budget)}
+                </span>
               </TooltipTrigger>
               <TooltipContent>{formatMoneyFull(budget)}</TooltipContent>
             </Tooltip>
           </div>
+
 
           {/* Transfer */}
           <div className="space-y-1.5">
