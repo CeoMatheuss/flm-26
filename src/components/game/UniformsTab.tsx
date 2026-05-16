@@ -374,6 +374,27 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       setLaunches(launchData || []);
       if (launchData && launchData.length > 0) {
         setActiveLaunch(launchData[0]);
+        // Trigger low sales notification if hype is low
+        const stats = calculateCurrentSales(launchData[0], clubReputation || 50, clubReputation || 50);
+        if (stats.hype < 20 && stats.daysSinceLaunch > 30) {
+          const { data: existingNotif } = await supabase
+            .from('user_notifications')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('title', 'Vendas de Uniforme em Queda')
+            .maybeSingle();
+            
+          if (!existingNotif) {
+             await supabase.from('user_notifications').insert({
+              user_id: user.id,
+              type: 'info',
+              category: 'Marketing',
+              title: 'Vendas de Uniforme em Queda',
+              message: 'As vendas do uniforme atual começaram a cair drasticamente. Que tal lançar um novo modelo para reacender o interesse da torcida?',
+              icon: '📩'
+            });
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching launches:', error);
