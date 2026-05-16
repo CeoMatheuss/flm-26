@@ -414,7 +414,40 @@ export function useClubState(initialState: any, userId?: string) {
     tick();
     const id = setInterval(tick, 60_000);
     return () => clearInterval(id);
+  }, [userId]);
+
+  const processMatchFinance = useCallback((
+    revenue: { 
+      tickets: number; 
+      vip: number; 
+      commercial: number; 
+      parking: number;
+      prizes: number;
+      sponsors: number;
+    },
+    penalties: { fine: number; reason: string }[],
+    addFinance: (type: FinanceType, cat: FinanceCategory, amt: number, desc: string) => void
+  ) => {
+    const totalRevenue = revenue.tickets + revenue.vip + revenue.commercial + revenue.parking + revenue.prizes + revenue.sponsors;
+    const totalPenalties = penalties.reduce((sum, p) => sum + p.fine, 0);
+    const net = totalRevenue - totalPenalties;
+
+    setClub(prev => ({ ...prev, budget: prev.budget + net }));
+
+    if (revenue.tickets > 0) addFinance('receita', 'Bilheteria', revenue.tickets, 'Venda de ingressos da partida');
+    if (revenue.vip > 0) addFinance('receita', 'Bilheteria', revenue.vip, 'Receita de camarotes');
+    if (revenue.commercial > 0) addFinance('receita', 'Marketing', revenue.commercial, 'Venda de alimentos e produtos no estádio');
+    if (revenue.parking > 0) addFinance('receita', 'Infraestrutura', revenue.parking, 'Receita de estacionamento');
+    if (revenue.prizes > 0) addFinance('premiação', 'Premiação', revenue.prizes, 'Premiação por desempenho na partida');
+    if (revenue.sponsors > 0) addFinance('receita', 'Patrocínio', revenue.sponsors, 'Bônus de patrocínio por partida');
+
+    penalties.forEach(p => {
+      if (p.fine > 0) addFinance('despesa', 'Impostos', p.fine, `Multa: ${p.reason}`);
+    });
+
+    return net;
   }, []);
+
 
   // 🏋️ Ciclo de Treino: 1 ciclo = 24h reais, 60s interval
   useEffect(() => {
@@ -1168,6 +1201,8 @@ export function useClubState(initialState: any, userId?: string) {
 
   return {
     club, setClub, marketPlayers, setMarketPlayers, freeAgents, setFreeAgents,
+    processMatchFinance,
+
     loanedPlayers, setLoanedPlayers, trainingFocus, trainingIntensity, listedForSale, clubProfile, setClubProfile,
     totalSalaries, loansOut, loansIn,
     transferBudget, salaryBudget, reservaBudget, salaryBudgetRemaining, annualSalaries,
