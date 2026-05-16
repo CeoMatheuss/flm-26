@@ -153,6 +153,41 @@ export function ShopFinanceDashboard({ stats, club, products }: ShopFinanceDashb
 
         {/* Info & Upgrades */}
         <div className="space-y-6">
+          <Card className="bg-black/40 border-white/5 backdrop-blur-md overflow-hidden">
+            <CardContent className="p-6">
+               <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                     <div className="p-2 rounded-xl bg-purple-500/10">
+                        <Users className="h-4 w-4 text-purple-400" />
+                     </div>
+                     <div>
+                        <h4 className="text-[10px] text-white/40 font-black uppercase tracking-widest">Impacto da Marca</h4>
+                        <p className="text-sm font-black text-white italic">Crescimento da Instituição</p>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="p-4 rounded-[1.5rem] bg-white/5 border border-white/5">
+                        <p className="text-[9px] text-white/30 font-black uppercase tracking-wider mb-1">Reputação</p>
+                        <p className="text-xl font-black text-white italic">{(club.reputation || 0).toFixed(0)}</p>
+                     </div>
+                     <div className="p-4 rounded-[1.5rem] bg-white/5 border border-white/5">
+                        <p className="text-[9px] text-white/30 font-black uppercase tracking-wider mb-1">Engajamento</p>
+                        <p className="text-xl font-black text-white italic">Forte</p>
+                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                     <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                        <span className="text-white/20">Média de Vendas</span>
+                        <span className="text-white/60">R$ {((stats.daily_revenue / (stats.buying_fans || 1)) / 100).toFixed(2)} / torcedor</span>
+                     </div>
+                     <div className="h-1 w-full bg-white/5 rounded-full" />
+                  </div>
+               </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-emerald-600/10 border-emerald-500/20 backdrop-blur-md overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <Star className="h-16 w-16 text-emerald-400" />
