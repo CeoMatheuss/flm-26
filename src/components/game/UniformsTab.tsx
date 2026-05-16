@@ -346,6 +346,38 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     third: defaultThird,
     goalkeeper: defaultGoalkeeper,
   });
+  const [launches, setLaunches] = useState<any[]>([]);
+  const [activeLaunch, setActiveLaunch] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+
+  useEffect(() => {
+    fetchLaunches();
+  }, []);
+
+  const fetchLaunches = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: clubData } = await supabase.from('clubs').select('id').eq('user_id', user.id).single();
+      if (!clubData) return;
+
+      const { data: launchData, error } = await supabase
+        .from('club_uniform_launches')
+        .select('*')
+        .eq('club_id', clubData.id)
+        .order('launched_at', { ascending: false });
+
+      if (error) throw error;
+      setLaunches(launchData || []);
+      if (launchData && launchData.length > 0) {
+        setActiveLaunch(launchData[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching launches:', error);
+    }
+  };
 
   const currentKit = kits[activeKit];
   const shirtSponsor = sponsors?.find(s => s.type === 'camisa');
@@ -358,6 +390,83 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
   const handleKitChange = (updated: UniformKit) => {
     setKits(prev => ({ ...prev, [activeKit]: updated }));
+  };
+
+  const generateLaunchNews = async (clubId: string, clubName: string, fans: number, reputation: number) => {
+    let title = '';
+    let content = '';
+
+    if (fans < 50000) {
+      title = `${clubName} apresenta novo uniforme para a temporada`;
+      content = `O ${clubName} revelou hoje sua nova identidade visual para a sequência das competições. O design busca aumentar a conexão com a torcida e renovar as esperanças dos fãs.`;
+    } else if (fans < 500000) {
+      title = `Novo uniforme do ${clubName} começa a movimentar a torcida`;
+      content = `A nova camisa do ${clubName} já é sucesso nas redes sociais. Com vendas iniciais superando as expectativas, o clube aposta no hype para alavancar as receitas de marketing.`;
+    } else {
+      title = `Torcida lota loja oficial após lançamento do novo uniforme do ${clubName}`;
+      content = `Filas quilométricas foram registradas na manhã de hoje. O lançamento do novo uniforme do gigante ${clubName} parou a cidade, com recorde de vendas nas primeiras horas.`;
+    }
+
+    await supabase.from('newspaper_entries').insert({
+      club_id: clubId,
+      title,
+      content,
+      type: 'marketing',
+      importance: reputation > 75 ? 'high' : 'medium'
+    });
+  };
+
+  const handleLaunch = async () => {
+    try {
+      setIsLaunching(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: clubData } = await supabase.from('clubs').select('*').eq('user_id', user.id).single();
+      if (!clubData) return;
+
+      if ((clubData.uniform_launches_available || 0) <= 0) {
+        toast.error('Você não possui slots de lançamento disponíveis. Compre na Loja FLM!');
+        return;
+      }
+
+      // 1. Criar registro de lançamento
+      const { data: newLaunch, error: launchError } = await supabase
+        .from('club_uniform_launches')
+        .insert({
+          club_id: clubData.id,
+          name: kits.home.name || 'Nova Coleção',
+          config: kits,
+          initial_fans: clubData.fans,
+          initial_reputation: clubData.reputation,
+          hype_score: 1.0
+        })
+        .select()
+        .single();
+
+      if (launchError) throw launchError;
+
+      // 2. Atualizar clube (consumir slot e definir uniforme atual)
+      await supabase.from('clubs').update({
+        uniform_launches_available: clubData.uniform_launches_available - 1,
+        current_uniform_launch_id: newLaunch.id,
+        primary_color: kits.home.shirtColor,
+        secondary_color: kits.home.shirtSecondaryColor
+      }).eq('id', clubData.id);
+
+      // 3. Gerar notícia
+      await generateLaunchNews(clubData.id, clubData.name, clubData.fans, clubData.reputation);
+
+      toast.success('🚀 Novo uniforme lançado com sucesso!');
+      fetchLaunches();
+      window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+      onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
+    } catch (error: any) {
+      console.error('Launch error:', error);
+      toast.error('Erro ao lançar uniforme: ' + error.message);
+    } finally {
+      setIsLaunching(false);
+    }
   };
 
   const handleSave = () => {
