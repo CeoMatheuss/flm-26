@@ -302,9 +302,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             variant="outline" 
             size="sm" 
             onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'dashboard' } }))} 
-            className="bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-xl gap-2 h-9"
+            className="bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-xl gap-2 h-8 sm:h-9 text-[10px] sm:text-xs"
           >
-             <ChevronRight className="h-4 w-4 rotate-180" /> Voltar ao Clube
+             <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 rotate-180" /> <span className="hidden sm:inline">Voltar ao Clube</span><span className="sm:hidden">Voltar</span>
           </Button>
           <div className="flex gap-2">
             {isPremium && (
