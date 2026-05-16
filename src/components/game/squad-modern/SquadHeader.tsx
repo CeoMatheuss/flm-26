@@ -17,6 +17,8 @@ interface Props {
   onViewModeChange: (mode: 'list' | 'pitch') => void;
   pendingSwap?: { id: string; name: string } | null;
   onCancelSwap?: () => void;
+  isTacticsOpen: boolean;
+  onToggleTactics: () => void;
 }
 
 export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewModeChange, pendingSwap, onCancelSwap }: Props) {
