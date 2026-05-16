@@ -91,7 +91,7 @@ serve(async (req) => {
           .eq('id', orderId)
           .single();
 
-        // Update order
+        // Update order status first to ensure we don't process twice if delivery is slow
         await supabaseAdmin.from('payment_orders').update({
           status: 'approved',
           payment_id: id.toString(),

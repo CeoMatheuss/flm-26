@@ -59,33 +59,41 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
     if (userId) {
       fetchHistory();
       
-      const channel = supabase
-        .channel('public:payment_orders_history')
-        .on('postgres_changes', { 
-          event: '*', 
-          schema: 'public', 
-          table: 'payment_orders',
-          filter: `user_id=eq.${userId}`
-        }, (payload: any) => {
-          fetchHistory();
-          if (payload.new.status === 'approved' && (payload.new.id === currentOrderId || (pixData && payload.new.id === pixData.orderId))) {
-            setShowPixModal(false);
-            setShowPremium(true);
-            const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
-            audio.volume = 0.3;
-            audio.play().catch(() => {});
-            window.dispatchEvent(new CustomEvent('flm:purchase-success', { 
-              detail: { item_name: payload.new.metadata?.item_name || 'Seu Item' } 
-            }));
-
-          }
-        })
-
-        .subscribe();
-        
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    const channel = supabase
+      .channel('public:payment_orders_history')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'payment_orders',
+        filter: `user_id=eq.${userId}`
+      }, (payload: any) => {
+        fetchHistory();
+        // Se o status mudou para 'approved' e for o pedido atual (ou do PIX)
+        if (payload.new.status === 'approved' && 
+           (payload.new.id === currentOrderId || (pixData && payload.new.id === pixData.orderId))) {
+          
+          setShowPixModal(false);
+          setShowPremium(true);
+          
+          const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
+          audio.volume = 0.3;
+          audio.play().catch(() => {});
+          
+          window.dispatchEvent(new CustomEvent('flm:purchase-success', { 
+            detail: { item_name: payload.new.metadata?.item_name || 'Seu Item' } 
+          }));
+          
+          // Dispara um evento para atualizar o estado global do clube (orçamento, torcida, etc)
+          window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+          
+          toast.success(`Pagamento confirmado! Seu item "${payload.new.metadata?.item_name || 'Premium'}" já foi entregue.`);
+        }
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
     }
   }, [userId, currentOrderId, pixData]);
 
