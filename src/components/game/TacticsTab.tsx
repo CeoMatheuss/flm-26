@@ -302,16 +302,16 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
           </div>
         </div>
 
-        <div className="xl:col-span-4 space-y-6 min-w-0 xl:min-w-[380px]">
+        <div className="xl:col-span-4 space-y-6 min-w-0">
           <Tabs defaultValue="style" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-14 bg-slate-900/80 border border-white/10 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
-              <TabsTrigger value="style" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+            <TabsList className="w-full grid grid-cols-3 h-14 bg-zinc-950/50 border border-white/5 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
+              <TabsTrigger value="style" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
                 <Target className="w-4 h-4" />Estilo
               </TabsTrigger>
-              <TabsTrigger value="roles" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+              <TabsTrigger value="roles" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
                 <Users className="w-4 h-4" />Banco
               </TabsTrigger>
-              <TabsTrigger value="details" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
+              <TabsTrigger value="details" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
                 <LayoutGrid className="w-4 h-4" />Funções
               </TabsTrigger>
             </TabsList>
