@@ -448,7 +448,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       
       <TabsContent value="settings"><SettingsTab /></TabsContent>
-      <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} onSave={() => {}} /></TabsContent>
+      <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} onSave={() => {}} customizationUnlocked={!!game.clubProfile?.customizationUnlocked} /></TabsContent>
       
       <TabsContent value="sponsors">
         {isTabBlocked('sponsors') ? <BlockedMessage /> : (
