@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Repeat, Zap, Heart, Star, Search, ShieldCheck } from 'lucide-react';
-import { getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
+import { Repeat, Zap, Heart, Search } from 'lucide-react';
+import { getAdaptationLevel, getAdaptationColor, positionCompatibility } from '@/utils/positionUtils';
 
 interface QuickSwapPanelProps {
   isOpen: boolean;
@@ -44,7 +44,9 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
 
   const PlayerRow = ({ player }: { player: Player }) => {
     const isSelected = selectedPlayerA?.id === player.id;
-    const adaptation = selectedPlayerA ? getAdaptationLevel(player, selectedPlayerA.position) : 100;
+    const compatibility = selectedPlayerA ? (positionCompatibility[player.position]?.[selectedPlayerA.position] || 0.3) : 1.0;
+    const adaptationLevel = getAdaptationLevel(compatibility);
+    const adaptationColor = getAdaptationColor(adaptationLevel);
 
     return (
       <div 
@@ -66,8 +68,8 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
                 {player.position}
               </Badge>
               {selectedPlayerA && !isSelected && (
-                <span className={`text-[9px] font-black uppercase ${getAdaptationColor(adaptation)}`}>
-                  Comp: {adaptation}%
+                <span className={`text-[9px] font-black uppercase ${adaptationColor}`}>
+                  {adaptationLevel}
                 </span>
               )}
             </div>
