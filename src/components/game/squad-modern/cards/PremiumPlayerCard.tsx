@@ -11,9 +11,10 @@ interface Props {
   isStarter: boolean;
   selected: boolean;
   onClick: () => void;
+  onOpenQuickSwap?: () => void;
 }
 
-export function PremiumPlayerCard({ player, isStarter, selected, onClick }: Props) {
+export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpenQuickSwap }: Props) {
   const tier = ovrTier(player.overall);
   const status = getPlayerStatus(player, isStarter);
   const sm = statusMeta[status] || statusMeta.reserva;
