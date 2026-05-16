@@ -317,7 +317,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
 
             <div className="mt-4">
               <TabsContent value="style" className="m-0 space-y-6">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {tacticsPresets.map(preset => (
                     <button
                       key={preset.name}
@@ -335,7 +335,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                 <div className="space-y-4">
                   <div>
                     <SectionLabel icon={Target} label="Filosofia de Jogo" />
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {MAIN_PLAY_STYLES.map(s => (
                         <button
                           key={s}
