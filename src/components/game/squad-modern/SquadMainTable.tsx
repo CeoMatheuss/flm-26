@@ -14,6 +14,8 @@ import {
   positionColors,
   flagFor,
   getPlayerStatus,
+  attrConfig,
+  getAttrValue,
 } from './squadHelpers';
 
 interface Props {
