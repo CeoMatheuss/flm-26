@@ -387,12 +387,11 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
               </TabsContent>
 
               <TabsContent value="roles" className="m-0">
-                <Card className="bg-slate-950/40 border-white/5">
-                  <CardContent className="p-4 space-y-3">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <Users className="w-3 h-3 text-blue-400" /> BANCO DE RESERVAS ({reserves.length})
-                    </p>
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-emerald-400" /> BANCO DE RESERVAS ({reserves.length})
+                  </p>
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                       {reserves.length === 0 ? (
                         <p className="text-[10px] text-muted-foreground italic text-center py-4">Nenhum reserva disponível</p>
                       ) : (
