@@ -91,7 +91,10 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
                 <span className="text-xs font-mono font-black text-white/40">#{player.shirtNumber}</span>
               )}
               {player.position !== 'GOL' && player.attributes.goalkeeping && player.attributes.goalkeeping > 40 && (
-                 <Badge variant="outline" className="text-[8px] bg-red-500/20 text-red-400 border-red-500/30">Fora de Posição</Badge>
+                 <Badge variant="outline" className="text-[8px] bg-red-500/20 text-red-400 border-red-500/30 font-black uppercase">Fora de Posição</Badge>
+              )}
+              {player.age < 21 && player.potential && player.potential >= 88 && (
+                 <Badge variant="outline" className="text-[8px] bg-amber-500/20 text-amber-400 border-amber-500/30 font-black uppercase">💎 Joia</Badge>
               )}
             </div>
             <h3 className="text-base font-black text-white uppercase italic tracking-tighter truncate max-w-[140px]">{player.name}</h3>
