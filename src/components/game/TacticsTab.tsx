@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { FormationView } from './FormationView';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, Zap, Target, Users, Star, Info, Lock, Sparkles, Heart, Activity, LayoutGrid, TrendingUp, TrendingDown, Minus, Crown, ArrowRightLeft, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Shield, Zap, Target, Users, Star, Info, Lock, Sparkles, Heart, Activity, LayoutGrid, TrendingUp, TrendingDown, Minus, Crown, ArrowRightLeft, PanelRightClose, PanelRightOpen, ArrowLeft } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { SeasonStartWidget } from './SeasonStartWidget';
@@ -183,7 +183,21 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
 
   return (
     <div className="space-y-4 pb-20">
-      <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
+      {!hideSwapButton && (
+        <div className="flex items-center justify-between gap-4">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'squad' } }))}
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-emerald-400 transition-all bg-white/5 px-4 h-11 rounded-2xl border border-white/10 group shadow-lg"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
+            Voltar ao Elenco
+          </button>
+          
+          <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
+        </div>
+      )}
+
+      {hideSwapButton && <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />}
 
       {isInLiveMatch && (
         <Card className="border-destructive/40 bg-destructive/5">
