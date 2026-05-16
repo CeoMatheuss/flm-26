@@ -393,27 +393,23 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     setKits(prev => ({ ...prev, [activeKit]: updated }));
   };
 
-  const generateLaunchNews = async (clubId: string, clubName: string, fans: number, reputation: number) => {
-    let title = '';
-    let content = '';
+  const generateLaunchNews = async (userId: string, clubName: string, fans: number, reputation: number) => {
+    let newsText = '';
 
     if (fans < 50000) {
-      title = `${clubName} apresenta novo uniforme para a temporada`;
-      content = `O ${clubName} revelou hoje sua nova identidade visual para a sequência das competições. O design busca aumentar a conexão com a torcida e renovar as esperanças dos fãs.`;
+      newsText = `👕 ${clubName} apresenta novo uniforme para a temporada. O design busca aumentar a conexão com a torcida e renovar as esperanças dos fãs.`;
     } else if (fans < 500000) {
-      title = `Novo uniforme do ${clubName} começa a movimentar a torcida`;
-      content = `A nova camisa do ${clubName} já é sucesso nas redes sociais. Com vendas iniciais superando as expectativas, o clube aposta no hype para alavancar as receitas de marketing.`;
+      newsText = `👕 Novo uniforme do ${clubName} começa a movimentar a torcida. Com vendas iniciais superando as expectativas, o clube aposta no hype para alavancar as receitas.`;
     } else {
-      title = `Torcida lota loja oficial após lançamento do novo uniforme do ${clubName}`;
-      content = `Filas quilométricas foram registradas na manhã de hoje. O lançamento do novo uniforme do gigante ${clubName} parou a cidade, com recorde de vendas nas primeiras horas.`;
+      newsText = `👕 Torcida lota loja oficial após lançamento do novo uniforme do ${clubName}. O lançamento do novo uniforme do gigante ${clubName} parou a cidade.`;
     }
 
-    await supabase.from('newspaper_entries').insert({
-      club_id: clubId,
-      title,
-      content,
-      type: 'marketing',
-      importance: reputation > 75 ? 'high' : 'medium'
+    await (supabase.from('newspaper_entries') as any).insert({
+      user_id: userId,
+      text: newsText,
+      category: 'MARKETING',
+      importance: 1,
+      is_event: true
     });
   };
 
@@ -423,7 +419,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: clubData } = await supabase.from('clubs').select('*').eq('user_id', user.id).single();
+      const { data: clubData } = await (supabase.from('clubs') as any).select('*').eq('user_id', user.id).single();
       if (!clubData) return;
 
       if ((clubData.uniform_launches_available || 0) <= 0) {
@@ -432,12 +428,11 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       }
 
       // 1. Criar registro de lançamento
-      const { data: newLaunch, error: launchError } = await supabase
-        .from('club_uniform_launches')
+      const { data: newLaunch, error: launchError } = await (supabase.from('club_uniform_launches') as any)
         .insert({
           club_id: clubData.id,
           name: kits.home.name || 'Nova Coleção',
-          config: kits,
+          config: kits as any,
           initial_fans: clubData.fans,
           initial_reputation: clubData.reputation,
           hype_score: 1.0
@@ -448,7 +443,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       if (launchError) throw launchError;
 
       // 2. Atualizar clube (consumir slot e definir uniforme atual)
-      await supabase.from('clubs').update({
+      await (supabase.from('clubs') as any).update({
         uniform_launches_available: clubData.uniform_launches_available - 1,
         current_uniform_launch_id: newLaunch.id,
         primary_color: kits.home.shirtColor,
@@ -456,7 +451,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       }).eq('id', clubData.id);
 
       // 3. Gerar notícia
-      await generateLaunchNews(clubData.id, clubData.name, clubData.fans, clubData.reputation);
+      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
 
       toast.success('🚀 Novo uniforme lançado com sucesso!');
       fetchLaunches();
@@ -469,6 +464,32 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       setIsLaunching(false);
     }
   };
+
+  const calculateCurrentSales = (launch: any, clubFans: number, clubRep: number) => {
+    if (!launch) return { daily: 0, total: 0, hype: 0, daysSinceLaunch: 0, revenue: 0 };
+    
+    const daysSinceLaunch = Math.max(0, (Date.now() - new Date(launch.launched_at).getTime()) / (24 * 3600 * 1000));
+    
+    const baseDaily = (clubFans * 0.005) * (clubRep / 100);
+    
+    let hype = 1.0;
+    if (daysSinceLaunch <= 15) {
+      hype = 1.5 - (daysSinceLaunch / 15) * 0.5;
+    } else {
+      hype = Math.max(0.1, 1.0 - ((daysSinceLaunch - 15) / 45));
+    }
+    
+    const dailySales = Math.floor(baseDaily * hype);
+    
+    return {
+      daily: dailySales,
+      revenue: dailySales * shirtPrice,
+      hype: Math.round(hype * 100),
+      daysSinceLaunch: Math.floor(daysSinceLaunch)
+    };
+  };
+
+  const salesStats = useMemo(() => calculateCurrentSales(activeLaunch, clubReputation || 50, clubReputation || 50), [activeLaunch, clubReputation]);
 
   const handleSave = () => {
     onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
