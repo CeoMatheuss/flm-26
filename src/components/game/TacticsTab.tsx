@@ -22,7 +22,7 @@ interface Props {
 }
 
 export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season, userId, hideSwapButton }: Props) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   const starters = players.slice(0, 11);
   
