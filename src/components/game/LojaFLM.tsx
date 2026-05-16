@@ -316,8 +316,8 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
   };
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-4 overflow-y-auto scrollbar-hide">
-      <div className="relative rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
+    <div className="space-y-4 sm:space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-2 sm:p-4 overflow-y-auto scrollbar-hide">
+      <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-3 sm:p-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
         <div className="absolute top-4 right-6 opacity-10">
           <ShoppingBag className="h-24 w-24 text-emerald-400" />
         </div>
