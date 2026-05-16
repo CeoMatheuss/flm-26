@@ -826,9 +826,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                       isInteractive={true}
                     />
                     
-                    <div className="mt-4 p-3 bg-white/5 rounded-2xl border border-white/5 text-[10px] text-white/40 font-bold uppercase tracking-wider text-center">
-                      Toque em dois jogadores para trocá-los de posição
-                    </div>
+                    {/* Hint removed for cleaner UI */}
                   </div>
                 </motion.div>
               )}
