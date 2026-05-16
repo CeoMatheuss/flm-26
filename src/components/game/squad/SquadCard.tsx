@@ -1,7 +1,7 @@
-import { Player } from '@/types/game';
+import { Player, personalityLabels } from '@/types/game';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Zap, Heart, TrendingUp, TrendingDown, Target, Shield, Activity, ArrowUp, ArrowDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Zap, Heart, TrendingUp, TrendingDown, Target, Activity, Star, Repeat } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
