@@ -43,11 +43,11 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
       {/* ─── Contratos Ativos ───────────────────────────────────── */}
       <Card className="border-primary/30">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center justify-between">
+          <CardTitle className="text-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="flex items-center gap-2">
-              <Handshake className="h-5 w-5" /> Patrocínios Ativos ({sponsors.length}/3)
+              <Handshake className="h-5 w-5 text-primary" /> Patrocínios Ativos ({sponsors.length}/3)
             </span>
-            <span className="text-sm font-normal text-muted-foreground">
+            <span className="text-xs sm:text-sm font-normal text-muted-foreground bg-muted/50 px-3 py-1 rounded-full border border-border/40 w-fit">
               Receita mensal: <span className="text-primary font-bold">{fmtBRL(totalMonthly)}</span>
             </span>
           </CardTitle>
@@ -58,7 +58,7 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
               Nenhum patrocinador ativo. Aceite ofertas abaixo!
             </p>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sponsors.map(sp => {
                 const progress = (sp.installmentsPaid / Math.max(1, sp.installmentsTotal)) * 100;
                 const winsTarget = sp.objective.target ?? 0;
@@ -68,57 +68,60 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
                   : null;
 
                 return (
-                  <div key={sp.id} className="p-3 bg-muted/30 rounded-lg border border-border/40 space-y-2">
-                    {/* Header */}
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="text-xs shrink-0">
-                        {sponsorTypeLabels[sp.type]}
-                      </Badge>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm truncate">{sp.name}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          Total: <span className="text-primary font-semibold">{fmtBRL(sp.totalValue)}</span>
-                          {' · '}
-                          {sp.payMode === 'monthly'
-                            ? `${fmtBRL(sp.monthlyPay)}/parcela`
-                            : 'Pagamento ao concluir'}
-                        </p>
+                  <div key={sp.id} className="p-3 bg-muted/30 rounded-lg border border-border/40 space-y-2 flex flex-col justify-between h-full">
+                    <div className="space-y-2">
+                      {/* Header */}
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary" className="text-xs shrink-0">
+                          {sponsorTypeLabels[sp.type]}
+                        </Badge>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate">{sp.name}</p>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] shrink-0">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {sp.duration} temp.
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="text-[10px] shrink-0">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {sp.duration} temp.
-                      </Badge>
-                    </div>
 
-                    {/* Objetivo */}
-                    <div className="flex items-center gap-2 text-xs bg-primary/5 rounded px-2 py-1.5 border border-primary/20">
-                      <Target className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="font-medium">{sp.objective?.label ?? 'Sem objetivo'}</span>
+                      <div className="text-[11px] text-muted-foreground">
+                        Total: <span className="text-primary font-semibold">{fmtBRL(sp.totalValue)}</span>
+                        {' · '}
+                        {sp.payMode === 'monthly'
+                          ? `${fmtBRL(sp.monthlyPay)}/parcela`
+                          : 'Pagamento ao concluir'}
+                      </div>
+
+                      {/* Objetivo */}
+                      <div className="flex items-center gap-2 text-xs bg-primary/5 rounded px-2 py-1.5 border border-primary/20">
+                        <Target className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="font-medium truncate">{sp.objective?.label ?? 'Sem objetivo'}</span>
+                        {winsProgress !== null && (
+                          <span className="ml-auto text-[10px] text-muted-foreground shrink-0">
+                            {winsTracked}/{winsTarget}
+                          </span>
+                        )}
+                      </div>
                       {winsProgress !== null && (
-                        <span className="ml-auto text-[10px] text-muted-foreground">
-                          {winsTracked}/{winsTarget}
-                        </span>
+                        <Progress value={winsProgress} className="h-1" />
+                      )}
+
+                      {/* Parcelas */}
+                      {sp.payMode === 'monthly' && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>Parcelas: {sp.installmentsPaid}/{sp.installmentsTotal}</span>
+                            <span>{progress.toFixed(0)}%</span>
+                          </div>
+                          <Progress value={progress} className="h-1" />
+                        </div>
                       )}
                     </div>
-                    {winsProgress !== null && (
-                      <Progress value={winsProgress} className="h-1" />
-                    )}
-
-                    {/* Parcelas */}
-                    {sp.payMode === 'monthly' && (
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>Parcelas pagas: {sp.installmentsPaid}/{sp.installmentsTotal}</span>
-                          <span>{progress.toFixed(0)}%</span>
-                        </div>
-                        <Progress value={progress} className="h-1" />
-                      </div>
-                    )}
 
                     {/* Multa */}
-                    <div className="flex items-center gap-2 text-[11px] text-destructive/90 bg-destructive/5 rounded px-2 py-1 border border-destructive/20">
+                    <div className="flex items-center gap-2 text-[10px] text-destructive/90 bg-destructive/5 rounded px-2 py-1 border border-destructive/20 mt-2">
                       <AlertTriangle className="h-3 w-3 shrink-0" />
-                      <span>Multa por descumprir: <strong>{fmtBRL(sp.penalty)}</strong> — pode falir o clube</span>
+                      <span className="truncate">Multa: <strong>{fmtBRL(sp.penalty)}</strong></span>
                     </div>
                   </div>
                 );
@@ -132,68 +135,71 @@ export function SponsorsTab({ sponsors, offers, reputation, onAccept, onRefreshO
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center justify-between">
-            <span className="flex items-center gap-2"><DollarSign className="h-5 w-5" /> Ofertas Disponíveis</span>
-            <Button size="sm" variant="outline" onClick={onRefreshOffers}>Buscar Novas</Button>
+            <span className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-emerald-500" /> Ofertas Disponíveis</span>
+            <Button size="sm" variant="outline" onClick={onRefreshOffers} className="h-8 text-xs shrink-0">Buscar Novas</Button>
           </CardTitle>
           <p className="text-xs text-muted-foreground">
             Reputação: <span className="text-primary font-semibold">{reputation}</span> — Quanto maior, mais ousados (e lucrativos) os contratos
           </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {offers.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhuma oferta no momento.</p>
             )}
             {offers.map(offer => {
               const eligible = reputation >= offer.minReputation && !atLimit;
               return (
-                <div key={offer.id} className="p-3 bg-accent/20 rounded-lg border border-border/30 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <Badge className="text-xs shrink-0">{sponsorTypeLabels[offer.type]}</Badge>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm truncate">{offer.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {offer.duration} temporada(s) · Rep. mín: {offer.minReputation}
-                        {' · '}
-                        <span className="text-primary font-semibold">
-                          {offer.payMode === 'monthly'
-                            ? `${fmtBRL(offer.monthlyPay)}/parcela`
-                            : 'Pago ao concluir objetivo'}
-                        </span>
-                      </p>
+                <div key={offer.id} className="p-3 bg-accent/20 rounded-lg border border-border/30 space-y-3 flex flex-col justify-between h-full">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Badge className="text-xs shrink-0">{sponsorTypeLabels[offer.type]}</Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{offer.name}</p>
+                      </div>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => onAccept(offer)}
-                      disabled={!eligible}
-                      className="shrink-0"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      {atLimit ? 'Limite' : reputation < offer.minReputation ? 'Rep. baixa' : 'Aceitar'}
-                    </Button>
+
+                    <div className="text-[11px] text-muted-foreground">
+                      {offer.duration} temp. · Rep. mín: {offer.minReputation}
+                      <div className="text-primary font-bold mt-0.5">
+                        {offer.payMode === 'monthly'
+                          ? `${fmtBRL(offer.monthlyPay)}/parcela`
+                          : 'Pago ao concluir objetivo'}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                      <div className="bg-primary/10 rounded p-1.5 border border-primary/20 text-center">
+                        <div className="text-[8px] text-muted-foreground uppercase leading-none mb-1">Total</div>
+                        <div className="font-bold text-primary truncate">{fmtBRL(offer.totalValue)}</div>
+                      </div>
+                      <div className="bg-yellow-500/10 rounded p-1.5 border border-yellow-500/20 text-center flex flex-col justify-center">
+                        <div className="text-[8px] text-muted-foreground uppercase leading-none mb-1">Objetivo</div>
+                        <div className="font-bold text-yellow-500 text-[9px] leading-tight truncate">{offer.objective?.label ?? '—'}</div>
+                      </div>
+                      <div className="bg-destructive/10 rounded p-1.5 border border-destructive/20 text-center">
+                        <div className="text-[8px] text-muted-foreground uppercase leading-none mb-1">Multa</div>
+                        <div className="font-bold text-destructive truncate">{fmtBRL(offer.penalty)}</div>
+                      </div>
+                    </div>
+
+                    {offer.payMode === 'on_complete' && (
+                      <div className="flex items-center gap-2 text-[9px] text-yellow-300 bg-yellow-500/5 rounded px-2 py-1 border border-yellow-500/20">
+                        <Trophy className="h-3 w-3 shrink-0" />
+                        <span className="leading-tight">Pagamento integral no fim</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-[11px]">
-                    <div className="bg-primary/10 rounded px-2 py-1.5 border border-primary/20">
-                      <div className="text-[9px] text-muted-foreground uppercase">Valor total</div>
-                      <div className="font-bold text-primary">{fmtBRL(offer.totalValue)}</div>
-                    </div>
-                    <div className="bg-yellow-500/10 rounded px-2 py-1.5 border border-yellow-500/20">
-                      <div className="text-[9px] text-muted-foreground uppercase">Objetivo</div>
-                      <div className="font-bold text-yellow-400 text-[10px] leading-tight">{offer.objective?.label ?? '—'}</div>
-                    </div>
-                    <div className="bg-destructive/10 rounded px-2 py-1.5 border border-destructive/20">
-                      <div className="text-[9px] text-muted-foreground uppercase">Multa</div>
-                      <div className="font-bold text-destructive">{fmtBRL(offer.penalty)}</div>
-                    </div>
-                  </div>
-
-                  {offer.payMode === 'on_complete' && (
-                    <div className="flex items-center gap-2 text-[10px] text-yellow-300 bg-yellow-500/5 rounded px-2 py-1 border border-yellow-500/20">
-                      <Trophy className="h-3 w-3 shrink-0" />
-                      Pagamento integral apenas se objetivo for cumprido
-                    </div>
-                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => onAccept(offer)}
+                    disabled={!eligible}
+                    className="w-full mt-2 h-8 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    {atLimit ? 'Limite' : reputation < offer.minReputation ? 'Rep. baixa' : 'Aceitar Contrato'}
+                  </Button>
                 </div>
               );
             })}
