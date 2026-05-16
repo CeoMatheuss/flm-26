@@ -228,8 +228,8 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
   }, [pendingSwapId, onSwapPlayers, onPlayerClick, isInteractive]);
 
   return (
-    <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] xl:aspect-[16/9] mx-auto bg-[#0a1f0f] rounded-3xl overflow-hidden border-4 border-emerald-900/50 shadow-2xl select-none">
-       <div className="relative w-full h-full">
+    <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] xl:aspect-[16/10] mx-auto bg-[#0a1f0f] rounded-[2.5rem] overflow-hidden border-[6px] border-emerald-900/40 shadow-[0_0_50px_rgba(0,0,0,0.5)] select-none">
+       <div className="relative w-full h-full p-4">
          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grass.png')] opacity-20 pointer-events-none" />
          <div className="absolute inset-0 flex pointer-events-none">
            {[...Array(12)].map((_, i) => (
@@ -307,15 +307,15 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
                      />
                    )}
                    
-                   <motion.div 
-                     whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0] }}
-                     whileTap={{ scale: 0.9 }}
-                     className={`w-16 h-16 sm:w-28 sm:h-28 rounded-full flex flex-col items-center justify-center text-white shadow-2xl border-4 transition-all duration-300 relative z-10
-                       ${isInjured ? 'bg-slate-800 grayscale border-slate-700' : (posColors[slot.position] || 'bg-slate-900')}
-                       ${isCaptain ? 'border-yellow-400 ring-4 ring-yellow-400/30' : 'border-white/90'}
-                       ${isJustUpdated ? 'animate-pulse ring-8 ring-primary/40' : ''}
-                       ${isPendingSwap ? 'scale-110 ring-8 ring-primary border-primary shadow-[0_0_30px_rgba(var(--primary),0.6)]' : 'border-white/20'}`}
-                   >
+                    <motion.div 
+                      whileHover={{ scale: 1.1, rotate: [0, -3, 3, 0] }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`w-14 h-14 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full flex flex-col items-center justify-center text-white shadow-2xl border-[3px] sm:border-4 transition-all duration-300 relative z-10
+                        ${isInjured ? 'bg-slate-800 grayscale border-slate-700' : (posColors[slot.position] || 'bg-slate-900')}
+                        ${isCaptain ? 'border-yellow-400 ring-4 ring-yellow-400/30' : 'border-white/80'}
+                        ${isJustUpdated ? 'animate-pulse ring-8 ring-primary/40' : ''}
+                        ${isPendingSwap ? 'scale-110 ring-8 ring-primary border-primary shadow-[0_0_30px_rgba(var(--primary),0.6)]' : 'border-white/20'}`}
+                    >
                      <div className="flex flex-col items-center -space-y-1">
                        <span className={`text-xl sm:text-4xl font-black tracking-tighter drop-shadow-md ${posTextColors[slot.position] || 'text-white'}`}>
                          {player ? getDynamicOverall(player, slot.position as Player['position']) : ''}
