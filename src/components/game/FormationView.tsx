@@ -310,7 +310,7 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
                     <motion.div 
                       whileHover={{ scale: 1.1, rotate: [0, -3, 3, 0] }}
                       whileTap={{ scale: 0.95 }}
-                      className={`w-14 h-14 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full flex flex-col items-center justify-center text-white shadow-2xl border-[3px] sm:border-4 transition-all duration-300 relative z-10
+                      className={`w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full flex flex-col items-center justify-center text-white shadow-2xl border-[3px] sm:border-4 transition-all duration-300 relative z-10
                         ${isInjured ? 'bg-slate-800 grayscale border-slate-700' : (posColors[slot.position] || 'bg-slate-900')}
                         ${isCaptain ? 'border-yellow-400 ring-4 ring-yellow-400/30' : 'border-white/80'}
                         ${isJustUpdated ? 'animate-pulse ring-8 ring-primary/40' : ''}
