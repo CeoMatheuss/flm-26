@@ -296,6 +296,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
     setIsDetailsOpen(true);
   };
 
+  const isActive = (itemId: string) => {
+    return storeManager.stats.activeEffects.some(e => e.itemId === itemId);
+  };
+
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500 bg-[#050810] min-h-screen text-white p-4 overflow-y-auto scrollbar-hide">
       <div className="relative rounded-3xl bg-gradient-to-br from-[#0a2e0a] to-[#050810] p-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
