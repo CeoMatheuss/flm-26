@@ -11,6 +11,7 @@ import {
   Trophy, Crown, Lock, Sparkles, CheckCircle2, Clock, CreditCard
 } from 'lucide-react';
 import { usePremiumSponsorship } from '@/hooks/usePremiumSponsorship';
+import { toast } from 'sonner';
 
 interface Props {
   sponsors: Sponsor[];
