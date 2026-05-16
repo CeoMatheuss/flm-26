@@ -37,12 +37,14 @@ export function useMatchState(initialState: any, userId?: string) {
     setClub: React.Dispatch<React.SetStateAction<Club>>;
     sponsors: any[];
     infrastructure: any;
-    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void;
+    addFinance: (type: any, cat: any, amount: number, desc: string) => void;
     setSeason: (fn: (s: any) => any) => void;
     stadiumOps?: any;
     isCup?: boolean;
     isFriendly?: boolean;
+    processMatchFinance?: (revenue: any, penalties: any[], addFinance: any) => number;
   }) => {
+
     const nowIso = new Date().toISOString();
     setLastFriendlyDate(nowIso);
     setFriendliesPlayedToday(1);
@@ -85,60 +87,41 @@ export function useMatchState(initialState: any, userId?: string) {
         leaguePrize = Math.round(20000 * resultMult * stadiumLeagueScale);
       }
       if (deps.isCup) {
-        // Prêmio fixo de 50k por vitória em copa, 20k empate, 10k derrota
         const cupBase = isWin ? 50000 : isDraw ? 20000 : 10000;
-        leaguePrize = cupBase; // Reutilizando a variável de premiação extra
+        leaguePrize = cupBase; 
       }
 
-      let stadiumPenaltyFine = 0;
-      let stadiumPenaltyRep = 0;
-      let stadiumPenaltyMsg = '';
+      let penalties: any[] = [];
       if (isHome && !isFriendly && deps.stadiumOps) {
         try {
           const pen = computeMatchPenalty(deps.stadiumOps, isFriendly);
           if (pen) {
-            stadiumPenaltyFine = pen.fine;
-            stadiumPenaltyRep = pen.reputationLoss;
-            stadiumPenaltyMsg = pen.reason;
+            penalties.push(pen);
           }
         } catch (e) {
           console.error('Error computing stadium penalty:', e);
         }
       }
 
-      // 🛡️ Registro Financeiro: Somente se NÃO for amistoso (onde o budget não muda)
-      // Usamos uma verificação interna para garantir que o log condiz com o saldo.
-      const shouldCredit = !deps.isFriendly && !isFriendly;
-
-      if (shouldCredit) {
-        if (sponsorWeekly > 0) deps.addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios (Semanal)');
-        deps.addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match?.opponent || 'Adversário'}`);
-        if (leaguePrize > 0) {
-          deps.addFinance('receita', 'Premiação Liga', leaguePrize, `Cota ${competition} vs ${match?.opponent || 'Adversário'}`);
-        }
-      }
-
-      if (stadiumPenaltyFine > 0) {
-        deps.addFinance('despesa', 'Multa Estádio', stadiumPenaltyFine, stadiumPenaltyMsg);
+      // 🛡️ Centralized Finance Processing
+      if (!deps.isFriendly && !isFriendly && deps.processMatchFinance) {
+        deps.processMatchFinance(
+          { 
+            tickets: ticketRevenue, 
+            vip: 0, 
+            commercial: 0, 
+            parking: 0, 
+            prizes: prize, 
+            sponsors: sponsorWeekly + leaguePrize 
+          },
+          penalties,
+          deps.addFinance
+        );
       }
 
       const stadiumFanBonus = Math.min(20, (deps.infrastructure?.stadium?.level || 1) * 5);
       const repBonus = prev.reputation >= 70 ? 10 : prev.reputation <= 30 ? -10 : 0;
 
-      let fanChange: number;
-      if (isWin) {
-        fanChange = 50 + Math.floor(Math.random() * 51);
-      } else if (isDraw) {
-        fanChange = 20 + Math.floor(Math.random() * 31);
-      } else {
-        fanChange = Math.floor(Math.random() * 21);
-      }
-      fanChange += stadiumFanBonus + repBonus;
-      fanChange = Math.max(-50, Math.min(fanChange, 100));
-
-      const isRout = isHome ? (homeGoals - awayGoals) >= 3 : (awayGoals - homeGoals) >= 3;
-      const isBigLoss = isHome ? (homeGoals - awayGoals) <= -3 : (awayGoals - homeGoals) <= -3;
-      const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
 
       const prizeMsg = leaguePrize > 0 ? ` | +R$${(leaguePrize/1000).toFixed(0)}k liga` : '';
       const penMsg = stadiumPenaltyFine > 0 ? ` | -R$${(stadiumPenaltyFine/1000).toFixed(0)}k multa estádio` : '';

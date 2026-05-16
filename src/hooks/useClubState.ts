@@ -3,6 +3,8 @@ import { getTrainingManager, defaultStaff } from "@/training/TrainingManager";
 import { WeeklyTrainingResult } from "@/training/TrainingTypes";
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { Club, Player, Scout, ScoutReport, PlayerAttributes, PhysicalStatus } from '@/types/game';
+import { FinanceType, FinanceCategory } from "@/types/finance";
+
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
