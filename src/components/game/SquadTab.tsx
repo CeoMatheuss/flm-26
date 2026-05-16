@@ -766,25 +766,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </TabsList>
         </Tabs>
 
-        {/* View Toggle - ONLY Mobile */}
-        <div className="flex sm:hidden w-full gap-2 p-1 bg-slate-900/40 border border-white/5 rounded-2xl">
-          <Button 
-            variant={activeTacticalView === 'pitch' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="flex-1 rounded-xl gap-2"
-            onClick={() => setActiveTacticalView('pitch')}
-          >
-            <Layout className="w-4 h-4" /> Tático
-          </Button>
-          <Button 
-            variant={activeTacticalView === 'list' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="flex-1 rounded-xl gap-2"
-            onClick={() => setActiveTacticalView('list')}
-          >
-            <Users className="w-4 h-4" /> Lista
-          </Button>
-        </div>
+        {/* View Toggle removed for cleaner UI */}
       </div>
 
       <Tabs defaultValue="squad" value="squad" className="w-full">
