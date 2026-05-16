@@ -193,8 +193,8 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-8 space-y-4">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        <div className="xl:col-span-8 space-y-6">
           <Card className="border-primary/20 bg-slate-900/40 rounded-[2.5rem] overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
               <Shield className="w-32 h-32 text-primary rotate-12" />
@@ -301,9 +301,9 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
           </div>
         </div>
 
-        <div className="lg:col-span-4 space-y-4">
+        <div className="xl:col-span-4 space-y-6 min-w-0 xl:min-w-[380px]">
           <Tabs defaultValue="style" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-14 bg-slate-900/60 border border-white/5 p-1 rounded-2xl">
+            <TabsList className="w-full grid grid-cols-3 h-14 bg-slate-900/80 border border-white/10 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
               <TabsTrigger value="style" className="text-[11px] font-black uppercase tracking-tighter gap-2 rounded-lg data-[state=active]:bg-primary">
                 <Target className="w-4 h-4" />Estilo
               </TabsTrigger>
@@ -543,9 +543,10 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
 
       <Button
         onClick={() => setIsQuickSwapOpen(true)}
-        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground z-40 border-4 border-white/20 animate-bounce hover:animate-none group"
+        className="fixed bottom-24 right-6 h-16 px-6 rounded-2xl shadow-2xl bg-emerald-600 hover:bg-emerald-500 text-white z-40 border-4 border-white/10 flex items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 group shadow-emerald-500/20"
       >
-        <Repeat className="w-7 h-7 group-hover:rotate-180 transition-transform duration-500" />
+        <ArrowRightLeft className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
+        <span className="font-black uppercase tracking-tighter text-sm">🔄 Trocar Jogador</span>
       </Button>
     </div>
   );
