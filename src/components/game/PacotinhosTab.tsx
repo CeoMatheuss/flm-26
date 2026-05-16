@@ -115,6 +115,7 @@ export function PacotinhosTab({ budget, onBuyPack: _onBuyPack, userId }: Props) 
   const [packShake, setPackShake] = useState(false);
   const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const currentPlayer = generatedPlayers[currentPlayerIdx];
 
