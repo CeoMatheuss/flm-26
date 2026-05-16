@@ -281,7 +281,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       return false;
     }
     deductBudget(weeklyCost);
-    addFinance('despesa', 'Base', weeklyCost, `Custo Semanal Academia (${tierInfo.label})`);
+    addFinance('despesa', 'Infraestrutura', weeklyCost, `Custo Semanal Academia (${tierInfo.label})`);
     return true;
   }, [youthInvestment]);
 
@@ -299,7 +299,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       return false;
     }
     deductBudget(trainingInvestment);
-    addFinance('despesa', 'CT', trainingInvestment, 'Investimento mensal em Treino');
+    addFinance('despesa', 'Infraestrutura', trainingInvestment, 'Investimento mensal em Treino');
     toast.success(`💰 Investimento mensal em treino debitado: R$ ${trainingInvestment.toLocaleString('pt-BR')}`);
     return true;
   }, [trainingInvestment]);
