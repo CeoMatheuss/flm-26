@@ -154,6 +154,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [loanSubmitting, setLoanSubmitting] = useState(false);
   const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
   // activeTacticalView state removed to show both pitch and list as requested
+  const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
 
@@ -1209,7 +1210,19 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             setLoanSubmitting(false);
           }
         }}
+      <QuickSwapPanel
+        isOpen={isQuickSwapOpen}
+        onClose={() => setIsQuickSwapOpen(false)}
+        players={players}
+        onSwap={swapPlayers}
       />
+
+      <Button
+        onClick={() => setIsQuickSwapOpen(true)}
+        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground z-[100] border-4 border-white/20 animate-bounce hover:animate-none group"
+      >
+        <Repeat className="w-7 h-7 group-hover:rotate-180 transition-transform duration-500" />
+      </Button>
     </div>
   );
 }
