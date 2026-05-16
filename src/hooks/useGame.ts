@@ -106,8 +106,11 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
       stadiumOps: clubState.club.stadiumOps,
       isCup,
       isFriendly,
+      // Pass centralized finance method
+      processMatchFinance: clubState.processMatchFinance,
     });
-  }, [matchState.applyServerResult, clubState.setClub, financeState.sponsors, infraState.infrastructure, financeState.addFinance, infraState.setSeason, clubState.club.stadiumOps]);
+  }, [matchState.applyServerResult, clubState.setClub, financeState.sponsors, infraState.infrastructure, financeState.addFinance, infraState.setSeason, clubState.club.stadiumOps, clubState.processMatchFinance]);
+
 
   const generateFriendly = useCallback(async () => {
     await matchState.generateFriendly(
@@ -132,7 +135,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
     const result = clubState.signFreeAgent(player, offeredSalary);
     if (result) {
-      financeState.addFinance('despesa', 'Transferência Livre', result.salary * 3, `Assinatura: ${player.name} (3 meses adiantados)`);
+      financeState.addFinance('despesa', 'Transferência', result.salary * 3, `Assinatura: ${player.name} (3 meses adiantados)`);
     }
   }, [clubState.signFreeAgent, financeState.addFinance]);
 
@@ -397,6 +400,17 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
         financeState.addFinance,
         (amt: number) => clubState.setClub(prev => ({ ...prev, budget: prev.budget + amt }))
       );
+    },
+    // Export centralized month processing
+    processMonthlyFinance: () => {
+      financeState.processMonthlyFinance(
+        clubState.club.budget,
+        (fn) => clubState.setClub(prev => ({ ...prev, budget: fn(prev.budget) })),
+        clubState.totalSalaries,
+        0, // Maintenance already handled by stadiumOps tick
+        clubState.club.scouts?.reduce((acc: number, s: any) => acc + s.salary, 0) || 0
+      );
     }
+
   };
 }

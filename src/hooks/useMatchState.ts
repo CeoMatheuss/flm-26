@@ -5,6 +5,8 @@ import { GameEvent } from '@/types/events';
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { toast } from 'sonner';
 import { computeMatchPenalty } from '@/match/stadiumExtras';
+import { FinanceType, FinanceCategory } from '@/types/finance';
+
 
 export interface RankingHistory {
   season: number;
@@ -37,12 +39,14 @@ export function useMatchState(initialState: any, userId?: string) {
     setClub: React.Dispatch<React.SetStateAction<Club>>;
     sponsors: any[];
     infrastructure: any;
-    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void;
+    addFinance: (type: any, cat: any, amount: number, desc: string) => void;
     setSeason: (fn: (s: any) => any) => void;
     stadiumOps?: any;
     isCup?: boolean;
     isFriendly?: boolean;
+    processMatchFinance?: (revenue: any, penalties: any[], addFinance: any) => number;
   }) => {
+
     const nowIso = new Date().toISOString();
     setLastFriendlyDate(nowIso);
     setFriendliesPlayedToday(1);
@@ -85,41 +89,36 @@ export function useMatchState(initialState: any, userId?: string) {
         leaguePrize = Math.round(20000 * resultMult * stadiumLeagueScale);
       }
       if (deps.isCup) {
-        // Prêmio fixo de 50k por vitória em copa, 20k empate, 10k derrota
         const cupBase = isWin ? 50000 : isDraw ? 20000 : 10000;
-        leaguePrize = cupBase; // Reutilizando a variável de premiação extra
+        leaguePrize = cupBase; 
       }
 
-      let stadiumPenaltyFine = 0;
-      let stadiumPenaltyRep = 0;
-      let stadiumPenaltyMsg = '';
+      let penalties: any[] = [];
       if (isHome && !isFriendly && deps.stadiumOps) {
         try {
           const pen = computeMatchPenalty(deps.stadiumOps, isFriendly);
           if (pen) {
-            stadiumPenaltyFine = pen.fine;
-            stadiumPenaltyRep = pen.reputationLoss;
-            stadiumPenaltyMsg = pen.reason;
+            penalties.push(pen);
           }
         } catch (e) {
           console.error('Error computing stadium penalty:', e);
         }
       }
 
-      // 🛡️ Registro Financeiro: Somente se NÃO for amistoso (onde o budget não muda)
-      // Usamos uma verificação interna para garantir que o log condiz com o saldo.
-      const shouldCredit = !deps.isFriendly && !isFriendly;
-
-      if (shouldCredit) {
-        if (sponsorWeekly > 0) deps.addFinance('receita', 'Patrocínio', sponsorWeekly, 'Receita de patrocínios (Semanal)');
-        deps.addFinance('receita', 'Partida', prize, `${isWin ? 'Vitória' : isDraw ? 'Empate' : 'Derrota'} vs ${match?.opponent || 'Adversário'}`);
-        if (leaguePrize > 0) {
-          deps.addFinance('receita', 'Premiação Liga', leaguePrize, `Cota ${competition} vs ${match?.opponent || 'Adversário'}`);
-        }
-      }
-
-      if (stadiumPenaltyFine > 0) {
-        deps.addFinance('despesa', 'Multa Estádio', stadiumPenaltyFine, stadiumPenaltyMsg);
+      // 🛡️ Centralized Finance Processing
+      if (!deps.isFriendly && !isFriendly && deps.processMatchFinance) {
+        deps.processMatchFinance(
+          { 
+            tickets: ticketRevenue, 
+            vip: 0, 
+            commercial: 0, 
+            parking: 0, 
+            prizes: prize, 
+            sponsors: sponsorWeekly + leaguePrize 
+          },
+          penalties,
+          deps.addFinance
+        );
       }
 
       const stadiumFanBonus = Math.min(20, (deps.infrastructure?.stadium?.level || 1) * 5);
@@ -140,6 +139,9 @@ export function useMatchState(initialState: any, userId?: string) {
       const isBigLoss = isHome ? (homeGoals - awayGoals) <= -3 : (awayGoals - homeGoals) <= -3;
       const repChange = isWin ? (isRout ? 2 : 1) : isDraw ? 0 : (isBigLoss ? -2 : -1);
 
+      const stadiumPenaltyFine = penalties.reduce((s, p) => s + p.fine, 0);
+      const stadiumPenaltyRep = penalties.reduce((s, p) => s + p.reputationLoss, 0);
+
       const prizeMsg = leaguePrize > 0 ? ` | +R$${(leaguePrize/1000).toFixed(0)}k liga` : '';
       const penMsg = stadiumPenaltyFine > 0 ? ` | -R$${(stadiumPenaltyFine/1000).toFixed(0)}k multa estádio` : '';
       
@@ -148,7 +150,6 @@ export function useMatchState(initialState: any, userId?: string) {
       });
 
       if (userId) {
-        // Obter destaques e artilheiros (simulado para a notificação)
         const highlights = isWin ? "Ataque eficiente e defesa sólida." : isDraw ? "Equilíbrio em campo." : "Erros individuais custaram caro.";
         const scorer = (isHome ? homeGoals : awayGoals) > 0 ? "Artilheiro da rodada" : "Nenhum gol";
         
@@ -172,6 +173,8 @@ export function useMatchState(initialState: any, userId?: string) {
         deps.setSeason((s: any) => ({ ...s, currentWeek: Math.min(s.totalWeeks || 38, s.currentWeek + 1) }));
       }
 
+      const totalMatchRevenue = deps.isFriendly ? 0 : (prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine);
+
       return {
         ...prev,
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
@@ -188,7 +191,7 @@ export function useMatchState(initialState: any, userId?: string) {
             gamesPlayed: p.gamesPlayed + 1,
           };
         }),
-        budget: prev.budget + (deps.isFriendly ? 0 : (prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine)),
+        budget: prev.budget + totalMatchRevenue,
         fans: Math.max(1000, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
         stats: {
@@ -201,6 +204,7 @@ export function useMatchState(initialState: any, userId?: string) {
         },
       };
     });
+
   }, [userId]);
 
   const generateFriendly = useCallback(async (

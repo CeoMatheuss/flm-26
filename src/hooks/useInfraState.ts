@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Infrastructure, defaultInfrastructure, getUpgradeCost, getAcademyUpgradeCost,
   getStadiumUpgradeCost, getStadiumCapacity, getTrainingCenterUpgradeCost,
@@ -17,7 +17,8 @@ import { rollYouthEvent } from '@/utils/youthEvents';
 import { supabase } from '@/integrations/supabase/client';
 import { generatePlayer } from '@/utils/playerGenerator';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { FinanceType, FinanceCategory } from '@/types/finance';
+
 
 export function useInfraState(initialState: any, userId?: string, isPremium: boolean = false) {
   const [infrastructure, setInfrastructure] = useState<Infrastructure>(initialState?.infrastructure ?? defaultInfrastructure);
@@ -49,9 +50,10 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy',
     clubBudget: number,
     clubName: string,
-    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    addFinance: (type: FinanceType, cat: FinanceCategory, amount: number, desc: string) => void,
     deductBudget: (cost: number) => void,
   ) => {
+
     let cost: number;
     const label = facility === 'trainingCenter' ? 'Centro de Treinamento' : facility === 'youthAcademy' ? 'Academia' : facility === 'physiotherapy' ? 'Fisioterapia' : 'Estádio';
 
@@ -266,9 +268,10 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
 
   const chargeYouthInvestment = useCallback((
     clubBudget: number,
-    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    addFinance: (type: FinanceType, cat: FinanceCategory, amount: number, desc: string) => void,
     deductBudget: (cost: number) => void,
   ) => {
+
     if (youthInvestment <= 0) return false;
     const tierInfo = getYouthTierByMonthlyCost(youthInvestment);
     const weeklyCost = tierInfo.weeklyCost;
@@ -278,15 +281,16 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       return false;
     }
     deductBudget(weeklyCost);
-    addFinance('despesa', 'Base', weeklyCost, `Custo Semanal Academia (${tierInfo.label})`);
+    addFinance('despesa', 'Infraestrutura', weeklyCost, `Custo Semanal Academia (${tierInfo.label})`);
     return true;
   }, [youthInvestment]);
 
   const chargeTrainingInvestment = useCallback((
     clubBudget: number,
-    addFinance: (type: 'receita' | 'despesa', cat: string, amount: number, desc: string) => void,
+    addFinance: (type: FinanceType, cat: FinanceCategory, amount: number, desc: string) => void,
     deductBudget: (cost: number) => void,
   ) => {
+
     if (trainingInvestment <= 0) return false;
     if (clubBudget < trainingInvestment) {
       toast.error('Orçamento insuficiente para o investimento mensal em treino!');
@@ -295,7 +299,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       return false;
     }
     deductBudget(trainingInvestment);
-    addFinance('despesa', 'CT', trainingInvestment, 'Investimento mensal em Treino');
+    addFinance('despesa', 'Infraestrutura', trainingInvestment, 'Investimento mensal em Treino');
     toast.success(`💰 Investimento mensal em treino debitado: R$ ${trainingInvestment.toLocaleString('pt-BR')}`);
     return true;
   }, [trainingInvestment]);
