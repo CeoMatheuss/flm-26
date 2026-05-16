@@ -357,6 +357,88 @@ export type Database = {
           },
         ]
       }
+      club_active_effects: {
+        Row: {
+          bonus_data: Json | null
+          category: string
+          club_id: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          item_id: string
+          started_at: string | null
+        }
+        Insert: {
+          bonus_data?: Json | null
+          category: string
+          club_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          item_id: string
+          started_at?: string | null
+        }
+        Update: {
+          bonus_data?: Json | null
+          category?: string
+          club_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          item_id?: string
+          started_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_active_effects_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_memberships: {
+        Row: {
+          active_plan_id: string | null
+          churn_rate: number | null
+          club_id: string
+          happiness: number | null
+          id: string
+          monthly_revenue_cents: number | null
+          total_members: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_plan_id?: string | null
+          churn_rate?: number | null
+          club_id: string
+          happiness?: number | null
+          id?: string
+          monthly_revenue_cents?: number | null
+          total_members?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_plan_id?: string | null
+          churn_rate?: number | null
+          club_id?: string
+          happiness?: number | null
+          id?: string
+          monthly_revenue_cents?: number | null
+          total_members?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_memberships_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: true
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_shop_products: {
         Row: {
           base_price_cents: number
@@ -447,6 +529,53 @@ export type Database = {
             foreignKeyName: "club_shop_stats_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: true
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_sponsorships: {
+        Row: {
+          bonus_data: Json | null
+          club_id: string
+          contract_value_cents: number
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          payment_type: string
+          sponsor_name: string
+          started_at: string | null
+        }
+        Insert: {
+          bonus_data?: Json | null
+          club_id: string
+          contract_value_cents: number
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          payment_type: string
+          sponsor_name: string
+          started_at?: string | null
+        }
+        Update: {
+          bonus_data?: Json | null
+          club_id?: string
+          contract_value_cents?: number
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          payment_type?: string
+          sponsor_name?: string
+          started_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_sponsorships_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "clubs"
             referencedColumns: ["id"]
           },
@@ -5473,6 +5602,7 @@ export type Database = {
       process_club_shop_daily: { Args: { p_club_id: string }; Returns: Json }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
       process_daily_shop_bonuses: { Args: { p_user_id: string }; Returns: Json }
+      process_daily_store_updates: { Args: never; Returns: undefined }
       process_expired_auctions: { Args: never; Returns: undefined }
       process_league_waiting_list: {
         Args: { _league_id: string }
