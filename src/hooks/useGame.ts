@@ -136,12 +136,12 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     }
   }, [clubState.signFreeAgent, financeState.addFinance]);
 
-  const renewContract = useCallback((playerId: string, newSalary: number, newDuration?: number) => {
-    const result = clubState.renewContract(playerId, newSalary, newDuration);
+  const renewContract = useCallback(async (playerId: string, newSalary: number, newDuration?: number) => {
+    const result = await clubState.renewContract(playerId, newSalary, newDuration);
     if (result) {
-      financeState.addFinance('despesa', 'Renovação', newSalary * result.duration * 12, `Renovação (${result.duration}a)`);
+      // Logic for finance update if needed immediately or via background process
     }
-  }, [clubState.renewContract, financeState.addFinance]);
+  }, [clubState.renewContract]);
 
   const sellPlayer = useCallback((player: Player) => {
     const result = clubState.sellPlayer(player);
