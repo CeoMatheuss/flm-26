@@ -3339,6 +3339,53 @@ export type Database = {
         }
         Relationships: []
       }
+      player_negotiations: {
+        Row: {
+          club_id: string
+          created_at: string | null
+          id: string
+          offered_duration: number
+          offered_salary: number
+          player_id: string
+          player_name: string
+          response_at: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string | null
+          id?: string
+          offered_duration: number
+          offered_salary: number
+          player_id: string
+          player_name: string
+          response_at?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string | null
+          id?: string
+          offered_duration?: number
+          offered_salary?: number
+          player_id?: string
+          player_name?: string
+          response_at?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_negotiations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       premium_sponsorships: {
         Row: {
           activated_at: string
