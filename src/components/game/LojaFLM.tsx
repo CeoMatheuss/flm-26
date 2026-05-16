@@ -128,11 +128,11 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       try {
         const { data, error } = await supabase
           .from('payment_orders')
-          .select('status, metadata')
+          .select('status, metadata, delivered')
           .eq('id', pixData.orderId)
           .maybeSingle();
         if (cancelled || error || !data) return;
-        if (data.status === 'approved') {
+        if (data.status === 'approved' || data.delivered) {
           clearInterval(interval);
           setShowPixModal(false);
           const itemName = (data.metadata as any)?.item_name || 'Premium';
@@ -147,7 +147,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
           toast.error('Pagamento não concluído. Tente novamente.');
         }
       } catch (_) {
-        // silencioso: tentaremos novamente no próximo ciclo
+        // silencioso
       }
     }, 5000);
 
