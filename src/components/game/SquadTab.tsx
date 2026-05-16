@@ -1210,6 +1210,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             setLoanSubmitting(false);
           }
         }}
+      />
       <QuickSwapPanel
         isOpen={isQuickSwapOpen}
         onClose={() => setIsQuickSwapOpen(false)}
