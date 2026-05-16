@@ -68,8 +68,8 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
           </div>
         </div>
 
-        {/* Center: Swap Info or Stats */}
-        <div className="flex-1 flex items-center justify-center">
+        {/* Center: Swap Info or Stats (hidden on mobile to free space for club name) */}
+        <div className={cn("flex items-center justify-center", pendingSwap ? "flex-1" : "hidden md:flex flex-1")}>
           <AnimatePresence mode="wait">
             {pendingSwap ? (
               <motion.div 
