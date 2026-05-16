@@ -268,6 +268,10 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   // Auto-fix and Initialize league + NATIONAL CUPS for current month (CRITICAL SYNC)
   useEffect(() => {
     if (!userId) return;
+    
+    const today = new Date();
+    const day = today.getDate();
+
     const initCompetitions = async () => {
       try {
         const { data: team } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
@@ -282,9 +286,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           await supabase.rpc('initialize_player_league', { p_player_team_id: team.id });
         }
 
-        // NATIONAL CUP AUTOMATION (DAY 10 DRAW / DAILY SIM)
-        const today = new Date();
-        const day = today.getDate();
         
         // 1. Geração automática no Dia 10
         if (day === 10) {
