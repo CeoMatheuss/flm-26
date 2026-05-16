@@ -55,6 +55,7 @@ export function SquadModernLayout({
   const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list');
   const [pendingSwap, setPendingSwap] = useState<Player | null>(null);
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
+  const [isTacticsOpen, setIsTacticsOpen] = useState(true);
 
 
   const deltas = useAttributeEvolution(players);
