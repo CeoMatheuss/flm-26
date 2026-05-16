@@ -213,7 +213,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             tier.ring, tier.glow, "bg-zinc-950/80"
           )}>
             <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", tier.bg)} />
-            <span className={cn("text-base z-10", tier.color)}>{player.overall}</span>
+            <span className={cn("text-lg z-10 font-black", tier.color)}>{player.overall}</span>
             {delta !== 0 && (
                <span className="absolute -top-1 -right-1 p-0.5 z-10">
                  {delta > 0 ? (
