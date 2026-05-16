@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoutV3, ScoutMissionV3, ScoutReportV3, ScoutLevel, ScoutSpecialization, MissionType } from '@/types/scoutingV3';
-import { Search, UserPlus, Trash2, MapPin, Globe, Target, Star, Shield, Clock, Play, FileText, CheckCircle2, AlertCircle, X, ChevronRight, User } from 'lucide-react';
+import { Search, UserPlus, Trash2, MapPin, Globe, Target, Star, Shield, Clock, Play, FileText, CheckCircle2, AlertCircle, X, ChevronRight, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,11 +44,12 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
   const fetchScoutingData = async () => {
     try {
       setLoading(true);
+      
       const [myScoutsRes, marketScoutsRes, missionsRes, reportsRes] = await Promise.all([
         supabase.from('scouts').select('*').eq('user_id', userId),
-        supabase.from('scouts').select('*').eq('is_free_agent', true),
+        supabase.from('scouts').select('*').eq('is_free_agent', true).limit(6),
         supabase.from('scout_missions').select('*').eq('user_id', userId).eq('status', 'em_andamento'),
-        supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+        supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20)
       ]);
 
       if (myScoutsRes.data) setMyScouts(myScoutsRes.data as ScoutV3[]);
@@ -64,7 +65,9 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
   };
 
   useEffect(() => {
-    fetchScoutingData();
+    if (userId) {
+      fetchScoutingData();
+    }
   }, [userId]);
 
   const handleHireScout = async (scout: ScoutV3) => {
@@ -140,7 +143,12 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">Carregando scouting...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground animate-pulse font-bold uppercase tracking-widest">Sincronizando Departamento de Scouting...</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto p-2 sm:p-4">
@@ -185,7 +193,7 @@ export function ScoutsTab({ userId, budget }: ScoutsTabProps) {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {myScouts.map(scout => {
                 const activeMission = missions.find(m => m.scout_id === scout.id);
                 return (

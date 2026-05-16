@@ -6,6 +6,7 @@ import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { ChampionshipsTab } from '@/components/game/ChampionshipsTab';
+import { ScoutsTab } from '@/components/game/ScoutsTab';
 
 import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
 import { MatchesTab } from '@/components/game/MatchesTab';
@@ -15,7 +16,6 @@ import { TrainingCenterTab } from '@/components/game/TrainingCenterTab';
 import { StadiumTab } from '@/components/game/StadiumTab';
 import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
 import { SponsorsTab } from '@/components/game/SponsorsTab';
-import { ScoutsTab } from '@/components/game/ScoutsTab';
 import { FansTab } from '@/components/game/FansTab';
 import { MembersTab } from '@/components/game/MembersTab';
 import { InfrastructureWrapper } from '@/components/game/InfrastructureWrapper';
@@ -178,6 +178,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           season={game.season?.currentSeason ?? 1} 
         />
       </TabsContent>
+      <TabsContent value="scouts">{isTabBlocked('scouts') ? <BlockedMessage /> : <ScoutsTab userId={userId} budget={game.club.budget} />}</TabsContent>
       
       <TabsContent value="market">
         {isTabBlocked('market') ? <BlockedMessage /> : (
