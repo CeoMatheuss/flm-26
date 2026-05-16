@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { validateLineup } from '@/utils/lineupManager';
-import { Zap, Heart, Activity, Star } from 'lucide-react';
+import { Zap, Heart, Activity, Star, TrendingUp, TrendingDown, Minus, Crown, Sparkles, UserCircle2, ArrowRightLeft } from 'lucide-react';
 
 interface Props {
   formation: Formation;
@@ -115,7 +115,6 @@ function assignPlayersToSlots(players: Player[], formation: Formation) {
   const starters = players.slice(0, 11);
   if (starters.length < 11) return new Array(11).fill(null);
 
-  // Group starters by their position category
   const categories: Record<string, Player[]> = {
     GOL: starters.filter(p => p.position === 'GOL').sort((a,b) => b.overall - a.overall),
     DEF: starters.filter(p => ['ZAG', 'LAT'].includes(p.position)).sort((a,b) => b.overall - a.overall),
@@ -123,42 +122,24 @@ function assignPlayersToSlots(players: Player[], formation: Formation) {
     ATK: starters.filter(p => p.position === 'ATA').sort((a,b) => b.overall - a.overall)
   };
 
-  // Find the actual formation based on these counts
-  const actualDef = categories.DEF.length;
-  const actualMid = categories.MID.length;
-  const actualAtk = categories.ATK.length;
-  const actualFormationKey = `${actualDef}-${actualMid}-${actualAtk}`;
-
-  // Use the requested formation layout, but map players by their natural category order
   const layout = formationLayouts[formation] || formationLayouts['4-4-2'];
   const assigned: (Player | null)[] = new Array(11).fill(null);
-
-  // Layout slots are generally ordered from back to front:
-  // 0: GOL
-  // 1-X: Defenders
-  // X-Y: Midfielders
-  // Y-11: Attackers
   
-  // 1. Assign GOL
   if (categories.GOL.length > 0) assigned[0] = categories.GOL[0];
 
-  // 2. Fill Defenders (slots 1 up to 1+actualDef)
   let currentIdx = 1;
   categories.DEF.forEach(p => {
     if (currentIdx < 11) assigned[currentIdx++] = p;
   });
 
-  // 3. Fill Midfielders
   categories.MID.forEach(p => {
     if (currentIdx < 11) assigned[currentIdx++] = p;
   });
 
-  // 4. Fill Attackers
   categories.ATK.forEach(p => {
     if (currentIdx < 11) assigned[currentIdx++] = p;
   });
 
-  // 5. Fill remaining slots with anyone left (shouldn't happen with 11 starters)
   const allUsed = new Set(assigned.filter(Boolean).map(p => p!.id));
   const remaining = starters.filter(p => !allUsed.has(p.id));
   for (let i = 0; i < 11; i++) {
@@ -179,12 +160,21 @@ const posColors: Record<string, string> = {
   ATA: 'bg-red-600',
 };
 
+const posTextColors: Record<string, string> = {
+  GOL: 'text-yellow-950',
+  ZAG: 'text-blue-50',
+  LAT: 'text-blue-50',
+  VOL: 'text-emerald-50',
+  MEI: 'text-orange-950',
+  ATA: 'text-red-50',
+};
+
 export function FormationView({ formation, players, captainId, onPlayerClick, onSwapPlayers, isInteractive = true }: Props) {
   const [prevAssignedIds, setPrevAssignedIds] = useState<string>('');
   const [justUpdatedIds, setJustUpdatedIds] = useState<Set<string>>(new Set());
   const [pendingSwapId, setPendingSwapId] = useState<string | null>(null);
+  const [hoveredPlayerId, setHoveredPlayerId] = useState<string | null>(null);
   
-  // Real-time validation (only when we have a full lineup)
   useEffect(() => {
     if (!Array.isArray(players) || players.length < 11) return;
     const validation = validateLineup(players);
@@ -237,32 +227,33 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
   }, [pendingSwapId, onSwapPlayers, onPlayerClick, isInteractive]);
 
   return (
-    <div className="relative w-full max-w-[300px] mx-auto aspect-[3/4] bg-[#07140b] rounded-3xl overflow-hidden border border-emerald-500/30 shadow-[0_0_40px_-12px_rgba(16,185,129,0.3)] select-none">
-      {/* Pitch Pattern (Stripes) */}
-      <div className="absolute inset-0 flex flex-col pointer-events-none">
-        {[...Array(10)].map((_, i) => (
-          <div key={i} className={`flex-1 ${i % 2 === 0 ? 'bg-emerald-500/[0.02]' : 'bg-transparent'}`} />
+    <div className="relative w-full max-w-[1200px] mx-auto aspect-[16/9] sm:aspect-[16/9] bg-[#0a1f0f] rounded-[2.5rem] overflow-hidden border-8 border-emerald-900/50 shadow-[0_0_100px_-20px_rgba(16,185,129,0.5)] select-none">
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grass.png')] opacity-20 pointer-events-none" />
+      <div className="absolute inset-0 flex pointer-events-none">
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className={`flex-1 ${i % 2 === 0 ? 'bg-emerald-500/[0.04]' : 'bg-transparent'}`} />
         ))}
       </div>
-      
-      <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-transparent to-emerald-950/20 pointer-events-none" />
-      
-      {/* Pitch markings - Modern Style */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 sm:w-32 sm:h-32 border border-white/40 rounded-full" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/60 rounded-full shadow-[0_0_10px_white]" />
-        <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/40" />
-        
-        {/* Goal Areas */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[60%] h-[18%] border border-t-0 border-white/40 rounded-b-xl bg-white/5" />
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[60%] h-[18%] border border-b-0 border-white/40 rounded-t-xl bg-white/5" />
-        
-        {/* Penalty Arcs */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-[18%] w-[25%] h-[6%] border border-t-0 border-white/40 rounded-b-full" />
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-[18%] w-[25%] h-[6%] border border-b-0 border-white/40 rounded-t-full" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-950/40 via-transparent to-emerald-950/40 pointer-events-none" />
+      <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.6)] pointer-events-none" />
+      <div className="absolute inset-2 border-2 border-white/20 rounded-xl pointer-events-none">
+        <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/20" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[25%] aspect-square border-2 border-white/20 rounded-full" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white/40 rounded-full shadow-[0_0_15px_white]" />
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[16%] h-[40%] border-2 border-l-0 border-white/20 bg-white/5" />
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[6%] h-[20%] border-2 border-l-0 border-white/20" />
+        <div className="absolute left-[11%] top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/40 rounded-full" />
+        <div className="absolute left-[16%] top-1/2 -translate-y-1/2 w-[8%] h-[20%] border-2 border-l-0 border-white/20 rounded-r-full" />
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[16%] h-[40%] border-2 border-r-0 border-white/20 bg-white/5" />
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[6%] h-[20%] border-2 border-r-0 border-white/20" />
+        <div className="absolute right-[11%] top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/40 rounded-full" />
+        <div className="absolute right-[16%] top-1/2 -translate-y-1/2 w-[8%] h-[20%] border-2 border-r-0 border-white/20 rounded-l-full" />
+        <div className="absolute -left-1 -top-1 w-8 h-8 border-2 border-white/20 rounded-full" />
+        <div className="absolute -right-1 -top-1 w-8 h-8 border-2 border-white/20 rounded-full" />
+        <div className="absolute -left-1 -bottom-1 w-8 h-8 border-2 border-white/20 rounded-full" />
+        <div className="absolute -right-1 -bottom-1 w-8 h-8 border-2 border-white/20 rounded-full" />
       </div>
 
-      {/* Players */}
       <AnimatePresence mode="popLayout">
         {layout.map((slot, i) => {
           const player = assigned[i];
@@ -270,90 +261,133 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
           const isInjured = player?.injury;
           const isJustUpdated = player && justUpdatedIds.has(player.id);
           const isPendingSwap = player && pendingSwapId === player.id;
+          const isHovered = player && hoveredPlayerId === player.id;
+
+          const pitchX = 100 - slot.y;
+          const pitchY = slot.x;
+
+          const getStatusColor = () => {
+            if (!player) return 'bg-white';
+            if (player.stamina < 40 || player.morale < 40 || player.injury) return 'bg-red-500';
+            if (player.stamina < 70 || player.morale < 70) return 'bg-yellow-500';
+            return 'bg-emerald-500';
+          };
 
           return (
             <motion.div
               key={player?.id || `empty-${i}`}
               layout
-              initial={{ scale: 0.5, opacity: 0 }}
+              initial={{ scale: 0.8, opacity: 0 }}
               animate={{ 
                 scale: 1, 
                 opacity: 1,
-                left: `${slot.x}%`, 
-                top: `${slot.y}%` 
+                left: `${pitchX}%`, 
+                top: `${pitchY}%` 
               }}
-              exit={{ scale: 0.5, opacity: 0 }}
+              exit={{ scale: 0.8, opacity: 0 }}
               transition={{ 
                 type: "spring", 
-                stiffness: 300, 
-                damping: 25,
-                layout: { duration: 0.4 }
+                stiffness: 400, 
+                damping: 30,
+                layout: { duration: 0.3 }
               }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 ${player ? 'cursor-pointer' : ''} z-10 group`}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 
+                ${player ? 'cursor-pointer' : 'opacity-20'} group`}
               onClick={() => handleSlotClick(player)}
+              onMouseEnter={() => player && setHoveredPlayerId(player.id)}
+              onMouseLeave={() => setHoveredPlayerId(null)}
             >
-              <div className="relative">
-                {/* Glow for Starters */}
+              <div className="relative group/player">
                 {player && (
-                  <div className={`absolute inset-0 rounded-full blur-xl opacity-20 -z-10 group-hover:opacity-40 transition-opacity ${posColors[slot.position] || 'bg-white'}`} />
+                  <div className={`absolute inset-0 rounded-full blur-3xl opacity-30 -z-10 transition-all duration-500
+                    ${isHovered ? 'scale-150 opacity-50' : 'scale-100'}
+                    ${getStatusColor()}`} 
+                  />
                 )}
                 
                 <motion.div 
-                  whileHover={{ scale: 1.1, y: -5 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg border-2 transition-all duration-300 relative
-                    ${isInjured ? 'bg-slate-700 grayscale border-slate-600' : (posColors[slot.position] || 'bg-slate-800')}
-                    ${isCaptain ? 'border-yellow-400 ring-4 ring-yellow-400/20' : 'border-white/90'}
-                    ${isJustUpdated ? 'animate-pulse ring-4 ring-primary/50' : ''}
-                    ${isPendingSwap ? 'scale-110 ring-4 ring-primary border-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]' : 'border-white/20'}`}
+                  whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0] }}
+                  whileTap={{ scale: 0.9 }}
+                  className={`w-14 h-14 sm:w-28 sm:h-28 rounded-full flex flex-col items-center justify-center text-white shadow-2xl border-4 transition-all duration-300 relative z-10
+                    ${isInjured ? 'bg-slate-800 grayscale border-slate-700' : (posColors[slot.position] || 'bg-slate-900')}
+                    ${isCaptain ? 'border-yellow-400 ring-4 ring-yellow-400/30' : 'border-white/90'}
+                    ${isJustUpdated ? 'animate-pulse ring-8 ring-primary/40' : ''}
+                    ${isPendingSwap ? 'scale-110 ring-8 ring-primary border-primary shadow-[0_0_30px_rgba(var(--primary),0.6)]' : 'border-white/20'}`}
                 >
-                  <div className="flex flex-col items-center">
-                    <span className="drop-shadow-lg text-lg leading-none">{player ? player.overall : '?'}</span>
+                  <div className="flex flex-col items-center -space-y-1">
+                    <span className={`text-xl sm:text-4xl font-black tracking-tighter drop-shadow-md ${posTextColors[slot.position] || 'text-white'}`}>
+                      {player ? player.overall : ''}
+                    </span>
+                    <span className={`text-[8px] sm:text-[14px] font-bold uppercase opacity-80 ${posTextColors[slot.position] || 'text-white'}`}>
+                      {slot.position}
+                    </span>
+                  </div>
+                  
+                  <div className="absolute -top-1 -right-1 flex flex-col gap-1 z-30">
+                    {isPendingSwap && (
+                      <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-10 sm:h-10 flex items-center justify-center shadow-[0_0_15px_rgba(var(--primary),0.8)] border-2 border-white animate-bounce">
+                        <ArrowRightLeft className="w-4 h-4 sm:w-6 sm:h-6" />
+                      </div>
+                    )}
+                    {isCaptain && !isPendingSwap && (
+                      <div className="bg-yellow-400 text-yellow-950 rounded-full w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center font-black text-[10px] shadow-lg border-2 border-white">
+                        <Crown className="w-3 h-3 sm:w-5 sm:h-5" />
+                      </div>
+                    )}
+                    {player?.squadRole === 'estrela' && !isPendingSwap && (
+                      <div className="bg-purple-500 text-white rounded-full w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center shadow-lg border-2 border-white">
+                        <Star className="w-3 h-3 sm:w-5 sm:h-5 fill-current" />
+                      </div>
+                    )}
+                    {player?.isYouth && !isPendingSwap && (
+                      <div className="bg-blue-400 text-white rounded-full w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center shadow-lg border-2 border-white">
+                        <Sparkles className="w-3 h-3 sm:w-5 sm:h-5" />
+                      </div>
+                    )}
                   </div>
                 </motion.div>
-                
-                {isCaptain && (
-                  <motion.div 
-                    initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-4.5 h-4.5 flex items-center justify-center font-black text-[8px] shadow-lg border border-black/20 z-20"
-                  >
-                    C
-                  </motion.div>
-                )}
 
-                {/* Status Indicators */}
                 {player && (
-                  <div className="absolute -bottom-1 -right-1 flex gap-0.5 z-20">
-                    {player.stamina < 50 && (
-                      <div className="bg-red-500 rounded-full w-4 h-4 flex items-center justify-center shadow-lg border border-white/20" title="Cansado">
-                        <Zap className="w-2.5 h-2.5 text-white" />
-                      </div>
-                    )}
-                    {isInjured && (
-                      <div className="bg-slate-900 rounded-full w-4 h-4 flex items-center justify-center shadow-lg border border-white/20" title="Lesionado">
-                        <Activity className="w-2.5 h-2.5 text-red-500" />
-                      </div>
-                    )}
-                    {player.morale > 80 && (
-                      <div className="bg-emerald-500 rounded-full w-4 h-4 flex items-center justify-center shadow-lg border border-white/20" title="Boa Forma">
-                        <Star className="w-2.5 h-2.5 text-white fill-current" />
-                      </div>
-                    )}
-                  </div>
+                  <>
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 sm:w-20 h-2 bg-black/40 rounded-full overflow-hidden border border-white/10 z-20">
+                      <div 
+                        className={`h-full transition-all duration-1000 ${player.stamina < 30 ? 'bg-red-500' : player.stamina < 70 ? 'bg-yellow-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${player.stamina}%` }}
+                      />
+                    </div>
+                    
+                    <div className={`absolute top-1/2 -translate-y-1/2 -left-4 sm:-left-6 p-1.5 rounded-full shadow-lg border-2 border-white z-20
+                      ${player.morale > 80 ? 'bg-emerald-500' : player.morale < 40 ? 'bg-red-500' : 'bg-yellow-500'}`}>
+                      <Heart className="w-3 h-3 sm:w-5 sm:h-5 text-white fill-current" />
+                    </div>
+
+                    <div className={`absolute top-1/2 -translate-y-1/2 -right-4 sm:-right-6 p-1.5 rounded-full shadow-lg border-2 border-white z-20 bg-slate-900`}>
+                      {player.evolutionTrend === 'up' && <TrendingUp className="w-3 h-3 sm:w-5 sm:h-5 text-emerald-400" />}
+                      {player.evolutionTrend === 'down' && <TrendingDown className="w-3 h-3 sm:w-5 sm:h-5 text-red-400" />}
+                      {(player.evolutionTrend === 'stable' || !player.evolutionTrend) && <Minus className="w-3 h-3 sm:w-5 sm:h-5 text-slate-400" />}
+                    </div>
+                  </>
                 )}
               </div>
               
-              <div className={`mt-1 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md border shadow-sm transition-all duration-300
-                ${isPendingSwap ? 'border-primary bg-primary/20' : 'border-white/10 group-hover:border-white/30'}`}>
-                <p className="text-[9px] sm:text-[10px] text-white font-bold text-center leading-none uppercase tracking-wide truncate max-w-[70px] sm:max-w-[90px]">
+              <div className={`mt-6 bg-slate-900/90 backdrop-blur-xl px-5 py-2.5 rounded-xl border-2 shadow-2xl transition-all duration-300 min-w-[100px] sm:min-w-[140px]
+                ${isPendingSwap ? 'border-primary bg-primary/20 scale-110' : 'border-white/10 group-hover:border-white/40 group-hover:bg-slate-800'}`}>
+                <p className="text-[12px] sm:text-[16px] text-white font-black text-center leading-none uppercase tracking-tighter truncate">
                   {player ? player.name.split(' ').pop() : slot.position}
                 </p>
+                {player && (
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <span className="text-[9px] sm:text-[11px] text-slate-400 font-bold">#{player.shirtNumber || '--'}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                    <span className="text-[9px] sm:text-[11px] text-slate-400 font-bold">{player.age} anos</span>
+                  </div>
+                )}
               </div>
             </motion.div>
           );
         })}
       </AnimatePresence>
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
     </div>
-
   );
 }

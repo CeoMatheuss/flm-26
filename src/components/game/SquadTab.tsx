@@ -3,6 +3,7 @@ import { ShieldCrest } from './ShieldCrest';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { 
@@ -798,42 +799,51 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             </motion.div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Lado Esquerdo: Pitch (Exclusivo Mobile View ou Desktop Sidebar) */}
+          <div className="flex flex-col gap-6">
+            {/* Top Section: Large Pitch View */}
             <AnimatePresence mode="wait">
-              {true && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="w-full lg:w-[320px] shrink-0"
-                >
-                  <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-4 backdrop-blur-xl">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                        <Users className="w-4 h-4 text-emerald-400" /> Escalação
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="w-full"
+              >
+                <Card className="bg-slate-900/40 rounded-[2.5rem] border-white/5 p-6 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+                  <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                    <Layout className="w-40 h-40 text-primary" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between mb-6 relative z-10">
+                    <div>
+                      <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                        <Users className="w-6 h-6 text-emerald-400" /> CENTRO DE ESCALAÇÃO
                       </h3>
-                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-black">
-                        {tactics?.formation || '4-4-2'}
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Gerencie seu time titular no campo</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase">Formação Atual</p>
+                        <p className="text-lg font-black text-primary">{tactics?.formation || '4-4-2'}</p>
+                      </div>
+                      <Badge className="bg-primary/20 text-primary border-primary/30 h-10 px-4 flex items-center justify-center font-black">
+                        MODO EDIÇÃO
                       </Badge>
                     </div>
-                    
-                    <FormationView 
-                      formation={tactics?.formation || '4-4-2'} 
-                      players={players} 
-                      onPlayerClick={setViewingPlayer}
-                      onSwapPlayers={swapPlayers}
-                      isInteractive={true}
-                    />
-                    
-                    {/* Hint removed for cleaner UI */}
                   </div>
-                </motion.div>
-              )}
+                  
+                  <FormationView 
+                    formation={tactics?.formation || '4-4-2'} 
+                    players={players} 
+                    onPlayerClick={setViewingPlayer}
+                    onSwapPlayers={swapPlayers}
+                    isInteractive={true}
+                  />
+                </Card>
+              </motion.div>
             </AnimatePresence>
 
-            {/* Lado Direito: Lista de Jogadores */}
-            <div className="flex-1 space-y-4">
+            {/* Bottom Section: Player List */}
+            <div className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-900/40 p-2 rounded-2xl border border-white/5">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide">
                   {(['starters', 'reserves', 'out'] as const).map((tab) => (
