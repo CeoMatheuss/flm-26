@@ -321,33 +321,33 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
         </h1>
         <p className="text-emerald-100/60 text-xs font-medium relative z-10">Overhaul completo: estratégia, torcida e benefícios exclusivos.</p>
         
-        <div className="flex flex-wrap gap-4 mt-8 relative z-10">
-          <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-white/5 flex items-center gap-3 shadow-inner">
-            <div className="bg-emerald-500/20 p-2 rounded-lg">
-              <DollarSign className="text-emerald-400 h-5 w-5" />
+        <div className="flex flex-wrap gap-2 sm:gap-4 mt-6 sm:mt-8 relative z-10">
+          <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-white/5 flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px]">
+            <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg">
+              <DollarSign className="text-emerald-400 h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Orçamento</p>
-              <p className="font-black text-lg">R$ {(club.budget || 0).toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Orçamento</p>
+              <p className="font-black text-sm sm:text-lg italic">R$ {(club.budget || 0).toLocaleString()}</p>
             </div>
           </div>
-          <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-white/5 flex items-center gap-3 shadow-inner">
-            <div className="bg-emerald-500/20 p-2 rounded-lg">
-              <Users className="text-emerald-400 h-5 w-5" />
+          <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-white/5 flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px]">
+            <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg">
+              <Users className="text-emerald-400 h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Torcedores</p>
-              <p className="font-black text-lg">{(club.fans || 0).toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Torcedores</p>
+              <p className="font-black text-sm sm:text-lg italic">{(club.fans || 0).toLocaleString()}</p>
             </div>
           </div>
           {shopStats && (
-            <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-emerald-500/20 flex items-center gap-3 shadow-inner">
-              <div className="bg-emerald-500/20 p-2 rounded-lg">
-                <TrendingUp className="text-emerald-400 h-5 w-5" />
+            <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-emerald-500/20 flex items-center gap-2 sm:gap-3 shadow-inner w-full sm:w-auto flex-grow sm:flex-grow-0">
+              <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg">
+                <TrendingUp className="text-emerald-400 h-4 w-4 sm:h-5 sm:w-5" />
               </div>
               <div>
-                <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Ganhos Diários (Loja)</p>
-                <p className="font-black text-lg text-emerald-400">R$ {(shopStats.daily_revenue / 100).toLocaleString()}</p>
+                <p className="text-[8px] sm:text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Ganhos Diários (Loja)</p>
+                <p className="font-black text-sm sm:text-lg text-emerald-400 italic">R$ {(shopStats.daily_revenue / 100).toLocaleString()}</p>
               </div>
             </div>
           )}
