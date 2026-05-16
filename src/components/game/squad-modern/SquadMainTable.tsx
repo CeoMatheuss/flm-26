@@ -277,8 +277,8 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
         </div>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end">
-            <span className="text-xs font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(value)}</span>
-            <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.1em] mt-1">Mkt Value</span>
+            <span className="text-sm font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(value)}</span>
+            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
           </div>
           <ChevronRight className={cn("w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1", isPendingSwap && "text-primary animate-bounce")} />
         </div>
