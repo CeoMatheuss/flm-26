@@ -17,6 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { useActiveMatch } from '@/hooks/useActiveMatch';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Props {
   tactics: TacticsConfig;
