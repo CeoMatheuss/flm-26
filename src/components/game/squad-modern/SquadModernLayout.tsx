@@ -10,7 +10,7 @@ import { SquadMainTable } from './SquadMainTable';
 import { PlayerDetailPanel } from './PlayerDetailPanel';
 import { useAttributeEvolution } from './useAttributeEvolution';
 import { getPlayerStatus, avgStamina } from './squadHelpers';
-import { detectActualFormation } from '@/utils/lineupManager';
+import { detectActualFormation, autoLineup } from '@/utils/lineupManager';
 import { toast } from 'sonner';
 import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -51,6 +51,17 @@ export function SquadModernLayout({
   const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list');
 
   const deltas = useAttributeEvolution(players);
+
+  // Sync event for automatic lineup
+  useEffect(() => {
+    const handler = () => {
+      const nextPlayers = autoLineup(players, tactics.formation);
+      onUpdatePlayers(nextPlayers);
+      toast.success('Escalação e banco otimizados automaticamente!');
+    };
+    window.addEventListener('flm:auto-lineup', handler);
+    return () => window.removeEventListener('flm:auto-lineup', handler);
+  }, [players, tactics.formation, onUpdatePlayers]);
 
   // Sync youth prospects count to tab
   useEffect(() => {
@@ -110,6 +121,11 @@ export function SquadModernLayout({
         break;
       case 'captain':
         toast.success(`${p.name} é o novo capitão!`);
+        break;
+      case 'auto-lineup':
+        const nextPlayers = autoLineup(players, tactics.formation);
+        onUpdatePlayers(nextPlayers);
+        toast.success('Escalação e banco otimizados automaticamente!');
         break;
     }
   };

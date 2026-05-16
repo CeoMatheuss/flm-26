@@ -1,4 +1,4 @@
-import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users } from 'lucide-react';
+import { ArrowLeft, Menu, Wallet, Activity, Star, Info, LayoutDashboard, Users, Zap } from 'lucide-react';
 import { ClubShield } from '../ClubShield';
 import { Club } from '@/types/game';
 import { SeasonData } from '@/types/infrastructure';
@@ -93,6 +93,21 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          {/* Optimization Toggle */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={() => window.dispatchEvent(new CustomEvent('flm:auto-lineup'))}
+                  className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/20 transition-all active:scale-95"
+                >
+                  <Zap className="w-4 h-4 fill-emerald-400" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Otimizar Escalação (Titulares e Reserva)</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           {/* Mobile View Toggle */}
           <div className="flex xl:hidden bg-white/5 border border-white/10 p-1 rounded-2xl h-10 gap-1">
              <button 

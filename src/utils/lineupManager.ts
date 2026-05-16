@@ -24,52 +24,62 @@ export const formationRequirements: Record<Formation, string[]> = {
 
 /**
  * Intelligent Lineup System
- * Automatically reorders players to find the best 11 starters for a formation.
+ * Automatically reorders players to find the best 11 starters and 7 balanced reserves.
  */
 export function autoLineup(players: Player[], formation: Formation): Player[] {
   const requirements = formationRequirements[formation];
   if (!requirements) return players;
 
+  const allPlayers = [...players].sort((a, b) => {
+    // Basic sorting: Not injured, high overall
+    if (!!a.injury !== !!b.injury) return a.injury ? 1 : -1;
+    return b.overall - a.overall;
+  });
+
   const used = new Set<string>();
   const starters: (Player | null)[] = new Array(11).fill(null);
-  const allPlayers = [...players];
 
   const getPlayerScoreForPos = (player: Player, targetPos: string) => {
     if (player.injury) return -1000;
     let score = player.overall;
-    if (player.position === targetPos) score += 15;
-    else if (player.secondaryPosition === targetPos) score += 5;
-    else score -= 20;
+    if (player.position === targetPos) score += 20;
+    else if (player.secondaryPosition === targetPos) score += 10;
+    else score -= 15;
 
-    if (player.stamina < 40) score -= 15;
-    else if (player.stamina < 70) score -= 5;
-    else score += 5;
-
-    if (player.morale > 80) score += 3;
-    if (player.morale < 30) score -= 5;
+    // Favor balanced physical state
+    score += (player.stamina / 10);
+    score += (player.morale / 20);
+    
+    // Favor form
+    if (player.matchRating) score += (player.matchRating * 2);
+    
     return score;
   };
 
-  const gks = allPlayers
+  // 1. Assign Goalkeeper
+  const bestGK = allPlayers
     .filter(p => !p.injury && p.position === 'GOL')
-    .sort((a, b) => getPlayerScoreForPos(b, 'GOL') - getPlayerScoreForPos(a, 'GOL'));
+    .sort((a, b) => getPlayerScoreForPos(b, 'GOL') - getPlayerScoreForPos(a, 'GOL'))[0];
   
-  if (gks.length > 0) {
-    starters[0] = gks[0];
-    used.add(gks[0].id);
+  if (bestGK) {
+    starters[0] = bestGK;
+    used.add(bestGK.id);
   }
 
+  // 2. Assign other starters based on formation requirements
   for (let i = 1; i < requirements.length; i++) {
     const reqPos = requirements[i];
     const bestPlayer = allPlayers
-      .filter(p => !used.has(p.id))
+      .filter(p => !used.has(p.id) && !p.injury)
       .sort((a, b) => getPlayerScoreForPos(b, reqPos) - getPlayerScoreForPos(a, reqPos))[0];
+    
     if (bestPlayer) {
       starters[i] = bestPlayer;
       used.add(bestPlayer.id);
     }
   }
 
+  // Fill empty starter slots if needed (fallback to highest OVR)
   for (let i = 0; i < starters.length; i++) {
     if (!starters[i]) {
       const fallback = allPlayers
@@ -82,19 +92,52 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     }
   }
 
-  const remaining = allPlayers
-    .filter(p => !used.has(p.id))
-    .sort((a, b) => {
-      if (a.injury && !b.injury) return 1;
-      if (!a.injury && b.injury) return -1;
-      const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
-      const posA = posOrder.indexOf(a.position);
-      const posB = posOrder.indexOf(b.position);
-      if (posA !== posB) return posA - posB;
-      return b.overall - a.overall;
-    });
+  const finalStarters = starters.filter((p): p is Player => !!p);
+
+  // 3. Intelligent Balanced Reserves (7 slots)
+  const reserves: Player[] = [];
+  const remainingPlayers = allPlayers.filter(p => !used.has(p.id) && !p.injury);
+
+  // Reserve GK (Mandatory if available)
+  const resGK = remainingPlayers.find(p => p.position === 'GOL');
+  if (resGK) {
+    reserves.push(resGK);
+    used.add(resGK.id);
+  }
+
+  // Balanced logic: 2 Def, 2 Mid, 2 Atk or similar based on availability
+  const slots = [
+    { pos: ['ZAG', 'LAT'], count: 2 },
+    { pos: ['VOL', 'MEI'], count: 2 },
+    { pos: ['ATA'], count: 2 }
+  ];
+
+  slots.forEach(slot => {
+    const candidates = allPlayers
+      .filter(p => !used.has(p.id) && !p.injury && slot.pos.includes(p.position))
+      .sort((a, b) => b.overall - a.overall);
+    
+    for (let i = 0; i < slot.count && candidates.length > 0; i++) {
+      const p = candidates.shift()!;
+      reserves.push(p);
+      used.add(p.id);
+    }
+  });
+
+  // Fill remaining reserve slots (up to 7) with best remaining
+  const leftForReserves = allPlayers
+    .filter(p => !used.has(p.id) && !p.injury)
+    .sort((a, b) => b.overall - a.overall);
   
-  return [...starters.filter((p): p is Player => !!p), ...remaining];
+  while (reserves.length < 7 && leftForReserves.length > 0) {
+    const p = leftForReserves.shift()!;
+    reserves.push(p);
+    used.add(p.id);
+  }
+
+  const otherPlayers = allPlayers.filter(p => !used.has(p.id));
+  
+  return [...finalStarters, ...reserves, ...otherPlayers];
 }
 
 export function detectActualFormation(players: Player[]): Formation {

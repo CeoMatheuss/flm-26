@@ -113,13 +113,23 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick }: Prop
           <StatMini icon={<Heart className="w-2.5 h-2.5" />} label="MOR" value={player.morale} color="text-pink-400" />
         </div>
 
-        {/* Bottom Status Bar */}
+        {/* Promotion Status / Bottom Status Bar */}
         <div className={cn(
-          'mt-auto flex items-center justify-center gap-1.5 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest',
+          'mt-auto flex flex-col gap-2',
           sm.bg, sm.border, sm.color
         )}>
-          <span className={cn('w-1.5 h-1.5 rounded-full', sm.dot)} />
-          {sm.label}
+          {player.potential && player.potential >= 88 && (
+            <div className="flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-[8px] font-black text-amber-400 uppercase tracking-widest animate-pulse">
+               💎 JOIA DA BASE
+            </div>
+          )}
+          <div className={cn(
+            'flex items-center justify-center gap-1.5 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest',
+            sm.bg, sm.border, sm.color
+          )}>
+            <span className={cn('w-1.5 h-1.5 rounded-full', sm.dot)} />
+            {sm.label}
+          </div>
         </div>
       </div>
     </motion.button>
