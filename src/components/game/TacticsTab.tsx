@@ -40,7 +40,7 @@ function TacticButton<T extends string>({ value, current, label, onClick }: { va
   const isActive = current === value;
   return (
     <button
-      className={`capitalize text-[9px] font-black px-2 py-2.5 rounded-lg transition-all border w-full min-w-0 truncate ${
+      className={`capitalize text-[9px] font-black px-1.5 py-2 rounded-lg transition-all border w-full min-w-0 truncate ${
         isActive
           ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
           : 'bg-zinc-900/60 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'
@@ -182,7 +182,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-4 pb-20">
       <SeasonStartWidget seasonNumber={season ?? 1} userId={userId} />
 
       {isInLiveMatch && (
@@ -223,19 +223,19 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
               <Shield className="w-32 h-32 text-primary rotate-12" />
             </div>
             
-            <CardContent className="p-8 space-y-8 relative">
+            <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6 relative">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <p className="text-[10px] sm:text-[12px] font-black text-primary uppercase tracking-[0.2em] mb-2">CENTRO TÁTICO PROFISSIONAL</p>
-                  <div className="flex items-center gap-4">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">CENTRO TÁTICO PROFISSIONAL</p>
+                  <div className="flex items-center gap-3">
                     <select 
-                      className="bg-transparent text-2xl sm:text-3xl lg:text-5xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-all duration-300 max-w-full"
+                      className="bg-transparent text-xl sm:text-2xl lg:text-4xl font-black text-white tracking-tighter outline-none cursor-pointer hover:text-primary transition-all duration-300 max-w-full"
                       value={tactics.formation}
                       onChange={(e) => setField('formation', e.target.value as any)}
                     >
                       {allFormations.map(f => <option key={f} value={f} className="bg-slate-900 text-sm font-sans">{f}</option>)}
                     </select>
-                    <Badge className="bg-primary/20 text-primary border-primary/30 py-1.5 px-3 text-xs uppercase font-black tracking-wider ring-1 ring-primary/50 shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                    <Badge className="bg-primary/20 text-primary border-primary/30 py-1 px-2 text-[9px] uppercase font-black tracking-wider ring-1 ring-primary/50 shadow-[0_0_15px_rgba(var(--primary),0.3)]">
                       {tactics.playStyle}
                     </Badge>
                   </div>
@@ -325,7 +325,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
         </div>
 
         {isSidePanelOpen && (
-        <div className="xl:col-span-4 space-y-6 min-w-0 animate-in fade-in slide-in-from-right-4 duration-300">
+        <div className="xl:col-span-4 space-y-4 min-w-0 animate-in fade-in slide-in-from-right-4 duration-300">
           <Tabs defaultValue="style" className="w-full">
             <TabsList className="w-full grid grid-cols-3 h-14 bg-zinc-950/50 border border-white/5 p-1.5 rounded-2xl shadow-xl backdrop-blur-md">
               <TabsTrigger value="style" className="text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-zinc-950 transition-all">
@@ -340,12 +340,12 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
             </TabsList>
 
             <div className="mt-4">
-              <TabsContent value="style" className="m-0 space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="grid grid-cols-2 gap-3">
+              <TabsContent value="style" className="m-0 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="grid grid-cols-2 gap-2">
                   {tacticsPresets.slice(0, 4).map(preset => (
                     <button
                       key={preset.name}
-                      className={`text-[10px] font-black px-4 py-4 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
+                      className={`text-[9px] font-black px-2 py-2.5 rounded-xl border-2 transition-all duration-300 uppercase tracking-widest
                         ${tactics.playStyle === preset.config.playStyle 
                           ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
                           : 'bg-zinc-900/40 border-white/5 text-white/40 hover:border-white/10 hover:bg-zinc-800'}`}
@@ -356,15 +356,15 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, season
                   ))}
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <div>
                     <SectionLabel icon={Target} label="Filosofia de Jogo" />
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2">
                       {MAIN_PLAY_STYLES.map(s => (
                         <button
                           key={s}
                           onClick={() => setField('playStyle', s)}
-                          className={`text-[10px] py-4 rounded-xl font-black transition-all border-2 uppercase tracking-widest ${
+                          className={`text-[9px] py-2.5 rounded-xl font-black transition-all border-2 uppercase tracking-widest ${
                             tactics.playStyle === s 
                               ? 'bg-emerald-500 border-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
                               : 'bg-zinc-900/40 text-white/40 border-white/5 hover:border-white/10'

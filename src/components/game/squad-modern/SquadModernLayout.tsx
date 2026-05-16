@@ -191,6 +191,17 @@ export function SquadModernLayout({
         onViewModeChange={(mode) => setViewMode(mode as any)} 
         pendingSwap={pendingSwap ? { id: pendingSwap.id, name: pendingSwap.name } : null}
         onCancelSwap={() => setPendingSwap(null)}
+        onBack={() => {
+          if (viewMode === 'pitch') {
+            setViewMode('list');
+            return;
+          }
+          if (isTacticsOpen && window.innerWidth < 1280) {
+            setIsTacticsOpen(false);
+            return;
+          }
+          window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'dashboard' } }));
+        }}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative gap-6 p-4 sm:p-6">
