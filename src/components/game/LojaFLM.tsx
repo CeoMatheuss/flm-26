@@ -28,7 +28,7 @@ interface LojaProps {
 }
 
 const CATEGORIES = [
-  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, db: 'dashboard' },
+  { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
   { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
@@ -39,7 +39,7 @@ const CATEGORIES = [
 ];
 
 export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
-  const [activeCategory, setActiveCategory] = useState('dashboard');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [showPremium, setShowPremium] = useState(false);
@@ -303,9 +303,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
             variant="outline" 
             size="sm" 
             onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'dashboard' } }))} 
-            className="bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-xl gap-2 h-9"
+            className="bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-xl gap-2 h-8 sm:h-9 text-[10px] sm:text-xs"
           >
-             <ChevronRight className="h-4 w-4 rotate-180" /> Voltar ao Clube
+             <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 rotate-180" /> <span className="hidden sm:inline">Voltar ao Clube</span><span className="sm:hidden">Voltar</span>
           </Button>
           <div className="flex gap-2">
             {isPremium && (
@@ -317,38 +317,38 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
           </div>
         </div>
         
-        <h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none mb-1 relative z-10">
+        <h1 className="text-2xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none mb-1 relative z-10">
           Loja <span className="text-emerald-500">FLM 26</span>
         </h1>
-        <p className="text-emerald-100/60 text-xs font-medium relative z-10">Overhaul completo: estratégia, torcida e benefícios exclusivos.</p>
+        <p className="text-emerald-100/60 text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] relative z-10 opacity-70">Official Club Provider</p>
         
-        <div className="flex flex-wrap gap-4 mt-8 relative z-10">
-          <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-white/5 flex items-center gap-3 shadow-inner">
-            <div className="bg-emerald-500/20 p-2 rounded-lg">
-              <DollarSign className="text-emerald-400 h-5 w-5" />
+        <div className="flex flex-wrap gap-2 sm:gap-4 mt-6 sm:mt-8 relative z-10">
+          <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-white/5 flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px]">
+            <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg">
+              <DollarSign className="text-emerald-400 h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Orçamento</p>
-              <p className="font-black text-lg">R$ {(club.budget || 0).toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Orçamento</p>
+              <p className="font-black text-sm sm:text-lg italic">R$ {(club.budget || 0).toLocaleString()}</p>
             </div>
           </div>
-          <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-white/5 flex items-center gap-3 shadow-inner">
-            <div className="bg-emerald-500/20 p-2 rounded-lg">
-              <Users className="text-emerald-400 h-5 w-5" />
+          <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-white/5 flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px]">
+            <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg">
+              <Users className="text-emerald-400 h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Torcedores</p>
-              <p className="font-black text-lg">{(club.fans || 0).toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Torcedores</p>
+              <p className="font-black text-sm sm:text-lg italic">{(club.fans || 0).toLocaleString()}</p>
             </div>
           </div>
           {shopStats && (
-            <div className="bg-black/40 backdrop-blur-md p-3 px-5 rounded-2xl border border-emerald-500/20 flex items-center gap-3 shadow-inner">
-              <div className="bg-emerald-500/20 p-2 rounded-lg">
-                <TrendingUp className="text-emerald-400 h-5 w-5" />
+            <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-emerald-500/20 flex items-center gap-2 sm:gap-3 shadow-inner w-full sm:w-auto flex-grow sm:flex-grow-0">
+              <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg">
+                <TrendingUp className="text-emerald-400 h-4 w-4 sm:h-5 sm:w-5" />
               </div>
               <div>
-                <p className="text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Ganhos Diários (Loja)</p>
-                <p className="font-black text-lg text-emerald-400">R$ {(shopStats.daily_revenue / 100).toLocaleString()}</p>
+                <p className="text-[8px] sm:text-[10px] text-emerald-400/60 font-black uppercase tracking-wider">Ganhos Diários (Loja)</p>
+                <p className="font-black text-sm sm:text-lg text-emerald-400 italic">R$ {(shopStats.daily_revenue / 100).toLocaleString()}</p>
               </div>
             </div>
           )}
@@ -356,28 +356,28 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
       </div>
 
       {shopStats && (
-        <div className="flex flex-col md:flex-row gap-4 mb-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-2">
           <Button 
             onClick={handleUpgrade}
             disabled={upgrading}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl h-14 px-8 font-black uppercase italic tracking-tighter shadow-lg shadow-emerald-900/20 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex-1"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl h-12 sm:h-14 px-4 sm:px-8 font-black uppercase italic tracking-tighter shadow-lg shadow-emerald-900/20 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all flex-1"
           >
             {upgrading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <>
-                <ArrowUpRight className="mr-2 h-5 w-5" />
-                Upgrade da Loja (Nível {shopStats.level} → {shopStats.level + 1})
-                <Badge className="ml-3 bg-black/30 border-none">R$ {(500 * Math.pow(3, shopStats.level - 1)).toLocaleString()}</Badge>
-              </>
+              <div className="flex items-center justify-center gap-2 text-[10px] sm:text-sm">
+                <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>Upgrade Loja (Nv.{shopStats.level} → {shopStats.level + 1})</span>
+                <Badge className="bg-black/30 border-none text-[9px] sm:text-xs">R$ {(500 * Math.pow(3, shopStats.level - 1)).toLocaleString()}</Badge>
+              </div>
             )}
           </Button>
-          <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl flex items-center gap-3 md:w-80">
-            <div className="bg-emerald-500/20 p-2 rounded-lg">
-              <Star className="text-emerald-400 h-4 w-4" />
+          <div className="bg-emerald-500/10 border border-emerald-500/20 p-2 sm:p-3 rounded-2xl flex items-center gap-2 sm:gap-3 sm:w-80">
+            <div className="bg-emerald-500/20 p-1.5 sm:p-2 rounded-lg shrink-0">
+              <Star className="text-emerald-400 h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
-            <p className="text-[10px] text-emerald-100 font-bold leading-tight">
-              Aumentar o nível da loja desbloqueia novos produtos e melhora a taxa de conversão dos torcedores.
+            <p className="text-[8px] sm:text-[10px] text-emerald-100 font-bold leading-tight">
+              Aumentar o nível desbloqueia novos produtos e melhora a conversão.
             </p>
           </div>
         </div>
@@ -385,17 +385,17 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
 
       <div className="flex flex-col gap-6">
         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-          <div className="bg-black/20 p-1.5 rounded-2xl border border-white/5 mb-6">
+          <div className="bg-black/20 p-1 rounded-2xl border border-white/5 mb-4 sm:mb-6">
             <ScrollArea className="w-full whitespace-nowrap">
-              <TabsList className="bg-transparent gap-2 h-auto p-0">
+              <TabsList className="bg-transparent gap-1 sm:gap-2 h-auto p-0 flex">
                 {CATEGORIES.map(cat => (
                   <TabsTrigger 
                     key={cat.id} value={cat.id}
-                    className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl bg-transparent text-white/60 border border-transparent data-[state=active]:border-emerald-400/30 px-5 py-2.5 transition-all"
+                    className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl bg-transparent text-white/60 border border-transparent data-[state=active]:border-emerald-400/30 px-3 sm:px-5 py-2 sm:py-2.5 transition-all flex-1 min-w-[100px]"
                   >
-                    <div className="flex items-center gap-2">
-                       <cat.icon className="h-4 w-4" />
-                       <span className="text-xs font-black uppercase italic">{cat.name}</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                       <cat.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                       <span className="text-[9px] sm:text-xs font-black uppercase italic">{cat.name}</span>
                     </div>
                   </TabsTrigger>
                 ))}
@@ -427,21 +427,12 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
 
           {!loading && !error && (
             <>
-              <TabsContent value="dashboard" className="outline-none">
-                {shopStats && (
-                  <ShopFinanceDashboard 
-                    stats={shopStats} 
-                    club={club} 
-                    products={shopProducts} 
-                  />
-                )}
-              </TabsContent>
 
-              {CATEGORIES.filter(cat => cat.id !== 'history' && cat.id !== 'dashboard').map(cat => (
-                <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 outline-none">
+              {CATEGORIES.filter(cat => cat.id !== 'history').map(cat => (
+                <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 outline-none">
                   <AnimatePresence mode="popLayout">
                     {items
-                      .filter(i => i.category === cat.db)
+                      .filter(i => cat.id === 'all' ? true : i.category === cat.db)
                       .map((item, idx) => (
                         <motion.div
                           key={item.id}
@@ -460,7 +451,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                       ))}
                   </AnimatePresence>
                   
-                  {items.filter(i => i.category === cat.db).length === 0 && (
+                  {items.filter(i => cat.id === 'all' ? items.length > 0 : i.category === cat.db).length === 0 && (
                     <div className="col-span-full py-20 text-center">
                        <Package className="h-12 w-12 text-white/10 mx-auto mb-3" />
                        <p className="text-sm text-white/40 font-medium italic">Nenhum item disponível nesta categoria no momento.</p>
@@ -760,7 +751,7 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
   return (
     <div 
       onClick={onViewDetails}
-      className={`group relative overflow-hidden rounded-[2rem] border transition-all duration-500 flex flex-col h-full cursor-pointer ${
+      className={`group relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] border transition-all duration-500 flex flex-col h-full cursor-pointer ${
       isBlocked 
         ? 'border-white/5 bg-black/40 grayscale' 
         : `border-white/10 bg-[#0A0D14] hover:border-emerald-500/50 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(16,185,129,0.1)]`
@@ -778,9 +769,9 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
         </div>
       )}
 
-      <div className="relative z-10 space-y-4 p-5 flex-1 flex flex-col">
+      <div className="relative z-10 space-y-3 sm:space-y-4 p-4 sm:p-5 flex-1 flex flex-col">
         <div className="flex justify-between items-center">
-          <Badge className={`border-none uppercase font-black text-[9px] px-2.5 py-1 ${
+          <Badge className={`border-none uppercase font-black text-[8px] sm:text-[9px] px-2 py-0.5 sm:px-2.5 sm:py-1 ${
             item.rarity === 'legendary' ? 'bg-amber-500/20 text-amber-400' :
             item.rarity === 'epic' ? 'bg-purple-500/20 text-purple-400' :
             'bg-emerald-500/10 text-emerald-400'
@@ -799,10 +790,10 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
         </div>
         
         <div className="space-y-1">
-          <h3 className="text-xl font-black uppercase italic tracking-tighter leading-tight group-hover:text-emerald-400 transition-colors">
+          <h3 className="text-lg sm:text-xl font-black uppercase italic tracking-tighter leading-tight group-hover:text-emerald-400 transition-colors">
             {item.name}
           </h3>
-          <p className="text-[11px] text-muted-foreground/80 leading-relaxed font-medium line-clamp-3">
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 leading-relaxed font-medium line-clamp-2 sm:line-clamp-3">
             {item.description}
           </p>
         </div>
@@ -850,16 +841,16 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
           </div>
         )}
 
-        <div className="pt-2 mt-auto flex gap-2">
+        <div className="pt-2 mt-auto flex gap-1.5 sm:gap-2">
           <Button 
             variant="outline"
             onClick={(e) => {
               e.stopPropagation();
               onViewDetails();
             }}
-            className="flex-none w-12 h-12 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white p-0"
+            className="flex-none w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white p-0"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           <Button 
             disabled={isBlocked} 
@@ -867,7 +858,7 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
               e.stopPropagation();
               onPurchase();
             }}
-            className={`flex-1 font-black uppercase italic h-12 rounded-2xl transition-all duration-300 shadow-lg ${
+            className={`flex-1 font-black uppercase italic h-10 sm:h-12 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-lg text-xs sm:text-sm ${
               isBlocked 
                 ? 'bg-white/5 text-white/40 border border-white/5' 
                 : isFree 
@@ -876,8 +867,8 @@ function StoreCard({ item, clubFans, isPremium, onPurchase, onViewDetails }: any
             }`}
           >
             {isFree ? 'Assinar' : (
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-sm">R$ {price.toLocaleString()}</span>
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                <span>R$ {price.toLocaleString()}</span>
               </div>
             )}
           </Button>
