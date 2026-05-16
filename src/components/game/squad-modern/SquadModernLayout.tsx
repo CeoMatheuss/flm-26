@@ -290,6 +290,7 @@ export function SquadModernLayout({
                 onUpdate={onUpdateTactics || (() => {})} 
                 season={season?.currentSeason}
                 userId={userId}
+                hideSwapButton={true}
               />
            </div>
 
