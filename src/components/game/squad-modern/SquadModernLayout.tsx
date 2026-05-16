@@ -192,7 +192,7 @@ export function SquadModernLayout({
         onCancelSwap={() => setPendingSwap(null)}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative gap-6 p-6">
         {/* Main Content Area: Tabs & Tables */}
         <div className={cn(
           "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500",
