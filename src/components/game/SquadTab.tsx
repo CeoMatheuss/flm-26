@@ -24,7 +24,9 @@ import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
 import { SquadCard } from './squad/SquadCard';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface Props {
+import { QuickSwapPanel } from './squad/QuickSwapPanel';
+import { FAB } from '@/components/ui/fab'; // Wait, I might need to check if FAB exists or just use a standard button fixed
+
   players: Player[];
   budget: number;
   trainingLevel: number;
