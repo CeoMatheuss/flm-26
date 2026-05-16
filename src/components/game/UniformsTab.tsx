@@ -750,6 +750,42 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           )}
         </CardContent>
       </Card>
+      {/* History Section */}
+      {launches.length > 1 && (
+        <Card className="border-0 bg-muted/10">
+          <CardHeader className="pb-2 pt-3 px-3">
+            <CardTitle className="text-xs flex items-center gap-1.5">
+              <History className="h-3.5 w-3.5 text-primary" /> Histórico de Lançamentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3">
+            <ScrollArea className="w-full">
+              <div className="flex gap-3 pb-2">
+                {launches.slice(1).map((launch, idx) => (
+                  <div key={launch.id} className="min-w-[150px] bg-background/50 p-2 rounded-xl border border-white/5 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <span className="text-[10px] font-bold text-muted-foreground">{new Date(launch.launched_at).toLocaleDateString()}</span>
+                      <Badge variant="outline" className="text-[8px] h-4 px-1">#{launches.length - idx - 1}</Badge>
+                    </div>
+                    <p className="text-xs font-bold truncate">{launch.name}</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[9px]">
+                        <span className="text-muted-foreground">Vendas:</span>
+                        <span className="font-bold">{launch.total_sales_count?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-[9px]">
+                        <span className="text-muted-foreground">Receita:</span>
+                        <span className="text-emerald-500 font-bold">R$ {(launch.total_revenue_cents / 100).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
