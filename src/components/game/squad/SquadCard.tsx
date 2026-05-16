@@ -177,7 +177,7 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
               e.stopPropagation();
               if (onSwap) onSwap(player);
             }}
-            className="h-9 px-4 text-xs font-black uppercase tracking-tighter gap-2 rounded-xl border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:scale-105 active:scale-95 transition-all group/btn shadow-lg"
+            className="h-10 px-6 text-xs font-black uppercase tracking-tighter gap-2 rounded-xl border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:scale-105 active:scale-95 transition-all group/btn shadow-lg"
           >
             <Repeat className="w-3.5 h-3.5 group-hover/btn:rotate-180 transition-transform duration-500" />
             <span>Trocar Jogador</span>
