@@ -317,10 +317,10 @@ export function FormationView({ formation, players, captainId, onPlayerClick, on
                         ${isPendingSwap ? 'scale-110 ring-8 ring-primary border-primary shadow-[0_0_30px_rgba(var(--primary),0.6)]' : 'border-white/20'}`}
                     >
                      <div className="flex flex-col items-center -space-y-1">
-                       <span className={`text-xl sm:text-4xl font-black tracking-tighter drop-shadow-md ${posTextColors[slot.position] || 'text-white'}`}>
+                       <span className={`text-base sm:text-2xl lg:text-3xl font-black tracking-tighter drop-shadow-md ${posTextColors[slot.position] || 'text-white'}`}>
                          {player ? getDynamicOverall(player, slot.position as Player['position']) : ''}
                        </span>
-                       <span className={`text-[8px] sm:text-[14px] font-bold uppercase opacity-80 ${posTextColors[slot.position] || 'text-white'}`}>
+                       <span className={`text-[7px] sm:text-[10px] lg:text-[11px] font-bold uppercase opacity-80 ${posTextColors[slot.position] || 'text-white'}`}>
                          {slot.position}
                        </span>
                      </div>
