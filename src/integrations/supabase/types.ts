@@ -452,12 +452,66 @@ export type Database = {
           },
         ]
       }
+      club_uniform_launches: {
+        Row: {
+          club_id: string
+          config: Json
+          hype_score: number | null
+          id: string
+          initial_fans: number
+          initial_reputation: number
+          last_sales_update_at: string | null
+          launched_at: string
+          name: string
+          peak_daily_sales: number | null
+          total_revenue_cents: number | null
+          total_sales_count: number | null
+        }
+        Insert: {
+          club_id: string
+          config: Json
+          hype_score?: number | null
+          id?: string
+          initial_fans: number
+          initial_reputation: number
+          last_sales_update_at?: string | null
+          launched_at?: string
+          name: string
+          peak_daily_sales?: number | null
+          total_revenue_cents?: number | null
+          total_sales_count?: number | null
+        }
+        Update: {
+          club_id?: string
+          config?: Json
+          hype_score?: number | null
+          id?: string
+          initial_fans?: number
+          initial_reputation?: number
+          last_sales_update_at?: string | null
+          launched_at?: string
+          name?: string
+          peak_daily_sales?: number | null
+          total_revenue_cents?: number | null
+          total_sales_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_uniform_launches_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           budget: number | null
           cash: number | null
           country: string
           created_at: string
+          current_uniform_launch_id: string | null
           detail_color: string | null
           fans: number | null
           id: string
@@ -477,6 +531,7 @@ export type Database = {
           cash?: number | null
           country?: string
           created_at?: string
+          current_uniform_launch_id?: string | null
           detail_color?: string | null
           fans?: number | null
           id?: string
@@ -496,6 +551,7 @@ export type Database = {
           cash?: number | null
           country?: string
           created_at?: string
+          current_uniform_launch_id?: string | null
           detail_color?: string | null
           fans?: number | null
           id?: string
@@ -510,7 +566,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clubs_current_uniform_launch_id_fkey"
+            columns: ["current_uniform_launch_id"]
+            isOneToOne: false
+            referencedRelation: "club_uniform_launches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       continental_qualifications: {
         Row: {
