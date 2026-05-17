@@ -217,15 +217,21 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
             <Card className="bg-zinc-900/60 border-white/5 rounded-2xl">
               <CardContent className="p-4 space-y-4">
                 <SectionTitle icon={<Zap className="w-4 h-4 text-amber-400" />} label="Dinâmica" />
-                <Group label="Estilo">
-                  <Grid items={['equilibrado','ofensivo','defensivo','posse'] as const}
-                        value={safeTactics.playStyle} onPick={(v) => setField('playStyle', v as any)}
-                        activeClass="bg-emerald-500 border-emerald-400 text-zinc-950" />
+                <Group label="Estilo de Jogo">
+                  <StylePicker
+                    value={safeTactics.playStyle as PlayStyle}
+                    onPick={(v) => setField('playStyle', v as any)}
+                  />
                 </Group>
                 <Group label="Ritmo">
                   <Grid items={['lento','normal','rapido','muito-rapido'] as const}
                         value={safeTactics.tempo} onPick={(v) => setField('tempo', v as any)}
                         activeClass="bg-amber-500 border-amber-400 text-zinc-950" />
+                </Group>
+                <Group label="Linha Defensiva">
+                  <Grid items={['baixa','media','alta'] as const}
+                        value={(safeTactics as any).defenseLine || 'media'} onPick={(v) => setField('defenseLine' as any, v as any)}
+                        activeClass="bg-sky-500 border-sky-400 text-zinc-950" />
                 </Group>
               </CardContent>
             </Card>
