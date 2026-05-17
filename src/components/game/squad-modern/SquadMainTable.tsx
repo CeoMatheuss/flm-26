@@ -68,7 +68,8 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
 
       switch (activeTab) {
         case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
-        case 'reservas': return !isStarter && status === 'reserva';
+        // Reservas: qualquer jogador disponível fora do XI titular (inclui jovens promessas).
+        case 'reservas': return !isStarter && (status === 'reserva' || status === 'promessa');
         case 'fora': return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
         case 'suspensos': return status === 'suspenso';
         case 'emprestados': return status === 'emprestado';
