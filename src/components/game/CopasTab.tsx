@@ -342,8 +342,9 @@ export function CopasTab({ userId }: Props) {
                  );
                })()}
              </div>
-          ) : myMatch && (
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match shrink-0">
+           ) : myMatch && (
+             <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match shrink-0">
+
               <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black text-primary uppercase tracking-widest">SEU JOGO</span>
@@ -396,7 +397,19 @@ export function CopasTab({ userId }: Props) {
             </Card>
           )}
         </div>
+
+        {cup.status === 'finished' && (
+          <div className="relative z-10 mt-6 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-center">
+            <p className="text-xs md:text-sm font-black text-yellow-400 uppercase tracking-widest">
+              🏆 Copas nacionais retornam no dia 10
+            </p>
+            <p className="text-[10px] md:text-xs text-yellow-200/70 font-medium mt-1">
+              Prepare seu elenco para a próxima edição do torneio.
+            </p>
+          </div>
+        )}
       </div>
+
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="flex items-center justify-start gap-1 p-1 bg-card/40 backdrop-blur-md border border-border/50 rounded-2xl mb-6 overflow-x-auto no-scrollbar">
