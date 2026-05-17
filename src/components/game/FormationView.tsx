@@ -203,11 +203,15 @@ export function FormationView({
 
   const isPortrait = orientation === 'portrait';
 
+  // Fallback: se a formação for inválida, usa 4-4-2
+  const safeLayout = formationLayouts[formation] ? layout : formationLayouts['4-4-2'];
+
   return (
     <div
       className={cn(
-        'relative w-full mx-auto bg-[#0a1f0f] rounded-2xl overflow-hidden border-[5px] border-emerald-900/40 shadow-xl select-none',
-        isPortrait ? 'aspect-[3/4] max-w-[440px]' : 'aspect-[16/10] max-w-3xl'
+        'relative w-full mx-auto bg-[#0a1f0f] overflow-hidden shadow-xl select-none',
+        'rounded-xl sm:rounded-2xl border-2 sm:border-[5px] border-emerald-900/40',
+        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/10] max-w-3xl'
       )}
     >
       {/* Grama */}
