@@ -1048,7 +1048,10 @@ function simulateFullMatch(
   // ── CARDS ──────────────────────────────────────────────────
   // Times com moral/stamina baixos cometem mais faltas → favorece esses jogadores no sorteio.
   for (const m of cardMins) {
-    const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
+    // Times com marcação individual / pressing alto cometem mais faltas
+    const homeFoulW = 1 + homeExtras.foulBias + Math.max(0, pressingMod - 1) * 0.8;
+    const awayFoulW = 1 + awayExtras.foulBias + Math.max(0, awayPressingMod - 1) * 0.8;
+    const teamIdx: 0 | 1 = rng() < homeFoulW / (homeFoulW + awayFoulW) ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
