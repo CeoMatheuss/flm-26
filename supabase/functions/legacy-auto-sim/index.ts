@@ -73,12 +73,17 @@ async function notify(supabase: any, userId: string, opponent: string, mine: num
 
 async function processFriendlies(supabase: any): Promise<number> {
   const nowIso = new Date().toISOString();
+  // Regra: só auto-simula amistosos cujo horário oficial já chegou (com 5min de tolerância)
+  // E onde NENHUM jogador entrou no lobby. Se ao menos 1 entrou, a partida segue normal.
+  const tolerance = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const { data: list } = await supabase
     .from('friendly_invites')
-    .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, auto_sim_at')
+    .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, auto_sim_at, home_joined, away_joined')
     .eq('status', 'accepted')
     .is('match_result', null)
-    .or(`auto_sim_at.lte.${nowIso},match_date.lte.${nowIso}`)
+    .lte('match_date', tolerance)
+    .not('home_joined', 'is', true)
+    .not('away_joined', 'is', true)
     .limit(MAX_BATCH);
   if (!list || list.length === 0) return 0;
 
