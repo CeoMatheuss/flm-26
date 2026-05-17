@@ -672,11 +672,6 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           }
           drawEventLabel(1, cardLabel, playerName);
         }
-
-            drawEventLabel(1, '🧤 GOLEIRO SALVOU O PÊNALTI!', playerName);
-          }
-        }
-
       // ══════════════════════════════════════════════
       // COUNTER-ATTACK — Full-field sprint
       // ══════════════════════════════════════════════
