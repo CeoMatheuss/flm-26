@@ -1315,7 +1315,7 @@ function simulateFullMatch(
   
   // Conversão de fãs (5% base * reputação)
   const conversionRate = 0.05 * (0.5 + (reputation / 100));
-  const expectedAttendance = Math.floor(resolvedHomeFans * conversionRate * moodMult * matchMult * priceImpact);
+  const expectedAttendance = Math.floor(homeFans * conversionRate * moodMult * matchMult * priceImpact);
   const estimatedCrowd = Math.min(maxCapacity, Math.max(100, expectedAttendance));
   
   // Receitas detalhadas
