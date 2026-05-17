@@ -1106,11 +1106,28 @@ function simulateFullMatch(
     stats.shots[teamIdx]++;
     // Chance outcome favors misses/saves when shooter is tired/desmotivated
     const sForm = formMult(shooter);
-    const chancePool = sForm >= 1.0
+    // Defesa adversária com linha alta força mais impedimentos contra o atacante
+    const oppExtras = team === 'home' ? awayExtras : homeExtras;
+    const myExtras = team === 'home' ? homeExtras : awayExtras;
+    const basePool = sForm >= 1.0
       ? ['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
       : sForm >= 0.85
         ? ['woodwork', 'great_save', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
         : ['great_save', 'great_save', 'offside_trap', 'long_shot_miss', 'long_shot_miss', 'header_miss', 'header_miss', 'buildup_play'];
+    const chancePool: string[] = [...basePool];
+    // Linha alta adversária → +impedimentos
+    if (oppExtras.offsideMul > 1.2) chancePool.push('offside_trap', 'offside_trap');
+    else if (oppExtras.offsideMul < 0.8) {
+      // tira um offside_trap se houver
+      const idx = chancePool.indexOf('offside_trap');
+      if (idx >= 0) chancePool.splice(idx, 1);
+    }
+    // Bola longa / largura larga → mais cruzamentos / cabeceios e contra-ataques
+    if (myExtras.crossBoost > 0.1) chancePool.push('corner_danger', 'header_miss', 'free_kick_near');
+    // Passe curto → mais construção
+    if (myExtras.shortPassBoost > 0.05) chancePool.push('buildup_play', 'buildup_play');
+    // Chutão / passe longo → mais chutes de longe
+    if (myExtras.longShotBoost > 0.08) chancePool.push('long_shot_miss', 'woodwork');
     const evType = pick(chancePool);
     const descs: Record<string, string> = {
       woodwork: `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área e a bola bate no travessão! ${gkName} do ${opp} apenas observou. A torcida grita!`,
