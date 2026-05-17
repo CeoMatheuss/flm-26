@@ -435,8 +435,15 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               {CATEGORIES.filter(cat => !['painel'].includes(cat.id)).map(cat => (
                 <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 outline-none">
                   <AnimatePresence mode="popLayout">
-                    {items
+                {items
                       .filter(i => cat.id === 'all' ? true : i.category === cat.db)
+                      .slice()
+                      .sort((a: any, b: any) => {
+                        if (cat.db === 'sponsorship') {
+                          return (a.min_fans || 0) - (b.min_fans || 0);
+                        }
+                        return (a.price_cents || 0) - (b.price_cents || 0);
+                      })
                       .map((item, idx) => (
                         <motion.div
                           key={item.id}
