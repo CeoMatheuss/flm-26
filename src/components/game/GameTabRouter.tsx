@@ -251,6 +251,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             onChangePosition={game.changePlayerPosition} 
             season={game.season?.currentSeason ?? 1} 
             userId={userId} 
+            hideSwapButton
           />
         )}
       </TabsContent>
