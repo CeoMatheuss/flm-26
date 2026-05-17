@@ -97,8 +97,46 @@ Deno.serve(async (req) => {
     if (clubError || !club) throw new Error("Club not found");
 
     const now = new Date();
+
+    // Fetch academy info from game_saves
+    const { data: save } = await adminClient
+      .from('game_saves')
+      .select('club_data')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const clubData = save?.club_data || {};
+    const infrastructure = clubData.infrastructure || {};
+    const academy = infrastructure.youthAcademy || null;
+    const academyLevel = academy?.level || 0;
+    const academyActive = !!academy && academyLevel >= 1 && academy.active !== false;
+    const investmentAmount = clubData.youthInvestment || 0;
+
+    // GUARD: only clubs with an active youth academy can generate prospects
+    if (!academyActive) {
+      return new Response(JSON.stringify({
+        error: 'Seu clube ainda não possui categoria de base ativa. Construa/ative a Base na Infraestrutura para revelar jovens talentos.',
+        noAcademy: true,
+      }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // LIMIT: max prospects in academy depends on level (10 + 2 per level, cap 40)
+    const maxProspects = Math.min(40, 10 + academyLevel * 2);
+    const { count: currentCount } = await adminClient
+      .from('youth_prospects')
+      .select('id', { count: 'exact', head: true })
+      .eq('club_id', club.id);
+    if ((currentCount || 0) >= maxProspects) {
+      return new Response(JSON.stringify({
+        error: `Sua base já está cheia (${currentCount}/${maxProspects}). Promova ou libere jovens antes de revelar novos.`,
+        full: true,
+      }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // CYCLE: better academies reveal talents more often (level 1 = 14d → level 10+ = 3d)
+    const cycleDays = Math.max(3, 15 - academyLevel);
+    const cycleMs = cycleDays * 24 * 60 * 60 * 1000;
     const lastGen = club.last_youth_generation_at ? new Date(club.last_youth_generation_at) : null;
-    const cycleMs = 7 * 24 * 60 * 60 * 1000;
 
     if (lastGen && (now.getTime() - lastGen.getTime()) < cycleMs) {
       const remaining = cycleMs - (now.getTime() - lastGen.getTime());
@@ -110,18 +148,6 @@ Deno.serve(async (req) => {
         nextGenerationAt: new Date(lastGen.getTime() + cycleMs).toISOString()
       }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-
-    // Fetch academy info from game_saves
-    const { data: save, error: saveError } = await adminClient
-      .from('game_saves')
-      .select('club_data')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    const clubData = save?.club_data || {};
-    const infrastructure = clubData.infrastructure || {};
-    const academyLevel = infrastructure.youthAcademy?.level || 1;
-    const investmentAmount = clubData.youthInvestment || 0;
 
     // Determine nationality
     const nationality = Math.random() < 0.9 ? (club.country || 'Brasil') : getRandomElement(['Brasil', 'Portugal', 'Argentina']);
