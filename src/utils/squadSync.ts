@@ -39,8 +39,10 @@ export const youthProspectToPlayer = (prospect: YouthProspect): Player => ({
 
 export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspect[], formation: TacticsConfig['formation']) => {
   const byId = new Map<string, Player>();
+  const activeYouthIds = new Set(youthProspects.map((prospect) => prospect.id));
   [...players, ...youthProspects.map(youthProspectToPlayer)].forEach((player) => {
     if (!player?.id || !isAvailableForSquad(player)) return;
+    if ((player as any).isYouth && !activeYouthIds.has(player.id) && (player as any).contractStatus !== 'profissional') return;
     const previous = byId.get(player.id);
     byId.set(player.id, {
       ...previous,
