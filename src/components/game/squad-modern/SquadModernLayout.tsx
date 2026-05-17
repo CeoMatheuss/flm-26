@@ -137,28 +137,19 @@ export function SquadModernLayout({
     });
   }, [players, onUpdatePlayers]);
 
-  const handleAction = (action: 'lineup' | 'bench' | 'transfer' | 'renew' | 'train' | 'medical' | 'captain' | 'swap', p: Player) => {
+  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player) => {
     switch (action) {
-      case 'swap':
-        setPendingSwap(p);
-        setPanelOpen(false);
-        // Priorizar aba de reservas para facilitar a troca se o jogador for titular
-        if (starterIds.has(p.id)) {
-          setActiveTab('reservas');
-        } else {
-          setActiveTab('titulares');
-        }
-        toast.info(`Selecione um jogador para trocar por ${p.name}`, {
-          description: "Clique em outro jogador na lista para completar a troca.",
-          duration: 5000,
-        });
-        break;
-      case 'lineup':
-      case 'bench':
-        toast.info(`${p.name} — abra a aba Tático para alterar a escalação.`);
-        break;
       case 'transfer':
         toast.info(`${p.name} pode ser listado no Mercado.`);
+        break;
+      case 'loan-out':
+        toast.info(`${p.name} disponibilizado para empréstimo.`);
+        break;
+      case 'auction':
+        toast.info(`${p.name} enviado para leilão.`);
+        break;
+      case 'shirt-number':
+        toast.info(`Escolha a camisa de ${p.name} no menu de equipamentos.`);
         break;
       case 'renew':
         toast.success(`Negociação de renovação iniciada com ${p.name}.`);
@@ -166,13 +157,9 @@ export function SquadModernLayout({
       case 'train':
         toast.info(`${p.name} foi adicionado ao foco de treino.`);
         break;
-      case 'medical':
-        toast.info(`${p.name} foi enviado ao departamento médico.`);
+      case 'promote-youth':
+        toast.info(`${p.name} promovido da base.`);
         break;
-      case 'captain':
-        toast.success(`${p.name} é o novo capitão!`);
-        break;
-      // removido case manual para usar apenas handleAction
     }
   };
 
