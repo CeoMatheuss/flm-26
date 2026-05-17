@@ -249,7 +249,7 @@ export function useMatchSimulation() {
 
   const processMatchEvent = useCallback((event: SimEvent, currentVisibleEvents: SimEvent[]) => {
     // 1. Identificar se o evento é um gol
-    const isGoal = event.isGoal === true || event.type === 'goal' || event.description.toUpperCase().includes('GOL');
+    const isGoal = event.isGoal === true || event.type === 'goal' || event.type.endsWith('_goal');
     
     // 2. Usar ID único do evento para evitar duplicidade
     const eventId = `${event.minute}-${event.type}-${event.team}-${event.playerName || ''}`;
