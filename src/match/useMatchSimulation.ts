@@ -173,7 +173,7 @@ export function useMatchSimulation() {
       const opp = idx === 0 ? 1 : 0;
       if (ev.team === 'home') homeActions++; else if (ev.team === 'away') awayActions++;
       
-      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
+      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.type.endsWith('_goal');
       if (isEvGoal && ev.type !== 'penalty_shootout') { 
         s.shots[idx]++; 
         s.shotsOnTarget[idx]++; 
