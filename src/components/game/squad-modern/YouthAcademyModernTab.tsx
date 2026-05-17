@@ -218,6 +218,12 @@ export function YouthAcademyModernTab({
              icon={<Trophy className="w-3.5 h-3.5" />} 
            />
            <TabButton 
+             active={activeSubTab === 'upgrade'} 
+             onClick={() => setActiveSubTab('upgrade')} 
+             label="Upgrade" 
+             icon={<Hammer className="w-3.5 h-3.5" />} 
+           />
+           <TabButton 
              active={activeSubTab === 'mural'} 
              onClick={() => setActiveSubTab('mural')} 
              label="Mural" 
