@@ -191,6 +191,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       cancelled = true; 
       clearInterval(interval); 
       supabase.removeChannel(channel); 
+      window.removeEventListener('flm:match-finalized', handleSync);
       window.removeEventListener('league_match_updated', handleSync);
     };
   }, [userId]);
