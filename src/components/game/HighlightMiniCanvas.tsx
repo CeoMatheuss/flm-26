@@ -1453,3 +1453,20 @@ export function getHighlightType(eventType: string): HighlightType {
   if (eventType === 'yellow_card') return 'yellow_card';
   return 'chance';
 }
+
+/** Single source of truth: derive the real outcome of a match event for the 2D layer. */
+export function getHighlightOutcome(eventType: string): HighlightOutcome {
+  if ([
+    'foot_goal', 'header_goal', 'goal',
+    'penalty_goal', 'counter_attack_goal',
+    'crossing_goal', 'free_kick_goal',
+  ].includes(eventType)) return 'goal';
+  if (['great_save', 'penalty_miss'].includes(eventType)) return 'save';
+  if (eventType === 'woodwork') return 'woodwork';
+  if (eventType === 'corner_danger') return 'corner';
+  if ([
+    'free_kick_near', 'long_shot_miss', 'header_miss',
+    'counter_attack', 'dangerous_foul',
+  ].includes(eventType)) return 'miss';
+  return 'neutral';
+}
