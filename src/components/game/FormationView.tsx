@@ -203,11 +203,15 @@ export function FormationView({
 
   const isPortrait = orientation === 'portrait';
 
+  // Fallback: se a formação for inválida, usa 4-4-2
+  const safeLayout = formationLayouts[formation] ? layout : formationLayouts['4-4-2'];
+
   return (
     <div
       className={cn(
-        'relative w-full mx-auto bg-[#0a1f0f] rounded-2xl overflow-hidden border-[5px] border-emerald-900/40 shadow-xl select-none',
-        isPortrait ? 'aspect-[3/4] max-w-[440px]' : 'aspect-[16/10] max-w-3xl'
+        'relative w-full mx-auto bg-[#0a1f0f] overflow-hidden shadow-xl select-none',
+        'rounded-xl sm:rounded-2xl border-2 sm:border-[5px] border-emerald-900/40',
+        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/10] max-w-3xl'
       )}
     >
       {/* Grama */}
@@ -245,13 +249,12 @@ export function FormationView({
       )}
 
       <AnimatePresence mode="popLayout">
-        {layout.map((slot, i) => {
+        {safeLayout.map((slot, i) => {
           const player = assigned[i];
 
-          // Mapeia coordenadas: portrait usa (x, y) direto; landscape rotaciona 90°
-          // Aplica inset de segurança p/ que chip + nome não vazem do campo (overflow-hidden)
-          const INSET_X = 8; // % de margem lateral
-          const INSET_Y = 4; // % de margem vertical
+          // Insets adaptativos: mobile portrait precisa de mais margem p/ não cortar chips e nomes
+          const INSET_X = isPortrait ? 11 : 8;
+          const INSET_Y = isPortrait ? 6 : 4;
           const sx = INSET_X + (slot.x * (100 - 2 * INSET_X)) / 100;
           const sy = INSET_Y + (slot.y * (100 - 2 * INSET_Y)) / 100;
           const left = isPortrait ? sx : 100 - sy;
@@ -280,34 +283,34 @@ export function FormationView({
             >
               <div
                 className={cn(
-                  'relative rounded-full flex flex-col items-center justify-center border-[3px] shadow-lg transition-all',
-                  'w-11 h-11 sm:w-14 sm:h-14 lg:w-16 lg:h-16',
+                  'relative rounded-full flex flex-col items-center justify-center border-2 sm:border-[3px] shadow-lg transition-all',
+                  'w-9 h-9 sm:w-14 sm:h-14 lg:w-16 lg:h-16',
                   isInjured ? 'bg-slate-800 grayscale border-slate-700' : posColor[slot.position] || 'bg-slate-900 text-white',
                   adapt?.border || 'border-white/60',
                   isSelected ? 'scale-110 ring-4 ring-primary shadow-[0_0_25px_rgba(16,185,129,0.6)]' : adapt ? `ring-2 ${adapt.ring}` : ''
                 )}
               >
-                <span className="text-sm sm:text-lg font-black tracking-tighter leading-none">
+                <span className="text-[11px] sm:text-lg font-black tracking-tighter leading-none">
                   {player ? getDynamicOverall(player, slot.position as Player['position']) : '-'}
                 </span>
-                <span className="text-[7px] sm:text-[8px] font-bold uppercase opacity-80 leading-none mt-0.5">
+                <span className="text-[6px] sm:text-[8px] font-bold uppercase opacity-80 leading-none mt-0.5">
                   {slot.position}
                 </span>
 
                 {/* Badges */}
                 {isCaptain && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-yellow-400 border border-zinc-900 flex items-center justify-center">
-                    <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-yellow-950" />
+                  <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-yellow-400 border border-zinc-900 flex items-center justify-center">
+                    <Crown className="w-2 h-2 sm:w-3 sm:h-3 text-yellow-950" />
                   </div>
                 )}
                 {adapt?.label === 'fora' && (
-                  <div className="absolute -top-1 -left-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-red-500 border border-zinc-900 flex items-center justify-center" title="Fora de posição">
-                    <AlertTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                  <div className="absolute -top-0.5 -left-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-red-500 border border-zinc-900 flex items-center justify-center" title="Fora de posição">
+                    <AlertTriangle className="w-2 h-2 sm:w-3 sm:h-3 text-white" />
                   </div>
                 )}
                 {isSelected && (
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-primary border border-zinc-900 flex items-center justify-center animate-pulse">
-                    <ArrowRightLeft className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary-foreground" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-primary border border-zinc-900 flex items-center justify-center animate-pulse">
+                    <ArrowRightLeft className="w-2 h-2 sm:w-3 sm:h-3 text-primary-foreground" />
                   </div>
                 )}
               </div>
@@ -315,7 +318,7 @@ export function FormationView({
               {player && (
                 <>
                   {/* Barra de stamina */}
-                  <div className="mt-1 w-10 sm:w-12 h-1 bg-black/50 rounded-full overflow-hidden border border-white/10">
+                  <div className="mt-0.5 sm:mt-1 w-8 sm:w-12 h-[3px] sm:h-1 bg-black/50 rounded-full overflow-hidden border border-white/10">
                     <div
                       className={cn(
                         'h-full transition-all duration-500',
@@ -325,13 +328,13 @@ export function FormationView({
                     />
                   </div>
                   {/* Nome compacto */}
-                  <div className="mt-1 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/10 max-w-[80px] sm:max-w-[110px]">
-                    <p className="text-[9px] sm:text-[10px] text-white font-bold text-center leading-tight truncate">
+                  <div className="mt-0.5 sm:mt-1 px-1 sm:px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/10 max-w-[60px] sm:max-w-[110px]">
+                    <p className="text-[8px] sm:text-[10px] text-white font-bold text-center leading-tight truncate">
                       {player.name.split(' ').pop()}
                     </p>
                   </div>
                   {player.morale < 40 && (
-                    <Heart className="w-3 h-3 text-red-400 mt-0.5 fill-current" />
+                    <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-400 mt-0.5 fill-current" />
                   )}
                 </>
               )}

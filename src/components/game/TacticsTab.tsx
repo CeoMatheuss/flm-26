@@ -68,8 +68,8 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
   return (
     <div className={cn(
       hideSwapButton
-        ? 'w-full h-full flex flex-col overflow-hidden bg-zinc-950'
-        : 'fixed inset-0 z-[100] bg-zinc-950 flex flex-col overflow-hidden animate-in fade-in duration-200'
+        ? 'w-full min-h-[70vh] flex flex-col overflow-hidden overflow-x-hidden bg-zinc-950'
+        : 'fixed inset-0 z-[100] bg-zinc-950 flex flex-col overflow-hidden overflow-x-hidden animate-in fade-in duration-200'
     )}>
       {/* Header compacto */}
       <header className="shrink-0 border-b border-white/5 bg-zinc-950/90 backdrop-blur-xl px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2">
@@ -164,18 +164,25 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
 
       {/* Conteúdo: mobile = stack, desktop = split */}
       <div className="flex-1 overflow-y-auto lg:overflow-hidden">
-        <div className="h-full flex flex-col lg:flex-row gap-3 sm:gap-4 p-3 sm:p-4">
+        <div className="h-full flex flex-col lg:flex-row gap-3 sm:gap-4 p-2 sm:p-4">
           {/* Campo */}
-          <div className="lg:flex-1 bg-zinc-900/40 rounded-2xl border border-white/5 p-2 sm:p-4 flex items-center justify-center min-h-0">
-            <FormationView
-              formation={tactics.formation}
-              players={players}
-              captainId={tactics.captainId}
-              orientation={isMobile ? 'portrait' : 'landscape'}
-              selectedId={pendingFieldId}
-              onSlotSelect={(id) => setPendingFieldId(prev => (prev === id ? null : id))}
-              onSwapPlayers={onUpdatePlayers ? swapInLineup : undefined}
-            />
+          <div className="lg:flex-1 bg-zinc-900/40 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center min-h-0">
+            {players.length < 11 ? (
+              <div className="w-full aspect-[4/5] sm:aspect-[16/10] flex flex-col items-center justify-center text-white/40 gap-2">
+                <div className="w-10 h-10 rounded-full border-2 border-emerald-500/40 border-t-emerald-500 animate-spin" />
+                <p className="text-[10px] font-bold uppercase tracking-widest">Carregando elenco...</p>
+              </div>
+            ) : (
+              <FormationView
+                formation={tactics.formation}
+                players={players}
+                captainId={tactics.captainId}
+                orientation={isMobile ? 'portrait' : 'landscape'}
+                selectedId={pendingFieldId}
+                onSlotSelect={(id) => setPendingFieldId(prev => (prev === id ? null : id))}
+                onSwapPlayers={onUpdatePlayers ? swapInLineup : undefined}
+              />
+            )}
           </div>
 
           {/* Painel de ajustes */}
