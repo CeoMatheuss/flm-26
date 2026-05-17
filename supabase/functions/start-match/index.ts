@@ -1052,18 +1052,25 @@ function simulateFullMatch(
     const [sh, sa] = getScoreAtMinute(m, false);
     currentHomeGoals = sh; currentAwayGoals = sa;
 
-    // Injury check for exhausted players
-    for (const p of home) {
-      if (p.isOnPitch && !p.injured && p.stamina < 40 && rng() < 0.05) {
-        p.injured = true;
-        p.isOnPitch = false;
-        allPlanned.push({
-          minute: m, type: 'injury', team: 'home',
-          playerName: p.name, animType: 'foul',
-          description: `🏥 LESÃO! ${p.name} sente dores musculares e precisa ser substituído! O cansaço cobrou seu preço!`,
-        });
+    // Injury check for exhausted players — moral baixa aumenta o risco
+    const checkInjury = (squad: SimPlayer[], teamKey: 'home' | 'away') => {
+      for (const p of squad) {
+        if (!p.isOnPitch || p.injured || p.stamina >= 40) continue;
+        const moraleRisk = p.morale < 40 ? 1.6 : p.morale < 60 ? 1.2 : 1.0;
+        const baseRisk = 0.04 + (40 - p.stamina) / 800; // 0..0.09
+        if (rng() < baseRisk * moraleRisk) {
+          p.injured = true;
+          p.isOnPitch = false;
+          allPlanned.push({
+            minute: m, type: 'injury', team: teamKey,
+            playerName: p.name, animType: 'foul',
+            description: `🏥 LESÃO! ${p.name} sente dores musculares e precisa ser substituído! O cansaço cobrou seu preço!`,
+          });
+        }
       }
-    }
+    };
+    checkInjury(home, 'home');
+    checkInjury(away, 'away');
 
     // Moment phase check
     const isMomentCheck = momentCheckMinutes.includes(m);
