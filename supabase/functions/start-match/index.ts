@@ -881,13 +881,13 @@ function simulateFullMatch(
     const teamPlayers = team === 'home' ? home : away;
     const oppPlayers = team === 'home' ? away : home;
     const teamIdx = team === 'home' ? 0 : 1;
-    const kicker = pickByAttr(teamPlayers.filter(p => p.isOnPitch), 'setPieces');
-    const gk = pickByAttr(oppPlayers.filter(p => p.isOnPitch), 'goalkeeping', 'GOL');
+    const kicker = pickByRole(teamPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'set_piece');
+    const gk = pickByRole(oppPlayers.filter(p => p.isOnPitch), 'gk_save', 'GOL');
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
 
     // ── LANCE ANTERIOR (jogada na área que gera o pênalti) ──
-    const attacker = pickByAttr(teamPlayers.filter(p => p.isOnPitch), 'dribbling', rng() > 0.4 ? 'ATA' : undefined) || kicker;
-    const defender = pickByAttr(oppPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'defending', 'ZAG') || pick(oppPlayers.filter(p => p.isOnPitch));
+    const attacker = pickByRole(teamPlayers.filter(p => p.isOnPitch), 'dribble', rng() > 0.4 ? 'ATA' : undefined) || kicker;
+    const defender = pickByRole(oppPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'tackle', 'ZAG') || pick(oppPlayers.filter(p => p.isOnPitch));
     const buildupVariants = [
       `🏃 Jogada perigosa do ${tName}! ${attacker?.name || 'Atacante'} entra na área driblando, ${defender?.name || 'defensor'} do ${opp} chega atrasado e derruba dentro da área!`,
       `🔥 Contra-ataque mortal! ${attacker?.name || 'O atacante'} ganha na velocidade, invade a área e é derrubado por trás pelo ${defender?.name || 'zagueiro'}!`,
