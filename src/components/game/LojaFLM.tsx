@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ShopItemDetails } from './ShopItemDetails';
 import { StoreDashboard } from './shop/StoreDashboard';
+import { PainelFLM } from './shop/PainelFLM';
 import { useStoreManager } from '@/hooks/useStoreManager';
 import { useMarketingDelivery } from '@/hooks/useMarketingDelivery';
 import { formatMoney } from '@/lib/formatMoney';
@@ -38,8 +39,7 @@ const CATEGORIES = [
   { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
   { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
   { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
-  { id: 'ganhos', name: 'Ganhos', icon: TrendingUp, db: 'ganhos' },
-  { id: 'history', name: 'Histórico', icon: History, db: 'history' },
+  { id: 'painel', name: 'Painel', icon: LayoutDashboard, db: 'painel' },
 ];
 
 export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
