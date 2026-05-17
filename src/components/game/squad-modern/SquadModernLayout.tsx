@@ -300,7 +300,7 @@ export function SquadModernLayout({
           layout
           className={cn(
             "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500 bg-zinc-900/30 rounded-[2.5rem] border border-white/5",
-            (viewMode === 'pitch' || isTacticsOpen) ? "hidden xl:flex" : "flex"
+            (viewMode === 'pitch' || isTacticsOpen) ? "hidden" : "flex"
           )}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
