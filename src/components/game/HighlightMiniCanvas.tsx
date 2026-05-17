@@ -91,7 +91,7 @@ const HIGHLIGHT_DURATIONS: Record<HighlightType, number> = {
   idle: Infinity,
 };
 
-function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentMinute }: HighlightMiniCanvasProps) {
+function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentMinute, outcome = 'goal' }: HighlightMiniCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const driftRef = useRef(0);
