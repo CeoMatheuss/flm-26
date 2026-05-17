@@ -9,7 +9,7 @@
 
 import { useRef, useEffect, memo } from 'react';
 
-export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'counter_attack' | 'crossing' | 'free_kick' | 'idle';
+export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'counter_attack' | 'crossing' | 'free_kick' | 'card' | 'idle';
 
 interface HighlightMiniCanvasProps {
   type: HighlightType;
