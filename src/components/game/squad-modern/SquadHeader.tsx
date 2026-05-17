@@ -129,21 +129,6 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
             {isTacticsOpen ? 'Fechar Tático' : 'Abrir Tático'}
           </button>
 
-          {/* Optimization Toggle */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button 
-                  onClick={() => window.dispatchEvent(new CustomEvent('flm:auto-lineup'))}
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/20 transition-all active:scale-95 shrink-0"
-                >
-                  <Zap className="w-4 h-4 fill-emerald-400" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Otimizar Escalação (Titulares e Reserva)</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
           {/* Mobile View Toggle */}
           <div className="flex xl:hidden bg-white/5 border border-white/10 p-1 rounded-2xl h-10 gap-1 shrink-0">
              <button 
