@@ -21,11 +21,12 @@ import { TrainingCenterTab } from './TrainingCenterTab';
 import { CTRoomsTab } from './CTRoomsTab';
 import { StadiumTab } from './StadiumTab';
 import { YouthAcademyTab } from './YouthAcademyTab';
-import { Building2, Dumbbell, Gamepad2, HeartPulse, Landmark, GraduationCap, Wrench } from 'lucide-react';
+import { UpgradesTab } from './UpgradesTab';
+import { Building2, Dumbbell, Gamepad2, HeartPulse, Landmark, GraduationCap, Wrench, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 type FacilityKey = 'trainingCenter' | 'physiotherapy' | 'youthAcademy' | 'stadium';
-type SubTab = 'training' | 'training2d' | 'physio' | 'stadium' | 'youth' | 'ctrooms';
+type SubTab = 'training' | 'training2d' | 'physio' | 'stadium' | 'youth' | 'ctrooms' | 'upgrades';
 
 interface Props {
   // Treinos
