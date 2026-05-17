@@ -354,7 +354,7 @@ export function ClubProfilePage({ member, members, userId, leagueMatches, league
                 <InfoBlock icon={<Star className="h-3.5 w-3.5 text-amber-400" />} label="Reputação" value={String(clubMeta.reputation ?? member.reputation)} />
                 <InfoBlock icon={<Calendar className="h-3.5 w-3.5 text-muted-foreground" />} label="Fundado" value={clubMeta.foundedSeason ? `Temporada ${clubMeta.foundedSeason}` : '—'} />
                 <InfoBlock icon={<Users className="h-3.5 w-3.5 text-blue-400" />} label="Dirigente" value={clubMeta.ownerName || 'Sem dados'} />
-                <InfoBlock icon={<Home className="h-3.5 w-3.5 text-emerald-400" />} label="Estádio" value={clubMeta.stadiumName || 'Sem dados'} sub={stadiumCapacity ? `${stadiumCapacity.toLocaleString()} lugares` : undefined} />
+                <InfoBlock icon={<Home className="h-3.5 w-3.5 text-emerald-400" />} label="Estádio" value={clubMeta.stadiumName || 'Sem dados'} sub={stadiumCapacity ? `${stadiumCapacity.toLocaleString('pt-BR')} lugares` : undefined} />
                 <InfoBlock icon={<Heart className="h-3.5 w-3.5 text-rose-400" />} label="Torcida" value={clubMeta.fans ? clubMeta.fans.toLocaleString() : '—'} />
                 <InfoBlock icon={<Trophy className="h-3.5 w-3.5 text-yellow-500" />} label="Posição" value={leaguePosition ? `${leaguePosition}º` : '—'} sub="na liga" />
               </div>

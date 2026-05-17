@@ -295,7 +295,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                   {!isMaxStadium && nextStadiumCapacity && (
                     <div className="flex items-center justify-between col-span-2">
                       <span className="text-muted-foreground">Próx. nível</span>
-                      <span className="font-bold text-primary">+{(nextStadiumCapacity - (stadiumCapacity || 0)).toLocaleString()} lugares</span>
+                      <span className="font-bold text-primary">+{(nextStadiumCapacity - (stadiumCapacity || 0)).toLocaleString('pt-BR')} lugares</span>
                     </div>
                   )}
                 </div>
