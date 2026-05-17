@@ -203,8 +203,10 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       const elapsed = now - scheduledTime;
       
       if (diff <= 0 && elapsed >= 1 * 60 * 1000) {
-        // More than 1 min past -> should be simulated
-        setTimeLeft('Aguardando início');
+        // Overdue: show a live count-up chronometer until the auto-sim kicks in
+        const overdueMin = Math.floor(elapsed / 60000);
+        const overdueSec = Math.floor((elapsed % 60000) / 1000);
+        setTimeLeft(`⏱️ Iniciando... +${overdueMin}min ${String(overdueSec).padStart(2, '0')}s`);
         setIsReady(false);
       } else if (diff <= 0) {
         // Within the kickoff window
