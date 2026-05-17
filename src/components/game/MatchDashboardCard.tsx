@@ -204,7 +204,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       
       if (diff <= 0 && elapsed >= 1 * 60 * 1000) {
         // More than 1 min past -> should be simulated
-        setTimeLeft('Simulando...');
+        setTimeLeft('Aguardando início');
         setIsReady(false);
       } else if (diff <= 0) {
         // Within the kickoff window
