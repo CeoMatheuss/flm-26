@@ -1502,10 +1502,13 @@ function simulateFullMatch(
   const aggregateHomeGoals = finalHomeGoals + extraHomeGoals;
   const aggregateAwayGoals = finalAwayGoals + extraAwayGoals;
 
-  // Possession stats
+  // Possession stats — agora influenciado por estilo de passe / largura
   const effectiveHome = homeStrength * homeAdv * moraleMod;
   const possStyle = playStyle === 'posse' ? 1.15 : playStyle === 'contra-ataque' ? 0.85 : 1.0;
-  const possRatio = (effectiveHome * possStyle) / (effectiveHome * possStyle + awayStrength);
+  const awayPossStyle = awayPlayStyle === 'posse' ? 1.15 : awayPlayStyle === 'contra-ataque' ? 0.85 : 1.0;
+  const homePossWeight = effectiveHome * possStyle * (1 + homeExtras.possessionBias);
+  const awayPossWeight = awayStrength * awayPossStyle * (1 + awayExtras.possessionBias);
+  const possRatio = homePossWeight / (homePossWeight + awayPossWeight);
   stats.possession = [Math.round(possRatio * 100), 100 - Math.round(possRatio * 100)];
 
   // ── PLAYER RATINGS (recompute from event log + role fit) ──
