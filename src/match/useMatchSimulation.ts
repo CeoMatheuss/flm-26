@@ -204,7 +204,7 @@ export function useMatchSimulation() {
   const recalculateScoreFromEvents = useCallback((events: SimEvent[]) => {
     let hG = 0, aG = 0;
     for (const ev of events) {
-      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
+      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.type.endsWith('_goal');
       if (isEvGoal && ev.type !== 'penalty_shootout') {
         if (ev.team === 'home') hG++;
         else if (ev.team === 'away') aG++;
