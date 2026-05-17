@@ -45,6 +45,7 @@ const CATEGORIES = [
 export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
   const [activeCategory, setActiveCategory] = useState('uniform');
   const storeManager = useStoreManager(club, userId);
+  useMarketingDelivery(club?.id, userId);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [showPremium, setShowPremium] = useState(false);
