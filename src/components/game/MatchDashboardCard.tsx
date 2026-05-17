@@ -192,39 +192,31 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   }, [userId]);
 
 
-  // Live countdown timer (only relevant when match is still scheduled)
+  // Live countdown timer — sistema antigo: contagem regressiva até a hora do jogo + 1h
   useEffect(() => {
     if (!nextMatch?.date || nextMatch.status === 'finished') return;
-    const WINDOW_MS = 5 * 60 * 1000; // 5 minutes
     const update = () => {
-      const scheduledTime = new Date(nextMatch.date).getTime();
+      // Hora oficial do jogo + 1 hora (ajuste solicitado)
+      const scheduledTime = new Date(nextMatch.date).getTime() + 60 * 60 * 1000;
       const now = Date.now();
       const diff = scheduledTime - now;
-      const elapsed = now - scheduledTime;
-      
-      if (diff <= 0 && elapsed >= 1 * 60 * 1000) {
-        // Overdue: show a live count-up chronometer until the auto-sim kicks in
-        const overdueMin = Math.floor(elapsed / 60000);
-        const overdueSec = Math.floor((elapsed % 60000) / 1000);
-        setTimeLeft(`⏱️ Iniciando... +${overdueMin}min ${String(overdueSec).padStart(2, '0')}s`);
-        setIsReady(false);
-      } else if (diff <= 0) {
-        // Within the kickoff window
+
+      if (diff <= 0) {
         setTimeLeft('🔴 AO VIVO');
         setIsReady(true);
+        return;
+      }
+
+      setIsReady(false);
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      if (h >= 1) {
+        setTimeLeft(`Faltam ${h}h ${String(m).padStart(2, '0')}min ${String(s).padStart(2, '0')}s`);
+      } else if (m >= 1) {
+        setTimeLeft(`Faltam ${m}min ${String(s).padStart(2, '0')}s`);
       } else {
-        setIsReady(false);
-        const totalHours = diff / 3600000;
-        const h = Math.floor(diff / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        if (totalHours >= 1) {
-          setTimeLeft(`Faltam ${h}h ${String(m).padStart(2, '0')}min`);
-        } else if (m >= 1) {
-          setTimeLeft(`Faltam ${m}min ${String(s).padStart(2, '0')}s`);
-        } else {
-          setTimeLeft(`Faltam ${s}s`);
-        }
+        setTimeLeft(`Faltam ${s}s`);
       }
     };
     update();
