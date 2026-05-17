@@ -344,7 +344,7 @@ function StylePicker({ value, onPick }: { value: PlayStyle; onPick: (v: PlayStyl
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-2 gap-1.5 max-h-[260px] overflow-y-auto pr-1">
-        {visible.map((s) => {
+        {visible.filter(s => playStyleEffects[s]).map((s) => {
           const e = playStyleEffects[s];
           const active = value === s;
           return (
