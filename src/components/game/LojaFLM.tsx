@@ -435,8 +435,15 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               {CATEGORIES.filter(cat => !['painel'].includes(cat.id)).map(cat => (
                 <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 outline-none">
                   <AnimatePresence mode="popLayout">
-                    {items
+                {items
                       .filter(i => cat.id === 'all' ? true : i.category === cat.db)
+                      .slice()
+                      .sort((a: any, b: any) => {
+                        if (cat.db === 'sponsorship') {
+                          return (a.min_fans || 0) - (b.min_fans || 0);
+                        }
+                        return (a.price_cents || 0) - (b.price_cents || 0);
+                      })
                       .map((item, idx) => (
                         <motion.div
                           key={item.id}
@@ -972,9 +979,28 @@ function SponsorshipCard({ item, clubFans, isActive, onPurchase, onViewDetails }
             )}
           </div>
           <div className="min-w-0">
-            <Badge className={`border uppercase font-black text-[9px] tracking-widest px-2 py-0.5 ${t.chip}`}>
-              {t.label}
-            </Badge>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Badge className={`border uppercase font-black text-[9px] tracking-widest px-2 py-0.5 ${t.chip}`}>
+                {t.label}
+              </Badge>
+              {(() => {
+                const sub = (item.bonus_data?.sub_type || '').toString().toLowerCase();
+                if (!sub) return null;
+                const subMap: Record<string, { label: string; cls: string }> = {
+                  master:    { label: '💰 Máster',    cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30' },
+                  uniforme:  { label: '👕 Uniforme',  cls: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30' },
+                  estadio:   { label: '🏟️ Estádio',  cls: 'bg-orange-500/15 text-orange-300 border-orange-400/30' },
+                  marketing: { label: '📣 Marketing', cls: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-400/30' },
+                  premium:   { label: '⭐ Premium',   cls: 'bg-amber-500/15 text-amber-300 border-amber-400/30' },
+                };
+                const s = subMap[sub];
+                return s ? (
+                  <Badge className={`border uppercase font-black text-[9px] tracking-widest px-2 py-0.5 ${s.cls}`}>
+                    {s.label}
+                  </Badge>
+                ) : null;
+              })()}
+            </div>
             <h3 className="mt-1 text-base sm:text-lg font-black uppercase italic tracking-tighter leading-none truncate">
               {item.name}
             </h3>
