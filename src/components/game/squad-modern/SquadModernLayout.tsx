@@ -286,7 +286,7 @@ export function SquadModernLayout({
             setViewMode('list');
             return;
           }
-          if (isTacticsOpen && window.innerWidth < 1280) {
+          if (isTacticsOpen) {
             setIsTacticsOpen(false);
             return;
           }
@@ -300,7 +300,7 @@ export function SquadModernLayout({
           layout
           className={cn(
             "flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-500 bg-zinc-900/30 rounded-[2.5rem] border border-white/5",
-            (viewMode === 'pitch' || isTacticsOpen) ? "hidden xl:flex" : "flex"
+            (viewMode === 'pitch' || isTacticsOpen) ? "hidden" : "flex"
           )}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -376,7 +376,7 @@ export function SquadModernLayout({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
                 onClick={() => setIsTacticsOpen(false)}
-                className="xl:hidden fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm"
+                className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm"
               />
               <motion.div
                 key="tactics-panel"
@@ -385,11 +385,8 @@ export function SquadModernLayout({
                 exit={{ opacity: 0, y: 24 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 240 }}
                 className={cn(
-                  // Mobile: cobre tela inteira como overlay para evitar width=0 / tela preta
-                  "fixed inset-0 z-[60] bg-zinc-950 flex flex-col overflow-hidden",
-                  // Desktop xl+: vira painel lateral dentro do grid
-                  "xl:static xl:inset-auto xl:z-auto xl:w-[400px] 2xl:w-[450px]",
-                  "xl:bg-zinc-900/30 xl:border xl:border-white/5 xl:rounded-[2.5rem] xl:shrink-0"
+                  // Sempre cobre a tela inteira (igual à aba "Táticas")
+                  "fixed inset-0 z-[60] bg-zinc-950 flex flex-col overflow-hidden"
                 )}
               >
                  {/* Section Header */}
@@ -409,7 +406,7 @@ export function SquadModernLayout({
                        </span>
                        <button
                          onClick={() => setIsTacticsOpen(false)}
-                         className="xl:hidden w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center"
+                         className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center"
                          aria-label="Fechar painel tático"
                        >
                          <X className="w-4 h-4 text-white/70" />
