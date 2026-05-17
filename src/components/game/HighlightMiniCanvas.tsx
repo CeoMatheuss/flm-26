@@ -11,12 +11,16 @@ import React, { useRef, useEffect, memo } from 'react';
 
 export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'counter_attack' | 'crossing' | 'free_kick' | 'yellow_card' | 'red_card' | 'idle';
 
+export type HighlightOutcome = 'goal' | 'save' | 'miss' | 'corner' | 'woodwork' | 'neutral';
+
 interface HighlightMiniCanvasProps {
   type: HighlightType;
   team: 'home' | 'away';
   playerName?: string;
   onComplete?: () => void;
   currentMinute?: number;
+  /** Real outcome of the event — drives aftermath labels so the 2D never lies about goals. */
+  outcome?: HighlightOutcome;
 }
 
 const COLORS = {
@@ -87,7 +91,7 @@ const HIGHLIGHT_DURATIONS: Record<HighlightType, number> = {
   idle: Infinity,
 };
 
-function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentMinute }: HighlightMiniCanvasProps) {
+function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentMinute, outcome = 'goal' }: HighlightMiniCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const driftRef = useRef(0);
@@ -768,18 +772,21 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(shotT, '🔥 CHUTOU NO CONTRA-ATAQUE!', playerName);
 
         } else {
-          // Aftermath — reuse goal celebration
+          // Aftermath — outcome-aware (counter_attack can be goal/save/miss)
           const afterT = (t - 0.72) / 0.28;
           drawAllPlayers(drift * 0.15);
           drawPlayer(shooterPos.x + dir * 10, shooterPos.y, teamColor, teamLight, '10', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
-          drawPlayer(gkBaseX, goalY + 15, gkColor, gkLight, 'GK', 9);
+          drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 15 : 0), gkColor, gkLight, 'GK', 9);
           drawBall(ballEndX, ballEndY, 0.9);
-          // Goal flash
-          const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
-          if (flash > 0) {
-            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
-            ctx.fillRect(0, 0, W, H);
+
+          const isGoal = outcome === 'goal';
+          if (isGoal) {
+            const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
+            if (flash > 0) {
+              ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+              ctx.fillRect(0, 0, W, H);
+            }
           }
           if (afterT > 0.12) {
             const bigAlpha = Math.min(1, (afterT - 0.12) * 4) * (afterT < 0.75 ? 1 : Math.max(0, 1 - (afterT - 0.75) * 4));
@@ -788,11 +795,17 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.font = `bold 26px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#fbbf24';
+            ctx.fillStyle = isGoal ? '#fbbf24' : '#e5e7eb';
             ctx.strokeStyle = 'rgba(0,0,0,0.6)';
             ctx.lineWidth = 4;
-            ctx.strokeText('GOL DE CONTRA-ATAQUE!', W / 2, H / 2 - 12);
-            ctx.fillText('GOL DE CONTRA-ATAQUE!', W / 2, H / 2 - 12);
+            const bigLabel =
+              outcome === 'goal' ? 'GOL DE CONTRA-ATAQUE!' :
+              outcome === 'save' ? 'DEFENDEU!' :
+              outcome === 'woodwork' ? 'NA TRAVE!' :
+              outcome === 'corner' ? 'ESCANTEIO!' :
+              'PRA FORA!';
+            ctx.strokeText(bigLabel, W / 2, H / 2 - 12);
+            ctx.fillText(bigLabel, W / 2, H / 2 - 12);
             if (playerName) {
               ctx.font = `bold 14px Arial`;
               ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -803,7 +816,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             }
             ctx.restore();
           }
-          drawEventLabel(1, '⚽ GOL DE CONTRA-ATAQUE!', playerName);
+          const subLabel =
+            outcome === 'goal' ? '⚽ GOL DE CONTRA-ATAQUE!' :
+            outcome === 'save' ? '🧤 Goleiro salva no contra-ataque!' :
+            outcome === 'woodwork' ? '🥅 Bola na trave no contra-ataque!' :
+            outcome === 'corner' ? '📐 Defesa para escanteio!' :
+            '😰 Perdeu o contra-ataque!';
+          drawEventLabel(1, subLabel, playerName);
         }
 
       // ══════════════════════════════════════════════
@@ -920,18 +939,21 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(headT, '⬆️ CABECEIO!', playerName);
 
         } else {
-          // Aftermath
+          // Aftermath — outcome-aware (crossing can be header goal, save, miss)
           const afterT = (t - 0.75) / 0.25;
           drawAllPlayers(drift * 0.15);
           drawPlayer(shooterPos.x, shooterPos.y, teamColor, teamLight, '9', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
-          drawPlayer(gkBaseX, goalY + 18, gkColor, gkLight, 'GK', 9);
+          drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 18 : 0), gkColor, gkLight, 'GK', 9);
           drawBall(ballEndX + dir * 2, ballEndY, 0.9);
-          // Goal celebration
-          const flash = Math.sin(afterT * 22) * 0.12 * Math.max(0, 1 - afterT * 1.2);
-          if (flash > 0) {
-            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
-            ctx.fillRect(0, 0, W, H);
+
+          const isGoal = outcome === 'goal';
+          if (isGoal) {
+            const flash = Math.sin(afterT * 22) * 0.12 * Math.max(0, 1 - afterT * 1.2);
+            if (flash > 0) {
+              ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+              ctx.fillRect(0, 0, W, H);
+            }
           }
           if (afterT > 0.15) {
             const bigAlpha = Math.min(1, (afterT - 0.15) * 4) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
@@ -940,11 +962,17 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.font = `bold 24px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#fbbf24';
+            ctx.fillStyle = isGoal ? '#fbbf24' : '#e5e7eb';
             ctx.strokeStyle = 'rgba(0,0,0,0.6)';
             ctx.lineWidth = 4;
-            ctx.strokeText('GOL DE CABEÇA!', W / 2, H / 2 - 12);
-            ctx.fillText('GOL DE CABEÇA!', W / 2, H / 2 - 12);
+            const bigLabel =
+              outcome === 'goal' ? 'GOL DE CABEÇA!' :
+              outcome === 'save' ? 'DEFENDEU!' :
+              outcome === 'woodwork' ? 'NA TRAVE!' :
+              outcome === 'corner' ? 'ESCANTEIO!' :
+              'CABECEOU PRA FORA!';
+            ctx.strokeText(bigLabel, W / 2, H / 2 - 12);
+            ctx.fillText(bigLabel, W / 2, H / 2 - 12);
             if (playerName) {
               ctx.font = `bold 14px Arial`;
               ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -953,7 +981,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             }
             ctx.restore();
           }
-          drawEventLabel(1, '⚽ GOL DE CRUZAMENTO!', playerName);
+          const subLabel =
+            outcome === 'goal' ? '⚽ GOL DE CRUZAMENTO!' :
+            outcome === 'save' ? '🧤 Goleiro defende o cabeceio!' :
+            outcome === 'woodwork' ? '🥅 Cabeçada na trave!' :
+            outcome === 'corner' ? '📐 Defesa para escanteio!' :
+            '😰 Cabeceou por cima!';
+          drawEventLabel(1, subLabel, playerName);
         }
 
       // ══════════════════════════════════════════════
@@ -1091,19 +1125,22 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(impT, '💥 BATEU FORTE!', playerName);
 
         } else {
-          // Aftermath
+          // Aftermath — respect real outcome (goal vs save vs miss vs corner)
           const afterT = (t - 0.78) / 0.22;
           drawAllPlayers(drift * 0.15);
           drawPlayer(fkX + dir * 10, fkY, teamColor, teamLight, '10', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -20 : 20);
-          drawPlayer(gkBaseX, goalY + 20, gkColor, gkLight, 'GK', 9);
+          drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 20 : 0), gkColor, gkLight, 'GK', 9);
           drawBall(ballEndX + dir * 3, ballEndY, 0.9);
 
-          // Goal flash
-          const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
-          if (flash > 0) {
-            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
-            ctx.fillRect(0, 0, W, H);
+          const isGoal = outcome === 'goal';
+          // Goal-only flash
+          if (isGoal) {
+            const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
+            if (flash > 0) {
+              ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+              ctx.fillRect(0, 0, W, H);
+            }
           }
           if (afterT > 0.15) {
             const bigAlpha = Math.min(1, (afterT - 0.15) * 4) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
@@ -1112,11 +1149,17 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.font = `bold 24px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#fbbf24';
+            ctx.fillStyle = isGoal ? '#fbbf24' : '#e5e7eb';
             ctx.strokeStyle = 'rgba(0,0,0,0.6)';
             ctx.lineWidth = 4;
-            ctx.strokeText('GOL DE FALTA!', W / 2, H / 2 - 12);
-            ctx.fillText('GOL DE FALTA!', W / 2, H / 2 - 12);
+            const bigLabel =
+              outcome === 'goal' ? 'GOL DE FALTA!' :
+              outcome === 'save' ? 'DEFENDEU!' :
+              outcome === 'woodwork' ? 'NA TRAVE!' :
+              outcome === 'corner' ? 'ESCANTEIO!' :
+              'PRA FORA!';
+            ctx.strokeText(bigLabel, W / 2, H / 2 - 12);
+            ctx.fillText(bigLabel, W / 2, H / 2 - 12);
             if (playerName) {
               ctx.font = `bold 14px Arial`;
               ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -1125,7 +1168,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             }
             ctx.restore();
           }
-          drawEventLabel(1, '⚽ GOL DE FALTA MAGISTRAL!', playerName);
+          const subLabel =
+            outcome === 'goal' ? '⚽ GOL DE FALTA MAGISTRAL!' :
+            outcome === 'save' ? '🧤 Goleiro espalma a falta!' :
+            outcome === 'woodwork' ? '🥅 Bola na trave na cobrança!' :
+            outcome === 'corner' ? '📐 Cobrança fechada — escanteio!' :
+            '😰 Quase um golaço de falta!';
+          drawEventLabel(1, subLabel, playerName);
         }
 
       // ══════════════════════════════════════════════
@@ -1403,4 +1452,21 @@ export function getHighlightType(eventType: string): HighlightType {
   if (eventType === 'red_card') return 'red_card';
   if (eventType === 'yellow_card') return 'yellow_card';
   return 'chance';
+}
+
+/** Single source of truth: derive the real outcome of a match event for the 2D layer. */
+export function getHighlightOutcome(eventType: string): HighlightOutcome {
+  if ([
+    'foot_goal', 'header_goal', 'goal',
+    'penalty_goal', 'counter_attack_goal',
+    'crossing_goal', 'free_kick_goal',
+  ].includes(eventType)) return 'goal';
+  if (['great_save', 'penalty_miss'].includes(eventType)) return 'save';
+  if (eventType === 'woodwork') return 'woodwork';
+  if (eventType === 'corner_danger') return 'corner';
+  if ([
+    'free_kick_near', 'long_shot_miss', 'header_miss',
+    'counter_attack', 'dangerous_foul',
+  ].includes(eventType)) return 'miss';
+  return 'neutral';
 }

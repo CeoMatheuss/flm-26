@@ -18,7 +18,7 @@ import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { computeLiveStamina, staminaColorClass } from '@/match/liveStamina';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
-import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
+import { HighlightMiniCanvas, isHighlightEvent, getHighlightType, getHighlightOutcome } from '@/components/game/HighlightMiniCanvas';
 import { MatchSidebar } from '@/components/game/MatchSidebar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShieldCrest } from '@/components/game/ShieldCrest';
@@ -1312,6 +1312,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
                 <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden rounded-md">
                   <HighlightMiniCanvas
                     type={getHighlightType(activeHighlight.type)}
+                    outcome={getHighlightOutcome(activeHighlight.type)}
                     team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
                     playerName={activeHighlight?.playerName}
                     currentMinute={currentMinute}
@@ -2472,6 +2473,7 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
                 <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden">
                   <HighlightMiniCanvas
                     type={getHighlightType(goalEvents[replayIndex].type)}
+                    outcome={getHighlightOutcome(goalEvents[replayIndex].type)}
                     team={goalEvents[replayIndex].team === 'neutral' ? 'home' : goalEvents[replayIndex].team}
                     playerName={goalEvents[replayIndex].playerName}
                   />
