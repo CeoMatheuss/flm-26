@@ -233,6 +233,6 @@ export const tacticsPresets: TacticsPreset[] = [
   { name: 'Controle Total', config: { formation: '4-3-3', playStyle: 'controle-total', pressing: 'alto', tempo: 'normal', passingStyle: 'curto', defenseLine: 'alta' } },
   { name: 'Verticalidade', config: { formation: '4-2-3-1', playStyle: 'verticalidade', pressing: 'medio', tempo: 'rapido', passingStyle: 'longo' } },
   { name: 'Criativo', config: { formation: '4-3-2-1', playStyle: 'futebol-criativo', pressing: 'medio', tempo: 'normal', passingStyle: 'curto', width: 'larga' } },
-  { name: 'Defesa Compacta', config: { formation: '5-4-1', playStyle: 'defesa-compacta', pressing: 'baixo', tempo: 'lento', defenseLine: 'baixa', marking: 'mista' } },
+  { name: 'Defesa Compacta', config: { formation: '5-4-1', playStyle: 'defesa-compacta', pressing: 'baixo', tempo: 'lento', defenseLine: 'baixa', marking: 'misto' } },
   { name: 'Pressão Pós-Perda', config: { formation: '4-3-3', playStyle: 'pressao-pos-perda', pressing: 'ultra-alto', tempo: 'rapido', marking: 'individual', defenseLine: 'alta' } },
 ];
