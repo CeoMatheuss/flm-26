@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import { QuickSwapPanel } from '../squad/QuickSwapPanel';
 import { Button } from '@/components/ui/button';
 import { Repeat, ShoppingCart, ArrowLeftRight } from 'lucide-react';
@@ -249,13 +249,13 @@ export function SquadModernLayout({
     }
   };
 
-  const closeConfirmAction = (event?: React.SyntheticEvent) => {
+  const closeConfirmAction = (event?: SyntheticEvent) => {
     event?.preventDefault();
     event?.stopPropagation();
     if (!submitting) setConfirmAction(null);
   };
 
-  const submitConfirmAction = (event?: React.SyntheticEvent) => {
+  const submitConfirmAction = (event?: SyntheticEvent) => {
     event?.preventDefault();
     event?.stopPropagation();
     if (!submitting) void confirmListing();
