@@ -243,16 +243,24 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       
       <TabsContent value="tactics">
         {isTabBlocked('tactics') ? <BlockedMessage /> : (
-          <TacticsTab 
-            tactics={game.tactics} 
-            players={game.club.players} 
-            onUpdate={game.setTactics} 
-            onUpdatePlayers={game.updatePlayers}
-            onChangePosition={game.changePlayerPosition} 
-            season={game.season?.currentSeason ?? 1} 
-            userId={userId} 
-            hideSwapButton
-          />
+          <ErrorBoundary label="TacticsTab" fallback={(err, reset) => (
+            <div className="p-6 text-center">
+              <p className="text-sm font-bold text-white mb-2">Não foi possível abrir o Centro Tático</p>
+              <p className="text-xs text-white/50 mb-4">{err.message}</p>
+              <button onClick={reset} className="h-10 px-4 rounded-xl bg-emerald-500 text-zinc-950 font-black text-xs uppercase tracking-widest">Recarregar</button>
+            </div>
+          )}>
+            <TacticsTab 
+              tactics={game.tactics} 
+              players={game.club.players} 
+              onUpdate={game.setTactics} 
+              onUpdatePlayers={game.updatePlayers}
+              onChangePosition={game.changePlayerPosition} 
+              season={game.season?.currentSeason ?? 1} 
+              userId={userId} 
+              hideSwapButton
+            />
+          </ErrorBoundary>
         )}
       </TabsContent>
       
