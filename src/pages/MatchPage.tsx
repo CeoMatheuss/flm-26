@@ -264,6 +264,14 @@ export default function MatchPage() {
   }
 
   const handleExit = () => {
+    // Ao sair, notificamos o sistema que a partida acabou para limpar caches
+    window.dispatchEvent(new CustomEvent('flm:match-finalized', { 
+      detail: { 
+        matchId: state.matchDbId,
+        finished: true 
+      } 
+    }));
+
     if (state.phase === 'finished' && state.matchDbId) {
       navigate('/', {
         replace: true,
@@ -273,11 +281,12 @@ export default function MatchPage() {
             homeGoals: state.homeGoals,
             awayGoals: state.awayGoals,
             competition: locState?.competition || 'Amistoso',
+            finished: true
           },
         },
       });
     } else {
-      navigate('/', { replace: true });
+      navigate('/', { replace: true, state: { matchFinished: true } });
     }
   };
 
