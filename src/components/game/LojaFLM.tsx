@@ -444,14 +444,24 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.05 }}
                         >
-                          <StoreCard 
-                            item={item} 
-                            clubFans={club.fans || 0} 
-                            isPremium={isPremium}
-                            isActive={isActive(item.id)}
-                            onPurchase={() => handlePurchase(item)} 
-                            onViewDetails={() => openDetails(item)}
-                          />
+                          {item.category === 'sponsorship' ? (
+                            <SponsorshipCard
+                              item={item}
+                              clubFans={club.fans || 0}
+                              isActive={isActive(item.id)}
+                              onPurchase={() => handlePurchase(item)}
+                              onViewDetails={() => openDetails(item)}
+                            />
+                          ) : (
+                            <StoreCard 
+                              item={item} 
+                              clubFans={club.fans || 0} 
+                              isPremium={isPremium}
+                              isActive={isActive(item.id)}
+                              onPurchase={() => handlePurchase(item)} 
+                              onViewDetails={() => openDetails(item)}
+                            />
+                          )}
                         </motion.div>
                       ))}
                   </AnimatePresence>
