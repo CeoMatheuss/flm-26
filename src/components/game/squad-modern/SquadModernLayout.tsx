@@ -319,16 +319,6 @@ export function SquadModernLayout({
                   />
                </div>
 
-               {/* Quick Actions Footer */}
-               <div className="p-6 border-t border-white/5 bg-zinc-950/80">
-                  <button 
-                     onClick={handleAutoLineup}
-                     className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-3"
-                  >
-                     <Sparkles className="w-5 h-5" />
-                     Auto-Escalar Time
-                  </button>
-               </div>
             </motion.div>
           )}
         </AnimatePresence>
