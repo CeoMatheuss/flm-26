@@ -135,6 +135,13 @@ export function InfrastructureWrapper({
       )}
 
       {/* Conteúdo */}
+      {activeTab === 'upgrades' && onUpgradeFacility && (
+        <UpgradesTab
+          infrastructure={infrastructure}
+          budget={budget}
+          onUpgradeFacility={onUpgradeFacility}
+        />
+      )}
       {activeTab === 'training' && (
         <TrainingTab
           players={players}
