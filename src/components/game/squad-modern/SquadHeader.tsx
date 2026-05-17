@@ -142,13 +142,14 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
                 <span className="hidden sm:inline text-[10px] font-black uppercase">Lista</span>
              </button>
              <button 
-                onClick={() => onViewModeChange('pitch')}
+                onClick={onToggleTactics}
                 className={cn(
                   "px-2 sm:px-3 rounded-xl flex items-center gap-2 transition-all",
-                  viewMode === 'pitch' ? "bg-emerald-500 text-zinc-950 shadow-lg" : "text-white/40"
+                  isTacticsOpen ? "bg-emerald-500 text-zinc-950 shadow-lg" : "text-white/40"
                 )}
+                aria-label="Abrir centro tático"
              >
-                <LayoutDashboard className="w-4 h-4" />
+                {isTacticsOpen ? <X className="w-4 h-4" /> : <LayoutDashboard className="w-4 h-4" />}
                 <span className="hidden sm:inline text-[10px] font-black uppercase">Tático</span>
              </button>
           </div>
