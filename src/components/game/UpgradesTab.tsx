@@ -44,13 +44,7 @@ interface CardDef {
   benefits: string[];
 }
 
-function useCountdown(target?: string) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (!target) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [target]);
+function computeCountdown(target: string | undefined, now: number) {
   if (!target) return null;
   const end = new Date(target).getTime();
   const diff = end - now;
