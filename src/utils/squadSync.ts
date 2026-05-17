@@ -39,7 +39,7 @@ export const youthProspectToPlayer = (prospect: YouthProspect): Player => ({
 
 export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspect[], formation: TacticsConfig['formation']) => {
   const byId = new Map<string, Player>();
-  [...youthProspects.map(youthProspectToPlayer), ...players].forEach((player) => {
+  [...players, ...youthProspects.map(youthProspectToPlayer)].forEach((player) => {
     if (!player?.id || !isAvailableForSquad(player)) return;
     const previous = byId.get(player.id);
     byId.set(player.id, {
@@ -53,7 +53,9 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
   });
 
   const rebuilt = Array.from(byId.values());
-  return rebuilt.length > 0 ? autoLineup(rebuilt, formation) : rebuilt;
+  const hasReserve = rebuilt.slice(11).some((player) => isAvailableForSquad(player) && !player.injury);
+  const hasStarterIssue = rebuilt.slice(0, Math.min(11, rebuilt.length)).some((player) => !isAvailableForSquad(player) || !!player.injury);
+  return rebuilt.length > 0 && (!hasReserve || hasStarterIssue || rebuilt.length <= 18) ? autoLineup(rebuilt, formation) : rebuilt;
 };
 
 export const squadsDiffer = (a: Player[], b: Player[]) => {
