@@ -63,13 +63,14 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
       const isStarter = starterIds.has(p.id);
       const isNegotiating = negotiations[p.id];
       const status = getPlayerStatus(p, isStarter, isNegotiating);
+      const isBaseYouth = (p as any).isYouth && (p as any).contractStatus !== 'profissional';
       
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
 
       switch (activeTab) {
         case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
-        // Reservas: qualquer jogador disponível fora do XI titular (inclui jovens promessas).
-        case 'reservas': return !isStarter && (status === 'reserva' || status === 'promessa');
+        // Reservas: profissionais/promovidos disponíveis fora do XI titular; atletas da base ficam na aba Juniores.
+        case 'reservas': return !isStarter && !isBaseYouth && (status === 'reserva' || status === 'promessa');
         case 'fora': return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
         case 'suspensos': return status === 'suspenso';
         case 'emprestados': return status === 'emprestado';
