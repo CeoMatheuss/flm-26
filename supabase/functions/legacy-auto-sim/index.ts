@@ -190,11 +190,14 @@ async function processLeagueMatches(supabase: any): Promise<number> {
 
 async function processTournamentMatches(supabase: any): Promise<number> {
   const nowIso = new Date().toISOString();
+  const tolerance = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const { data: list } = await supabase
     .from('custom_tournament_matches')
-    .select('id, tournament_id, home_team_id, away_team_id, round, stage, match_data')
+    .select('id, tournament_id, home_team_id, away_team_id, round, stage, match_data, home_joined, away_joined')
     .eq('status', 'scheduled')
-    .lte('scheduled_at', nowIso)
+    .lte('scheduled_at', tolerance)
+    .not('home_joined', 'is', true)
+    .not('away_joined', 'is', true)
     .order('scheduled_at', { ascending: true })
     .limit(MAX_BATCH);
   if (!list || list.length === 0) return 0;
