@@ -770,9 +770,9 @@ function simulateFullMatch(
         const gk = team === 'home'
           ? pickByRole(away.filter(p => p.isOnPitch), 'gk_save', 'GOL')
           : pickByRole(home.filter(p => p.isOnPitch), 'gk_save', 'GOL');
-        const kickerSkill = kicker ? (kicker.composure * 0.5 + kicker.setPieces * 0.5) : 55;
-        const gkSkill = gk ? (gk.goalkeeping * 0.6 + gk.composure * 0.4) : 50;
-        const conversionProb = clamp(kickerSkill / (kickerSkill + gkSkill) + 0.15, 0.55, 0.85);
+        const kickerSkill = kicker ? (kicker.composure * 0.5 + kicker.setPieces * 0.5) * formMult(kicker) : 55;
+        const gkSkill = gk ? (gk.goalkeeping * 0.6 + gk.composure * 0.4) * formMult(gk) : 50;
+        const conversionProb = clamp(kickerSkill / (kickerSkill + gkSkill) + 0.15, 0.50, 0.88);
         penaltyMins.push({ minute: m, team, isGoal: rng() < conversionProb });
       }
     }
