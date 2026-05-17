@@ -85,6 +85,21 @@ function effectiveAttr(player: SimPlayer, attr: keyof SimPlayer): number {
   return val * getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
 }
 
+// Individual "form" multiplier (morale × stamina) used to scale action probabilities.
+// Range ~0.55 (gassed + desmotivado) → ~1.10 (fresco + moral alta).
+function formMult(p: SimPlayer | null | undefined): number {
+  if (!p) return 1.0;
+  return getStaminaMultiplier(p.stamina) * getMoraleMultiplier(p.morale);
+}
+
+// Team-level form (average of on-pitch players).
+function teamFormMult(players: SimPlayer[]): number {
+  const onPitch = players.filter(p => p.isOnPitch);
+  if (onPitch.length === 0) return 1.0;
+  const sum = onPitch.reduce((s, p) => s + formMult(p), 0);
+  return sum / onPitch.length;
+}
+
 // ── POSITION-WEIGHTED ROLE MODEL ───────────────────────────
 // Each position gets a weight per attribute for each "role" (action type).
 // A ZAG playing as scorer barely contributes (low finishing weight); an ATA dominates.
