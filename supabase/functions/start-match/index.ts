@@ -851,7 +851,7 @@ function simulateFullMatch(
   // ── AWAY GOALS ──────────────────────────────────────────────
   for (const m of awayGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
-    const scorer = pickByAttr(away.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
+    const scorer = pickByRole(away.filter(p => p.isOnPitch && p.position !== 'GOL'), 'finishing', rng() > 0.55 ? 'ATA' : undefined);
     const goalType = pick(['chute rasteiro cruzado', 'cabeceio no segundo pau', 'contra-ataque com toque na saída do goleiro', 'finalização de primeira']);
     let assistName: string | undefined;
     if (scorer) {
