@@ -825,7 +825,7 @@ function simulateFullMatch(
   // ── HOME GOALS ──────────────────────────────────────────────
   for (const m of homeGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
-    const scorer = pickByAttr(home.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
+    const scorer = pickByRole(home.filter(p => p.isOnPitch && p.position !== 'GOL'), 'finishing', rng() > 0.55 ? 'ATA' : undefined);
     const goalTypes = ['chute rasteiro no canto', 'chute colocado no ângulo', 'voleio de primeira', 'toque na saída do goleiro', 'cabeçada certeira', 'chute de longe'];
     const goalType = pick(goalTypes);
     let assistName: string | undefined;
