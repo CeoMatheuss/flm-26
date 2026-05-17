@@ -5838,6 +5838,16 @@ export type Database = {
         }[]
       }
       world_leagues_redistribute_kickoff: { Args: never; Returns: Json }
+      youth_potential_bounds: {
+        Args: { lvl: number }
+        Returns: {
+          max_pot: number
+          min_pot: number
+          rare_bonus_max: number
+          rare_bonus_min: number
+          rare_chance: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
