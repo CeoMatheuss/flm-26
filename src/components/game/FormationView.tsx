@@ -23,103 +23,117 @@ interface Props {
   onSlotSelect?: (id: string | null) => void;
 }
 
-// Coordenadas em sistema "portrait" (x = horizontal 0-100, y = profundidade 0=ataque..100=gol)
-// Linhas horizontais com y idêntico para alinhamento perfeito.
-const formationLayouts: Record<Formation, { position: string; x: number; y: number }[]> = {
-  '4-4-2': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'MEI', x: 10, y: 50 }, { position: 'VOL', x: 36, y: 50 }, { position: 'VOL', x: 64, y: 50 }, { position: 'MEI', x: 90, y: 50 },
-    { position: 'ATA', x: 38, y: 22 }, { position: 'ATA', x: 62, y: 22 },
-  ],
-  '4-3-3': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'VOL', x: 50, y: 58 },
-    { position: 'MEI', x: 28, y: 46 }, { position: 'MEI', x: 72, y: 46 },
-    { position: 'ATA', x: 12, y: 22 }, { position: 'ATA', x: 50, y: 14 }, { position: 'ATA', x: 88, y: 22 },
-  ],
-  '4-2-3-1': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'VOL', x: 36, y: 58 }, { position: 'VOL', x: 64, y: 58 },
-    { position: 'MEI', x: 15, y: 36 }, { position: 'MEI', x: 50, y: 36 }, { position: 'MEI', x: 85, y: 36 },
-    { position: 'ATA', x: 50, y: 14 },
-  ],
-  '3-5-2': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'ZAG', x: 22, y: 76 }, { position: 'ZAG', x: 50, y: 76 }, { position: 'ZAG', x: 78, y: 76 },
-    { position: 'VOL', x: 8,  y: 52 }, { position: 'VOL', x: 92, y: 52 },
-    { position: 'MEI', x: 28, y: 44 }, { position: 'MEI', x: 50, y: 44 }, { position: 'MEI', x: 72, y: 44 },
-    { position: 'ATA', x: 38, y: 18 }, { position: 'ATA', x: 62, y: 18 },
-  ],
-  '5-3-2': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 6,  y: 75 }, { position: 'ZAG', x: 28, y: 75 }, { position: 'ZAG', x: 50, y: 75 }, { position: 'ZAG', x: 72, y: 75 }, { position: 'LAT', x: 94, y: 75 },
-    { position: 'VOL', x: 28, y: 48 }, { position: 'MEI', x: 50, y: 48 }, { position: 'VOL', x: 72, y: 48 },
-    { position: 'ATA', x: 38, y: 20 }, { position: 'ATA', x: 62, y: 20 },
-  ],
-  '4-1-4-1': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'VOL', x: 50, y: 60 },
-    { position: 'MEI', x: 10, y: 40 }, { position: 'MEI', x: 36, y: 40 }, { position: 'MEI', x: 64, y: 40 }, { position: 'MEI', x: 90, y: 40 },
-    { position: 'ATA', x: 50, y: 14 },
-  ],
-  '4-4-1-1': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'MEI', x: 10, y: 52 }, { position: 'VOL', x: 36, y: 52 }, { position: 'VOL', x: 64, y: 52 }, { position: 'MEI', x: 90, y: 52 },
-    { position: 'MEI', x: 50, y: 32 },
-    { position: 'ATA', x: 50, y: 14 },
-  ],
-  '3-4-3': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'ZAG', x: 22, y: 76 }, { position: 'ZAG', x: 50, y: 76 }, { position: 'ZAG', x: 78, y: 76 },
-    { position: 'VOL', x: 8,  y: 50 }, { position: 'MEI', x: 36, y: 50 }, { position: 'MEI', x: 64, y: 50 }, { position: 'VOL', x: 92, y: 50 },
-    { position: 'ATA', x: 12, y: 22 }, { position: 'ATA', x: 50, y: 14 }, { position: 'ATA', x: 88, y: 22 },
-  ],
-  '5-4-1': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 6,  y: 75 }, { position: 'ZAG', x: 28, y: 75 }, { position: 'ZAG', x: 50, y: 75 }, { position: 'ZAG', x: 72, y: 75 }, { position: 'LAT', x: 94, y: 75 },
-    { position: 'MEI', x: 12, y: 50 }, { position: 'VOL', x: 38, y: 50 }, { position: 'VOL', x: 62, y: 50 }, { position: 'MEI', x: 88, y: 50 },
-    { position: 'ATA', x: 50, y: 18 },
-  ],
-  '4-5-1': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'VOL', x: 28, y: 58 }, { position: 'VOL', x: 72, y: 58 },
-    { position: 'MEI', x: 12, y: 38 }, { position: 'MEI', x: 50, y: 38 }, { position: 'MEI', x: 88, y: 38 },
-    { position: 'ATA', x: 50, y: 14 },
-  ],
-  '4-3-2-1': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'VOL', x: 28, y: 58 }, { position: 'MEI', x: 50, y: 58 }, { position: 'VOL', x: 72, y: 58 },
-    { position: 'MEI', x: 34, y: 36 }, { position: 'MEI', x: 66, y: 36 },
-    { position: 'ATA', x: 50, y: 14 },
-  ],
-  '4-2-4-0': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'VOL', x: 36, y: 58 }, { position: 'VOL', x: 64, y: 58 },
-    { position: 'MEI', x: 12, y: 28 }, { position: 'MEI', x: 38, y: 28 }, { position: 'MEI', x: 62, y: 28 }, { position: 'MEI', x: 88, y: 28 },
-  ],
-  '3-4-1-2': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'ZAG', x: 22, y: 76 }, { position: 'ZAG', x: 50, y: 76 }, { position: 'ZAG', x: 78, y: 76 },
-    { position: 'VOL', x: 10, y: 54 }, { position: 'MEI', x: 36, y: 54 }, { position: 'MEI', x: 64, y: 54 }, { position: 'VOL', x: 90, y: 54 },
-    { position: 'MEI', x: 50, y: 34 },
-    { position: 'ATA', x: 35, y: 16 }, { position: 'ATA', x: 65, y: 16 },
-  ],
-  '4-1-2-1-2': [
-    { position: 'GOL', x: 50, y: 93 },
-    { position: 'LAT', x: 8,  y: 75 }, { position: 'ZAG', x: 34, y: 75 }, { position: 'ZAG', x: 66, y: 75 }, { position: 'LAT', x: 92, y: 75 },
-    { position: 'VOL', x: 50, y: 60 },
-    { position: 'MEI', x: 26, y: 46 }, { position: 'MEI', x: 74, y: 46 },
-    { position: 'MEI', x: 50, y: 32 },
-    { position: 'ATA', x: 35, y: 16 }, { position: 'ATA', x: 65, y: 16 },
-  ],
+// Coordenadas em sistema "portrait" (x = horizontal 0-100, y = profundidade 0=ataque..100=gol).
+// O grid abaixo impede deslocamentos tortos: cada linha tem Y fixo e X simétrico/centralizado.
+type TacticalSlot = { position: string; x: number; y: number };
+
+const lineX: Record<number, number[]> = {
+  1: [50],
+  2: [36, 64],
+  3: [22, 50, 78],
+  4: [10, 36, 64, 90],
+  5: [7, 28, 50, 72, 93],
+};
+
+const makeLine = (y: number, positions: string[]): TacticalSlot[] => {
+  const xs = lineX[positions.length] || [50];
+  return positions.map((position, index) => ({ position, x: xs[index], y }));
+};
+
+const makeLayout = (lines: TacticalSlot[][]): TacticalSlot[] => lines.flat();
+
+const formationLayouts: Record<Formation, TacticalSlot[]> = {
+  '4-4-2': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(50, ['MEI', 'VOL', 'VOL', 'MEI']),
+    makeLine(18, ['ATA', 'ATA']),
+  ]),
+  '4-3-3': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(48, ['MEI', 'VOL', 'MEI']),
+    makeLine(18, ['ATA', 'ATA', 'ATA']),
+  ]),
+  '4-2-3-1': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(58, ['VOL', 'VOL']),
+    makeLine(38, ['MEI', 'MEI', 'MEI']),
+    makeLine(16, ['ATA']),
+  ]),
+  '3-5-2': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['ZAG', 'ZAG', 'ZAG']),
+    makeLine(48, ['VOL', 'MEI', 'MEI', 'MEI', 'VOL']),
+    makeLine(18, ['ATA', 'ATA']),
+  ]),
+  '5-3-2': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(48, ['VOL', 'MEI', 'VOL']),
+    makeLine(18, ['ATA', 'ATA']),
+  ]),
+  '4-1-4-1': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(60, ['VOL']),
+    makeLine(40, ['MEI', 'MEI', 'MEI', 'MEI']),
+    makeLine(16, ['ATA']),
+  ]),
+  '4-4-1-1': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(52, ['MEI', 'VOL', 'VOL', 'MEI']),
+    makeLine(32, ['MEI']),
+    makeLine(16, ['ATA']),
+  ]),
+  '3-4-3': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['ZAG', 'ZAG', 'ZAG']),
+    makeLine(50, ['VOL', 'MEI', 'MEI', 'VOL']),
+    makeLine(18, ['ATA', 'ATA', 'ATA']),
+  ]),
+  '5-4-1': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(50, ['MEI', 'VOL', 'VOL', 'MEI']),
+    makeLine(16, ['ATA']),
+  ]),
+  '4-5-1': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(48, ['MEI', 'VOL', 'MEI', 'VOL', 'MEI']),
+    makeLine(16, ['ATA']),
+  ]),
+  '4-3-2-1': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(58, ['VOL', 'MEI', 'VOL']),
+    makeLine(36, ['MEI', 'MEI']),
+    makeLine(16, ['ATA']),
+  ]),
+  '4-2-4-0': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(58, ['VOL', 'VOL']),
+    makeLine(28, ['MEI', 'MEI', 'MEI', 'MEI']),
+  ]),
+  '3-4-1-2': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['ZAG', 'ZAG', 'ZAG']),
+    makeLine(54, ['VOL', 'MEI', 'MEI', 'VOL']),
+    makeLine(34, ['MEI']),
+    makeLine(16, ['ATA', 'ATA']),
+  ]),
+  '4-1-2-1-2': makeLayout([
+    makeLine(93, ['GOL']),
+    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(60, ['VOL']),
+    makeLine(46, ['MEI', 'MEI']),
+    makeLine(32, ['MEI']),
+    makeLine(16, ['ATA', 'ATA']),
+  ]),
 };
 
 function assignPlayersToSlots(players: Player[], formation: Formation) {
@@ -338,7 +352,7 @@ export function FormationView({
               transition={{ type: 'spring', stiffness: 380, damping: 28, layout: { duration: 0.25 } }}
               onClick={() => handleSlotClick(player)}
               className={cn(
-                'absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 outline-none',
+                'absolute -translate-x-1/2 -translate-y-3 sm:-translate-y-4 lg:-translate-y-[18px] flex flex-col items-center z-10 outline-none',
                 player ? 'cursor-pointer' : 'opacity-25 pointer-events-none'
               )}
               style={{ touchAction: 'manipulation' }}
