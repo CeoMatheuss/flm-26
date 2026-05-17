@@ -180,7 +180,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
                 formation={safeTactics.formation}
                 players={safePlayers}
                 captainId={safeTactics.captainId}
-                orientation={isMobile ? 'portrait' : 'landscape'}
+                orientation="portrait"
                 selectedId={pendingFieldId}
                 onSlotSelect={(id) => setPendingFieldId(prev => (prev === id ? null : id))}
                 onSwapPlayers={onUpdatePlayers ? swapInLineup : undefined}
