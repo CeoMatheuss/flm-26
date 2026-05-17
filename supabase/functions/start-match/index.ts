@@ -1091,13 +1091,26 @@ function simulateFullMatch(
       if (pickRoll <= 0) { player = pool[i]; break; }
     }
     if (!player && pool.length) player = pool[pool.length - 1];
-    if (player) player.yellowCards++;
-    stats.fouls[teamIdx]++; stats.yellowCards[teamIdx]++;
-    allPlanned.push({
-      minute: m, type: 'yellow_card', team, animType: 'card',
-      playerName: player?.name || 'Jogador',
-      description: `CARTÃO AMARELO para ${player?.name || 'Jogador'} do ${tName}! Falta dura no meio-campo!`,
-    });
+    if (player) {
+      const isRed = rng() < 0.15 || player.yellowCards >= 1; // 15% direto ou se já tiver amarelo
+      if (isRed) {
+        player.redCards++;
+        stats.fouls[teamIdx]++; stats.redCards[teamIdx]++;
+        allPlanned.push({
+          minute: m, type: 'red_card', team, animType: 'card',
+          playerName: player.name,
+          description: `🟥 EXPULSÃO! ${player.name} do ${tName} recebe o CARTÃO VERMELHO e vai para o chuveiro mais cedo!`,
+        });
+      } else {
+        player.yellowCards++;
+        stats.fouls[teamIdx]++; stats.yellowCards[teamIdx]++;
+        allPlanned.push({
+          minute: m, type: 'yellow_card', team, animType: 'card',
+          playerName: player.name,
+          description: `🟨 CARTÃO AMARELO para ${player.name} do ${tName}! Falta dura no meio-campo!`,
+        });
+      }
+    }
   }
 
   // ── SUBSTITUTIONS: REMOVED ──────────────────────────────────
