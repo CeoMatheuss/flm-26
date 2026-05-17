@@ -432,11 +432,6 @@ function PreMatchScreen({ locState, players, onReorder, onConfirm, onCancel }: {
 
       {activeTab === 'squad' ? (
         <>
-          {/* Auto-suggest button */}
-          <Button variant="outline" size="sm" className="w-full mb-3 gap-1.5 text-sm" onClick={suggestBestLineup}>
-            <Zap className="h-4 w-4 text-yellow-400" /> Sugerir Melhor Escalação
-          </Button>
-
           {/* Starters */}
           <div className="mb-4">
             <p className="text-base font-black text-primary mb-2 flex items-center gap-2">
