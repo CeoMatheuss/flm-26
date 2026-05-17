@@ -291,6 +291,10 @@ export function generateFreeAgents(count: number): Player[] {
 
 /** Valor fixo baseado em atributos e idade — V3 (preços top reescalonados) */
 export function getPlayerBaseValue(player: Player): number {
+  if (player.isYouth && typeof player.marketValue === 'number' && player.marketValue > 0) {
+    return player.marketValue;
+  }
+
   // Curva de OVR encarecendo a elite
   let baseValue: number;
   if (player.overall >= 90)      baseValue = player.overall * 250_000;
@@ -334,6 +338,13 @@ export function getPlayerVariableBonus(winStreak: number, leaguePosition?: numbe
 
 /** Bônus de potencial: jovem (≤22) com OVR ≥75 ganha multiplicador (joia 💎) — até +40% */
 export function getPotentialBonusPercent(player: Player): number {
+  if (player.isYouth && player.potential) {
+    if (player.potential >= 90) return 35;
+    if (player.potential >= 82) return 18;
+    if (player.potential >= 75) return 8;
+    return 0;
+  }
+
   if (player.age > 22) return 0;
   if (player.overall < 75) return 0;
   // OVR 75 → +20%, OVR 80 → +30%, OVR 85+ → +40%
@@ -384,6 +395,11 @@ export function getEliteOvrMultiplier(overall: number): number {
 
 /** Valor total = fixo × (1 + soma de bônus%) × multiplicador de elite (OVR 80+) */
 export function getPlayerValue(player: Player, winStreak: number = 0, leaguePosition?: number, totalTeams?: number): number {
+  if (player.isYouth && typeof player.marketValue === 'number' && player.marketValue > 0) {
+    const rarityMult = player.potential && player.potential >= 90 ? 1.12 : player.potential && player.potential >= 82 ? 1.06 : 1;
+    return Math.floor(player.marketValue * rarityMult);
+  }
+
   const baseValue = getPlayerBaseValue(player);
   const variablePercent = getPlayerVariableBonus(winStreak, leaguePosition, totalTeams);
   const potentialPercent = getPotentialBonusPercent(player);
