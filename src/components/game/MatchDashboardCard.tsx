@@ -212,10 +212,17 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         setIsReady(true);
       } else {
         setIsReady(false);
+        const totalHours = diff / 3600000;
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
-        setTimeLeft(h > 0 ? `${h}h ${m}min` : `${m}:${String(s).padStart(2, '0')}`);
+        if (totalHours >= 1) {
+          setTimeLeft(`Faltam ${h}h ${String(m).padStart(2, '0')}min`);
+        } else if (m >= 1) {
+          setTimeLeft(`Faltam ${m}min ${String(s).padStart(2, '0')}s`);
+        } else {
+          setTimeLeft(`Faltam ${s}s`);
+        }
       }
     };
     update();

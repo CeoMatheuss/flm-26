@@ -273,7 +273,7 @@ export function YouthAcademyModernTab({
            <TabButton 
              active={activeSubTab === 'upgrade'} 
              onClick={() => setActiveSubTab('upgrade')} 
-             label="Upgrade" 
+             label="Evolução" 
              icon={<Hammer className="w-3.5 h-3.5" />} 
            />
            <TabButton 
