@@ -159,6 +159,10 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             infrastructure={game.infrastructure}
             lastYouthGenAt={game.lastYouthGenAt}
             isPremium={isPremium}
+            onSpendBudget={(cost, category, description) => {
+              game.setClub(prev => ({ ...prev, budget: (prev.budget || 0) - cost }));
+              game.addFinance('despesa', category, cost, description);
+            }}
           />
         )}
       </TabsContent>
