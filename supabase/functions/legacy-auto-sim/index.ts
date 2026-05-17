@@ -121,12 +121,16 @@ async function processFriendlies(supabase: any): Promise<number> {
 
 async function processLeagueMatches(supabase: any): Promise<number> {
   const nowIso = new Date().toISOString();
+  const tolerance = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  // Só auto-simula se ninguém entrou no lobby após 5min do horário marcado.
   const { data: list } = await supabase
     .from('league_matches')
-    .select('id, league_id, home_user_id, away_user_id, match_data')
+    .select('id, league_id, home_user_id, away_user_id, match_data, home_joined, away_joined, scheduled_at, auto_sim_at')
     .eq('status', 'scheduled')
-    .lte('auto_sim_at', nowIso)
-    .order('auto_sim_at', { ascending: true })
+    .or(`auto_sim_at.lte.${nowIso},scheduled_at.lte.${tolerance}`)
+    .not('home_joined', 'is', true)
+    .not('away_joined', 'is', true)
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
     .limit(MAX_BATCH);
   if (!list || list.length === 0) return 0;
 
