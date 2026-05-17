@@ -1312,6 +1312,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
                 <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden rounded-md">
                   <HighlightMiniCanvas
                     type={getHighlightType(activeHighlight.type)}
+                    outcome={getHighlightOutcome(activeHighlight.type)}
                     team={activeHighlight.team === 'neutral' ? 'home' : activeHighlight.team}
                     playerName={activeHighlight?.playerName}
                     currentMinute={currentMinute}
