@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import { QuickSwapPanel } from '../squad/QuickSwapPanel';
 import { Button } from '@/components/ui/button';
 import { Repeat, ShoppingCart, ArrowLeftRight } from 'lucide-react';
@@ -146,6 +146,9 @@ export function SquadModernLayout({
     type: 'transfer' | 'loan-out';
     player: Player;
     value: number;
+    listingFeeRate: number;
+    agentFeeRate: number;
+    adminFeeRate: number;
     listingFee: number;
     agentFee: number;
     adminFee: number;
@@ -155,11 +158,15 @@ export function SquadModernLayout({
 
   const openMarketConfirm = (p: Player) => {
     const value = getPlayerValue(p);
-    const listingFee = Math.max(50_000, Math.round(value * 0.01));
-    const agentFee = Math.round(value * 0.02);
-    const adminFee = 25_000;
+    const listingFeeRate = 0.005;
+    const agentFeeRate = 0.0075;
+    const adminFeeRate = 0.0025;
+    const listingFee = Math.round(value * listingFeeRate);
+    const agentFee = Math.round(value * agentFeeRate);
+    const adminFee = Math.round(value * adminFeeRate);
     setConfirmAction({
       type: 'transfer', player: p, value,
+      listingFeeRate, agentFeeRate, adminFeeRate,
       listingFee, agentFee, adminFee,
       total: listingFee + agentFee + adminFee,
     });
@@ -167,11 +174,15 @@ export function SquadModernLayout({
 
   const openLoanConfirm = (p: Player) => {
     const value = getPlayerValue(p);
-    const listingFee = Math.max(20_000, Math.round(value * 0.005));
-    const agentFee = Math.round(value * 0.01);
-    const adminFee = 15_000;
+    const listingFeeRate = 0.0025;
+    const agentFeeRate = 0.0035;
+    const adminFeeRate = 0.0015;
+    const listingFee = Math.round(value * listingFeeRate);
+    const agentFee = Math.round(value * agentFeeRate);
+    const adminFee = Math.round(value * adminFeeRate);
     setConfirmAction({
       type: 'loan-out', player: p, value,
+      listingFeeRate, agentFeeRate, adminFeeRate,
       listingFee, agentFee, adminFee,
       total: listingFee + agentFee + adminFee,
     });
@@ -236,6 +247,18 @@ export function SquadModernLayout({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const closeConfirmAction = (event?: SyntheticEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!submitting) setConfirmAction(null);
+  };
+
+  const submitConfirmAction = (event?: SyntheticEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!submitting) void confirmListing();
   };
 
   const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player) => {
@@ -446,7 +469,7 @@ export function SquadModernLayout({
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => !submitting && setConfirmAction(null)}
+            onClick={closeConfirmAction}
           >
             <motion.div
               initial={{ scale: 0.92, y: 20, opacity: 0 }}
@@ -492,15 +515,15 @@ export function SquadModernLayout({
                   </div>
                   <div className="h-px bg-white/5 my-2" />
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">💰 Taxa de anúncio</span>
+                    <span className="text-white/60">💰 Taxa de anúncio ({(confirmAction.listingFeeRate * 100).toFixed(2)}%)</span>
                     <span className="font-bold text-amber-300">{formatMoney(confirmAction.listingFee)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">💼 Taxa de empresário</span>
+                    <span className="text-white/60">💼 Taxa de empresário ({(confirmAction.agentFeeRate * 100).toFixed(2)}%)</span>
                     <span className="font-bold text-amber-300">{formatMoney(confirmAction.agentFee)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">📋 Custos administrativos</span>
+                    <span className="text-white/60">📋 Custos administrativos ({(confirmAction.adminFeeRate * 100).toFixed(2)}%)</span>
                     <span className="font-bold text-amber-300">{formatMoney(confirmAction.adminFee)}</span>
                   </div>
                   <div className="h-px bg-white/5 my-2" />
@@ -521,16 +544,22 @@ export function SquadModernLayout({
 
               <div className="p-4 border-t border-white/5 bg-zinc-950/50 flex items-center gap-3">
                 <Button
+                  type="button"
                   variant="ghost"
                   disabled={submitting}
-                  onClick={() => setConfirmAction(null)}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={closeConfirmAction}
                   className="flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/5"
                 >
                   Cancelar
                 </Button>
                 <Button
+                  type="button"
                   disabled={submitting || (club.budget ?? 0) < confirmAction.total}
-                  onClick={confirmListing}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={submitConfirmAction}
                   className={cn(
                     "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950",
                     confirmAction.type === 'transfer'
