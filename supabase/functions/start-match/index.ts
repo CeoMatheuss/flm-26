@@ -956,11 +956,15 @@ function simulateFullMatch(
     }
     stats.shots[0]++; stats.shotsOnTarget[0]++;
     const buildup = buildupDesc('home', homeTeam);
+    const desc = `${buildup}... ⚽ GOOOOL DO ${homeTeam.toUpperCase()}!!! ${scorer?.name || 'Jogador'} finaliza com ${goalType}!${assistName ? ` Assistência de ${assistName}!` : ''} [${scoreH}x${scoreA}]`;
+    
+    console.log(`[GOAL_LOG] HOME Goal at ${m}' | Scorer: ${scorer?.name} | Score: ${scoreH}x${scoreA}`);
+    
     allPlanned.push({
       minute: m, type: pickGoalEventType(), team: 'home', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.95, ballY: 0.5,
-      description: `${buildup}... ⚽ GOOOOL DO ${homeTeam.toUpperCase()}!!! ${scorer?.name || 'Jogador'} finaliza com ${goalType}!${assistName ? ` Assistência de ${assistName}!` : ''} [${scoreH}x${scoreA}]`,
+      description: desc,
     });
   }
 
