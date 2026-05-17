@@ -659,6 +659,13 @@ function simulateFullMatch(
   const moraleMod = 0.85 + (avgMorale / 100) * 0.3;
   const avgStamina = home.reduce((s, p) => s + p.stamina, 0) / 11;
   const fatigueMod = 0.8 + (avgStamina / 100) * 0.2;
+
+  // Symmetric morale/fatigue mods for the AWAY side — without these only the home
+  // team felt the effect of low motivation / tired squad on the goal model.
+  const awayAvgMorale = away.reduce((s, p) => s + p.morale, 0) / Math.max(1, away.length);
+  const awayMoraleMod = 0.85 + (awayAvgMorale / 100) * 0.3;
+  const awayAvgStaminaInit = away.reduce((s, p) => s + p.stamina, 0) / 11;
+  const awayFatigueMod = 0.8 + (awayAvgStaminaInit / 100) * 0.2;
   
   // Tactical impact on simulation (HOME) — uses style table
   const pressingBase = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
