@@ -34,7 +34,6 @@ export function useActiveMatch() {
       .select('id, match_id, current_minute, status')
       .eq('user_id', user.id)
       .eq('status', 'live')
-      .lt('current_minute', 90)
       .order('started_at', { ascending: false })
       .limit(1)
       .maybeSingle();
