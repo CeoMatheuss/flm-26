@@ -985,11 +985,15 @@ function simulateFullMatch(
     }
     stats.shots[1]++; stats.shotsOnTarget[1]++;
     const buildup = buildupDesc('away', awayTeam);
+    const desc = `${buildup}... ⚽ GOL DO ${awayTeam.toUpperCase()}! ${scorer?.name || 'Jogador'} marca com ${goalType}!${assistName ? ` Passe de ${assistName}!` : ''} [${scoreH}x${scoreA}]`;
+
+    console.log(`[GOAL_LOG] AWAY Goal at ${m}' | Scorer: ${scorer?.name} | Score: ${scoreH}x${scoreA}`);
+
     allPlanned.push({
       minute: m, type: pickGoalEventType(), team: 'away', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.05, ballY: 0.5,
-      description: `${buildup}... ⚽ GOL DO ${awayTeam.toUpperCase()}! ${scorer?.name || 'Jogador'} marca com ${goalType}!${assistName ? ` Passe de ${assistName}!` : ''} [${scoreH}x${scoreA}]`,
+      description: desc,
     });
   }
 
