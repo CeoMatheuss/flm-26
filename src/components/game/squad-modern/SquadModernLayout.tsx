@@ -421,6 +421,111 @@ export function SquadModernLayout({
         onAction={handleAction}
       />
 
+      <AnimatePresence>
+        {confirmAction && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => !submitting && setConfirmAction(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.92, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.92, y: 20, opacity: 0 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 240 }}
+              className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.7)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={cn(
+                "p-5 border-b border-white/5 flex items-center gap-3",
+                confirmAction.type === 'transfer' ? "bg-emerald-500/5" : "bg-sky-500/5"
+              )}>
+                <div className={cn(
+                  "w-11 h-11 rounded-2xl flex items-center justify-center border",
+                  confirmAction.type === 'transfer'
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                    : "bg-sky-500/10 border-sky-500/30 text-sky-400"
+                )}>
+                  {confirmAction.type === 'transfer'
+                    ? <ShoppingCart className="w-5 h-5" />
+                    : <ArrowLeftRight className="w-5 h-5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                    {confirmAction.type === 'transfer' ? 'Mercado de Transferências' : 'Mercado de Empréstimos'}
+                  </p>
+                  <p className="text-sm font-black text-white truncate">{confirmAction.player.name}</p>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <p className="text-sm text-white/80 leading-relaxed">
+                  {confirmAction.type === 'transfer'
+                    ? '📢 Tem certeza que deseja anunciar este jogador no mercado?'
+                    : '🤝 Tem certeza que deseja colocar este jogador para empréstimo?'}
+                </p>
+
+                <div className="bg-white/[0.03] rounded-2xl border border-white/5 p-4 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/50">Valor sugerido</span>
+                    <span className="font-bold text-white">{formatMoney(confirmAction.value)}</span>
+                  </div>
+                  <div className="h-px bg-white/5 my-2" />
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/60">💰 Taxa de anúncio</span>
+                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.listingFee)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/60">💼 Taxa de empresário</span>
+                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.agentFee)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/60">📋 Custos administrativos</span>
+                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.adminFee)}</span>
+                  </div>
+                  <div className="h-px bg-white/5 my-2" />
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-black text-white uppercase tracking-wider text-[11px]">Total a debitar</span>
+                    <span className="font-black text-rose-300">{formatMoney(confirmAction.total)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-white/40 pt-1">
+                    <span>Saldo atual</span>
+                    <span>{formatMoney(club.budget ?? 0)}</span>
+                  </div>
+                </div>
+
+                {(club.budget ?? 0) < confirmAction.total && (
+                  <p className="text-[11px] text-rose-400 font-bold">⚠️ Saldo insuficiente para arcar com as taxas.</p>
+                )}
+              </div>
+
+              <div className="p-4 border-t border-white/5 bg-zinc-950/50 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  disabled={submitting}
+                  onClick={() => setConfirmAction(null)}
+                  className="flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/5"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  disabled={submitting || (club.budget ?? 0) < confirmAction.total}
+                  onClick={confirmListing}
+                  className={cn(
+                    "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950",
+                    confirmAction.type === 'transfer'
+                      ? "bg-emerald-500 hover:bg-emerald-400"
+                      : "bg-sky-500 hover:bg-sky-400"
+                  )}
+                >
+                  {submitting ? 'Processando…' : 'Confirmar'}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <QuickSwapPanel
         isOpen={isQuickSwapOpen}
         onClose={() => setIsQuickSwapOpen(false)}
