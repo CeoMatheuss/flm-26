@@ -18,13 +18,15 @@ interface Props {
 }
 
 interface LobbyState {
-  state: 'waiting_other' | 'both_ready' | 'start_with_ai';
+  state: 'waiting_other' | 'one_ready' | 'both_ready' | 'start_with_ai';
   remaining_ms: number;
   home_joined: boolean;
   away_joined: boolean;
+  at_least_one_joined?: boolean;
   home_user_id: string;
   away_user_id: string;
   auto_sim_at: string | null;
+  kickoff_at?: string | null;
 }
 
 export function MatchLobbyScreen({ matchType, matchId, userId, myClub, oppClub, onReady, onAutoSimulated, onCancel }: Props) {
