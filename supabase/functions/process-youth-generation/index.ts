@@ -88,13 +88,31 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) throw new Error("User not found");
 
-    const { data: club, error: clubError } = await adminClient
+    let { data: club } = await adminClient
       .from('clubs')
       .select('id, country, last_youth_generation_at')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (clubError || !club) throw new Error("Club not found");
+    // Auto-create club row if missing (using game_saves data)
+    if (!club) {
+      const { data: saveRow } = await adminClient
+        .from('game_saves').select('club_data').eq('user_id', user.id).maybeSingle();
+      const cd: any = saveRow?.club_data || {};
+      const { data: created, error: createErr } = await adminClient
+        .from('clubs')
+        .insert({
+          user_id: user.id,
+          name: cd.name || 'Meu Clube',
+          country: cd.country || 'Brasil',
+          fans: cd.fans || 1000,
+          reputation: cd.reputation || 65,
+        })
+        .select('id, country, last_youth_generation_at')
+        .single();
+      if (createErr) throw createErr;
+      club = created;
+    }
 
     const now = new Date();
 
