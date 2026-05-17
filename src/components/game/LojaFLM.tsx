@@ -432,7 +432,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
           {!loading && !error && (
             <>
 
-              {CATEGORIES.filter(cat => cat.id !== 'history').map(cat => (
+              {CATEGORIES.filter(cat => !['painel'].includes(cat.id)).map(cat => (
                 <TabsContent key={cat.id} value={cat.id} className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 outline-none">
                   <AnimatePresence mode="popLayout">
                     {items
