@@ -173,7 +173,7 @@ export function useMatchSimulation() {
       const opp = idx === 0 ? 1 : 0;
       if (ev.team === 'home') homeActions++; else if (ev.team === 'away') awayActions++;
       
-      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
+      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.type.endsWith('_goal');
       if (isEvGoal && ev.type !== 'penalty_shootout') { 
         s.shots[idx]++; 
         s.shotsOnTarget[idx]++; 
@@ -204,7 +204,7 @@ export function useMatchSimulation() {
   const recalculateScoreFromEvents = useCallback((events: SimEvent[]) => {
     let hG = 0, aG = 0;
     for (const ev of events) {
-      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.description.toUpperCase().includes('GOL');
+      const isEvGoal = ev.isGoal === true || ev.type === 'goal' || ev.type.endsWith('_goal');
       if (isEvGoal && ev.type !== 'penalty_shootout') {
         if (ev.team === 'home') hG++;
         else if (ev.team === 'away') aG++;
@@ -249,7 +249,7 @@ export function useMatchSimulation() {
 
   const processMatchEvent = useCallback((event: SimEvent, currentVisibleEvents: SimEvent[]) => {
     // 1. Identificar se o evento é um gol
-    const isGoal = event.isGoal === true || event.type === 'goal' || event.description.toUpperCase().includes('GOL');
+    const isGoal = event.isGoal === true || event.type === 'goal' || event.type.endsWith('_goal');
     
     // 2. Usar ID único do evento para evitar duplicidade
     const eventId = `${event.minute}-${event.type}-${event.team}-${event.playerName || ''}`;

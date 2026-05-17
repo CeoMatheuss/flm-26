@@ -956,11 +956,15 @@ function simulateFullMatch(
     }
     stats.shots[0]++; stats.shotsOnTarget[0]++;
     const buildup = buildupDesc('home', homeTeam);
+    const desc = `${buildup}... ⚽ GOOOOL DO ${homeTeam.toUpperCase()}!!! ${scorer?.name || 'Jogador'} finaliza com ${goalType}!${assistName ? ` Assistência de ${assistName}!` : ''} [${scoreH}x${scoreA}]`;
+    
+    console.log(`[GOAL_LOG] HOME Goal at ${m}' | Scorer: ${scorer?.name} | Score: ${scoreH}x${scoreA}`);
+    
     allPlanned.push({
       minute: m, type: pickGoalEventType(), team: 'home', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.95, ballY: 0.5,
-      description: `${buildup}... ⚽ GOOOOL DO ${homeTeam.toUpperCase()}!!! ${scorer?.name || 'Jogador'} finaliza com ${goalType}!${assistName ? ` Assistência de ${assistName}!` : ''} [${scoreH}x${scoreA}]`,
+      description: desc,
     });
   }
 
@@ -981,11 +985,15 @@ function simulateFullMatch(
     }
     stats.shots[1]++; stats.shotsOnTarget[1]++;
     const buildup = buildupDesc('away', awayTeam);
+    const desc = `${buildup}... ⚽ GOL DO ${awayTeam.toUpperCase()}! ${scorer?.name || 'Jogador'} marca com ${goalType}!${assistName ? ` Passe de ${assistName}!` : ''} [${scoreH}x${scoreA}]`;
+
+    console.log(`[GOAL_LOG] AWAY Goal at ${m}' | Scorer: ${scorer?.name} | Score: ${scoreH}x${scoreA}`);
+
     allPlanned.push({
       minute: m, type: pickGoalEventType(), team: 'away', isGoal: true,
       playerName: scorer?.name, assistName, goalType,
       animType: 'goal', ballX: 0.05, ballY: 0.5,
-      description: `${buildup}... ⚽ GOL DO ${awayTeam.toUpperCase()}! ${scorer?.name || 'Jogador'} marca com ${goalType}!${assistName ? ` Passe de ${assistName}!` : ''} [${scoreH}x${scoreA}]`,
+      description: desc,
     });
   }
 
@@ -1017,11 +1025,14 @@ function simulateFullMatch(
       if (kicker) { kicker.goals++; kicker.rating = Math.min(10, kicker.rating + 1.2); }
       if (gk) gk.rating = Math.max(3, gk.rating - 0.8);
       
+      const desc = `${buildup} 🎯 PÊNALTI PARA O ${tName.toUpperCase()}! ${kicker?.name || 'Batedor'} se concentra... ⚽ GOOOOL!!! Cobrança perfeita no canto! [${scoreH}x${scoreA}]`;
+      console.log(`[GOAL_LOG] PENALTY Goal at ${pen.minute}' for ${team} | Scorer: ${kicker?.name} | Score: ${scoreH}x${scoreA}`);
+
       allPlanned.push({
-        minute: pen.minute, type: 'penalty', team, isGoal: true,
+        minute: pen.minute, type: 'penalty_goal', team, isGoal: true,
         playerName: kicker?.name, animType: 'penalty',
         ballX: team === 'home' ? 0.95 : 0.05, ballY: 0.5,
-        description: `${buildup} 🎯 PÊNALTI PARA O ${tName.toUpperCase()}! ${kicker?.name || 'Batedor'} se concentra... ⚽ GOOOOL!!! Cobrança perfeita no canto! [${scoreH}x${scoreA}]`,
+        description: desc,
       });
     } else {
       if (kicker) kicker.rating = Math.max(3, kicker.rating - 1.0);
