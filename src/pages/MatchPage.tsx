@@ -2473,6 +2473,7 @@ function FinishedSection({ stats, homeTeam, awayTeam, finalHomeGoals, finalAwayG
                 <div className="w-full max-w-[480px] mx-auto aspect-[12/7] overflow-hidden">
                   <HighlightMiniCanvas
                     type={getHighlightType(goalEvents[replayIndex].type)}
+                    outcome={getHighlightOutcome(goalEvents[replayIndex].type)}
                     team={goalEvents[replayIndex].team === 'neutral' ? 'home' : goalEvents[replayIndex].team}
                     playerName={goalEvents[replayIndex].playerName}
                   />
