@@ -124,7 +124,7 @@ export function UpgradesTab({ infrastructure, budget, isPremium, onUpgradeFacili
         {cards.map((c) => {
           const lvl = infrastructure[c.key].level;
           const pending = infrastructure[c.key].upgradeCompletesAt;
-          const cd = useCountdown(pending && new Date(pending).getTime() > Date.now() ? pending : undefined);
+          const cd = computeCountdown(pending && new Date(pending).getTime() > Date.now() ? pending : undefined, now);
           const maxed = lvl >= c.maxLevel;
           const canAfford = budget >= c.cost;
           const Icon = c.icon;
