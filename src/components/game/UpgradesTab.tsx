@@ -59,6 +59,11 @@ function computeCountdown(target: string | undefined, now: number) {
 
 export function UpgradesTab({ infrastructure, budget, isPremium, onUpgradeFacility }: Props) {
   const [confirming, setConfirming] = useState<CardDef | null>(null);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const cards = useMemo<CardDef[]>(() => {
     const stLvl = infrastructure.stadium.level;
