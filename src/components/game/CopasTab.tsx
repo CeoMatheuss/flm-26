@@ -342,8 +342,9 @@ export function CopasTab({ userId }: Props) {
                  );
                })()}
              </div>
-          ) : myMatch && (
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match shrink-0">
+           ) : myMatch && (
+             <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[320px] shadow-2xl overflow-hidden group/match shrink-0">
+
               <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black text-primary uppercase tracking-widest">SEU JOGO</span>
