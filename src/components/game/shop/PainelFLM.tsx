@@ -49,6 +49,24 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [budget, setBudget] = useState<number>(club?.budget || 0);
 
+  // Real club id pode não vir do save local — resolve pelo userId.
+  const [resolvedClubId, setResolvedClubId] = useState<string | null>(club?.id || null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (club?.id) { setResolvedClubId(club.id); return; }
+      if (!userId) return;
+      const { data } = await supabase.from('clubs').select('id, budget').eq('user_id', userId).maybeSingle();
+      if (cancelled) return;
+      if (data?.id) {
+        setResolvedClubId(data.id);
+        if (data.budget != null) setBudget(Number(data.budget));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [club?.id, userId]);
+
   const [sponsorships, setSponsorships] = useState<any[]>([]);
   const [membership, setMembership] = useState<any>(null);
   const [shopStats, setShopStats] = useState<any>(null);
@@ -56,21 +74,21 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
   const [orders, setOrders] = useState<any[]>([]);
 
   const loadAll = useCallback(async () => {
-    if (!club?.id || !userId) return;
+    if (!resolvedClubId || !userId) return;
     setRefreshing(true);
     try {
       const client = supabase as any;
       const [spons, mem, stats, effects, ords, clubRow] = await Promise.all([
-        client.from('club_sponsorships').select('*').eq('club_id', club.id).eq('is_active', true),
-        client.from('club_memberships').select('*').eq('club_id', club.id).maybeSingle(),
-        client.from('club_shop_stats').select('*').eq('club_id', club.id).maybeSingle(),
-        client.from('club_active_effects').select('*').eq('club_id', club.id),
+        client.from('club_sponsorships').select('*').eq('club_id', resolvedClubId).eq('is_active', true),
+        client.from('club_memberships').select('*').eq('club_id', resolvedClubId).maybeSingle(),
+        client.from('club_shop_stats').select('*').eq('club_id', resolvedClubId).maybeSingle(),
+        client.from('club_active_effects').select('*').eq('club_id', resolvedClubId),
         client.from('payment_orders')
           .select('id, amount_cents, status, delivered, created_at, metadata, item_id, shop_items(name, category)')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(80),
-        client.from('clubs').select('budget').eq('id', club.id).maybeSingle(),
+        client.from('clubs').select('budget').eq('id', resolvedClubId).maybeSingle(),
       ]);
       setSponsorships(spons.data || []);
       setMembership(mem.data || null);
@@ -82,27 +100,27 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
       setRefreshing(false);
       setLoading(false);
     }
-  }, [club?.id, userId]);
+  }, [resolvedClubId, userId]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
   // Realtime: pagamentos + clube + sócios + loja
   useEffect(() => {
-    if (!club?.id || !userId) return;
-    const ch = supabase.channel(`painel-${club.id}`)
+    if (!resolvedClubId || !userId) return;
+    const ch = supabase.channel(`painel-${resolvedClubId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_orders', filter: `user_id=eq.${userId}` }, loadAll)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clubs', filter: `id=eq.${club.id}` }, (p: any) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clubs', filter: `id=eq.${resolvedClubId}` }, (p: any) => {
         if (p.new?.budget != null) setBudget(Number(p.new.budget));
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_sponsorships', filter: `club_id=eq.${club.id}` }, loadAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_memberships', filter: `club_id=eq.${club.id}` }, loadAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_shop_stats', filter: `club_id=eq.${club.id}` }, loadAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_active_effects', filter: `club_id=eq.${club.id}` }, loadAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_sponsorships', filter: `club_id=eq.${resolvedClubId}` }, loadAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_memberships', filter: `club_id=eq.${resolvedClubId}` }, loadAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_shop_stats', filter: `club_id=eq.${resolvedClubId}` }, loadAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_active_effects', filter: `club_id=eq.${resolvedClubId}` }, loadAll)
       .subscribe();
     const onRefresh = () => loadAll();
     window.addEventListener('flm:refresh-club-data', onRefresh);
     return () => { supabase.removeChannel(ch); window.removeEventListener('flm:refresh-club-data', onRefresh); };
-  }, [club?.id, userId, loadAll]);
+  }, [resolvedClubId, userId, loadAll]);
 
   // ── Receitas agregadas ────────────────────────────────────────────────────
   const sponsorshipMonthly = useMemo(
