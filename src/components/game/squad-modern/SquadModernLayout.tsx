@@ -158,9 +158,9 @@ export function SquadModernLayout({
 
   const openMarketConfirm = (p: Player) => {
     const value = getPlayerValue(p);
-    const listingFeeRate = 0.005;
-    const agentFeeRate = 0.0075;
-    const adminFeeRate = 0.0025;
+    const listingFeeRate = 0.01;
+    const agentFeeRate = 0.01;
+    const adminFeeRate = 0.01;
     const listingFee = Math.round(value * listingFeeRate);
     const agentFee = Math.round(value * agentFeeRate);
     const adminFee = Math.round(value * adminFeeRate);
