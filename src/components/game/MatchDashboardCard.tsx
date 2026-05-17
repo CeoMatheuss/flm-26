@@ -798,7 +798,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
               </Badge>
               {venueCapacity &&
                 <Badge variant="outline" className="text-[9px] sm:text-[10px] flex items-center gap-1">
-                  <Building2 className="h-2.5 w-2.5" /> {venueCapacity.toLocaleString()} lugares
+                  <Building2 className="h-2.5 w-2.5" /> {venueCapacity.toLocaleString('pt-BR')} lugares
                 </Badge>
               }
               {status === 'live' && liveMatch?.attendance && (

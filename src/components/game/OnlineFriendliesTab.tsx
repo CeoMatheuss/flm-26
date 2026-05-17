@@ -596,7 +596,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
               <div className="flex items-center gap-1.5 font-semibold">
                 <Building2 className="h-3 w-3 text-primary" /> 🏟️ {stadiumName}
               </div>
-              <p className="text-[10px] text-muted-foreground">Capacidade: {stadiumCapacity.toLocaleString()} lugares</p>
+              <p className="text-[10px] text-muted-foreground">Capacidade: {stadiumCapacity.toLocaleString('pt-BR')} lugares</p>
             </div>
           )}
 
@@ -644,7 +644,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                       </div>
                       <div className="p-2 rounded bg-muted/20 text-[10px] space-y-0.5">
                         <p className="font-semibold">{homeClub} (Mandante) vs {homeClub === oppClub ? clubName : oppClub}</p>
-                        <p className="text-muted-foreground">🏟️ {homeStadium} • {homeCapacity.toLocaleString()} lugares</p>
+                        <p className="text-muted-foreground">🏟️ {homeStadium} • {homeCapacity.toLocaleString('pt-BR')} lugares</p>
                       </div>
                       <div className="flex gap-1.5">
                         <Button size="sm" className="flex-1 h-7 text-[10px] gap-1" onClick={() => respondInvite(invite.id, true)} disabled={loading}>
@@ -739,7 +739,7 @@ export function OnlineFriendliesTab({ userId, clubName, stadiumName, stadiumCapa
                             <span className="hover:text-primary transition-colors cursor-pointer" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: homeClub } }))}>{homeClub}</span> (Mandante) vs <span className="hover:text-primary transition-colors cursor-pointer" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: homeClub === clubName ? oppClub : clubName } }))}>{homeClub === clubName ? oppClub : clubName}</span>
                           </p>
                           <p className="text-[9px] text-muted-foreground">
-                            🏟️ {homeStadium} • {homeCapacity.toLocaleString()} lugares
+                            🏟️ {homeStadium} • {homeCapacity.toLocaleString('pt-BR')} lugares
                           </p>
                           <p className="text-[9px] text-muted-foreground">
                             📅 {new Date(invite.match_date).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' })}
