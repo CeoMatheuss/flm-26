@@ -6,7 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DollarSign, TrendingUp, TrendingDown, Users, Crown, Rocket, Package,
   Shirt, Building2, Trophy, RefreshCw, ArrowDownRight, ArrowUpRight,
-  Wallet, History as HistoryIcon, Activity, Banknote, ShoppingBag, PieChart, BarChart3
+  Wallet, History as HistoryIcon, Activity, Banknote, ShoppingBag, PieChart, BarChart3,
+  CheckCircle2, Clock, Sparkles
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
