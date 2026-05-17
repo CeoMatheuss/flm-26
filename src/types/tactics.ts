@@ -226,4 +226,13 @@ export const tacticsPresets: TacticsPreset[] = [
   { name: 'Gegenpress', config: { formation: '4-2-3-1', playStyle: 'ofensivo', pressing: 'ultra-alto', tempo: 'muito-rapido', marking: 'individual', defenseLine: 'alta' } },
   { name: 'Jogo Bonito', config: { formation: '4-3-3', playStyle: 'ofensivo', pressing: 'alto', tempo: 'rapido', passingStyle: 'curto', width: 'larga' } },
   { name: 'Retranca', config: { formation: '5-4-1', playStyle: 'defensivo', pressing: 'baixo', tempo: 'lento', defenseLine: 'baixa', width: 'estreita' } },
+  { name: 'Ataque Total', config: { formation: '3-4-3', playStyle: 'ataque-total', pressing: 'alto', tempo: 'muito-rapido', defenseLine: 'alta', width: 'larga' } },
+  { name: 'Bloco Médio', config: { formation: '4-4-2', playStyle: 'bloco-medio', pressing: 'medio', tempo: 'normal', defenseLine: 'media', marking: 'zona' } },
+  { name: 'Transição', config: { formation: '4-2-3-1', playStyle: 'transicao-rapida', pressing: 'medio', tempo: 'muito-rapido', passingStyle: 'direto', defenseLine: 'media' } },
+  { name: 'Cruzamentos', config: { formation: '4-4-2', playStyle: 'cruzamentos', pressing: 'medio', tempo: 'rapido', passingStyle: 'longo', width: 'larga' } },
+  { name: 'Controle Total', config: { formation: '4-3-3', playStyle: 'controle-total', pressing: 'alto', tempo: 'normal', passingStyle: 'curto', defenseLine: 'alta' } },
+  { name: 'Verticalidade', config: { formation: '4-2-3-1', playStyle: 'verticalidade', pressing: 'medio', tempo: 'rapido', passingStyle: 'longo' } },
+  { name: 'Criativo', config: { formation: '4-3-2-1', playStyle: 'futebol-criativo', pressing: 'medio', tempo: 'normal', passingStyle: 'curto', width: 'larga' } },
+  { name: 'Defesa Compacta', config: { formation: '5-4-1', playStyle: 'defesa-compacta', pressing: 'baixo', tempo: 'lento', defenseLine: 'baixa', marking: 'mista' } },
+  { name: 'Pressão Pós-Perda', config: { formation: '4-3-3', playStyle: 'pressao-pos-perda', pressing: 'ultra-alto', tempo: 'rapido', marking: 'individual', defenseLine: 'alta' } },
 ];
