@@ -127,7 +127,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   slots.forEach(slot => {
     const candidates = allPlayers
-      .filter(p => !used.has(p.id) && !p.injury && slot.pos.includes(p.position as any))
+      .filter(p => !used.has(p.id) && canPlayMatch(p) && slot.pos.includes(p.position as any))
       .sort((a, b) => b.overall - a.overall);
     
     for (let i = 0; i < slot.count && candidates.length > 0; i++) {
