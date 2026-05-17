@@ -5462,6 +5462,7 @@ export type Database = {
         Args: { p_description: string; p_target_id: string; p_value: number }
         Returns: Json
       }
+      expire_shop_effects: { Args: never; Returns: Json }
       fill_league_with_bots: { Args: { _league_id: string }; Returns: number }
       finish_national_cup_award_continental: {
         Args: { _cup_id: string }
