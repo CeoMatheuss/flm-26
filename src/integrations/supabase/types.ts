@@ -2221,6 +2221,7 @@ export type Database = {
           away_strength: number
           away_team: string
           competition: string
+          competition_type: string | null
           created_at: string
           current_minute: number
           duration_seconds: number
@@ -2233,6 +2234,7 @@ export type Database = {
           home_team: string
           id: string
           is_home: boolean
+          is_processed: boolean | null
           match_id: string
           player_ratings: Json
           roster_locked_at: string | null
@@ -2252,6 +2254,7 @@ export type Database = {
           away_strength?: number
           away_team: string
           competition?: string
+          competition_type?: string | null
           created_at?: string
           current_minute?: number
           duration_seconds?: number
@@ -2264,6 +2267,7 @@ export type Database = {
           home_team: string
           id?: string
           is_home?: boolean
+          is_processed?: boolean | null
           match_id: string
           player_ratings?: Json
           roster_locked_at?: string | null
@@ -2283,6 +2287,7 @@ export type Database = {
           away_strength?: number
           away_team?: string
           competition?: string
+          competition_type?: string | null
           created_at?: string
           current_minute?: number
           duration_seconds?: number
@@ -2295,6 +2300,7 @@ export type Database = {
           home_team?: string
           id?: string
           is_home?: boolean
+          is_processed?: boolean | null
           match_id?: string
           player_ratings?: Json
           roster_locked_at?: string | null
