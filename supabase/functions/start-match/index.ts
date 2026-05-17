@@ -833,7 +833,7 @@ function simulateFullMatch(
       scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
       const others = home.filter(p => p.id !== scorer.id && p.isOnPitch);
       if (others.length > 0 && rng() < 0.65) {
-        const assister = pickByAttr(others, 'vision') || pick(others);
+        const assister = pickByRole(others, 'creation') || pick(others);
         assister.assists++; assister.rating = Math.min(10, assister.rating + 0.6);
         assistName = assister.name;
       }
