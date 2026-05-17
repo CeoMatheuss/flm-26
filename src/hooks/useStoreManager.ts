@@ -171,6 +171,26 @@ export function useStoreManager(club: Club, userId: string) {
         importance: 2
       });
 
+      // 4. Registra como pedido aprovado para aparecer em Ganhos/Histórico
+      try {
+        await client.from('payment_orders').insert({
+          user_id: userId,
+          item_id: item.id,
+          amount_cents: item.price_cents || 0,
+          status: 'approved',
+          payment_method: 'in_game',
+          delivered: true,
+          metadata: {
+            item_name: item.name,
+            category: item.category,
+            bonus_data: item.bonus_data ?? null,
+            source: 'in_game_redeem',
+          },
+        });
+      } catch (e) {
+        console.warn('[store] registro de pedido falhou', e);
+      }
+
       toast.success(`${item.name} ativado com sucesso!`);
       fetchStoreData();
       window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));

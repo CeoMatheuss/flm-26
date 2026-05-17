@@ -366,6 +366,7 @@ export type Database = {
           expires_at: string | null
           id: string
           item_id: string
+          last_delivery_at: string
           started_at: string | null
         }
         Insert: {
@@ -376,6 +377,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           item_id: string
+          last_delivery_at?: string
           started_at?: string | null
         }
         Update: {
@@ -386,6 +388,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           item_id?: string
+          last_delivery_at?: string
           started_at?: string | null
         }
         Relationships: [
