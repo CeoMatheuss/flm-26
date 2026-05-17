@@ -939,18 +939,21 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(headT, '⬆️ CABECEIO!', playerName);
 
         } else {
-          // Aftermath
+          // Aftermath — outcome-aware (crossing can be header goal, save, miss)
           const afterT = (t - 0.75) / 0.25;
           drawAllPlayers(drift * 0.15);
           drawPlayer(shooterPos.x, shooterPos.y, teamColor, teamLight, '9', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
-          drawPlayer(gkBaseX, goalY + 18, gkColor, gkLight, 'GK', 9);
+          drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 18 : 0), gkColor, gkLight, 'GK', 9);
           drawBall(ballEndX + dir * 2, ballEndY, 0.9);
-          // Goal celebration
-          const flash = Math.sin(afterT * 22) * 0.12 * Math.max(0, 1 - afterT * 1.2);
-          if (flash > 0) {
-            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
-            ctx.fillRect(0, 0, W, H);
+
+          const isGoal = outcome === 'goal';
+          if (isGoal) {
+            const flash = Math.sin(afterT * 22) * 0.12 * Math.max(0, 1 - afterT * 1.2);
+            if (flash > 0) {
+              ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+              ctx.fillRect(0, 0, W, H);
+            }
           }
           if (afterT > 0.15) {
             const bigAlpha = Math.min(1, (afterT - 0.15) * 4) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
@@ -959,11 +962,17 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.font = `bold 24px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#fbbf24';
+            ctx.fillStyle = isGoal ? '#fbbf24' : '#e5e7eb';
             ctx.strokeStyle = 'rgba(0,0,0,0.6)';
             ctx.lineWidth = 4;
-            ctx.strokeText('GOL DE CABEÇA!', W / 2, H / 2 - 12);
-            ctx.fillText('GOL DE CABEÇA!', W / 2, H / 2 - 12);
+            const bigLabel =
+              outcome === 'goal' ? 'GOL DE CABEÇA!' :
+              outcome === 'save' ? 'DEFENDEU!' :
+              outcome === 'woodwork' ? 'NA TRAVE!' :
+              outcome === 'corner' ? 'ESCANTEIO!' :
+              'CABECEOU PRA FORA!';
+            ctx.strokeText(bigLabel, W / 2, H / 2 - 12);
+            ctx.fillText(bigLabel, W / 2, H / 2 - 12);
             if (playerName) {
               ctx.font = `bold 14px Arial`;
               ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -972,7 +981,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             }
             ctx.restore();
           }
-          drawEventLabel(1, '⚽ GOL DE CRUZAMENTO!', playerName);
+          const subLabel =
+            outcome === 'goal' ? '⚽ GOL DE CRUZAMENTO!' :
+            outcome === 'save' ? '🧤 Goleiro defende o cabeceio!' :
+            outcome === 'woodwork' ? '🥅 Cabeçada na trave!' :
+            outcome === 'corner' ? '📐 Defesa para escanteio!' :
+            '😰 Cabeceou por cima!';
+          drawEventLabel(1, subLabel, playerName);
         }
 
       // ══════════════════════════════════════════════
