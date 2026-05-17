@@ -49,8 +49,8 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
 
   const swapInLineup = (idA: string, idB: string) => {
     if (!onUpdatePlayers) return;
-    const idxA = players.findIndex(p => p.id === idA);
-    const idxB = players.findIndex(p => p.id === idB);
+    const idxA = safePlayers.findIndex(p => p.id === idA);
+    const idxB = safePlayers.findIndex(p => p.id === idB);
     if (idxA < 0 || idxB < 0) return;
     const next = [...players];
     [next[idxA], next[idxB]] = [next[idxB], next[idxA]];
@@ -91,7 +91,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
               Centro Tático
             </h1>
             <p className="text-[9px] sm:text-[10px] font-bold text-white/40 uppercase tracking-widest mt-0.5">
-              {tactics.formation} · {tactics.playStyle}
+              {safeTactics.formation} · {safeTactics.playStyle}
             </p>
           </div>
         </div>
@@ -170,16 +170,16 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
         <div className="h-full flex flex-col lg:flex-row gap-3 sm:gap-4 p-2 sm:p-4">
           {/* Campo */}
           <div className="lg:flex-1 bg-zinc-900/40 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center min-h-0">
-            {players.length < 11 ? (
+            {safePlayers.length < 11 ? (
               <div className="w-full aspect-[4/5] sm:aspect-[16/10] flex flex-col items-center justify-center text-white/40 gap-2">
                 <div className="w-10 h-10 rounded-full border-2 border-emerald-500/40 border-t-emerald-500 animate-spin" />
                 <p className="text-[10px] font-bold uppercase tracking-widest">Carregando elenco...</p>
               </div>
             ) : (
               <FormationView
-                formation={tactics.formation}
-                players={players}
-                captainId={tactics.captainId}
+                formation={safeTactics.formation}
+                players={safePlayers}
+                captainId={safeTactics.captainId}
                 orientation={isMobile ? 'portrait' : 'landscape'}
                 selectedId={pendingFieldId}
                 onSlotSelect={(id) => setPendingFieldId(prev => (prev === id ? null : id))}
@@ -201,7 +201,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
                       onClick={() => setField('formation', f)}
                       className={cn(
                         'h-10 rounded-lg text-[11px] font-black tracking-tight transition-all border',
-                        tactics.formation === f
+                        safeTactics.formation === f
                           ? 'bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20'
                           : 'bg-white/5 border-white/5 text-white/50 hover:bg-white/10 hover:text-white'
                       )}
@@ -219,12 +219,12 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
                 <SectionTitle icon={<Zap className="w-4 h-4 text-amber-400" />} label="Dinâmica" />
                 <Group label="Estilo">
                   <Grid items={['equilibrado','ofensivo','defensivo','posse'] as const}
-                        value={tactics.playStyle} onPick={(v) => setField('playStyle', v as any)}
+                        value={safeTactics.playStyle} onPick={(v) => setField('playStyle', v as any)}
                         activeClass="bg-emerald-500 border-emerald-400 text-zinc-950" />
                 </Group>
                 <Group label="Ritmo">
                   <Grid items={['lento','normal','rapido','muito-rapido'] as const}
-                        value={tactics.tempo} onPick={(v) => setField('tempo', v as any)}
+                        value={safeTactics.tempo} onPick={(v) => setField('tempo', v as any)}
                         activeClass="bg-amber-500 border-amber-400 text-zinc-950" />
                 </Group>
               </CardContent>
@@ -236,7 +236,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
                 <SectionTitle icon={<Target className="w-4 h-4 text-red-400" />} label="Defesa" />
                 <Group label="Pressão">
                   <Grid items={['baixo','medio','alto','ultra-alto'] as const}
-                        value={tactics.pressing} onPick={(v) => setField('pressing', v as any)}
+                        value={safeTactics.pressing} onPick={(v) => setField('pressing', v as any)}
                         activeClass="bg-red-500 border-red-400 text-zinc-950" />
                 </Group>
               </CardContent>
