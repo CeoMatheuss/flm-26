@@ -311,7 +311,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
 
       // Backfill: prospects que possam ter sido inseridos enquanto offline
       const { data: rows } = await supabase
-        .from('youth_prospects').select('*').eq('club_id', clubId);
+        .from('youth_prospects').select('*').eq('club_id', clubId).neq('contract_status', 'profissional');
       if (rows && rows.length) {
         setYouthProspects(prev => {
           const known = new Set(prev.map(p => p.id));
@@ -327,11 +327,21 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
           filter: `club_id=eq.${clubId}`,
         }, (payload) => {
           const np = mapRow(payload.new);
+          if (np.contractStatus === 'profissional') return;
           setYouthProspects(prev => prev.some(p => p.id === np.id) ? prev : [...prev, np]);
           toast.success(`🌟 Novo talento na base: ${np.name}!`, {
             description: `${np.position} • OVR ${np.overall} • POT ${np.potential}`,
             icon: '🎓',
           });
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'youth_prospects',
+          filter: `club_id=eq.${clubId}`,
+        }, (payload) => {
+          const np = mapRow(payload.new);
+          setYouthProspects(prev => np.contractStatus === 'profissional'
+            ? prev.filter(p => p.id !== np.id)
+            : prev.map(p => p.id === np.id ? np : p));
         })
         .on('postgres_changes', {
           event: 'DELETE', schema: 'public', table: 'youth_prospects',
