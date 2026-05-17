@@ -89,6 +89,56 @@ export const playStyleEffects: Record<PlayStyle, PlayStyleEffect> = {
     philosophy: 'Pressionar o adversário no campo dele, recuperar a bola rápido.',
     bullets: ['✅ +15% chances, +8 agressividade', '🔥 Stamina cai +20%', '⚠️ Defesa exposta nas costas', '🆚 Forte vs Posse'],
   },
+  'transicao-rapida': {
+    label: 'Transição Rápida', icon: '🚀',
+    philosophy: 'Verticaliza imediatamente após recuperar a bola.',
+    bullets: ['✅ +10 velocidade ao recuperar', '✅ +8% contra-ataques', '⚠️ Pouca posse'],
+  },
+  'cruzamentos': {
+    label: 'Cruzamentos', icon: '📌',
+    philosophy: 'Joga aberto pelas pontas e cruza muito.',
+    bullets: ['✅ +12 cruzamento, +6 cabeceio', '✅ Largura ampliada', '⚠️ Vulnerável a contra-ataques'],
+  },
+  'jogo-inteligente': {
+    label: 'Jogo Inteligente', icon: '🧠',
+    philosophy: 'Lê o jogo e equilibra ataque/defesa por contexto.',
+    bullets: ['✅ +6 visão, +5 compostura', '✅ Adapta-se ao placar', '➖ Sem extremos'],
+  },
+  'defesa-compacta': {
+    label: 'Defesa Compacta', icon: '🪖',
+    philosophy: 'Bloco recuado e linhas curtas. Difícil de furar.',
+    bullets: ['✅ +25% defesa, +10 marcação', '⚠️ -15% ataque', '🔋 Pouco desgaste'],
+  },
+  'ataque-total': {
+    label: 'Ataque Total', icon: '⚔️',
+    philosophy: 'Tudo no ataque, todos pra frente. Festival de gols.',
+    bullets: ['✅ +30% chances de gol', '⚠️ -25% defesa', '🔥 Stamina cai muito'],
+  },
+  'pressao-pos-perda': {
+    label: 'Pressão Pós-Perda', icon: '🌪️',
+    philosophy: 'Recupera a bola nos primeiros 5 segundos após perdê-la.',
+    bullets: ['✅ +20% recuperação rápida', '✅ +10 agressividade', '🔥 Stamina cai +25%'],
+  },
+  'futebol-criativo': {
+    label: 'Futebol Criativo', icon: '🎨',
+    philosophy: 'Liberdade total ao meio-campo para criar jogadas.',
+    bullets: ['✅ +10 visão, +8 drible', '✅ +6% chances de assistência', '⚠️ Pode perder equilíbrio'],
+  },
+  'controle-total': {
+    label: 'Controle Total', icon: '🏟️',
+    philosophy: 'Domina posse e pressiona alto. Sufoca o adversário.',
+    bullets: ['✅ +8 passe, +12% pressão', '✅ Mais posse', '🔥 Exige alta stamina'],
+  },
+  'bloco-medio': {
+    label: 'Bloco Médio', icon: '🚧',
+    philosophy: 'Defende no meio-campo, sem expor a defesa nem pressionar alto.',
+    bullets: ['✅ +12% defesa', '✅ Equilibrado fisicamente', '➖ Sem boost ofensivo'],
+  },
+  'verticalidade': {
+    label: 'Verticalidade', icon: '⚡',
+    philosophy: 'Passes verticais e progressão direta ao gol.',
+    bullets: ['✅ +10 passe longo, +5 visão', '✅ +8% chutes diretos', '⚠️ Menos passes curtos'],
+  },
 };
 export type Pressing = 'ultra-alto' | 'alto' | 'medio' | 'baixo';
 export type Tempo = 'muito-rapido' | 'rapido' | 'normal' | 'lento';
