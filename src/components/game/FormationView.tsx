@@ -249,13 +249,12 @@ export function FormationView({
       )}
 
       <AnimatePresence mode="popLayout">
-        {layout.map((slot, i) => {
+        {safeLayout.map((slot, i) => {
           const player = assigned[i];
 
-          // Mapeia coordenadas: portrait usa (x, y) direto; landscape rotaciona 90°
-          // Aplica inset de segurança p/ que chip + nome não vazem do campo (overflow-hidden)
-          const INSET_X = 8; // % de margem lateral
-          const INSET_Y = 4; // % de margem vertical
+          // Insets adaptativos: mobile portrait precisa de mais margem p/ não cortar chips e nomes
+          const INSET_X = isPortrait ? 11 : 8;
+          const INSET_Y = isPortrait ? 6 : 4;
           const sx = INSET_X + (slot.x * (100 - 2 * INSET_X)) / 100;
           const sy = INSET_Y + (slot.y * (100 - 2 * INSET_Y)) / 100;
           const left = isPortrait ? sx : 100 - sy;
