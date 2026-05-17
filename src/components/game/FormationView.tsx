@@ -270,7 +270,7 @@ export function FormationView({
       className={cn(
         'relative w-full mx-auto bg-[#0a1f0f] overflow-visible shadow-xl select-none',
         'rounded-xl sm:rounded-2xl border-2 sm:border-[5px] border-emerald-900/40',
-        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/9] max-w-5xl'
+        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/9] max-w-[1100px]'
       )}
     >
       {/* Grama */}
@@ -344,7 +344,7 @@ export function FormationView({
               <div
                 className={cn(
                   'relative rounded-full flex flex-col items-center justify-center border-2 sm:border-[3px] shadow-lg transition-all',
-                  'w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10',
+                  'w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9',
                   isInjured ? 'bg-slate-800 grayscale border-slate-700' : posColor[slot.position] || 'bg-slate-900 text-white',
                   adapt?.border || 'border-white/60',
                   isSelected ? 'scale-110 ring-4 ring-primary shadow-[0_0_25px_rgba(16,185,129,0.6)]' : adapt ? `ring-2 ${adapt.ring}` : ''
