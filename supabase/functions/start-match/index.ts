@@ -1006,12 +1006,30 @@ function simulateFullMatch(
     const opp = team === 'home' ? awayTeam : homeTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
     const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
-    const pName = pool.length > 0 ? pick(pool).name : 'Jogador';
+    // Atacante sorteado favorece os melhor-formados (stamina+moral)
+    const shooterCandidates = pool.filter(p => p.position !== 'GOL');
+    const shooter = shooterCandidates.length > 0
+      ? (() => {
+          const ws = shooterCandidates.map(p => Math.pow(finishingPower(p) * formMult(p), 2.0));
+          const tot = ws.reduce((a, b) => a + b, 0) || 1;
+          let r = rng() * tot;
+          for (let i = 0; i < shooterCandidates.length; i++) { r -= ws[i]; if (r <= 0) return shooterCandidates[i]; }
+          return shooterCandidates[shooterCandidates.length - 1];
+        })()
+      : null;
+    const pName = shooter?.name || (pool.length > 0 ? pick(pool).name : 'Jogador');
     const p2Name = pool.filter(p => p.name !== pName).length > 0 ? pick(pool.filter(p => p.name !== pName)).name : pName;
     const defName = oppPool.length > 0 ? pick(oppPool).name : 'Defensor';
     const gkName = oppPool.filter(p => p.position === 'GOL').length > 0 ? pick(oppPool.filter(p => p.position === 'GOL')).name : 'Goleiro';
     stats.shots[teamIdx]++;
-    const evType = pick(['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']);
+    // Chance outcome favors misses/saves when shooter is tired/desmotivated
+    const sForm = formMult(shooter);
+    const chancePool = sForm >= 1.0
+      ? ['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
+      : sForm >= 0.85
+        ? ['woodwork', 'great_save', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
+        : ['great_save', 'great_save', 'offside_trap', 'long_shot_miss', 'long_shot_miss', 'header_miss', 'header_miss', 'buildup_play'];
+    const evType = pick(chancePool);
     const descs: Record<string, string> = {
       woodwork: `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área e a bola bate no travessão! ${gkName} do ${opp} apenas observou. A torcida grita!`,
       great_save: `🧤 DEFESAÇA! ${pName} recebe de ${p2Name}, gira e finaliza forte no canto. ${gkName} do ${opp} faz uma defesa espetacular com a ponta dos dedos! Que reflexo!`,
