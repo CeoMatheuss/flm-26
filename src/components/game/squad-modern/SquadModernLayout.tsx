@@ -286,7 +286,7 @@ export function SquadModernLayout({
             setViewMode('list');
             return;
           }
-          if (isTacticsOpen && window.innerWidth < 1280) {
+          if (isTacticsOpen) {
             setIsTacticsOpen(false);
             return;
           }
