@@ -742,11 +742,11 @@ function simulateFullMatch(
       const m = pickUnique(allGamePool.filter(m => m >= 20));
       if (m > 0) {
         const kicker = team === 'home'
-          ? pickByAttr(home.filter(p => p.isOnPitch), 'setPieces')
-          : pickByAttr(away.filter(p => p.isOnPitch), 'setPieces');
+          ? pickByRole(home.filter(p => p.isOnPitch && p.position !== 'GOL'), 'set_piece')
+          : pickByRole(away.filter(p => p.isOnPitch && p.position !== 'GOL'), 'set_piece');
         const gk = team === 'home'
-          ? pickByAttr(away.filter(p => p.isOnPitch), 'goalkeeping', 'GOL')
-          : pickByAttr(home.filter(p => p.isOnPitch), 'goalkeeping', 'GOL');
+          ? pickByRole(away.filter(p => p.isOnPitch), 'gk_save', 'GOL')
+          : pickByRole(home.filter(p => p.isOnPitch), 'gk_save', 'GOL');
         const kickerSkill = kicker ? (kicker.composure * 0.5 + kicker.setPieces * 0.5) : 55;
         const gkSkill = gk ? (gk.goalkeeping * 0.6 + gk.composure * 0.4) : 50;
         const conversionProb = clamp(kickerSkill / (kickerSkill + gkSkill) + 0.15, 0.55, 0.85);
