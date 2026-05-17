@@ -7,9 +7,9 @@
  * counter-attacks, crossings, and free kicks.
  */
 
-import { useRef, useEffect, memo } from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 
-export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'counter_attack' | 'crossing' | 'free_kick' | 'idle';
+export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'counter_attack' | 'crossing' | 'free_kick' | 'yellow_card' | 'red_card' | 'idle';
 
 interface HighlightMiniCanvasProps {
   type: HighlightType;
@@ -82,6 +82,8 @@ const HIGHLIGHT_DURATIONS: Record<HighlightType, number> = {
   counter_attack: 450,  // 7.5s — longer for full-field run
   crossing: 400,        // 6.7s
   free_kick: 420,       // 7s
+  yellow_card: 320,
+  red_card: 320,
   idle: Infinity,
 };
 
@@ -610,7 +612,69 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             drawEventLabel(1, '🧤 GOLEIRO SALVOU O PÊNALTI!', playerName);
           }
         }
+      // ══════════════════════════════════════════════
+      // CARD ANIMATION (yellow/red)
+      // ══════════════════════════════════════════════
+      } else if (type === 'yellow_card' || type === 'red_card') {
+        const t = Math.min(1, frame / totalFrames);
+        drawPitch();
+        
+        const focusX = W / 2;
+        const focusY = H / 2;
+        const isRed = type === 'red_card';
+        const cardColor = isRed ? '#ef4444' : '#fbbf24';
+        const cardLabel = isRed ? '🟥 Expulsão!' : '🟨 Amarelo!';
 
+        if (t < 0.4) {
+          // Approach
+          const approachT = t / 0.4;
+          drawAllPlayers(drift, true, focusX, focusY, approachT * 10);
+          drawPlayer(focusX - 30 + 30 * approachT, focusY, teamColor, teamLight, '!', 9, true, playerName);
+          
+          // Referee approaching
+          const refX = focusX + 50 - 25 * approachT;
+          const refY = focusY - 5;
+          drawPlayer(refX, refY, '#111', '#333', 'REF', 8);
+          
+          drawEventLabel(approachT, '⚠️ Falta marcada!', playerName);
+        } else {
+          // Card show
+          const cardT = (t - 0.4) / 0.6;
+          drawAllPlayers(drift * 0.5);
+          drawPlayer(focusX, focusY, teamColor, teamLight, '!', 10, true, playerName);
+          
+          const refX = focusX + 25;
+          const refY = focusY - 5;
+          drawPlayer(refX, refY, '#111', '#333', 'REF', 8);
+
+          // Card in hand
+          if (cardT > 0.1) {
+            const cardRise = Math.min(1, (cardT - 0.1) * 3);
+            ctx.fillStyle = cardColor;
+            ctx.fillRect(refX + 5, refY - 15 - (10 * cardRise), 10, 14);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(refX + 5, refY - 15 - (10 * cardRise), 10, 14);
+            
+            // Spotlight on player
+            drawSpotlight(focusX, focusY, 60, cardRise * 0.8);
+
+            if (cardT > 0.3) {
+              const textAlpha = Math.min(1, (cardT - 0.3) * 3) * (cardT < 0.8 ? 1 : Math.max(0, 1 - (cardT - 0.8) * 5));
+              ctx.save();
+              ctx.globalAlpha = textAlpha;
+              ctx.font = 'bold 24px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillStyle = cardColor;
+              ctx.strokeStyle = '#000';
+              ctx.lineWidth = 3;
+              ctx.strokeText(cardLabel, W / 2, H / 2 - 45);
+              ctx.fillText(cardLabel, W / 2, H / 2 - 45);
+              ctx.restore();
+            }
+          }
+          drawEventLabel(1, cardLabel, playerName);
+        }
       // ══════════════════════════════════════════════
       // COUNTER-ATTACK — Full-field sprint
       // ══════════════════════════════════════════════
@@ -1319,8 +1383,8 @@ export function isHighlightEvent(type: string): boolean {
     'great_save', 'woodwork', 'corner_danger',
     'long_shot_miss', 'header_miss', 'dangerous_foul',
     'counter_attack_goal', 'crossing_goal', 'free_kick_goal',
-    'counter_attack', 'buildup_play', 'free_kick_near',
-    'penalty_shootout', 'goal'
+    'counter_attack', 'free_kick_near',
+    'penalty_shootout', 'goal', 'red_card', 'yellow_card'
   ].includes(type);
 }
 
@@ -1330,12 +1394,13 @@ export function getHighlightType(eventType: string): HighlightType {
   if (eventType === 'crossing_goal') return 'crossing';
   if (eventType === 'free_kick_goal') return 'free_kick';
   if (eventType === 'counter_attack') return 'counter_attack';
-  if (eventType === 'buildup_play') return 'chance';
   if (eventType === 'free_kick_near') return 'free_kick';
-  if (['foot_goal', 'header_goal'].includes(eventType)) return 'goal';
+  if (['foot_goal', 'header_goal', 'goal'].includes(eventType)) return 'goal';
   if (['penalty_goal', 'penalty_miss', 'penalty_shootout'].includes(eventType)) return 'penalty';
   if (eventType === 'woodwork') return 'woodwork';
   if (eventType === 'corner_danger') return 'corner';
   if (eventType === 'great_save') return 'save';
+  if (eventType === 'red_card') return 'red_card';
+  if (eventType === 'yellow_card') return 'yellow_card';
   return 'chance';
 }

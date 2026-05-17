@@ -2585,7 +2585,7 @@ function getEventBg(_ev: SimEvent): string {
 }
 
 function getHighlightLabel(type: string): string {
-  if (['foot_goal', 'header_goal'].includes(type)) return '⚽ GOL!';
+  if (['foot_goal', 'header_goal', 'goal'].includes(type)) return '⚽ GOL!';
   if (type === 'penalty_goal') return '⚽ GOL DE PÊNALTI!';
   if (type === 'penalty_miss') return '❌ PÊNALTI PERDIDO!';
   if (type === 'great_save') return '🧤 GRANDE DEFESA!';
@@ -2595,6 +2595,8 @@ function getHighlightLabel(type: string): string {
   if (type === 'free_kick_goal') return '⚽ GOL DE FALTA!';
   if (type === 'counter_attack') return '⚡ CONTRA-ATAQUE!';
   if (type === 'free_kick_near') return '🎯 FALTA PERIGOSA!';
+  if (type === 'red_card') return '🟥 CARTÃO VERMELHO!';
+  if (type === 'yellow_card') return '🟨 CARTÃO AMARELO';
   return '⚡ LANCE IMPORTANTE';
 }
 
