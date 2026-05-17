@@ -930,8 +930,8 @@ function simulateFullMatch(
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const opp = team === 'home' ? awayTeam : homeTeam;
-    const attacker = pickByAttr(allPlayers.filter(p => p.team === team && p.isOnPitch), 'dribbling');
-    const defender = pickByAttr(allPlayers.filter(p => p.team !== team && p.isOnPitch), 'aggression');
+    const attacker = pickByRole(allPlayers.filter(p => p.team === team && p.isOnPitch), 'dribble');
+    const defender = pickByRole(allPlayers.filter(p => p.team !== team && p.isOnPitch), 'tackle');
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
     allPlanned.push({
       minute: m, type: 'dangerous_foul', team,
