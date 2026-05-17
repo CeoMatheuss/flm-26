@@ -85,24 +85,94 @@ function effectiveAttr(player: SimPlayer, attr: keyof SimPlayer): number {
   return val * getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
 }
 
-function creationPower(p: SimPlayer): number {
-  return effectiveAttr(p, 'passing') + effectiveAttr(p, 'vision') * 0.5;
+// ── POSITION-WEIGHTED ROLE MODEL ───────────────────────────
+// Each position gets a weight per attribute for each "role" (action type).
+// A ZAG playing as scorer barely contributes (low finishing weight); an ATA dominates.
+type Role = 'finishing' | 'creation' | 'tackle' | 'aerial' | 'dribble' | 'pace' | 'gk_save' | 'set_piece';
+
+// weights[position][role] = partial map of { attribute: weight }
+const POSITION_ROLE_WEIGHTS: Record<string, Record<Role, Partial<Record<keyof SimPlayer, number>>>> = {
+  ATA: {
+    finishing: { shooting: 1.0, composure: 0.45, positioning: 0.35, longShots: 0.25, heading: 0.20 },
+    creation:  { vision: 0.45, passing: 0.40, dribbling: 0.40, crossing: 0.20 },
+    tackle:    { defending: 0.15, marking: 0.10, workRate: 0.20 },
+    aerial:    { heading: 0.90, physical: 0.40, positioning: 0.30 },
+    dribble:   { dribbling: 1.0, speed: 0.45, composure: 0.25 },
+    pace:      { speed: 1.0, workRate: 0.35, physical: 0.25 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 1.0, composure: 0.40, shooting: 0.30 },
+  },
+  MEI: {
+    finishing: { shooting: 0.65, longShots: 0.45, composure: 0.35, positioning: 0.25 },
+    creation:  { vision: 1.0, passing: 0.90, dribbling: 0.40, crossing: 0.30, composure: 0.25 },
+    tackle:    { defending: 0.35, marking: 0.30, workRate: 0.40 },
+    aerial:    { heading: 0.35, physical: 0.30 },
+    dribble:   { dribbling: 0.85, speed: 0.40, vision: 0.30 },
+    pace:      { speed: 0.75, workRate: 0.45 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 0.95, vision: 0.45, composure: 0.40 },
+  },
+  VOL: {
+    finishing: { shooting: 0.35, longShots: 0.40, composure: 0.25 },
+    creation:  { passing: 0.70, vision: 0.55, workRate: 0.35 },
+    tackle:    { defending: 0.90, marking: 0.80, physical: 0.45, workRate: 0.55, aggression: 0.30 },
+    aerial:    { heading: 0.55, physical: 0.55, positioning: 0.30 },
+    dribble:   { dribbling: 0.45, speed: 0.30 },
+    pace:      { speed: 0.60, workRate: 0.55, physical: 0.35 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 0.55, longShots: 0.40 },
+  },
+  LAT: {
+    finishing: { shooting: 0.25, longShots: 0.20, positioning: 0.15 },
+    creation:  { crossing: 0.85, passing: 0.50, vision: 0.35, dribbling: 0.40 },
+    tackle:    { defending: 0.70, marking: 0.65, workRate: 0.50, positioning: 0.40 },
+    aerial:    { heading: 0.40, physical: 0.35 },
+    dribble:   { dribbling: 0.60, speed: 0.55 },
+    pace:      { speed: 0.95, workRate: 0.55, physical: 0.30 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 0.40, crossing: 0.50 },
+  },
+  ZAG: {
+    finishing: { shooting: 0.20, heading: 0.55, positioning: 0.25 },
+    creation:  { passing: 0.45, vision: 0.30 },
+    tackle:    { defending: 1.0, marking: 0.95, heading: 0.50, physical: 0.65, positioning: 0.55, aggression: 0.35 },
+    aerial:    { heading: 1.0, physical: 0.65, positioning: 0.45 },
+    dribble:   { dribbling: 0.25, speed: 0.25 },
+    pace:      { speed: 0.55, physical: 0.40 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 0.30, heading: 0.45 },
+  },
+  GOL: {
+    finishing: { shooting: 0.05 },
+    creation:  { passing: 0.20, vision: 0.20 },
+    tackle:    { positioning: 0.30, composure: 0.20 },
+    aerial:    { goalkeeping: 0.50, heading: 0.30, positioning: 0.40 },
+    dribble:   { dribbling: 0.10 },
+    pace:      { speed: 0.20 },
+    gk_save:   { goalkeeping: 1.0, positioning: 0.55, composure: 0.45, physical: 0.20 },
+    set_piece: { setPieces: 0.10 },
+  },
+};
+
+const DEFAULT_ROLE_WEIGHTS = POSITION_ROLE_WEIGHTS.MEI;
+
+function rolePower(p: SimPlayer, role: Role): number {
+  const weights = (POSITION_ROLE_WEIGHTS[p.position] || DEFAULT_ROLE_WEIGHTS)[role];
+  let sum = 0; let totalW = 0;
+  for (const [attr, w] of Object.entries(weights)) {
+    sum += effectiveAttr(p, attr as keyof SimPlayer) * (w as number);
+    totalW += (w as number);
+  }
+  return totalW > 0 ? sum / totalW : 50;
 }
-function tacklePower(p: SimPlayer): number {
-  return effectiveAttr(p, 'defending') + effectiveAttr(p, 'marking') * 0.5;
-}
-function finishingPower(p: SimPlayer): number {
-  return effectiveAttr(p, 'shooting') + effectiveAttr(p, 'composure') * 0.3;
-}
-function transitionPower(p: SimPlayer): number {
-  return effectiveAttr(p, 'speed') + effectiveAttr(p, 'workRate') * 0.3;
-}
-function headerPower(p: SimPlayer): number {
-  return effectiveAttr(p, 'heading') + effectiveAttr(p, 'physical') * 0.3;
-}
-function dribblePower(p: SimPlayer): number {
-  return effectiveAttr(p, 'dribbling') + effectiveAttr(p, 'speed') * 0.3;
-}
+
+// Back-compat aliases used elsewhere in the file
+function creationPower(p: SimPlayer): number { return rolePower(p, 'creation'); }
+function tacklePower(p: SimPlayer): number { return rolePower(p, 'tackle'); }
+function finishingPower(p: SimPlayer): number { return rolePower(p, 'finishing'); }
+function transitionPower(p: SimPlayer): number { return rolePower(p, 'pace'); }
+function headerPower(p: SimPlayer): number { return rolePower(p, 'aerial'); }
+function dribblePower(p: SimPlayer): number { return rolePower(p, 'dribble'); }
 
 // ── HELPERS ──────────────────────────────────────────────────
 
@@ -125,6 +195,20 @@ function pickByAttr(pool: SimPlayer[], attr: keyof SimPlayer, posFilter?: string
   if (posFilter) { const f2 = filtered.filter(p => p.position === posFilter); if (f2.length > 0) filtered = f2; }
   if (filtered.length === 0) return null;
   const weights = filtered.map(p => Math.max(1, Number(p[attr]) || 50));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = rng() * total;
+  for (let i = 0; i < filtered.length; i++) { r -= weights[i]; if (r <= 0) return filtered[i]; }
+  return filtered[filtered.length - 1];
+}
+
+// Pick a player weighted by their position-aware role power.
+// Optional posFilter narrows the pool first (e.g. only ATAs for many goal events).
+function pickByRole(pool: SimPlayer[], role: Role, posFilter?: string): SimPlayer | null {
+  let filtered = pool.filter(p => p.isOnPitch && !p.injured);
+  if (posFilter) { const f2 = filtered.filter(p => p.position === posFilter); if (f2.length > 0) filtered = f2; }
+  if (filtered.length === 0) return null;
+  // Cubic weighting amplifies attribute differences so top players dominate the role
+  const weights = filtered.map(p => Math.max(1, Math.pow(rolePower(p, role), 2.2)));
   const total = weights.reduce((a, b) => a + b, 0);
   let r = rng() * total;
   for (let i = 0; i < filtered.length; i++) { r -= weights[i]; if (r <= 0) return filtered[i]; }
