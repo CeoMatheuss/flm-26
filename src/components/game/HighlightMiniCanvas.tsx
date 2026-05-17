@@ -82,6 +82,7 @@ const HIGHLIGHT_DURATIONS: Record<HighlightType, number> = {
   counter_attack: 450,  // 7.5s — longer for full-field run
   crossing: 400,        // 6.7s
   free_kick: 420,       // 7s
+  card: 320,            // 5.3s
   idle: Infinity,
 };
 
