@@ -85,24 +85,94 @@ function effectiveAttr(player: SimPlayer, attr: keyof SimPlayer): number {
   return val * getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
 }
 
-function creationPower(p: SimPlayer): number {
-  return effectiveAttr(p, 'passing') + effectiveAttr(p, 'vision') * 0.5;
+// ── POSITION-WEIGHTED ROLE MODEL ───────────────────────────
+// Each position gets a weight per attribute for each "role" (action type).
+// A ZAG playing as scorer barely contributes (low finishing weight); an ATA dominates.
+type Role = 'finishing' | 'creation' | 'tackle' | 'aerial' | 'dribble' | 'pace' | 'gk_save' | 'set_piece';
+
+// weights[position][role] = partial map of { attribute: weight }
+const POSITION_ROLE_WEIGHTS: Record<string, Record<Role, Partial<Record<keyof SimPlayer, number>>>> = {
+  ATA: {
+    finishing: { shooting: 1.0, composure: 0.45, positioning: 0.35, longShots: 0.25, heading: 0.20 },
+    creation:  { vision: 0.45, passing: 0.40, dribbling: 0.40, crossing: 0.20 },
+    tackle:    { defending: 0.15, marking: 0.10, workRate: 0.20 },
+    aerial:    { heading: 0.90, physical: 0.40, positioning: 0.30 },
+    dribble:   { dribbling: 1.0, speed: 0.45, composure: 0.25 },
+    pace:      { speed: 1.0, workRate: 0.35, physical: 0.25 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 1.0, composure: 0.40, shooting: 0.30 },
+  },
+  MEI: {
+    finishing: { shooting: 0.65, longShots: 0.45, composure: 0.35, positioning: 0.25 },
+    creation:  { vision: 1.0, passing: 0.90, dribbling: 0.40, crossing: 0.30, composure: 0.25 },
+    tackle:    { defending: 0.35, marking: 0.30, workRate: 0.40 },
+    aerial:    { heading: 0.35, physical: 0.30 },
+    dribble:   { dribbling: 0.85, speed: 0.40, vision: 0.30 },
+    pace:      { speed: 0.75, workRate: 0.45 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 0.95, vision: 0.45, composure: 0.40 },
+  },
+  VOL: {
+    finishing: { shooting: 0.35, longShots: 0.40, composure: 0.25 },
+    creation:  { passing: 0.70, vision: 0.55, workRate: 0.35 },
+    tackle:    { defending: 0.90, marking: 0.80, physical: 0.45, workRate: 0.55, aggression: 0.30 },
+    aerial:    { heading: 0.55, physical: 0.55, positioning: 0.30 },
+    dribble:   { dribbling: 0.45, speed: 0.30 },
+    pace:      { speed: 0.60, workRate: 0.55, physical: 0.35 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 0.55, longShots: 0.40 },
+  },
+  LAT: {
+    finishing: { shooting: 0.25, longShots: 0.20, positioning: 0.15 },
+    creation:  { crossing: 0.85, passing: 0.50, vision: 0.35, dribbling: 0.40 },
+    tackle:    { defending: 0.70, marking: 0.65, workRate: 0.50, positioning: 0.40 },
+    aerial:    { heading: 0.40, physical: 0.35 },
+    dribble:   { dribbling: 0.60, speed: 0.55 },
+    pace:      { speed: 0.95, workRate: 0.55, physical: 0.30 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 0.40, crossing: 0.50 },
+  },
+  ZAG: {
+    finishing: { shooting: 0.20, heading: 0.55, positioning: 0.25 },
+    creation:  { passing: 0.45, vision: 0.30 },
+    tackle:    { defending: 1.0, marking: 0.95, heading: 0.50, physical: 0.65, positioning: 0.55, aggression: 0.35 },
+    aerial:    { heading: 1.0, physical: 0.65, positioning: 0.45 },
+    dribble:   { dribbling: 0.25, speed: 0.25 },
+    pace:      { speed: 0.55, physical: 0.40 },
+    gk_save:   { goalkeeping: 0.05 },
+    set_piece: { setPieces: 0.30, heading: 0.45 },
+  },
+  GOL: {
+    finishing: { shooting: 0.05 },
+    creation:  { passing: 0.20, vision: 0.20 },
+    tackle:    { positioning: 0.30, composure: 0.20 },
+    aerial:    { goalkeeping: 0.50, heading: 0.30, positioning: 0.40 },
+    dribble:   { dribbling: 0.10 },
+    pace:      { speed: 0.20 },
+    gk_save:   { goalkeeping: 1.0, positioning: 0.55, composure: 0.45, physical: 0.20 },
+    set_piece: { setPieces: 0.10 },
+  },
+};
+
+const DEFAULT_ROLE_WEIGHTS = POSITION_ROLE_WEIGHTS.MEI;
+
+function rolePower(p: SimPlayer, role: Role): number {
+  const weights = (POSITION_ROLE_WEIGHTS[p.position] || DEFAULT_ROLE_WEIGHTS)[role];
+  let sum = 0; let totalW = 0;
+  for (const [attr, w] of Object.entries(weights)) {
+    sum += effectiveAttr(p, attr as keyof SimPlayer) * (w as number);
+    totalW += (w as number);
+  }
+  return totalW > 0 ? sum / totalW : 50;
 }
-function tacklePower(p: SimPlayer): number {
-  return effectiveAttr(p, 'defending') + effectiveAttr(p, 'marking') * 0.5;
-}
-function finishingPower(p: SimPlayer): number {
-  return effectiveAttr(p, 'shooting') + effectiveAttr(p, 'composure') * 0.3;
-}
-function transitionPower(p: SimPlayer): number {
-  return effectiveAttr(p, 'speed') + effectiveAttr(p, 'workRate') * 0.3;
-}
-function headerPower(p: SimPlayer): number {
-  return effectiveAttr(p, 'heading') + effectiveAttr(p, 'physical') * 0.3;
-}
-function dribblePower(p: SimPlayer): number {
-  return effectiveAttr(p, 'dribbling') + effectiveAttr(p, 'speed') * 0.3;
-}
+
+// Back-compat aliases used elsewhere in the file
+function creationPower(p: SimPlayer): number { return rolePower(p, 'creation'); }
+function tacklePower(p: SimPlayer): number { return rolePower(p, 'tackle'); }
+function finishingPower(p: SimPlayer): number { return rolePower(p, 'finishing'); }
+function transitionPower(p: SimPlayer): number { return rolePower(p, 'pace'); }
+function headerPower(p: SimPlayer): number { return rolePower(p, 'aerial'); }
+function dribblePower(p: SimPlayer): number { return rolePower(p, 'dribble'); }
 
 // ── HELPERS ──────────────────────────────────────────────────
 
@@ -125,6 +195,20 @@ function pickByAttr(pool: SimPlayer[], attr: keyof SimPlayer, posFilter?: string
   if (posFilter) { const f2 = filtered.filter(p => p.position === posFilter); if (f2.length > 0) filtered = f2; }
   if (filtered.length === 0) return null;
   const weights = filtered.map(p => Math.max(1, Number(p[attr]) || 50));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = rng() * total;
+  for (let i = 0; i < filtered.length; i++) { r -= weights[i]; if (r <= 0) return filtered[i]; }
+  return filtered[filtered.length - 1];
+}
+
+// Pick a player weighted by their position-aware role power.
+// Optional posFilter narrows the pool first (e.g. only ATAs for many goal events).
+function pickByRole(pool: SimPlayer[], role: Role, posFilter?: string): SimPlayer | null {
+  let filtered = pool.filter(p => p.isOnPitch && !p.injured);
+  if (posFilter) { const f2 = filtered.filter(p => p.position === posFilter); if (f2.length > 0) filtered = f2; }
+  if (filtered.length === 0) return null;
+  // Cubic weighting amplifies attribute differences so top players dominate the role
+  const weights = filtered.map(p => Math.max(1, Math.pow(rolePower(p, role), 2.2)));
   const total = weights.reduce((a, b) => a + b, 0);
   let r = rng() * total;
   for (let i = 0; i < filtered.length; i++) { r -= weights[i]; if (r <= 0) return filtered[i]; }
@@ -658,11 +742,11 @@ function simulateFullMatch(
       const m = pickUnique(allGamePool.filter(m => m >= 20));
       if (m > 0) {
         const kicker = team === 'home'
-          ? pickByAttr(home.filter(p => p.isOnPitch), 'setPieces')
-          : pickByAttr(away.filter(p => p.isOnPitch), 'setPieces');
+          ? pickByRole(home.filter(p => p.isOnPitch && p.position !== 'GOL'), 'set_piece')
+          : pickByRole(away.filter(p => p.isOnPitch && p.position !== 'GOL'), 'set_piece');
         const gk = team === 'home'
-          ? pickByAttr(away.filter(p => p.isOnPitch), 'goalkeeping', 'GOL')
-          : pickByAttr(home.filter(p => p.isOnPitch), 'goalkeeping', 'GOL');
+          ? pickByRole(away.filter(p => p.isOnPitch), 'gk_save', 'GOL')
+          : pickByRole(home.filter(p => p.isOnPitch), 'gk_save', 'GOL');
         const kickerSkill = kicker ? (kicker.composure * 0.5 + kicker.setPieces * 0.5) : 55;
         const gkSkill = gk ? (gk.goalkeeping * 0.6 + gk.composure * 0.4) : 50;
         const conversionProb = clamp(kickerSkill / (kickerSkill + gkSkill) + 0.15, 0.55, 0.85);
@@ -741,7 +825,7 @@ function simulateFullMatch(
   // ── HOME GOALS ──────────────────────────────────────────────
   for (const m of homeGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
-    const scorer = pickByAttr(home.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
+    const scorer = pickByRole(home.filter(p => p.isOnPitch && p.position !== 'GOL'), 'finishing', rng() > 0.55 ? 'ATA' : undefined);
     const goalTypes = ['chute rasteiro no canto', 'chute colocado no ângulo', 'voleio de primeira', 'toque na saída do goleiro', 'cabeçada certeira', 'chute de longe'];
     const goalType = pick(goalTypes);
     let assistName: string | undefined;
@@ -749,7 +833,7 @@ function simulateFullMatch(
       scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
       const others = home.filter(p => p.id !== scorer.id && p.isOnPitch);
       if (others.length > 0 && rng() < 0.65) {
-        const assister = pickByAttr(others, 'vision') || pick(others);
+        const assister = pickByRole(others, 'creation') || pick(others);
         assister.assists++; assister.rating = Math.min(10, assister.rating + 0.6);
         assistName = assister.name;
       }
@@ -767,14 +851,14 @@ function simulateFullMatch(
   // ── AWAY GOALS ──────────────────────────────────────────────
   for (const m of awayGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
-    const scorer = pickByAttr(away.filter(p => p.isOnPitch), 'shooting', rng() > 0.55 ? 'ATA' : undefined);
+    const scorer = pickByRole(away.filter(p => p.isOnPitch && p.position !== 'GOL'), 'finishing', rng() > 0.55 ? 'ATA' : undefined);
     const goalType = pick(['chute rasteiro cruzado', 'cabeceio no segundo pau', 'contra-ataque com toque na saída do goleiro', 'finalização de primeira']);
     let assistName: string | undefined;
     if (scorer) {
       scorer.goals++; scorer.rating = Math.min(10, scorer.rating + 1.2);
       const others = away.filter(p => p.id !== scorer.id && p.isOnPitch);
       if (others.length > 0 && rng() < 0.60) {
-        const assister = pick(others);
+        const assister = pickByRole(others, 'creation') || pick(others);
         assister.assists++; assister.rating = Math.min(10, assister.rating + 0.6);
         assistName = assister.name;
       }
@@ -797,13 +881,13 @@ function simulateFullMatch(
     const teamPlayers = team === 'home' ? home : away;
     const oppPlayers = team === 'home' ? away : home;
     const teamIdx = team === 'home' ? 0 : 1;
-    const kicker = pickByAttr(teamPlayers.filter(p => p.isOnPitch), 'setPieces');
-    const gk = pickByAttr(oppPlayers.filter(p => p.isOnPitch), 'goalkeeping', 'GOL');
+    const kicker = pickByRole(teamPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'set_piece');
+    const gk = pickByRole(oppPlayers.filter(p => p.isOnPitch), 'gk_save', 'GOL');
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
 
     // ── LANCE ANTERIOR (jogada na área que gera o pênalti) ──
-    const attacker = pickByAttr(teamPlayers.filter(p => p.isOnPitch), 'dribbling', rng() > 0.4 ? 'ATA' : undefined) || kicker;
-    const defender = pickByAttr(oppPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'defending', 'ZAG') || pick(oppPlayers.filter(p => p.isOnPitch));
+    const attacker = pickByRole(teamPlayers.filter(p => p.isOnPitch), 'dribble', rng() > 0.4 ? 'ATA' : undefined) || kicker;
+    const defender = pickByRole(oppPlayers.filter(p => p.isOnPitch && p.position !== 'GOL'), 'tackle', 'ZAG') || pick(oppPlayers.filter(p => p.isOnPitch));
     const buildupVariants = [
       `🏃 Jogada perigosa do ${tName}! ${attacker?.name || 'Atacante'} entra na área driblando, ${defender?.name || 'defensor'} do ${opp} chega atrasado e derruba dentro da área!`,
       `🔥 Contra-ataque mortal! ${attacker?.name || 'O atacante'} ganha na velocidade, invade a área e é derrubado por trás pelo ${defender?.name || 'zagueiro'}!`,
@@ -846,8 +930,8 @@ function simulateFullMatch(
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const opp = team === 'home' ? awayTeam : homeTeam;
-    const attacker = pickByAttr(allPlayers.filter(p => p.team === team && p.isOnPitch), 'dribbling');
-    const defender = pickByAttr(allPlayers.filter(p => p.team !== team && p.isOnPitch), 'aggression');
+    const attacker = pickByRole(allPlayers.filter(p => p.team === team && p.isOnPitch), 'dribble');
+    const defender = pickByRole(allPlayers.filter(p => p.team !== team && p.isOnPitch), 'tackle');
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
     allPlanned.push({
       minute: m, type: 'dangerous_foul', team,
@@ -1260,11 +1344,114 @@ function simulateFullMatch(
   const possRatio = (effectiveHome * possStyle) / (effectiveHome * possStyle + awayStrength);
   stats.possession = [Math.round(possRatio * 100), 100 - Math.round(possRatio * 100)];
 
-  // Player ratings
+  // ── PLAYER RATINGS (recompute from event log + role fit) ──
+  // Base 6.0, then accumulate per-action deltas attributing them to playerName/assistName.
+  // Players also gain a small bonus for participation aligned with their role power.
   const playerRatings: Record<string, number> = {};
-  allPlayers.filter(p => p.team === 'home').forEach(p => {
-    playerRatings[p.id] = Math.round(p.rating * 10) / 10;
-  });
+  const playersById = new Map<string, SimPlayer>();
+  allPlayers.forEach(p => playersById.set(p.id, p));
+  const nameToPlayer = new Map<string, SimPlayer>();
+  allPlayers.forEach(p => nameToPlayer.set(p.name, p));
+
+  // counters per player
+  const counters: Record<string, {
+    goals: number; assists: number; saves: number; tackles: number;
+    yellows: number; reds: number; missedPen: number; concededGoals: number;
+    keyMoments: number;
+  }> = {};
+  for (const p of allPlayers) {
+    counters[p.id] = { goals: 0, assists: 0, saves: 0, tackles: 0, yellows: 0, reds: 0, missedPen: 0, concededGoals: 0, keyMoments: 0 };
+  }
+
+  let homeFinal = 0, awayFinal = 0;
+  for (const ev of finalEvents) {
+    if (ev.type === 'penalty_shootout') continue;
+    const scorer = ev.playerName ? nameToPlayer.get(ev.playerName) : null;
+    const assister = ev.assistName ? nameToPlayer.get(ev.assistName) : null;
+    if (ev.isGoal) {
+      if (ev.team === 'home') homeFinal++; else if (ev.team === 'away') awayFinal++;
+      if (scorer) counters[scorer.id].goals++;
+      if (assister) counters[assister.id].assists++;
+      // GK on the conceding team takes a small hit
+      const concedingTeam: 'home' | 'away' = ev.team === 'home' ? 'away' : 'home';
+      const gks = allPlayers.filter(p => p.team === concedingTeam && p.position === 'GOL' && p.isOnPitch);
+      for (const gk of gks) counters[gk.id].concededGoals++;
+    }
+    switch (ev.type) {
+      case 'great_save':
+        // attribute the save to the opposing team's GK
+        {
+          const oppTeam: 'home' | 'away' = ev.team === 'home' ? 'away' : 'home';
+          const gks = allPlayers.filter(p => p.team === oppTeam && p.position === 'GOL' && p.isOnPitch);
+          for (const gk of gks) counters[gk.id].saves++;
+        }
+        break;
+      case 'penalty_miss':
+        if (scorer) counters[scorer.id].missedPen++;
+        break;
+      case 'tackle':
+        if (scorer) counters[scorer.id].tackles++;
+        break;
+      case 'yellow_card':
+        if (scorer) counters[scorer.id].yellows++;
+        break;
+      case 'red_card':
+        if (scorer) counters[scorer.id].reds++;
+        break;
+      case 'woodwork':
+      case 'corner_danger':
+      case 'counter_attack':
+      case 'free_kick_near':
+      case 'long_shot_miss':
+      case 'header_miss':
+        if (scorer) counters[scorer.id].keyMoments++;
+        break;
+    }
+  }
+
+  for (const p of allPlayers) {
+    if (!p.isOnPitch && counters[p.id].goals === 0 && counters[p.id].assists === 0) {
+      // Player never came on and had no events → neutral baseline
+      playerRatings[p.id] = 6.0;
+      continue;
+    }
+    const c = counters[p.id];
+    // Role-aligned baseline contribution (0..0.6 extra for players doing their job well)
+    const myTeamWon = (p.team === 'home' && homeFinal > awayFinal) || (p.team === 'away' && awayFinal > homeFinal);
+    const myTeamLost = (p.team === 'home' && homeFinal < awayFinal) || (p.team === 'away' && awayFinal < homeFinal);
+    // Per-position role fit bonus, based on stamina/morale-adjusted attributes
+    let roleBonus = 0;
+    if (p.position === 'GOL') roleBonus = (rolePower(p, 'gk_save') - 60) / 100;
+    else if (p.position === 'ZAG' || p.position === 'LAT') roleBonus = (rolePower(p, 'tackle') - 60) / 120;
+    else if (p.position === 'VOL' || p.position === 'MEI') roleBonus = (rolePower(p, 'creation') - 60) / 130;
+    else if (p.position === 'ATA') roleBonus = (rolePower(p, 'finishing') - 60) / 110;
+    roleBonus = Math.max(-0.4, Math.min(0.6, roleBonus));
+
+    let r = 6.0
+      + c.goals * 1.2
+      + c.assists * 0.65
+      + c.saves * 0.25
+      + c.tackles * 0.10
+      + c.keyMoments * 0.08
+      - c.yellows * 0.30
+      - c.reds * 1.40
+      - c.missedPen * 0.90
+      - (p.position === 'GOL' ? c.concededGoals * 0.20 : 0)
+      + roleBonus
+      + (myTeamWon ? 0.20 : myTeamLost ? -0.15 : 0);
+
+    // Stamina/morale-driven decay for players who finished the game cooked or low morale
+    r += (p.stamina - 50) / 400;   // ±0.12 swing
+    r += (p.morale - 50) / 500;    // ±0.10 swing
+
+    // Carry over duel rating already applied during sim (penalty miss/save handlers etc.)
+    // We blend in 30% of the live "p.rating" so existing penalty/save bumps still influence the final.
+    r = r * 0.85 + p.rating * 0.15;
+
+    playerRatings[p.id] = Math.round(Math.max(3.0, Math.min(10.0, r)) * 10) / 10;
+    // sync back so manOfTheMatch sort uses the same number
+    p.rating = playerRatings[p.id];
+  }
 
   const goalScorers: { name: string; minute: number; team: 'home' | 'away'; assist?: string }[] = [];
   finalEvents.filter(e => e.isGoal).forEach(e => {
