@@ -18,7 +18,7 @@ import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { computeLiveStamina, staminaColorClass } from '@/match/liveStamina';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
-import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
+import { HighlightMiniCanvas, isHighlightEvent, getHighlightType, getHighlightOutcome } from '@/components/game/HighlightMiniCanvas';
 import { MatchSidebar } from '@/components/game/MatchSidebar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShieldCrest } from '@/components/game/ShieldCrest';
