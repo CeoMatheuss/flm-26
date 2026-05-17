@@ -1,0 +1,1 @@
+ALTER FUNCTION public.youth_potential_bounds(INT) SET search_path = public;
