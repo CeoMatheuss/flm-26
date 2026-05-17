@@ -469,7 +469,7 @@ export function SquadModernLayout({
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => !submitting && setConfirmAction(null)}
+            onClick={closeConfirmAction}
           >
             <motion.div
               initial={{ scale: 0.92, y: 20, opacity: 0 }}
@@ -515,15 +515,15 @@ export function SquadModernLayout({
                   </div>
                   <div className="h-px bg-white/5 my-2" />
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">💰 Taxa de anúncio</span>
+                    <span className="text-white/60">💰 Taxa de anúncio ({(confirmAction.listingFeeRate * 100).toFixed(2)}%)</span>
                     <span className="font-bold text-amber-300">{formatMoney(confirmAction.listingFee)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">💼 Taxa de empresário</span>
+                    <span className="text-white/60">💼 Taxa de empresário ({(confirmAction.agentFeeRate * 100).toFixed(2)}%)</span>
                     <span className="font-bold text-amber-300">{formatMoney(confirmAction.agentFee)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">📋 Custos administrativos</span>
+                    <span className="text-white/60">📋 Custos administrativos ({(confirmAction.adminFeeRate * 100).toFixed(2)}%)</span>
                     <span className="font-bold text-amber-300">{formatMoney(confirmAction.adminFee)}</span>
                   </div>
                   <div className="h-px bg-white/5 my-2" />
@@ -544,16 +544,22 @@ export function SquadModernLayout({
 
               <div className="p-4 border-t border-white/5 bg-zinc-950/50 flex items-center gap-3">
                 <Button
+                  type="button"
                   variant="ghost"
                   disabled={submitting}
-                  onClick={() => setConfirmAction(null)}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={closeConfirmAction}
                   className="flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/5"
                 >
                   Cancelar
                 </Button>
                 <Button
+                  type="button"
                   disabled={submitting || (club.budget ?? 0) < confirmAction.total}
-                  onClick={confirmListing}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={submitConfirmAction}
                   className={cn(
                     "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950",
                     confirmAction.type === 'transfer'
