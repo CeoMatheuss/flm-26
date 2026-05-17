@@ -1320,6 +1320,7 @@ export function isHighlightEvent(type: string): boolean {
     'long_shot_miss', 'header_miss', 'dangerous_foul',
     'counter_attack_goal', 'crossing_goal', 'free_kick_goal',
     'counter_attack', 'buildup_play', 'free_kick_near',
+    'penalty_shootout', 'goal'
   ].includes(type);
 }
 
