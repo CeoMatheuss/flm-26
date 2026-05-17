@@ -247,18 +247,21 @@ Deno.serve(async (req) => {
     const interception = position === 'ZAG' || position === 'VOL' ? Math.min(99, overall + 10) : Math.max(10, overall - 15);
     const stamina_stat = overall + Math.floor(Math.random() * 10) - 5;
 
-    // 💰 Valor de mercado realista (espelha public.youth_market_value / getPlayerBaseValue)
-    const baseV = overall >= 90 ? overall * 250000
-      : overall >= 85 ? overall * 150000
-      : overall >= 80 ? overall * 80000
-      : overall >= 75 ? overall * 50000
-      : overall >= 70 ? overall * 30000
-      : overall >= 65 ? overall * 20000
-      : overall >= 55 ? overall * 10000
-      : overall * 5000;
-    const ageF = age <= 17 ? 1.5 : age <= 20 ? 1.4 : 1.2;
-    const potM = potential >= 90 ? 1.4 : potential >= 82 ? 1.25 : potential >= 75 ? 1.1 : 1.0;
-    const marketValue = Math.max(50000, Math.floor(baseV * ageF * potM));
+    // 💰 Valor de mercado realista: OVR + POT + idade + posição + raridade
+    const baseV = overall >= 90 ? overall * 220000
+      : overall >= 85 ? overall * 135000
+      : overall >= 80 ? overall * 76000
+      : overall >= 75 ? overall * 46000
+      : overall >= 70 ? overall * 28000
+      : overall >= 65 ? overall * 18000
+      : overall >= 60 ? overall * 11500
+      : overall >= 55 ? overall * 7500
+      : overall * 4200;
+    const ageF = age <= 16 ? 1.22 : age === 17 ? 1.16 : 1.08;
+    const potM = potential >= 94 ? 1.62 : potential >= 90 ? 1.42 : potential >= 86 ? 1.28 : potential >= 82 ? 1.18 : potential >= 75 ? 1.08 : potential >= 68 ? 1.0 : 0.88;
+    const posM = position === 'ATA' ? 1.08 : position === 'MEI' ? 1.05 : position === 'GOL' ? 1.03 : position === 'ZAG' ? 0.96 : position === 'LAT' ? 0.94 : 1.0;
+    const rarityM = rarity === 'Craque geracional' ? 1.35 : rarity === 'Promessa' ? 1.18 : rarity === 'Bom talento' ? 1.08 : 0.92;
+    const marketValue = Math.max(35000, Math.min(25000000, Math.floor((baseV * ageF * potM * posM * rarityM) / 5000) * 5000));
 
     const { data: prospect, error: insertError } = await adminClient
       .from('youth_prospects')
@@ -301,13 +304,11 @@ Deno.serve(async (req) => {
       .update({ last_youth_generation_at: now.toISOString() })
       .eq('id', club.id);
 
-    await adminClient.from('user_notifications').insert({
-      user_id: user.id,
-      icon: '🎓',
-      title: rarity === 'Comum' ? 'Novo Junior!' : `⭐ Nova ${rarity}!`,
-      message: `${name} (${position}, OVR ${overall}) acaba de chegar na base do clube.`,
-      type: rarity === 'Comum' ? 'info' : 'success'
-    });
+    await adminClient.from('user_notifications').insert([
+      { user_id: user.id, icon: '🎓', title: '🌟 Novo jogador adicionado aos juniores.', message: `${name} (${position}, OVR ${overall}, POT ${potential}) chegou à base.`, type: rarity === 'Comum' ? 'info' : 'success' },
+      { user_id: user.id, icon: '📋', title: '📋 Banco de reservas atualizado.', message: 'O elenco foi reconstruído automaticamente com os juniores disponíveis.', type: 'info' },
+      { user_id: user.id, icon: '💰', title: '💰 Valor de mercado recalculado.', message: `${name} agora vale R$ ${marketValue.toLocaleString('pt-BR')}.`, type: 'info' }
+    ]);
 
     return new Response(JSON.stringify({ success: true, prospect }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 

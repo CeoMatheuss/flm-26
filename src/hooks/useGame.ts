@@ -16,7 +16,7 @@ import { CTRooms } from '@/types/ctRooms';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { getTrainingManager } from '@/training/TrainingManager';
 import { useState } from 'react';
-import { autoLineup } from '@/utils/lineupManager';
+import { rebuildClubSquad, squadsDiffer, syncTacticsWithSquad } from '@/utils/squadSync';
 
 import { useClubState, LoanedPlayer } from './useClubState';
 import { useFinanceState } from './useFinanceState';
@@ -77,19 +77,24 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     getTrainingManager().setMonthlyTrainingInvestment(infraState.trainingInvestment ?? 0);
   }, [infraState.trainingInvestment]);
 
-  // 🔄 Auto-Lineup Trigger
+  // 🔄 Reconstrói elenco completo: profissionais + juniores + banco + tática.
   useEffect(() => {
-    if (tactics.autoUpdateLineup && clubState.club.players.length > 0) {
-      const currentStartersIds = clubState.club.players.slice(0, 11).map(p => p.id).join(',');
-      const newOrder = autoLineup(clubState.club.players, tactics.formation);
-      const newStartersIds = newOrder.slice(0, 11).map(p => p.id).join(',');
+    if (clubState.club.players.length === 0 && infraState.youthProspects.length === 0) return;
 
-      if (currentStartersIds !== newStartersIds) {
-        clubState.setClub(prev => ({ ...prev, players: newOrder }));
-        console.log('[useGame] Escalação atualizada automaticamente devido a mudança tática ou de elenco.');
-      }
+    const rebuiltPlayers = rebuildClubSquad(clubState.club.players, infraState.youthProspects, tactics.formation);
+    const rebuiltTactics = syncTacticsWithSquad(tactics, rebuiltPlayers);
+    const playersChanged = squadsDiffer(clubState.club.players, rebuiltPlayers);
+    const tacticsChanged = JSON.stringify(rebuiltTactics) !== JSON.stringify(tactics);
+
+    if (playersChanged) {
+      clubState.setClub(prev => ({ ...prev, players: rebuiltPlayers }));
+      console.log('[useGame] Elenco, juniores e banco reconstruídos automaticamente.');
     }
-  }, [tactics.formation, tactics.autoUpdateLineup, clubState.club.players, clubState.setClub]);
+
+    if (tacticsChanged) {
+      setTactics(rebuiltTactics);
+    }
+  }, [tactics, clubState.club.players, infraState.youthProspects, clubState.setClub]);
 
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({

@@ -311,7 +311,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
 
       // Backfill: prospects que possam ter sido inseridos enquanto offline
       const { data: rows } = await supabase
-        .from('youth_prospects').select('*').eq('club_id', clubId);
+        .from('youth_prospects').select('*').eq('club_id', clubId).or('contract_status.is.null,contract_status.neq.profissional');
       if (rows && rows.length) {
         setYouthProspects(prev => {
           const known = new Set(prev.map(p => p.id));
@@ -327,11 +327,21 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
           filter: `club_id=eq.${clubId}`,
         }, (payload) => {
           const np = mapRow(payload.new);
+          if (np.contractStatus === 'profissional') return;
           setYouthProspects(prev => prev.some(p => p.id === np.id) ? prev : [...prev, np]);
           toast.success(`🌟 Novo talento na base: ${np.name}!`, {
             description: `${np.position} • OVR ${np.overall} • POT ${np.potential}`,
             icon: '🎓',
           });
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'youth_prospects',
+          filter: `club_id=eq.${clubId}`,
+        }, (payload) => {
+          const np = mapRow(payload.new);
+          setYouthProspects(prev => np.contractStatus === 'profissional'
+            ? prev.filter(p => p.id !== np.id)
+            : prev.map(p => p.id === np.id ? np : p));
         })
         .on('postgres_changes', {
           event: 'DELETE', schema: 'public', table: 'youth_prospects',
@@ -486,9 +496,14 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         age: prospect.age, salary: prospect.salary,
         stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
         contract: 3, gamesPlayed: 0, trainingProgress: 0, personality: prospect.personality,
+        isYouth: true, squadRole: 'promessa', contractStatus: 'profissional',
+        marketValue: prospect.marketValue, potential: prospect.potential,
       };
       
       addPlayerToClub(player);
+      if (userId) {
+        supabase.from('youth_prospects').update({ contract_status: 'profissional' }).eq('id', youthId).then(() => {});
+      }
       setYouthPromotedCount((c: number) => c + 1);
       toast.success(`${prospect.name} promovido ao time principal!`);
       
@@ -527,12 +542,16 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
           personality: prospect.personality,
           isYouth: true,
           squadRole: contractDetails?.squadRole ?? 'promessa',
-          marketValue: prospect.overall * 100000, // Value increases after turning pro
+          contractStatus: 'profissional',
+          marketValue: prospect.marketValue,
           potential: prospect.potential,
         };
 
         // Automatic Lineup Optimization will be triggered by useGame's useEffect
         addPlayerToClub(player);
+        if (userId) {
+          supabase.from('youth_prospects').update({ contract_status: 'profissional' }).eq('id', prospectId).then(() => {});
+        }
         setYouthPromotedCount((c: number) => c + 1);
         toast.success(`🎉 ${prospect.name} agora é profissional!`, {
           description: `Contrato assinado por ${player.contract} anos.`
@@ -571,10 +590,13 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       const value = prospect.overall * 50_000;
       addBudget(value);
       addFinance('receita', 'Venda Base', value, `Venda jovem: ${prospect.name}`);
+      if (userId) {
+        supabase.from('youth_prospects').delete().eq('id', youthId).then(() => {});
+      }
       toast.success(`${prospect.name} vendido por R$ ${(value / 1000).toFixed(0)}k! 💰`);
       return prev.filter(p => p.id !== youthId);
     });
-  }, []); // youthProspects removed from deps to avoid stale closures in some patterns, but here we use functional update so it's fine.
+  }, [userId]);
 
   const enrollCopinha = useCallback((clubName: string, updateClubProfile: (fn: (prev: any) => any) => void) => {
     const eligible = youthProspects.filter(p => p.age <= 20 && (p.injuredCycles ?? 0) === 0);
