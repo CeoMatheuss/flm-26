@@ -378,6 +378,8 @@ export function useMatchSimulation() {
               try {
                 const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
                 if (rpcError) console.error("[MATCH] Erro ao sincronizar tabela:", rpcError);
+                // Emit custom event to refresh widgets globally
+                window.dispatchEvent(new CustomEvent('flm:match-finalized', { detail: { matchId: data.matchDbId } }));
               } catch (err) {
                 console.error("[MATCH] Exceção ao sincronizar tabela:", err);
               }
