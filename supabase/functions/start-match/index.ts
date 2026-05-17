@@ -964,12 +964,26 @@ function simulateFullMatch(
   }
 
   // ── CARDS ──────────────────────────────────────────────────
+  // Times com moral/stamina baixos cometem mais faltas → favorece esses jogadores no sorteio.
   for (const m of cardMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    const player = pool.length > 0 ? pick(pool) : null;
+    // Weight: jogador cansado/desmotivado tem 3x mais chance de tomar amarelo
+    const weights = pool.map(p => {
+      const fatigue = Math.max(0, 100 - p.stamina);   // 0..100
+      const lowMor = Math.max(0, 70 - p.morale);      // 0..70
+      return 1 + fatigue * 0.04 + lowMor * 0.05;
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let pickRoll = rng() * total;
+    let player: SimPlayer | null = null;
+    for (let i = 0; i < pool.length; i++) {
+      pickRoll -= weights[i];
+      if (pickRoll <= 0) { player = pool[i]; break; }
+    }
+    if (!player && pool.length) player = pool[pool.length - 1];
     if (player) player.yellowCards++;
     stats.fouls[teamIdx]++; stats.yellowCards[teamIdx]++;
     allPlanned.push({
