@@ -1095,19 +1095,22 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(impT, '💥 BATEU FORTE!', playerName);
 
         } else {
-          // Aftermath
+          // Aftermath — respect real outcome (goal vs save vs miss vs corner)
           const afterT = (t - 0.78) / 0.22;
           drawAllPlayers(drift * 0.15);
           drawPlayer(fkX + dir * 10, fkY, teamColor, teamLight, '10', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -20 : 20);
-          drawPlayer(gkBaseX, goalY + 20, gkColor, gkLight, 'GK', 9);
+          drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 20 : 0), gkColor, gkLight, 'GK', 9);
           drawBall(ballEndX + dir * 3, ballEndY, 0.9);
 
-          // Goal flash
-          const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
-          if (flash > 0) {
-            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
-            ctx.fillRect(0, 0, W, H);
+          const isGoal = outcome === 'goal';
+          // Goal-only flash
+          if (isGoal) {
+            const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
+            if (flash > 0) {
+              ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+              ctx.fillRect(0, 0, W, H);
+            }
           }
           if (afterT > 0.15) {
             const bigAlpha = Math.min(1, (afterT - 0.15) * 4) * (afterT < 0.7 ? 1 : Math.max(0, 1 - (afterT - 0.7) * 3));
@@ -1116,11 +1119,17 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.font = `bold 24px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#fbbf24';
+            ctx.fillStyle = isGoal ? '#fbbf24' : '#e5e7eb';
             ctx.strokeStyle = 'rgba(0,0,0,0.6)';
             ctx.lineWidth = 4;
-            ctx.strokeText('GOL DE FALTA!', W / 2, H / 2 - 12);
-            ctx.fillText('GOL DE FALTA!', W / 2, H / 2 - 12);
+            const bigLabel =
+              outcome === 'goal' ? 'GOL DE FALTA!' :
+              outcome === 'save' ? 'DEFENDEU!' :
+              outcome === 'woodwork' ? 'NA TRAVE!' :
+              outcome === 'corner' ? 'ESCANTEIO!' :
+              'PRA FORA!';
+            ctx.strokeText(bigLabel, W / 2, H / 2 - 12);
+            ctx.fillText(bigLabel, W / 2, H / 2 - 12);
             if (playerName) {
               ctx.font = `bold 14px Arial`;
               ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -1129,7 +1138,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             }
             ctx.restore();
           }
-          drawEventLabel(1, '⚽ GOL DE FALTA MAGISTRAL!', playerName);
+          const subLabel =
+            outcome === 'goal' ? '⚽ GOL DE FALTA MAGISTRAL!' :
+            outcome === 'save' ? '🧤 Goleiro espalma a falta!' :
+            outcome === 'woodwork' ? '🥅 Bola na trave na cobrança!' :
+            outcome === 'corner' ? '📐 Cobrança fechada — escanteio!' :
+            '😰 Quase um golaço de falta!';
+          drawEventLabel(1, subLabel, playerName);
         }
 
       // ══════════════════════════════════════════════
