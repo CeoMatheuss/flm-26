@@ -1,4 +1,5 @@
 import { TabsContent } from '@/components/ui/tabs';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card, CardContent } from '@/components/ui/card';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
