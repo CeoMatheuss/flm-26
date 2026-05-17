@@ -1282,8 +1282,10 @@ function simulateFullMatch(
           kickMinute += 1;
           const baseProb = 0.78;
           const skillBoost = (hT.shooting + (hT.composure || 60) + (hT.setPieces || 60)) / 300 * 0.15;
-          const gkSave = (awayKeeper?.goalkeeping || 60) / 100 * 0.10;
-          const scored = rng() < (baseProb + skillBoost - gkSave);
+          const gkSave = (awayKeeper?.goalkeeping || 60) / 100 * 0.10 * formMult(awayKeeper);
+          // Pênaltis são feitos de cabeça fria: moral pesa mais que stamina pura
+          const takerForm = (0.6 + 0.4 * formMult(hT));
+          const scored = rng() < ((baseProb + skillBoost) * takerForm - gkSave);
           if (scored) shootoutHomeGoals++;
           finalEvents.push({
             minute: kickMinute, type: 'penalty_shootout', team: 'home', animType: 'penalty',
