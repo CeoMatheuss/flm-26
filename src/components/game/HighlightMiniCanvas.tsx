@@ -1338,6 +1338,7 @@ export function getHighlightType(eventType: string): HighlightType {
   if (eventType === 'woodwork') return 'woodwork';
   if (eventType === 'corner_danger') return 'corner';
   if (eventType === 'great_save') return 'save';
-  if (['red_card', 'yellow_card'].includes(eventType)) return 'card';
+  if (eventType === 'red_card') return 'red_card';
+  if (eventType === 'yellow_card') return 'yellow_card';
   return 'chance';
 }
