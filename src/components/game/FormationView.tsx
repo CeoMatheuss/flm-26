@@ -268,9 +268,9 @@ export function FormationView({
   return (
     <div
       className={cn(
-        'relative w-full mx-auto bg-[#0a1f0f] overflow-hidden shadow-xl select-none',
+        'relative w-full mx-auto bg-[#0a1f0f] overflow-visible shadow-xl select-none',
         'rounded-xl sm:rounded-2xl border-2 sm:border-[5px] border-emerald-900/40',
-        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/10] max-w-3xl'
+        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/9] max-w-5xl'
       )}
     >
       {/* Grama */}
@@ -311,11 +311,12 @@ export function FormationView({
         {safeLayout.map((slot, i) => {
           const player = assigned[i];
 
-          // Insets adaptativos: mobile portrait precisa de mais margem p/ não cortar chips e nomes
-          const INSET_X = isPortrait ? 11 : 8;
-          const INSET_Y = isPortrait ? 6 : 4;
+          // Insets adaptativos: garante margem suficiente para os chips e labels não cortarem nas bordas
+          const INSET_X = isPortrait ? 11 : 7;
+          const INSET_Y = isPortrait ? 7 : 9;
           const sx = INSET_X + (slot.x * (100 - 2 * INSET_X)) / 100;
           const sy = INSET_Y + (slot.y * (100 - 2 * INSET_Y)) / 100;
+          // Em landscape: gol à esquerda (y=92 → left baixo). x do campo vira eixo vertical.
           const left = isPortrait ? sx : 100 - sy;
           const top = isPortrait ? sy : sx;
 
@@ -343,13 +344,13 @@ export function FormationView({
               <div
                 className={cn(
                   'relative rounded-full flex flex-col items-center justify-center border-2 sm:border-[3px] shadow-lg transition-all',
-                  'w-9 h-9 sm:w-14 sm:h-14 lg:w-16 lg:h-16',
+                  'w-9 h-9 sm:w-11 sm:h-11 lg:w-12 lg:h-12',
                   isInjured ? 'bg-slate-800 grayscale border-slate-700' : posColor[slot.position] || 'bg-slate-900 text-white',
                   adapt?.border || 'border-white/60',
                   isSelected ? 'scale-110 ring-4 ring-primary shadow-[0_0_25px_rgba(16,185,129,0.6)]' : adapt ? `ring-2 ${adapt.ring}` : ''
                 )}
               >
-                <span className="text-[11px] sm:text-lg font-black tracking-tighter leading-none">
+                <span className="text-[11px] sm:text-sm font-black tracking-tighter leading-none">
                   {player ? getDynamicOverall(player, slot.position as Player['position']) : '-'}
                 </span>
                 <span className="text-[6px] sm:text-[8px] font-bold uppercase opacity-80 leading-none mt-0.5">
