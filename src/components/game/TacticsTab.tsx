@@ -29,8 +29,11 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
   const [benchOpen, setBenchOpen] = useState(false);
   const [pendingFieldId, setPendingFieldId] = useState<string | null>(null);
 
-  const starters = players.slice(0, 11);
-  const bench = players.slice(11);
+  // Guardas defensivas: evita crash (tela preta) quando players/tactics ainda não carregaram
+  const safePlayers: Player[] = Array.isArray(players) ? players : [];
+  const safeTactics: TacticsConfig = tactics || ({ formation: '4-4-2', playStyle: 'equilibrado', tempo: 'normal', pressing: 'medio' } as any);
+  const starters = safePlayers.slice(0, 11);
+  const bench = safePlayers.slice(11);
 
   const setField = <K extends keyof TacticsConfig>(key: K, value: TacticsConfig[K]) => {
     onUpdate({ ...tactics, [key]: value });
