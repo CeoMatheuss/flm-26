@@ -85,6 +85,21 @@ function effectiveAttr(player: SimPlayer, attr: keyof SimPlayer): number {
   return val * getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
 }
 
+// Individual "form" multiplier (morale × stamina) used to scale action probabilities.
+// Range ~0.55 (gassed + desmotivado) → ~1.10 (fresco + moral alta).
+function formMult(p: SimPlayer | null | undefined): number {
+  if (!p) return 1.0;
+  return getStaminaMultiplier(p.stamina) * getMoraleMultiplier(p.morale);
+}
+
+// Team-level form (average of on-pitch players).
+function teamFormMult(players: SimPlayer[]): number {
+  const onPitch = players.filter(p => p.isOnPitch);
+  if (onPitch.length === 0) return 1.0;
+  const sum = onPitch.reduce((s, p) => s + formMult(p), 0);
+  return sum / onPitch.length;
+}
+
 // ── POSITION-WEIGHTED ROLE MODEL ───────────────────────────
 // Each position gets a weight per attribute for each "role" (action type).
 // A ZAG playing as scorer barely contributes (low finishing weight); an ATA dominates.
@@ -644,6 +659,13 @@ function simulateFullMatch(
   const moraleMod = 0.85 + (avgMorale / 100) * 0.3;
   const avgStamina = home.reduce((s, p) => s + p.stamina, 0) / 11;
   const fatigueMod = 0.8 + (avgStamina / 100) * 0.2;
+
+  // Symmetric morale/fatigue mods for the AWAY side — without these only the home
+  // team felt the effect of low motivation / tired squad on the goal model.
+  const awayAvgMorale = away.reduce((s, p) => s + p.morale, 0) / Math.max(1, away.length);
+  const awayMoraleMod = 0.85 + (awayAvgMorale / 100) * 0.3;
+  const awayAvgStaminaInit = away.reduce((s, p) => s + p.stamina, 0) / 11;
+  const awayFatigueMod = 0.8 + (awayAvgStaminaInit / 100) * 0.2;
   
   // Tactical impact on simulation (HOME) — uses style table
   const pressingBase = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
@@ -689,23 +711,24 @@ function simulateFullMatch(
   const homeAttackVsDefense = (homeAtkAvg + homeMidAvg * 0.5) / Math.max(1, awayDefAvg);
   const awayAttackVsDefense = (awayAtkAvg + 50 * 0.5) / Math.max(1, homeDefAvg);
 
-  const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
+  const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - (awayStrength * awayMoraleMod * awayFatigueMod);
 
   // ── MATCHUP MULTIPLIERS ──────────────────────────────────────
   const homeMatchup = getMatchup(playStyle, awayPlayStyle);
   const awayMatchup = getMatchup(awayPlayStyle, playStyle);
   console.log(`[Matchup] Home(${playStyle}) vs Away(${awayPlayStyle}) | homeAtk×${homeMatchup.homeAtk} homeDef×${homeMatchup.homeDef} | awayAtk×${awayMatchup.homeAtk} awayDef×${awayMatchup.homeDef}`);
+  console.log(`[Form] HOME mor=${avgMorale.toFixed(0)} sta=${avgStamina.toFixed(0)} (mod ${(moraleMod*fatigueMod).toFixed(2)}) | AWAY mor=${awayAvgMorale.toFixed(0)} sta=${awayAvgStaminaInit.toFixed(0)} (mod ${(awayMoraleMod*awayFatigueMod).toFixed(2)})`);
 
-  // Home expected goals: ataque do mandante vs defesa do visitante (peso de atributos REFORÇADO)
+  // Home expected goals — agora também escalado pelo moral+stamina do mandante
   const homeExpected = clamp(
-    ((1.1 + (strengthDiff / 100) * 2.2 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 1.1) * homeMatchup.homeAtk) /
-    Math.max(0.7, awayDefensiveMod * 0.85 * awayMatchup.homeDef + 0.15),
+    ((1.1 + (strengthDiff / 100) * 2.2 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 1.1) * homeMatchup.homeAtk * moraleMod * fatigueMod) /
+    Math.max(0.7, awayDefensiveMod * 0.85 * awayMatchup.homeDef * awayMoraleMod * awayFatigueMod + 0.15),
     0.1, 4.0
   );
-  // Away expected goals: ataque do visitante vs defesa do mandante (peso de atributos REFORÇADO)
+  // Away expected goals — simétrico, com moral/stamina visitante atacando e mandante defendendo
   const awayExpected = clamp(
-    ((1.1 - (strengthDiff / 100) * 1.8 + (awayAttackVsDefense - 1) * 1.1 * awayOffensiveMod * awayTempoMod) * awayMatchup.homeAtk) /
-    Math.max(0.7, defensiveMod * 0.85 * homeMatchup.homeDef + 0.15),
+    ((1.1 - (strengthDiff / 100) * 1.8 + (awayAttackVsDefense - 1) * 1.1 * awayOffensiveMod * awayTempoMod) * awayMatchup.homeAtk * awayMoraleMod * awayFatigueMod) /
+    Math.max(0.7, defensiveMod * 0.85 * homeMatchup.homeDef * moraleMod * fatigueMod + 0.15),
     0.1, 4.0
   );
   
@@ -747,9 +770,9 @@ function simulateFullMatch(
         const gk = team === 'home'
           ? pickByRole(away.filter(p => p.isOnPitch), 'gk_save', 'GOL')
           : pickByRole(home.filter(p => p.isOnPitch), 'gk_save', 'GOL');
-        const kickerSkill = kicker ? (kicker.composure * 0.5 + kicker.setPieces * 0.5) : 55;
-        const gkSkill = gk ? (gk.goalkeeping * 0.6 + gk.composure * 0.4) : 50;
-        const conversionProb = clamp(kickerSkill / (kickerSkill + gkSkill) + 0.15, 0.55, 0.85);
+        const kickerSkill = kicker ? (kicker.composure * 0.5 + kicker.setPieces * 0.5) * formMult(kicker) : 55;
+        const gkSkill = gk ? (gk.goalkeeping * 0.6 + gk.composure * 0.4) * formMult(gk) : 50;
+        const conversionProb = clamp(kickerSkill / (kickerSkill + gkSkill) + 0.15, 0.50, 0.88);
         penaltyMins.push({ minute: m, team, isGoal: rng() < conversionProb });
       }
     }
@@ -941,12 +964,26 @@ function simulateFullMatch(
   }
 
   // ── CARDS ──────────────────────────────────────────────────
+  // Times com moral/stamina baixos cometem mais faltas → favorece esses jogadores no sorteio.
   for (const m of cardMins) {
     const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    const player = pool.length > 0 ? pick(pool) : null;
+    // Weight: jogador cansado/desmotivado tem 3x mais chance de tomar amarelo
+    const weights = pool.map(p => {
+      const fatigue = Math.max(0, 100 - p.stamina);   // 0..100
+      const lowMor = Math.max(0, 70 - p.morale);      // 0..70
+      return 1 + fatigue * 0.04 + lowMor * 0.05;
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let pickRoll = rng() * total;
+    let player: SimPlayer | null = null;
+    for (let i = 0; i < pool.length; i++) {
+      pickRoll -= weights[i];
+      if (pickRoll <= 0) { player = pool[i]; break; }
+    }
+    if (!player && pool.length) player = pool[pool.length - 1];
     if (player) player.yellowCards++;
     stats.fouls[teamIdx]++; stats.yellowCards[teamIdx]++;
     allPlanned.push({
@@ -969,12 +1006,30 @@ function simulateFullMatch(
     const opp = team === 'home' ? awayTeam : homeTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
     const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
-    const pName = pool.length > 0 ? pick(pool).name : 'Jogador';
+    // Atacante sorteado favorece os melhor-formados (stamina+moral)
+    const shooterCandidates = pool.filter(p => p.position !== 'GOL');
+    const shooter = shooterCandidates.length > 0
+      ? (() => {
+          const ws = shooterCandidates.map(p => Math.pow(finishingPower(p) * formMult(p), 2.0));
+          const tot = ws.reduce((a, b) => a + b, 0) || 1;
+          let r = rng() * tot;
+          for (let i = 0; i < shooterCandidates.length; i++) { r -= ws[i]; if (r <= 0) return shooterCandidates[i]; }
+          return shooterCandidates[shooterCandidates.length - 1];
+        })()
+      : null;
+    const pName = shooter?.name || (pool.length > 0 ? pick(pool).name : 'Jogador');
     const p2Name = pool.filter(p => p.name !== pName).length > 0 ? pick(pool.filter(p => p.name !== pName)).name : pName;
     const defName = oppPool.length > 0 ? pick(oppPool).name : 'Defensor';
     const gkName = oppPool.filter(p => p.position === 'GOL').length > 0 ? pick(oppPool.filter(p => p.position === 'GOL')).name : 'Goleiro';
     stats.shots[teamIdx]++;
-    const evType = pick(['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']);
+    // Chance outcome favors misses/saves when shooter is tired/desmotivated
+    const sForm = formMult(shooter);
+    const chancePool = sForm >= 1.0
+      ? ['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
+      : sForm >= 0.85
+        ? ['woodwork', 'great_save', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
+        : ['great_save', 'great_save', 'offside_trap', 'long_shot_miss', 'long_shot_miss', 'header_miss', 'header_miss', 'buildup_play'];
+    const evType = pick(chancePool);
     const descs: Record<string, string> = {
       woodwork: `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área e a bola bate no travessão! ${gkName} do ${opp} apenas observou. A torcida grita!`,
       great_save: `🧤 DEFESAÇA! ${pName} recebe de ${p2Name}, gira e finaliza forte no canto. ${gkName} do ${opp} faz uma defesa espetacular com a ponta dos dedos! Que reflexo!`,
@@ -1015,18 +1070,25 @@ function simulateFullMatch(
     const [sh, sa] = getScoreAtMinute(m, false);
     currentHomeGoals = sh; currentAwayGoals = sa;
 
-    // Injury check for exhausted players
-    for (const p of home) {
-      if (p.isOnPitch && !p.injured && p.stamina < 40 && rng() < 0.05) {
-        p.injured = true;
-        p.isOnPitch = false;
-        allPlanned.push({
-          minute: m, type: 'injury', team: 'home',
-          playerName: p.name, animType: 'foul',
-          description: `🏥 LESÃO! ${p.name} sente dores musculares e precisa ser substituído! O cansaço cobrou seu preço!`,
-        });
+    // Injury check for exhausted players — moral baixa aumenta o risco
+    const checkInjury = (squad: SimPlayer[], teamKey: 'home' | 'away') => {
+      for (const p of squad) {
+        if (!p.isOnPitch || p.injured || p.stamina >= 40) continue;
+        const moraleRisk = p.morale < 40 ? 1.6 : p.morale < 60 ? 1.2 : 1.0;
+        const baseRisk = 0.04 + (40 - p.stamina) / 800; // 0..0.09
+        if (rng() < baseRisk * moraleRisk) {
+          p.injured = true;
+          p.isOnPitch = false;
+          allPlanned.push({
+            minute: m, type: 'injury', team: teamKey,
+            playerName: p.name, animType: 'foul',
+            description: `🏥 LESÃO! ${p.name} sente dores musculares e precisa ser substituído! O cansaço cobrou seu preço!`,
+          });
+        }
       }
-    }
+    };
+    checkInjury(home, 'home');
+    checkInjury(away, 'away');
 
     // Moment phase check
     const isMomentCheck = momentCheckMinutes.includes(m);
@@ -1259,8 +1321,10 @@ function simulateFullMatch(
           kickMinute += 1;
           const baseProb = 0.78;
           const skillBoost = (hT.shooting + (hT.composure || 60) + (hT.setPieces || 60)) / 300 * 0.15;
-          const gkSave = (awayKeeper?.goalkeeping || 60) / 100 * 0.10;
-          const scored = rng() < (baseProb + skillBoost - gkSave);
+          const gkSave = (awayKeeper?.goalkeeping || 60) / 100 * 0.10 * formMult(awayKeeper);
+          // Pênaltis são feitos de cabeça fria: moral pesa mais que stamina pura
+          const takerForm = (0.6 + 0.4 * formMult(hT));
+          const scored = rng() < ((baseProb + skillBoost) * takerForm - gkSave);
           if (scored) shootoutHomeGoals++;
           finalEvents.push({
             minute: kickMinute, type: 'penalty_shootout', team: 'home', animType: 'penalty',
@@ -1276,8 +1340,9 @@ function simulateFullMatch(
           kickMinute += 1;
           const baseProb = 0.78;
           const skillBoost = (aT.shooting + (aT.composure || 60) + (aT.setPieces || 60)) / 300 * 0.15;
-          const gkSave = (homeKeeper?.goalkeeping || 60) / 100 * 0.10;
-          const scored = rng() < (baseProb + skillBoost - gkSave);
+          const gkSave = (homeKeeper?.goalkeeping || 60) / 100 * 0.10 * formMult(homeKeeper);
+          const takerForm = (0.6 + 0.4 * formMult(aT));
+          const scored = rng() < ((baseProb + skillBoost) * takerForm - gkSave);
           if (scored) shootoutAwayGoals++;
           finalEvents.push({
             minute: kickMinute, type: 'penalty_shootout', team: 'away', animType: 'penalty',
