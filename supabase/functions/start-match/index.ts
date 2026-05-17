@@ -1029,7 +1029,7 @@ function simulateFullMatch(
       console.log(`[GOAL_LOG] PENALTY Goal at ${pen.minute}' for ${team} | Scorer: ${kicker?.name} | Score: ${scoreH}x${scoreA}`);
 
       allPlanned.push({
-        minute: pen.minute, type: 'penalty', team, isGoal: true,
+        minute: pen.minute, type: 'penalty_goal', team, isGoal: true,
         playerName: kicker?.name, animType: 'penalty',
         ballX: team === 'home' ? 0.95 : 0.05, ballY: 0.5,
         description: desc,
