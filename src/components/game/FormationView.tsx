@@ -344,7 +344,7 @@ export function FormationView({
               <div
                 className={cn(
                   'relative rounded-full flex flex-col items-center justify-center border-2 sm:border-[3px] shadow-lg transition-all',
-                  'w-9 h-9 sm:w-11 sm:h-11 lg:w-12 lg:h-12',
+                  'w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10',
                   isInjured ? 'bg-slate-800 grayscale border-slate-700' : posColor[slot.position] || 'bg-slate-900 text-white',
                   adapt?.border || 'border-white/60',
                   isSelected ? 'scale-110 ring-4 ring-primary shadow-[0_0_25px_rgba(16,185,129,0.6)]' : adapt ? `ring-2 ${adapt.ring}` : ''
