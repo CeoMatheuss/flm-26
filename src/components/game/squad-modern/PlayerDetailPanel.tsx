@@ -291,14 +291,15 @@ function PlayerDetailContent({
           <section className="pb-10">
             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] mb-6">Operações do Clube</h3>
             <div className="grid grid-cols-2 gap-3">
-              <ActionBtn icon={<ArrowLeftRight className="w-4 h-4" />} label="🔄 Substituir" onClick={() => onAction?.('swap', player)} className="col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400" />
-              <ActionBtn icon={<Shield className="w-4 h-4" />} label="Escalar" onClick={() => onAction?.('lineup', player)} />
-              <ActionBtn icon={<BedDouble className="w-4 h-4" />} label="Banco" onClick={() => onAction?.('bench', player)} />
-              <ActionBtn icon={<ShoppingCart className="w-4 h-4" />} label="Negociar" onClick={() => onAction?.('transfer', player)} />
-              <ActionBtn icon={<FileText className="w-4 h-4" />} label="Renovar" onClick={() => onAction?.('renew', player)} />
-              <ActionBtn icon={<TrendingUp className="w-4 h-4" />} label="Treino Focado" onClick={() => onAction?.('train', player)} />
-              <ActionBtn icon={<Bandage className="w-4 h-4" />} label="Médico" onClick={() => onAction?.('medical', player)} />
-              <ActionBtn icon={<Crown className="w-4 h-4" />} label="Capitão" onClick={() => onAction?.('captain', player)} className="col-span-2" />
+              {isYouth && (
+                <ActionBtn icon={<ChevronsUp className="w-4 h-4" />} label="⬆️ Promover da Base" onClick={() => onAction?.('promote-youth', player)} className="col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400" />
+              )}
+              <ActionBtn icon={<FileText className="w-4 h-4" />} label="📄 Renovar Contrato" onClick={() => onAction?.('renew', player)} />
+              <ActionBtn icon={<ShoppingCart className="w-4 h-4" />} label="📢 Anunciar Mercado" onClick={() => onAction?.('transfer', player)} />
+              <ActionBtn icon={<ArrowLeftRight className="w-4 h-4" />} label="🤝 Anunciar Empréstimo" onClick={() => onAction?.('loan-out', player)} />
+              <ActionBtn icon={<Gavel className="w-4 h-4" />} label="🏷️ Mandar p/ Leilão" onClick={() => onAction?.('auction', player)} />
+              <ActionBtn icon={<Hash className="w-4 h-4" />} label="👕 Escolher Camisa" onClick={() => onAction?.('shirt-number', player)} />
+              <ActionBtn icon={<Dumbbell className="w-4 h-4" />} label="🏋️ Definir Treino" onClick={() => onAction?.('train', player)} />
             </div>
           </section>
         </div>
