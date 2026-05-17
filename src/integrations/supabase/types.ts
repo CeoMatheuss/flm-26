@@ -5408,6 +5408,7 @@ export type Database = {
       check_beta_access: { Args: { _email: string }; Returns: Json }
       check_club_name_available: { Args: { _name: string }; Returns: Json }
       close_expired_auctions: { Args: never; Returns: Json }
+      cron_generate_youth_for_all: { Args: never; Returns: Json }
       cwc_update_standings: {
         Args: {
           _ag: number
