@@ -322,24 +322,23 @@ export function useMatchSimulation() {
     }
 
     if (nextEvent && nextEvent.minute <= currentMinute) {
-      const result = processMatchEvent(nextEvent, state.visibleEvents);
+      nextVisibleEventIdxRef.current++;
       
-      if (result) {
-        const { hG, aG, visibleEvents } = result;
-        nextVisibleEventIdxRef.current++;
-        
-        // Se o evento processado for o apito final, travar imediatamente
-        const isFinalWhistle = nextEvent.type === 'final_whistle';
-        
-        if (isHighlightEvent(nextEvent.type)) isAnimatingRef.current = true;
+      const isFinalWhistle = nextEvent.type === 'final_whistle';
+      if (isHighlightEvent(nextEvent.type)) isAnimatingRef.current = true;
 
+      nextEvent.description = getAtmosphereDescription(nextEvent, data.attendance, data.stadiumCapacity);
+
+      setState(prev => {
+        const result = processMatchEvent(nextEvent, prev.visibleEvents);
+        if (!result) return prev;
+
+        const { hG, aG, visibleEvents } = result;
         const stats = computeStatsFromEvents(visibleEvents);
         const stamina = visibleEvents.filter(e => e.staminaData).pop()?.staminaData || {};
         const moment = visibleEvents.filter(e => e.momentPhase).pop()?.momentPhase || 'equilíbrio';
 
-        nextEvent.description = getAtmosphereDescription(nextEvent, data.attendance, data.stadiumCapacity);
-
-        setState(prev => ({
+        return {
           ...prev,
           phase: isFinalWhistle ? 'finished' : prev.phase,
           currentMinute: nextEvent.minute,
@@ -356,27 +355,26 @@ export function useMatchSimulation() {
           playerStamina: stamina,
           assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
           onAnimationComplete: () => { isAnimatingRef.current = false; },
-        }));
+        };
+      });
 
-        if (isFinalWhistle) {
-          console.log("[MATCH] Apito final detectado nos eventos.");
-          stopTick();
-          if (!persistedRef.current) {
-            persistedRef.current = true;
-            supabase.from('live_matches')
-              .update({ status: 'finished', current_minute: nextEvent.minute })
-              .eq('id', data.matchDbId)
-              .then(async () => {
-                console.log("[MATCH] Sincronizando tabela da liga...");
-                // Aciona a atualização da tabela via RPC
-                try {
-                  const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
-                  if (rpcError) console.error("[MATCH] Erro ao sincronizar tabela:", rpcError);
-                } catch (err) {
-                  console.error("[MATCH] Exceção ao sincronizar tabela:", err);
-                }
-              });
-          }
+      if (isFinalWhistle) {
+        console.log("[MATCH] Apito final detectado nos eventos.");
+        stopTick();
+        if (!persistedRef.current) {
+          persistedRef.current = true;
+          supabase.from('live_matches')
+            .update({ status: 'finished', current_minute: nextEvent.minute })
+            .eq('id', data.matchDbId)
+            .then(async () => {
+              console.log("[MATCH] Sincronizando tabela da liga...");
+              try {
+                const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
+                if (rpcError) console.error("[MATCH] Erro ao sincronizar tabela:", rpcError);
+              } catch (err) {
+                console.error("[MATCH] Exceção ao sincronizar tabela:", err);
+              }
+            });
         }
       }
       return;
