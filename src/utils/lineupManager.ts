@@ -30,9 +30,15 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const requirements = formationRequirements[formation];
   if (!requirements) return players;
 
+  const canPlayMatch = (player: Player) => {
+    const raw = player as any;
+    const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
+    return !isBaseYouth && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended && !raw.isLoaned && !raw.loanedOut && !raw.inactive && !raw.removed;
+  };
+
   const allPlayers = [...players].sort((a, b) => {
-    // Basic sorting: Not injured, high overall
-    if (!!a.injury !== !!b.injury) return a.injury ? 1 : -1;
+    // Basic sorting: available professionals/promoted first, then high overall
+    if (canPlayMatch(a) !== canPlayMatch(b)) return canPlayMatch(a) ? -1 : 1;
     return b.overall - a.overall;
   });
 
@@ -40,7 +46,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const starters: (Player | null)[] = new Array(11).fill(null);
 
   const getPlayerScoreForPos = (player: Player, targetPos: Player['position']) => {
-    if (player.injury) return -1000;
+    if (!canPlayMatch(player)) return -1000;
     
     let score = player.overall;
     if (player.position === targetPos) score += 20;
@@ -65,7 +71,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   // 1. Assign Goalkeeper
   const bestGK = allPlayers
-    .filter(p => !p.injury && p.position === 'GOL')
+    .filter(p => canPlayMatch(p) && p.position === 'GOL')
     .sort((a, b) => getPlayerScoreForPos(b, 'GOL') - getPlayerScoreForPos(a, 'GOL'))[0];
   
   if (bestGK) {
@@ -77,7 +83,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   for (let i = 1; i < requirements.length; i++) {
     const reqPos = requirements[i] as Player['position'];
     const bestPlayer = allPlayers
-      .filter(p => !used.has(p.id) && !p.injury)
+      .filter(p => !used.has(p.id) && canPlayMatch(p))
       .sort((a, b) => getPlayerScoreForPos(b, reqPos) - getPlayerScoreForPos(a, reqPos))[0];
     
     if (bestPlayer) {
@@ -90,7 +96,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   for (let i = 0; i < starters.length; i++) {
     if (!starters[i]) {
       const fallback = allPlayers
-        .filter(p => !used.has(p.id) && !p.injury)
+        .filter(p => !used.has(p.id) && canPlayMatch(p))
         .sort((a, b) => b.overall - a.overall)[0];
       if (fallback) {
         starters[i] = fallback;
@@ -103,7 +109,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   // 3. Intelligent Balanced Reserves (7 slots)
   const reserves: Player[] = [];
-  const remainingPlayers = allPlayers.filter(p => !used.has(p.id) && !p.injury);
+  const remainingPlayers = allPlayers.filter(p => !used.has(p.id) && canPlayMatch(p));
 
   // Reserve GK (Mandatory if available)
   const resGK = remainingPlayers.find(p => p.position === 'GOL');
@@ -133,7 +139,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   // Fill remaining reserve slots (up to 7) with best remaining
   const leftForReserves = allPlayers
-    .filter(p => !used.has(p.id) && !p.injury)
+    .filter(p => !used.has(p.id) && canPlayMatch(p))
     .sort((a, b) => b.overall - a.overall);
   
   while (reserves.length < 7 && leftForReserves.length > 0) {
