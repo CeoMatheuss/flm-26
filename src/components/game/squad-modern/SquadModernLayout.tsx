@@ -44,13 +44,14 @@ interface SquadModernProps {
   onUpdateTactics?: (tactics: any) => void;
   lastYouthGenAt?: string;
   isPremium?: boolean;
+  onSpendBudget?: (cost: number, category: 'Transferência' | 'Empréstimo' | 'Contratos', description: string) => void;
 }
 
 export function SquadModernLayout({
   club, season, players, tactics, onUpdatePlayers, onUpdateTactics, onRest,
   youthProspects, onPromoteYouth, onSellYouth, onEnrollCopinha, onUpgradeAcademy,
   youthInvestment, onSetYouthInvestment,
-  userId, infrastructure, lastYouthGenAt, isPremium
+  userId, infrastructure, lastYouthGenAt, isPremium, onSpendBudget, clubName
 }: SquadModernProps) {
   const [activeTab, setActiveTab] = useState<string>('titulares');
   const [selectedId, setSelectedId] = useState<string | null>(null);
