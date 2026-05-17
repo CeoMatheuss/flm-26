@@ -540,6 +540,79 @@ function getStyleMod(style: string): StyleMod {
   return STYLE_MODS[style] || STYLE_MODS['equilibrado'];
 }
 
+// ── EXTRA TACTICAL OPTIONS ───────────────────────────────────
+// Aplica os campos marking / passingStyle / defenseLine / width / formation
+// sobre os modificadores táticos. Tudo simétrico entre home e away.
+interface TacticalExtras {
+  atkMul: number;      // multiplica offensiveMod
+  defMul: number;      // multiplica defensiveMod
+  pressBonus: number;  // soma em pressingMod
+  drainMul: number;    // multiplica desgaste de stamina
+  foulBias: number;    // peso extra no sorteio de cartões/faltas
+  penaltyBonus: number;// soma no penaltyChance
+  offsideMul: number;  // multiplica chance de impedimento marcado a favor
+  possessionBias: number; // soma na razão de posse (-0.1..+0.1)
+  shortPassBoost: number; // boost em creationPower / passes
+  longShotBoost: number;  // boost em finalizações de longe
+  crossBoost: number;     // boost em jogadas aéreas/cruzamento
+}
+
+function getTacticalExtras(t: any): TacticalExtras {
+  const marking = t?.marking || 'zona';
+  const passing = t?.passingStyle || 'misto';
+  const dline = t?.defenseLine || 'media';
+  const width = t?.width || 'normal';
+  const formation: string = t?.formation || '4-4-2';
+
+  let atkMul = 1, defMul = 1, pressBonus = 0, drainMul = 1;
+  let foulBias = 0, penaltyBonus = 0, offsideMul = 1, possessionBias = 0;
+  let shortPassBoost = 0, longShotBoost = 0, crossBoost = 0;
+
+  // Marcação
+  if (marking === 'individual') {
+    defMul *= 1.08; pressBonus += 0.10; drainMul *= 1.08;
+    foulBias += 0.6; penaltyBonus += 0.025;
+  } else if (marking === 'zona') {
+    defMul *= 1.03;
+  } else if (marking === 'mista') {
+    defMul *= 1.05; pressBonus += 0.05;
+  }
+
+  // Linha defensiva
+  if (dline === 'alta') {
+    atkMul *= 1.05; defMul *= 0.92; pressBonus += 0.10;
+    offsideMul *= 1.6; drainMul *= 1.05;
+  } else if (dline === 'baixa') {
+    atkMul *= 0.92; defMul *= 1.10; pressBonus -= 0.10;
+    offsideMul *= 0.6; drainMul *= 0.95;
+  }
+
+  // Estilo de passe
+  if (passing === 'curto') {
+    possessionBias += 0.06; shortPassBoost += 0.10;
+    atkMul *= 0.97; drainMul *= 0.97;
+  } else if (passing === 'direto') {
+    possessionBias -= 0.05; longShotBoost += 0.12; atkMul *= 1.05;
+  } else if (passing === 'longo') {
+    possessionBias -= 0.07; longShotBoost += 0.05; crossBoost += 0.15; atkMul *= 1.07;
+    drainMul *= 1.02;
+  }
+
+  // Largura
+  if (width === 'larga') {
+    atkMul *= 1.04; defMul *= 0.97; crossBoost += 0.18;
+  } else if (width === 'estreita') {
+    atkMul *= 0.97; defMul *= 1.04; shortPassBoost += 0.06;
+  }
+
+  // Formação (impacto sutil — só viés)
+  if (formation.startsWith('5-') || formation === '4-5-1') { defMul *= 1.05; atkMul *= 0.95; }
+  else if (formation === '3-4-3' || formation === '4-3-3' || formation === '4-2-4') { atkMul *= 1.05; defMul *= 0.96; }
+  else if (formation === '4-2-3-1' || formation === '4-3-2-1') { possessionBias += 0.03; }
+
+  return { atkMul, defMul, pressBonus, drainMul, foulBias, penaltyBonus, offsideMul, possessionBias, shortPassBoost, longShotBoost, crossBoost };
+}
+
 // ── MAIN SIMULATION ──────────────────────────────────────────
 
 function simulateFullMatch(
