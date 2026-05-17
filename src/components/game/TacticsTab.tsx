@@ -36,7 +36,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
   const bench = safePlayers.slice(11);
 
   const setField = <K extends keyof TacticsConfig>(key: K, value: TacticsConfig[K]) => {
-    onUpdate({ ...tactics, [key]: value });
+    onUpdate({ ...safeTactics, [key]: value });
   };
 
   const avgStamina = starters.length
