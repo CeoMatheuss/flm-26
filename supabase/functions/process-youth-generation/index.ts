@@ -88,13 +88,31 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) throw new Error("User not found");
 
-    const { data: club, error: clubError } = await adminClient
+    let { data: club } = await adminClient
       .from('clubs')
       .select('id, country, last_youth_generation_at')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (clubError || !club) throw new Error("Club not found");
+    // Auto-create club row if missing (using game_saves data)
+    if (!club) {
+      const { data: saveRow } = await adminClient
+        .from('game_saves').select('club_data').eq('user_id', user.id).maybeSingle();
+      const cd: any = saveRow?.club_data || {};
+      const { data: created, error: createErr } = await adminClient
+        .from('clubs')
+        .insert({
+          user_id: user.id,
+          name: cd.name || 'Meu Clube',
+          country: cd.country || 'Brasil',
+          fans: cd.fans || 1000,
+          reputation: cd.reputation || 65,
+        })
+        .select('id, country, last_youth_generation_at')
+        .single();
+      if (createErr) throw createErr;
+      club = created;
+    }
 
     const now = new Date();
 
@@ -176,25 +194,23 @@ Deno.serve(async (req) => {
     else if (investmentAmount >= 1200000) baseOvr += 3;
     else if (investmentAmount >= 600000) baseOvr += 1;
 
-    // Rarity and Potential logic
+    // Potential cap escalonado pelo nível da base: lvl1=65, lvl15=84, lvl30=99
+    const potCap = Math.min(99, 63 + Math.floor(academyLevel * 1.2));
     const rand = Math.random();
     let rarity: 'Comum' | 'Bom talento' | 'Promessa' | 'Craque geracional' = 'Comum';
-    
-    // Potentials: Comum: base+10 to 75, Talento: 76-85, Promessa: 86-94, Craque: 95-99
-    let potential = baseOvr + 10 + Math.floor(Math.random() * 15);
+    let potential = Math.min(potCap, baseOvr + 5 + Math.floor(Math.random() * Math.max(1, (potCap - baseOvr - 4))));
 
-    // Influenced by academy level and investment
     const rarityLuck = rand + (academyLevel * 0.005) + (investmentAmount > 2000000 ? 0.05 : 0);
 
-    if (rarityLuck > 0.98) {
+    if (rarityLuck > 0.98 && potCap >= 95) {
       rarity = 'Craque geracional';
-      potential = 95 + Math.floor(Math.random() * 5);
-    } else if (rarityLuck > 0.90) {
+      potential = Math.min(potCap, 95 + Math.floor(Math.random() * 5));
+    } else if (rarityLuck > 0.90 && potCap >= 88) {
       rarity = 'Promessa';
-      potential = 88 + Math.floor(Math.random() * 7);
-    } else if (rarityLuck > 0.75) {
+      potential = Math.min(potCap, 88 + Math.floor(Math.random() * 7));
+    } else if (rarityLuck > 0.75 && potCap >= 80) {
       rarity = 'Bom talento';
-      potential = 80 + Math.floor(Math.random() * 8);
+      potential = Math.min(potCap, 80 + Math.floor(Math.random() * 8));
     }
 
     potential = Math.max(potential, baseOvr + 5);
