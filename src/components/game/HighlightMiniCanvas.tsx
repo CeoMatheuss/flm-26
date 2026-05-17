@@ -772,18 +772,21 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(shotT, '🔥 CHUTOU NO CONTRA-ATAQUE!', playerName);
 
         } else {
-          // Aftermath — reuse goal celebration
+          // Aftermath — outcome-aware (counter_attack can be goal/save/miss)
           const afterT = (t - 0.72) / 0.28;
           drawAllPlayers(drift * 0.15);
           drawPlayer(shooterPos.x + dir * 10, shooterPos.y, teamColor, teamLight, '10', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
-          drawPlayer(gkBaseX, goalY + 15, gkColor, gkLight, 'GK', 9);
+          drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 15 : 0), gkColor, gkLight, 'GK', 9);
           drawBall(ballEndX, ballEndY, 0.9);
-          // Goal flash
-          const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
-          if (flash > 0) {
-            ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
-            ctx.fillRect(0, 0, W, H);
+
+          const isGoal = outcome === 'goal';
+          if (isGoal) {
+            const flash = Math.sin(afterT * 22) * 0.14 * Math.max(0, 1 - afterT * 1.2);
+            if (flash > 0) {
+              ctx.fillStyle = `rgba(251, 191, 36, ${flash})`;
+              ctx.fillRect(0, 0, W, H);
+            }
           }
           if (afterT > 0.12) {
             const bigAlpha = Math.min(1, (afterT - 0.12) * 4) * (afterT < 0.75 ? 1 : Math.max(0, 1 - (afterT - 0.75) * 4));
@@ -792,11 +795,17 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             ctx.font = `bold 26px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#fbbf24';
+            ctx.fillStyle = isGoal ? '#fbbf24' : '#e5e7eb';
             ctx.strokeStyle = 'rgba(0,0,0,0.6)';
             ctx.lineWidth = 4;
-            ctx.strokeText('GOL DE CONTRA-ATAQUE!', W / 2, H / 2 - 12);
-            ctx.fillText('GOL DE CONTRA-ATAQUE!', W / 2, H / 2 - 12);
+            const bigLabel =
+              outcome === 'goal' ? 'GOL DE CONTRA-ATAQUE!' :
+              outcome === 'save' ? 'DEFENDEU!' :
+              outcome === 'woodwork' ? 'NA TRAVE!' :
+              outcome === 'corner' ? 'ESCANTEIO!' :
+              'PRA FORA!';
+            ctx.strokeText(bigLabel, W / 2, H / 2 - 12);
+            ctx.fillText(bigLabel, W / 2, H / 2 - 12);
             if (playerName) {
               ctx.font = `bold 14px Arial`;
               ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -807,7 +816,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
             }
             ctx.restore();
           }
-          drawEventLabel(1, '⚽ GOL DE CONTRA-ATAQUE!', playerName);
+          const subLabel =
+            outcome === 'goal' ? '⚽ GOL DE CONTRA-ATAQUE!' :
+            outcome === 'save' ? '🧤 Goleiro salva no contra-ataque!' :
+            outcome === 'woodwork' ? '🥅 Bola na trave no contra-ataque!' :
+            outcome === 'corner' ? '📐 Defesa para escanteio!' :
+            '😰 Perdeu o contra-ataque!';
+          drawEventLabel(1, subLabel, playerName);
         }
 
       // ══════════════════════════════════════════════
