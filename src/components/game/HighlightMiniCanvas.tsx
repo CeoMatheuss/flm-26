@@ -608,7 +608,71 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
               ctx.strokeText('DEFENDEU!', W / 2, H / 2 - 10);
               ctx.fillText('DEFENDEU!', W / 2, H / 2 - 10);
               ctx.restore();
+        }
+      // ══════════════════════════════════════════════
+      // CARD ANIMATION (yellow/red)
+      // ══════════════════════════════════════════════
+      } else if (type === 'yellow_card' || type === 'red_card') {
+        const t = Math.min(1, frame / totalFrames);
+        drawPitch();
+        
+        const focusX = W / 2;
+        const focusY = H / 2;
+        const isRed = type === 'red_card';
+        const cardColor = isRed ? '#ef4444' : '#fbbf24';
+        const cardLabel = isRed ? '🟥 Expulsão!' : '🟨 Amarelo!';
+
+        if (t < 0.4) {
+          // Approach
+          const approachT = t / 0.4;
+          drawAllPlayers(drift, true, focusX, focusY, approachT * 10);
+          drawPlayer(focusX - 30 + 30 * approachT, focusY, teamColor, teamLight, '!', 9, true, playerName);
+          
+          // Referee approaching
+          const refX = focusX + 50 - 25 * approachT;
+          const refY = focusY - 5;
+          drawPlayer(refX, refY, '#111', '#333', 'REF', 8);
+          
+          drawEventLabel(approachT, '⚠️ Falta marcada!', playerName);
+        } else {
+          // Card show
+          const cardT = (t - 0.4) / 0.6;
+          drawAllPlayers(drift * 0.5);
+          drawPlayer(focusX, focusY, teamColor, teamLight, '!', 10, true, playerName);
+          
+          const refX = focusX + 25;
+          const refY = focusY - 5;
+          drawPlayer(refX, refY, '#111', '#333', 'REF', 8);
+
+          // Card in hand
+          if (cardT > 0.1) {
+            const cardRise = Math.min(1, (cardT - 0.1) * 3);
+            ctx.fillStyle = cardColor;
+            ctx.fillRect(refX + 5, refY - 15 - (10 * cardRise), 10, 14);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(refX + 5, refY - 15 - (10 * cardRise), 10, 14);
+            
+            // Spotlight on player
+            drawSpotlight(focusX, focusY, 60, cardRise * 0.8);
+
+            if (cardT > 0.3) {
+              const textAlpha = Math.min(1, (cardT - 0.3) * 3) * (cardT < 0.8 ? 1 : Math.max(0, 1 - (cardT - 0.8) * 5));
+              ctx.save();
+              ctx.globalAlpha = textAlpha;
+              ctx.font = 'bold 24px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillStyle = cardColor;
+              ctx.strokeStyle = '#000';
+              ctx.lineWidth = 3;
+              ctx.strokeText(cardLabel, W / 2, H / 2 - 45);
+              ctx.fillText(cardLabel, W / 2, H / 2 - 45);
+              ctx.restore();
             }
+          }
+          drawEventLabel(1, cardLabel, playerName);
+        }
+
             drawEventLabel(1, '🧤 GOLEIRO SALVOU O PÊNALTI!', playerName);
           }
         }
