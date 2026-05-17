@@ -5,8 +5,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   X, ArrowUp, ArrowDown, Star, Target, Zap, Trophy, Activity,
-  Heart, FileText, TrendingUp, Award, Flag, Footprints, Ruler,
-  Shield, ArrowUpRight, Bandage, ArrowDownRight, BedDouble, ShoppingCart, Crown, ArrowLeftRight,
+  Heart, FileText, TrendingUp, Award, Flag,
+  ArrowUpRight, ShoppingCart, ArrowLeftRight, Gavel, Hash, Dumbbell, ChevronsUp,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
