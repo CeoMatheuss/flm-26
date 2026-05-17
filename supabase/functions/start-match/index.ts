@@ -740,23 +740,31 @@ function simulateFullMatch(
   const awayAvgStaminaInit = away.reduce((s, p) => s + p.stamina, 0) / 11;
   const awayFatigueMod = 0.8 + (awayAvgStaminaInit / 100) * 0.2;
   
-  // Tactical impact on simulation (HOME) — uses style table
+  // Extras táticos (marking/passing/defenseLine/width/formation)
+  const homeExtras = getTacticalExtras(tactics);
+  const awayExtras = getTacticalExtras(awayTacticsInput);
+  console.log(`[Tactics] HOME mark=${tactics?.marking||'zona'} pass=${tactics?.passingStyle||'misto'} line=${tactics?.defenseLine||'media'} width=${tactics?.width||'normal'} form=${tactics?.formation||'4-4-2'}`);
+  console.log(`[Tactics] AWAY mark=${awayTacticsInput?.marking||'zona'} pass=${awayTacticsInput?.passingStyle||'misto'} line=${awayTacticsInput?.defenseLine||'media'} width=${awayTacticsInput?.width||'normal'} form=${awayTacticsInput?.formation||'4-4-2'}`);
+
+  // Tactical impact on simulation (HOME) — uses style table + extras
   const pressingBase = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
-  const pressingMod = clamp(pressingBase + homeStyleMod.pressureExtra, 0.5, 2.0);
-  const offensiveMod = homeStyleMod.atk;
-  const defensiveMod = homeStyleMod.def;
+  const pressingMod = clamp(pressingBase + homeStyleMod.pressureExtra + homeExtras.pressBonus, 0.5, 2.2);
+  const offensiveMod = homeStyleMod.atk * homeExtras.atkMul;
+  const defensiveMod = homeStyleMod.def * homeExtras.defMul;
   const tempoMod = tempo === 'muito-rapido' ? 1.15 : tempo === 'rapido' ? 1.08 : tempo === 'normal' ? 1.0 : 0.9;
 
   // Away tactical mods
   const awayPressingBase = awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8;
-  const awayPressingMod = clamp(awayPressingBase + awayStyleMod.pressureExtra, 0.5, 2.0);
-  const awayOffensiveMod = awayStyleMod.atk;
-  const awayDefensiveMod = awayStyleMod.def;
+  const awayPressingMod = clamp(awayPressingBase + awayStyleMod.pressureExtra + awayExtras.pressBonus, 0.5, 2.2);
+  const awayOffensiveMod = awayStyleMod.atk * awayExtras.atkMul;
+  const awayDefensiveMod = awayStyleMod.def * awayExtras.defMul;
   const awayTempoMod = awayTempo === 'muito-rapido' ? 1.15 : awayTempo === 'rapido' ? 1.08 : awayTempo === 'normal' ? 1.0 : 0.9;
 
-  // Stamina drain modifiers for pressing/tempo (multiplied by style drain)
-  const staminaDrainPressing = (pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8) * homeStyleMod.staminaDrain;
+  // Stamina drain modifiers for pressing/tempo (multiplied by style drain + extras)
+  const staminaDrainPressing = (pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8) * homeStyleMod.staminaDrain * homeExtras.drainMul;
   const staminaDrainTempo = tempo === 'muito-rapido' ? 1.2 : tempo === 'rapido' ? 1.1 : 1.0;
+  const awayStaminaDrainPressing = (awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8) * awayStyleMod.staminaDrain * awayExtras.drainMul;
+  const awayStaminaDrainTempo = awayTempo === 'muito-rapido' ? 1.2 : awayTempo === 'rapido' ? 1.1 : 1.0;
 
   // ── ATTRIBUTE-BASED STRENGTH ──────────────────────────────
   const homeDefenders = home.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
