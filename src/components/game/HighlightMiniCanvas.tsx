@@ -1333,7 +1333,7 @@ export function getHighlightType(eventType: string): HighlightType {
   if (eventType === 'buildup_play') return 'chance';
   if (eventType === 'free_kick_near') return 'free_kick';
   if (['foot_goal', 'header_goal'].includes(eventType)) return 'goal';
-  if (['penalty_goal', 'penalty_miss'].includes(eventType)) return 'penalty';
+  if (['penalty_goal', 'penalty_miss', 'penalty_shootout'].includes(eventType)) return 'penalty';
   if (eventType === 'woodwork') return 'woodwork';
   if (eventType === 'corner_danger') return 'corner';
   if (eventType === 'great_save') return 'save';
