@@ -194,27 +194,41 @@ Deno.serve(async (req) => {
     else if (investmentAmount >= 1200000) baseOvr += 3;
     else if (investmentAmount >= 600000) baseOvr += 1;
 
-    // Potential cap escalonado pelo nível da base: lvl1=65, lvl15=84, lvl30=99
-    const potCap = Math.min(99, 63 + Math.floor(academyLevel * 1.2));
-    const rand = Math.random();
-    let rarity: 'Comum' | 'Bom talento' | 'Promessa' | 'Craque geracional' = 'Comum';
-    let potential = Math.min(potCap, baseOvr + 5 + Math.floor(Math.random() * Math.max(1, (potCap - baseOvr - 4))));
+    // Tabela oficial de potencial por nível da Base (1-30)
+    const POT_TABLE: Array<{min: number; max: number; rare: number; bMin: number; bMax: number}> = [
+      {min:45,max:52,rare:0.005,bMin:4,bMax:8},{min:46,max:53,rare:0.005,bMin:4,bMax:8},{min:47,max:54,rare:0.005,bMin:4,bMax:8},
+      {min:48,max:55,rare:0.015,bMin:4,bMax:9},{min:49,max:56,rare:0.015,bMin:4,bMax:9},
+      {min:50,max:58,rare:0.025,bMin:5,bMax:9},{min:51,max:59,rare:0.025,bMin:5,bMax:9},
+      {min:52,max:60,rare:0.04,bMin:5,bMax:10},{min:53,max:61,rare:0.04,bMin:5,bMax:10},
+      {min:56,max:64,rare:0.06,bMin:5,bMax:10},{min:57,max:65,rare:0.06,bMin:5,bMax:10},{min:58,max:66,rare:0.06,bMin:5,bMax:10},
+      {min:59,max:67,rare:0.09,bMin:6,bMax:11},{min:60,max:68,rare:0.09,bMin:6,bMax:11},{min:61,max:69,rare:0.09,bMin:6,bMax:11},
+      {min:62,max:71,rare:0.12,bMin:6,bMax:11},{min:63,max:72,rare:0.12,bMin:6,bMax:11},
+      {min:64,max:73,rare:0.16,bMin:6,bMax:12},{min:65,max:74,rare:0.16,bMin:6,bMax:12},{min:66,max:75,rare:0.16,bMin:6,bMax:12},
+      {min:67,max:77,rare:0.20,bMin:7,bMax:12},{min:68,max:78,rare:0.20,bMin:7,bMax:12},
+      {min:69,max:79,rare:0.25,bMin:7,bMax:13},{min:70,max:80,rare:0.25,bMin:7,bMax:13},{min:71,max:81,rare:0.25,bMin:7,bMax:13},
+      {min:72,max:83,rare:0.32,bMin:8,bMax:14},{min:73,max:84,rare:0.32,bMin:8,bMax:14},{min:74,max:85,rare:0.32,bMin:8,bMax:14},
+      {min:75,max:86,rare:0.38,bMin:9,bMax:15},
+      {min:76,max:88,rare:0.45,bMin:10,bMax:16},
+    ];
+    const tier = POT_TABLE[Math.max(0, Math.min(29, academyLevel - 1))];
+    const investRareBoost = investmentAmount >= 2400000 ? 0.04
+      : investmentAmount >= 1200000 ? 0.02
+      : investmentAmount >= 600000 ? 0.01 : 0;
+    const isRare = Math.random() < (tier.rare + investRareBoost);
 
-    const rarityLuck = rand + (academyLevel * 0.005) + (investmentAmount > 2000000 ? 0.05 : 0);
-
-    if (rarityLuck > 0.98 && potCap >= 95) {
-      rarity = 'Craque geracional';
-      potential = Math.min(potCap, 95 + Math.floor(Math.random() * 5));
-    } else if (rarityLuck > 0.90 && potCap >= 88) {
-      rarity = 'Promessa';
-      potential = Math.min(potCap, 88 + Math.floor(Math.random() * 7));
-    } else if (rarityLuck > 0.75 && potCap >= 80) {
-      rarity = 'Bom talento';
-      potential = Math.min(potCap, 80 + Math.floor(Math.random() * 8));
+    let potential: number;
+    if (isRare) {
+      potential = Math.min(99, tier.max + tier.bMin + Math.floor(Math.random() * (tier.bMax - tier.bMin + 1)));
+    } else {
+      potential = tier.min + Math.floor(Math.random() * (tier.max - tier.min + 1));
     }
+    potential = Math.min(99, Math.max(potential, baseOvr + 3));
 
-    potential = Math.max(potential, baseOvr + 5);
-    potential = Math.min(99, potential);
+    const rarity: 'Comum' | 'Bom talento' | 'Promessa' | 'Craque geracional' =
+      potential >= 90 ? 'Craque geracional'
+      : potential >= 82 ? 'Promessa'
+      : potential >= 75 ? 'Bom talento'
+      : 'Comum';
     const overall = baseOvr;
 
     const attributes = generatePlayerAttributes(overall, position);
