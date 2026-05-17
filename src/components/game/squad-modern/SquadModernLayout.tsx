@@ -1,10 +1,13 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { QuickSwapPanel } from '../squad/QuickSwapPanel';
 import { Button } from '@/components/ui/button';
-import { Repeat } from 'lucide-react';
+import { Repeat, ShoppingCart, ArrowLeftRight } from 'lucide-react';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Player, Club } from '@/types/game';
+import { getPlayerValue } from '@/utils/playerGenerator';
+import { formatMoney } from '@/lib/formatMoney';
+import { supabase } from '@/integrations/supabase/client';
 import { SeasonData, YouthProspect } from '@/types/infrastructure';
 import { TacticsTab } from '../TacticsTab';
 import { YouthAcademyModernTab } from './YouthAcademyModernTab';
