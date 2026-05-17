@@ -93,15 +93,9 @@ export function SquadModernLayout({
 
   const starterIds = useMemo(() => {
     const ids = new Set<string>();
-    const lineup = (tactics?.lineup ?? tactics?.startingXI ?? tactics?.starting_xi) as string[] | undefined;
-    if (Array.isArray(lineup)) {
-      lineup.forEach(id => id && ids.add(id));
-    } else {
-      // Fallback fallback: first 11
-      players.slice(0, 11).forEach(p => ids.add(p.id));
-    }
+    players.slice(0, 11).forEach(p => ids.add(p.id));
     return ids;
-  }, [tactics, players]);
+  }, [players]);
 
   const selectedPlayer = useMemo(
     () => players.find(p => p.id === selectedId) ?? null,
