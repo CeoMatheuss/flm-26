@@ -364,50 +364,73 @@ export function SquadModernLayout({
           </Tabs>
         </motion.div>
 
-        {/* Tactical Panel (Desktop Right Side or Mobile Overlay) */}
+        {/* Tactical Panel — mobile: fixed overlay full-screen; desktop (xl+): side panel */}
         <AnimatePresence>
           {isTacticsOpen && (
-            <motion.div 
-              initial={{ opacity: 0, x: 50, width: 0 }}
-              animate={{ opacity: 1, x: 0, width: 'auto' }}
-              exit={{ opacity: 0, x: 50, width: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={cn(
-                "w-full xl:w-[400px] 2xl:w-[450px] flex-col border border-white/5 bg-zinc-900/30 rounded-[2.5rem] overflow-hidden relative group shrink-0",
-                (viewMode === 'pitch' || isTacticsOpen) ? "flex" : "hidden xl:flex"
-              )}
-            >
-               {/* Section Header */}
-               <div className="p-6 border-b border-white/5 flex items-center justify-between bg-zinc-950/20">
-                  <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                        <LayoutDashboard className="w-5 h-5 text-emerald-400" />
-                     </div>
-                     <div>
-                        <h2 className="text-sm font-black uppercase tracking-widest text-white italic">Centro Tático</h2>
-                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Configurações de Jogo</p>
-                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
-                        {actualFormation}
-                     </span>
-                  </div>
-               </div>
+            <>
+              {/* Backdrop (mobile only) */}
+              <motion.div
+                key="tactics-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                onClick={() => setIsTacticsOpen(false)}
+                className="xl:hidden fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm"
+              />
+              <motion.div
+                key="tactics-panel"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 24 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 240 }}
+                className={cn(
+                  // Mobile: cobre tela inteira como overlay para evitar width=0 / tela preta
+                  "fixed inset-0 z-[60] bg-zinc-950 flex flex-col overflow-hidden",
+                  // Desktop xl+: vira painel lateral dentro do grid
+                  "xl:static xl:inset-auto xl:z-auto xl:w-[400px] 2xl:w-[450px]",
+                  "xl:bg-zinc-900/30 xl:border xl:border-white/5 xl:rounded-[2.5rem] xl:shrink-0"
+                )}
+              >
+                 {/* Section Header */}
+                 <div className="p-4 sm:p-6 border-b border-white/5 flex items-center justify-between bg-zinc-950/40 shrink-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                       <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0">
+                          <LayoutDashboard className="w-5 h-5 text-emerald-400" />
+                       </div>
+                       <div className="min-w-0">
+                          <h2 className="text-sm font-black uppercase tracking-widest text-white italic truncate">Centro Tático</h2>
+                          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Configurações de Jogo</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                       <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
+                          {actualFormation}
+                       </span>
+                       <button
+                         onClick={() => setIsTacticsOpen(false)}
+                         className="xl:hidden w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center"
+                         aria-label="Fechar painel tático"
+                       >
+                         <X className="w-4 h-4 text-white/70" />
+                       </button>
+                    </div>
+                 </div>
 
-               {/* Tactical Tabbed Content */}
-               <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-                  <TacticsTab 
-                    players={players} 
-                    tactics={tactics} 
-                    onUpdate={onUpdateTactics || (() => {})} 
-                    season={season?.currentSeason}
-                    userId={userId}
-                    hideSwapButton={true}
-                  />
-               </div>
+                 {/* Tactical Tabbed Content */}
+                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3 sm:p-6 overscroll-contain">
+                    <TacticsTab 
+                      players={players} 
+                      tactics={tactics} 
+                      onUpdate={onUpdateTactics || (() => {})} 
+                      season={season?.currentSeason}
+                      userId={userId}
+                      hideSwapButton={true}
+                    />
+                 </div>
 
-            </motion.div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>
