@@ -16,7 +16,6 @@ import { CTRooms } from '@/types/ctRooms';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { getTrainingManager } from '@/training/TrainingManager';
 import { useState } from 'react';
-import { autoLineup } from '@/utils/lineupManager';
 import { rebuildClubSquad, squadsDiffer, syncTacticsWithSquad } from '@/utils/squadSync';
 
 import { useClubState, LoanedPlayer } from './useClubState';
