@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormationView } from './FormationView';
-import { TacticsConfig } from '@/types/tactics';
+import { TacticsConfig, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES, playStyleEffects, type PlayStyle } from '@/types/tactics';
 import { Player } from '@/types/game';
 import { ArrowLeft, Zap, Target, Shield, X, Sparkles, Users } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -217,15 +217,21 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
             <Card className="bg-zinc-900/60 border-white/5 rounded-2xl">
               <CardContent className="p-4 space-y-4">
                 <SectionTitle icon={<Zap className="w-4 h-4 text-amber-400" />} label="Dinâmica" />
-                <Group label="Estilo">
-                  <Grid items={['equilibrado','ofensivo','defensivo','posse'] as const}
-                        value={safeTactics.playStyle} onPick={(v) => setField('playStyle', v as any)}
-                        activeClass="bg-emerald-500 border-emerald-400 text-zinc-950" />
+                <Group label="Estilo de Jogo">
+                  <StylePicker
+                    value={safeTactics.playStyle as PlayStyle}
+                    onPick={(v) => setField('playStyle', v as any)}
+                  />
                 </Group>
                 <Group label="Ritmo">
                   <Grid items={['lento','normal','rapido','muito-rapido'] as const}
                         value={safeTactics.tempo} onPick={(v) => setField('tempo', v as any)}
                         activeClass="bg-amber-500 border-amber-400 text-zinc-950" />
+                </Group>
+                <Group label="Linha Defensiva">
+                  <Grid items={['baixa','media','alta'] as const}
+                        value={(safeTactics as any).defenseLine || 'media'} onPick={(v) => setField('defenseLine' as any, v as any)}
+                        activeClass="bg-sky-500 border-sky-400 text-zinc-950" />
                 </Group>
               </CardContent>
             </Card>
@@ -307,6 +313,56 @@ function Grid<T extends string>({ items, value, onPick, activeClass }: { items: 
           {it}
         </button>
       ))}
+    </div>
+  );
+}
+
+function StylePicker({ value, onPick }: { value: PlayStyle; onPick: (v: PlayStyle) => void }) {
+  const [showAll, setShowAll] = useState(false);
+  const visible: PlayStyle[] = showAll
+    ? [...MAIN_PLAY_STYLES, ...ADVANCED_PLAY_STYLES]
+    : MAIN_PLAY_STYLES;
+  const current = playStyleEffects[value];
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-1.5 max-h-[260px] overflow-y-auto pr-1">
+        {visible.map((s) => {
+          const e = playStyleEffects[s];
+          const active = value === s;
+          return (
+            <button
+              key={s}
+              onClick={() => onPick(s)}
+              className={cn(
+                'h-12 px-2 rounded-lg border flex flex-col items-start justify-center text-left transition-all',
+                active
+                  ? 'bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg'
+                  : 'bg-white/5 border-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+              )}
+              title={e.philosophy}
+            >
+              <span className="text-[11px] font-black leading-none">{e.icon} {e.label}</span>
+              <span className={cn('text-[8px] mt-0.5 uppercase tracking-wide truncate w-full', active ? 'text-zinc-900/80' : 'text-white/30')}>
+                {e.philosophy}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <button
+        onClick={() => setShowAll(s => !s)}
+        className="w-full h-7 rounded-md text-[9px] font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white/60 border border-white/5"
+      >
+        {showAll ? '− Estilos principais' : `+ ${ADVANCED_PLAY_STYLES.length} estilos avançados`}
+      </button>
+      {current && (
+        <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-2 space-y-0.5">
+          <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400">{current.icon} {current.label}</p>
+          {current.bullets.slice(0, 3).map((b, i) => (
+            <p key={i} className="text-[10px] text-white/60 leading-tight">{b}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

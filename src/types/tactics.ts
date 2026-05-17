@@ -6,7 +6,11 @@ export type Formation =
 export type PlayStyle =
   | 'ofensivo' | 'equilibrado' | 'defensivo' | 'contra-ataque' | 'posse'
   | 'tiki-taka' | 'gegenpressing' | 'parking-bus' | 'long-ball'
-  | 'retranca-total' | 'pressao-alta';
+  | 'retranca-total' | 'pressao-alta'
+  // NOVOS estilos expandidos
+  | 'transicao-rapida' | 'cruzamentos' | 'jogo-inteligente'
+  | 'defesa-compacta' | 'ataque-total' | 'pressao-pos-perda'
+  | 'futebol-criativo' | 'controle-total' | 'bloco-medio' | 'verticalidade';
 
 // Os 6 estilos principais (mostrados sempre)
 export const MAIN_PLAY_STYLES: PlayStyle[] = [
@@ -17,6 +21,9 @@ export const MAIN_PLAY_STYLES: PlayStyle[] = [
 // Estilos avançados (em accordion)
 export const ADVANCED_PLAY_STYLES: PlayStyle[] = [
   'posse', 'tiki-taka', 'gegenpressing', 'parking-bus', 'long-ball',
+  'transicao-rapida', 'cruzamentos', 'jogo-inteligente',
+  'defesa-compacta', 'ataque-total', 'pressao-pos-perda',
+  'futebol-criativo', 'controle-total', 'bloco-medio', 'verticalidade',
 ];
 
 export interface PlayStyleEffect {
@@ -81,6 +88,56 @@ export const playStyleEffects: Record<PlayStyle, PlayStyleEffect> = {
     label: 'Pressão Alta', icon: '🔥',
     philosophy: 'Pressionar o adversário no campo dele, recuperar a bola rápido.',
     bullets: ['✅ +15% chances, +8 agressividade', '🔥 Stamina cai +20%', '⚠️ Defesa exposta nas costas', '🆚 Forte vs Posse'],
+  },
+  'transicao-rapida': {
+    label: 'Transição Rápida', icon: '🚀',
+    philosophy: 'Verticaliza imediatamente após recuperar a bola.',
+    bullets: ['✅ +10 velocidade ao recuperar', '✅ +8% contra-ataques', '⚠️ Pouca posse'],
+  },
+  'cruzamentos': {
+    label: 'Cruzamentos', icon: '📌',
+    philosophy: 'Joga aberto pelas pontas e cruza muito.',
+    bullets: ['✅ +12 cruzamento, +6 cabeceio', '✅ Largura ampliada', '⚠️ Vulnerável a contra-ataques'],
+  },
+  'jogo-inteligente': {
+    label: 'Jogo Inteligente', icon: '🧠',
+    philosophy: 'Lê o jogo e equilibra ataque/defesa por contexto.',
+    bullets: ['✅ +6 visão, +5 compostura', '✅ Adapta-se ao placar', '➖ Sem extremos'],
+  },
+  'defesa-compacta': {
+    label: 'Defesa Compacta', icon: '🪖',
+    philosophy: 'Bloco recuado e linhas curtas. Difícil de furar.',
+    bullets: ['✅ +25% defesa, +10 marcação', '⚠️ -15% ataque', '🔋 Pouco desgaste'],
+  },
+  'ataque-total': {
+    label: 'Ataque Total', icon: '⚔️',
+    philosophy: 'Tudo no ataque, todos pra frente. Festival de gols.',
+    bullets: ['✅ +30% chances de gol', '⚠️ -25% defesa', '🔥 Stamina cai muito'],
+  },
+  'pressao-pos-perda': {
+    label: 'Pressão Pós-Perda', icon: '🌪️',
+    philosophy: 'Recupera a bola nos primeiros 5 segundos após perdê-la.',
+    bullets: ['✅ +20% recuperação rápida', '✅ +10 agressividade', '🔥 Stamina cai +25%'],
+  },
+  'futebol-criativo': {
+    label: 'Futebol Criativo', icon: '🎨',
+    philosophy: 'Liberdade total ao meio-campo para criar jogadas.',
+    bullets: ['✅ +10 visão, +8 drible', '✅ +6% chances de assistência', '⚠️ Pode perder equilíbrio'],
+  },
+  'controle-total': {
+    label: 'Controle Total', icon: '🏟️',
+    philosophy: 'Domina posse e pressiona alto. Sufoca o adversário.',
+    bullets: ['✅ +8 passe, +12% pressão', '✅ Mais posse', '🔥 Exige alta stamina'],
+  },
+  'bloco-medio': {
+    label: 'Bloco Médio', icon: '🚧',
+    philosophy: 'Defende no meio-campo, sem expor a defesa nem pressionar alto.',
+    bullets: ['✅ +12% defesa', '✅ Equilibrado fisicamente', '➖ Sem boost ofensivo'],
+  },
+  'verticalidade': {
+    label: 'Verticalidade', icon: '⚡',
+    philosophy: 'Passes verticais e progressão direta ao gol.',
+    bullets: ['✅ +10 passe longo, +5 visão', '✅ +8% chutes diretos', '⚠️ Menos passes curtos'],
   },
 };
 export type Pressing = 'ultra-alto' | 'alto' | 'medio' | 'baixo';
@@ -169,4 +226,13 @@ export const tacticsPresets: TacticsPreset[] = [
   { name: 'Gegenpress', config: { formation: '4-2-3-1', playStyle: 'ofensivo', pressing: 'ultra-alto', tempo: 'muito-rapido', marking: 'individual', defenseLine: 'alta' } },
   { name: 'Jogo Bonito', config: { formation: '4-3-3', playStyle: 'ofensivo', pressing: 'alto', tempo: 'rapido', passingStyle: 'curto', width: 'larga' } },
   { name: 'Retranca', config: { formation: '5-4-1', playStyle: 'defensivo', pressing: 'baixo', tempo: 'lento', defenseLine: 'baixa', width: 'estreita' } },
+  { name: 'Ataque Total', config: { formation: '3-4-3', playStyle: 'ataque-total', pressing: 'alto', tempo: 'muito-rapido', defenseLine: 'alta', width: 'larga' } },
+  { name: 'Bloco Médio', config: { formation: '4-4-2', playStyle: 'bloco-medio', pressing: 'medio', tempo: 'normal', defenseLine: 'media', marking: 'zona' } },
+  { name: 'Transição', config: { formation: '4-2-3-1', playStyle: 'transicao-rapida', pressing: 'medio', tempo: 'muito-rapido', passingStyle: 'direto', defenseLine: 'media' } },
+  { name: 'Cruzamentos', config: { formation: '4-4-2', playStyle: 'cruzamentos', pressing: 'medio', tempo: 'rapido', passingStyle: 'longo', width: 'larga' } },
+  { name: 'Controle Total', config: { formation: '4-3-3', playStyle: 'controle-total', pressing: 'alto', tempo: 'normal', passingStyle: 'curto', defenseLine: 'alta' } },
+  { name: 'Verticalidade', config: { formation: '4-2-3-1', playStyle: 'verticalidade', pressing: 'medio', tempo: 'rapido', passingStyle: 'longo' } },
+  { name: 'Criativo', config: { formation: '4-3-2-1', playStyle: 'futebol-criativo', pressing: 'medio', tempo: 'normal', passingStyle: 'curto', width: 'larga' } },
+  { name: 'Defesa Compacta', config: { formation: '5-4-1', playStyle: 'defesa-compacta', pressing: 'baixo', tempo: 'lento', defenseLine: 'baixa', marking: 'misto' } },
+  { name: 'Pressão Pós-Perda', config: { formation: '4-3-3', playStyle: 'pressao-pos-perda', pressing: 'ultra-alto', tempo: 'rapido', marking: 'individual', defenseLine: 'alta' } },
 ];
