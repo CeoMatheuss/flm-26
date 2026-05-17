@@ -1344,11 +1344,114 @@ function simulateFullMatch(
   const possRatio = (effectiveHome * possStyle) / (effectiveHome * possStyle + awayStrength);
   stats.possession = [Math.round(possRatio * 100), 100 - Math.round(possRatio * 100)];
 
-  // Player ratings
+  // ── PLAYER RATINGS (recompute from event log + role fit) ──
+  // Base 6.0, then accumulate per-action deltas attributing them to playerName/assistName.
+  // Players also gain a small bonus for participation aligned with their role power.
   const playerRatings: Record<string, number> = {};
-  allPlayers.filter(p => p.team === 'home').forEach(p => {
-    playerRatings[p.id] = Math.round(p.rating * 10) / 10;
-  });
+  const playersById = new Map<string, SimPlayer>();
+  allPlayers.forEach(p => playersById.set(p.id, p));
+  const nameToPlayer = new Map<string, SimPlayer>();
+  allPlayers.forEach(p => nameToPlayer.set(p.name, p));
+
+  // counters per player
+  const counters: Record<string, {
+    goals: number; assists: number; saves: number; tackles: number;
+    yellows: number; reds: number; missedPen: number; concededGoals: number;
+    keyMoments: number;
+  }> = {};
+  for (const p of allPlayers) {
+    counters[p.id] = { goals: 0, assists: 0, saves: 0, tackles: 0, yellows: 0, reds: 0, missedPen: 0, concededGoals: 0, keyMoments: 0 };
+  }
+
+  let homeFinal = 0, awayFinal = 0;
+  for (const ev of finalEvents) {
+    if (ev.type === 'penalty_shootout') continue;
+    const scorer = ev.playerName ? nameToPlayer.get(ev.playerName) : null;
+    const assister = ev.assistName ? nameToPlayer.get(ev.assistName) : null;
+    if (ev.isGoal) {
+      if (ev.team === 'home') homeFinal++; else if (ev.team === 'away') awayFinal++;
+      if (scorer) counters[scorer.id].goals++;
+      if (assister) counters[assister.id].assists++;
+      // GK on the conceding team takes a small hit
+      const concedingTeam: 'home' | 'away' = ev.team === 'home' ? 'away' : 'home';
+      const gks = allPlayers.filter(p => p.team === concedingTeam && p.position === 'GOL' && p.isOnPitch);
+      for (const gk of gks) counters[gk.id].concededGoals++;
+    }
+    switch (ev.type) {
+      case 'great_save':
+        // attribute the save to the opposing team's GK
+        {
+          const oppTeam: 'home' | 'away' = ev.team === 'home' ? 'away' : 'home';
+          const gks = allPlayers.filter(p => p.team === oppTeam && p.position === 'GOL' && p.isOnPitch);
+          for (const gk of gks) counters[gk.id].saves++;
+        }
+        break;
+      case 'penalty_miss':
+        if (scorer) counters[scorer.id].missedPen++;
+        break;
+      case 'tackle':
+        if (scorer) counters[scorer.id].tackles++;
+        break;
+      case 'yellow_card':
+        if (scorer) counters[scorer.id].yellows++;
+        break;
+      case 'red_card':
+        if (scorer) counters[scorer.id].reds++;
+        break;
+      case 'woodwork':
+      case 'corner_danger':
+      case 'counter_attack':
+      case 'free_kick_near':
+      case 'long_shot_miss':
+      case 'header_miss':
+        if (scorer) counters[scorer.id].keyMoments++;
+        break;
+    }
+  }
+
+  for (const p of allPlayers) {
+    if (!p.isOnPitch && counters[p.id].goals === 0 && counters[p.id].assists === 0) {
+      // Player never came on and had no events → neutral baseline
+      playerRatings[p.id] = 6.0;
+      continue;
+    }
+    const c = counters[p.id];
+    // Role-aligned baseline contribution (0..0.6 extra for players doing their job well)
+    const myTeamWon = (p.team === 'home' && homeFinal > awayFinal) || (p.team === 'away' && awayFinal > homeFinal);
+    const myTeamLost = (p.team === 'home' && homeFinal < awayFinal) || (p.team === 'away' && awayFinal < homeFinal);
+    // Per-position role fit bonus, based on stamina/morale-adjusted attributes
+    let roleBonus = 0;
+    if (p.position === 'GOL') roleBonus = (rolePower(p, 'gk_save') - 60) / 100;
+    else if (p.position === 'ZAG' || p.position === 'LAT') roleBonus = (rolePower(p, 'tackle') - 60) / 120;
+    else if (p.position === 'VOL' || p.position === 'MEI') roleBonus = (rolePower(p, 'creation') - 60) / 130;
+    else if (p.position === 'ATA') roleBonus = (rolePower(p, 'finishing') - 60) / 110;
+    roleBonus = Math.max(-0.4, Math.min(0.6, roleBonus));
+
+    let r = 6.0
+      + c.goals * 1.2
+      + c.assists * 0.65
+      + c.saves * 0.25
+      + c.tackles * 0.10
+      + c.keyMoments * 0.08
+      - c.yellows * 0.30
+      - c.reds * 1.40
+      - c.missedPen * 0.90
+      - (p.position === 'GOL' ? c.concededGoals * 0.20 : 0)
+      + roleBonus
+      + (myTeamWon ? 0.20 : myTeamLost ? -0.15 : 0);
+
+    // Stamina/morale-driven decay for players who finished the game cooked or low morale
+    r += (p.stamina - 50) / 400;   // ±0.12 swing
+    r += (p.morale - 50) / 500;    // ±0.10 swing
+
+    // Carry over duel rating already applied during sim (penalty miss/save handlers etc.)
+    // We blend in 30% of the live "p.rating" so existing penalty/save bumps still influence the final.
+    r = r * 0.85 + p.rating * 0.15;
+
+    playerRatings[p.id] = Math.round(Math.max(3.0, Math.min(10.0, r)) * 10) / 10;
+    // sync back so manOfTheMatch sort uses the same number
+    p.rating = playerRatings[p.id];
+  }
 
   const goalScorers: { name: string; minute: number; team: 'home' | 'away'; assist?: string }[] = [];
   finalEvents.filter(e => e.isGoal).forEach(e => {
