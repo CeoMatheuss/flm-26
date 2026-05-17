@@ -164,7 +164,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
 
       {/* Conteúdo: mobile = stack, desktop = split */}
       <div className="flex-1 overflow-y-auto lg:overflow-hidden">
-        <div className="h-full flex flex-col lg:flex-row gap-3 sm:gap-4 p-3 sm:p-4">
+        <div className="h-full flex flex-col lg:flex-row gap-3 sm:gap-4 p-2 sm:p-4">
           {/* Campo */}
           <div className="lg:flex-1 bg-zinc-900/40 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center min-h-0">
             {players.length < 11 ? (
