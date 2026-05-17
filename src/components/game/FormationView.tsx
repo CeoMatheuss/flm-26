@@ -350,7 +350,7 @@ export function FormationView({
                   isSelected ? 'scale-110 ring-4 ring-primary shadow-[0_0_25px_rgba(16,185,129,0.6)]' : adapt ? `ring-2 ${adapt.ring}` : ''
                 )}
               >
-                <span className="text-[11px] sm:text-lg font-black tracking-tighter leading-none">
+                <span className="text-[11px] sm:text-sm font-black tracking-tighter leading-none">
                   {player ? getDynamicOverall(player, slot.position as Player['position']) : '-'}
                 </span>
                 <span className="text-[6px] sm:text-[8px] font-bold uppercase opacity-80 leading-none mt-0.5">
