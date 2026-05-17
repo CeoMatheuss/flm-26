@@ -514,12 +514,35 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
       maybeSingle();
 
       if (data) {
-        setLiveMatch(data as any);
-        // Calculate current minute based on elapsed time
+        // ── AUTO-FINALIZE: se a partida já passou do tempo total + buffer,
+        // marcar como finalizada para liberar o widget e mostrar o resultado.
         const startTime = new Date(data.started_at).getTime();
         const now = Date.now();
         const elapsed = now - startTime;
-        const progress = Math.min(1, elapsed / (data.duration_seconds * 1000));
+        const totalMs = (data.duration_seconds || 720) * 1000;
+        const STALE_BUFFER_MS = 30_000; // 30s além da duração
+
+        if (elapsed > totalMs + STALE_BUFFER_MS) {
+          const events = (data.events as any[]) || [];
+          const maxMin = events.length > 0 ? Math.max(90, ...events.map((e: any) => e.minute)) : 90;
+          // Encerra a linha. Outros clientes que estiverem polling vão sair do "AO VIVO".
+          await supabase
+            .from('live_matches')
+            .update({ status: 'finished', current_minute: maxMin })
+            .eq('id', data.id)
+            .eq('status', 'live');
+          // Tenta sincronizar a tabela da liga (idempotente).
+          try {
+            await supabase.rpc('sync_match_persistence' as any, { _match_id: data.id });
+          } catch (e) {
+            console.warn('[MatchDashboardCard] sync_match_persistence falhou:', e);
+          }
+          setLiveMatch(null);
+          return;
+        }
+
+        setLiveMatch(data as any);
+        const progress = Math.min(1, elapsed / totalMs);
 
         // Get max minute from events
         const events = data.events as any[] || [];
@@ -528,17 +551,11 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
         setCurrentMinute(gameMin);
 
         // ANTI-SPOILER: contar gols apenas dos eventos já "ocorridos" até o minuto atual.
-        // Os campos home_goals/away_goals do banco contém o placar FINAL pré-calculado,
-        // então usar diretamente revelaria o resultado antecipadamente no dashboard.
         const visibleGoals = events.filter((e: any) => e.minute <= gameMin && (e.isGoal || e.type === 'goal'));
         const liveHomeGoals = visibleGoals.filter((e: any) => e.team === 'home').length;
         const liveAwayGoals = visibleGoals.filter((e: any) => e.team === 'away').length;
         setCurrentHomeGoals(liveHomeGoals);
         setCurrentAwayGoals(liveAwayGoals);
-
-        // Mesmo depois dos 12 minutos reais, mantém o widget aberto enquanto a
-        // linha estiver live: se um oponente iniciou a partida, o outro ainda
-        // consegue entrar direto e ver a timeline atualizada.
       } else {
         setLiveMatch(null);
       }
