@@ -141,13 +141,110 @@ export function SquadModernLayout({
     });
   }, [players, onUpdatePlayers]);
 
+  // Confirmation modal state for market/loan listing
+  const [confirmAction, setConfirmAction] = useState<null | {
+    type: 'transfer' | 'loan-out';
+    player: Player;
+    value: number;
+    listingFee: number;
+    agentFee: number;
+    adminFee: number;
+    total: number;
+  }>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const openMarketConfirm = (p: Player) => {
+    const value = getPlayerValue(p);
+    const listingFee = Math.max(50_000, Math.round(value * 0.01));
+    const agentFee = Math.round(value * 0.02);
+    const adminFee = 25_000;
+    setConfirmAction({
+      type: 'transfer', player: p, value,
+      listingFee, agentFee, adminFee,
+      total: listingFee + agentFee + adminFee,
+    });
+  };
+
+  const openLoanConfirm = (p: Player) => {
+    const value = getPlayerValue(p);
+    const listingFee = Math.max(20_000, Math.round(value * 0.005));
+    const agentFee = Math.round(value * 0.01);
+    const adminFee = 15_000;
+    setConfirmAction({
+      type: 'loan-out', player: p, value,
+      listingFee, agentFee, adminFee,
+      total: listingFee + agentFee + adminFee,
+    });
+  };
+
+  const confirmListing = async () => {
+    if (!confirmAction) return;
+    const { type, player, value, total } = confirmAction;
+
+    if ((club.budget ?? 0) < total) {
+      toast.error(`Saldo insuficiente. Necessário ${formatMoney(total)}.`);
+      return;
+    }
+
+    // Prevent double-listing
+    if (type === 'transfer' && (player as any).onTransferList) {
+      toast.error('Este jogador já está anunciado no mercado.');
+      setConfirmAction(null);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const shieldObj = (club as any).shieldPattern ? {
+        primaryColor: (club as any).primaryColor || '#2563EB',
+        secondaryColor: (club as any).secondaryColor || '#FFF',
+        pattern: (club as any).shieldPattern,
+        shape: (club as any).shieldShape || 'classic',
+      } : null;
+
+      const body = type === 'transfer' ? {
+        action: 'list', playerData: player, playerName: player.name,
+        playerPosition: player.position, playerOverall: player.overall, playerAge: player.age,
+        askingPrice: value, clubName, sellerShield: shieldObj,
+      } : {
+        action: 'loan-list', playerData: player, playerName: player.name,
+        playerPosition: player.position, playerOverall: player.overall, playerAge: player.age,
+        salary: player.salary || 0, clubName, sellerShield: shieldObj,
+      };
+
+      const res = await supabase.functions.invoke('process-transfer', { body });
+      if (res.error || (res.data as any)?.error) {
+        toast.error((res.data as any)?.error || 'Falha ao anunciar jogador.');
+        setSubmitting(false);
+        return;
+      }
+
+      // Charge fees
+      onSpendBudget?.(total, type === 'transfer' ? 'Transferência' : 'Empréstimo',
+        type === 'transfer'
+          ? `Taxas de anúncio no mercado — ${player.name}`
+          : `Taxas de listagem em empréstimos — ${player.name}`);
+
+      toast.success(type === 'transfer'
+        ? `📢 ${player.name} anunciado no mercado por ${formatMoney(value)}!`
+        : `🤝 ${player.name} listado para empréstimo!`,
+        { description: `Taxas administrativas pagas: ${formatMoney(total)}` });
+
+      setConfirmAction(null);
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro inesperado.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player) => {
     switch (action) {
       case 'transfer':
-        toast.info(`${p.name} pode ser listado no Mercado.`);
+        openMarketConfirm(p);
         break;
       case 'loan-out':
-        toast.info(`${p.name} disponibilizado para empréstimo.`);
+        openLoanConfirm(p);
         break;
       case 'auction':
         toast.info(`${p.name} enviado para leilão.`);
