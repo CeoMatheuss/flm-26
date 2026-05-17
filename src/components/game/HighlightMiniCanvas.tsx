@@ -608,6 +608,9 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
               ctx.strokeText('DEFENDEU!', W / 2, H / 2 - 10);
               ctx.fillText('DEFENDEU!', W / 2, H / 2 - 10);
               ctx.restore();
+            }
+            drawEventLabel(1, '🧤 GOLEIRO SALVOU O PÊNALTI!', playerName);
+          }
         }
       // ══════════════════════════════════════════════
       // CARD ANIMATION (yellow/red)
