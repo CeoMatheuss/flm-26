@@ -18,16 +18,26 @@ import {
 import { AttrDelta, evolutionReason } from './useAttributeEvolution';
 import { motion } from 'framer-motion';
 
+export type PlayerPanelAction =
+  | 'renew'
+  | 'transfer'
+  | 'loan-out'
+  | 'auction'
+  | 'shirt-number'
+  | 'train'
+  | 'promote-youth';
+
 interface Props {
   player: Player | null;
   status: PlayerStatus | null;
   delta: AttrDelta;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAction?: (action: 'lineup' | 'bench' | 'transfer' | 'renew' | 'train' | 'medical' | 'captain' | 'swap', player: Player) => void;
+  onAction?: (action: PlayerPanelAction, player: Player) => void;
+  isYouth?: boolean;
 }
 
-export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, onAction }: Props) {
+export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, onAction, isYouth }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -41,6 +51,7 @@ export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, o
             delta={delta}
             onClose={() => onOpenChange(false)}
             onAction={onAction}
+            isYouth={!!isYouth}
           />
         ) : null}
       </SheetContent>
@@ -49,13 +60,14 @@ export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, o
 }
 
 function PlayerDetailContent({
-  player, status, delta, onClose, onAction,
+  player, status, delta, onClose, onAction, isYouth,
 }: {
   player: Player;
   status: PlayerStatus;
   delta: AttrDelta;
   onClose: () => void;
   onAction?: Props['onAction'];
+  isYouth: boolean;
 }) {
   const tier = ovrTier(player.overall);
   const sm = statusMeta[status] || statusMeta.reserva;
