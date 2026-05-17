@@ -1298,9 +1298,9 @@ function simulateFullMatch(
   const effectiveHomeStrength = (homeStrength || 60);
   const reputation = homeStrength; // Simplified reputation for server calculation
   
-  // Fatores de humor e sequência
-  const winStreakMod = Number(body.winStreak || 0);
-  const loseStreakMod = Number(body.loseStreak || 0);
+  // Fatores de humor e sequência (defaults — body não está em escopo aqui)
+  const winStreakMod = 0;
+  const loseStreakMod = 0;
   const moodScore = (winStreakMod * 2) - (loseStreakMod * 1.5) + (reputation / 20);
   const moodMult = moodScore >= 12 ? 1.5 : moodScore >= 6 ? 1.25 : moodScore >= 0 ? 1.0 : 0.7;
   
@@ -1309,7 +1309,7 @@ function simulateFullMatch(
   const matchMult = compStr.includes('final') ? 2.2 : compStr.includes('clás') ? 1.5 : compStr.includes('amistos') ? 0.6 : 1.0;
   
   // Impacto de preço (curva de tolerância)
-  const ticketPriceVal = Number(body.ticketPrice || 25);
+  const ticketPriceVal = 25;
   const idealPrice = 20 + (reputation / 4);
   const priceImpact = Math.min(1.2, Math.max(0.25, 1 - ((ticketPriceVal - idealPrice) / (idealPrice * 2.5))));
   
@@ -1322,7 +1322,7 @@ function simulateFullMatch(
   const ticketRevenue = estimatedCrowd * ticketPriceVal;
   const vipPrice = 500 + (Math.floor(reputation/10) * 200);
   const occupancy = estimatedCrowd / maxCapacity;
-  const vipUnits = Number(body.vipUnits || 0);
+  const vipUnits = 0;
   const vipRevenue = vipUnits * vipPrice * Math.min(1, occupancy + 0.2);
   const commercialRevenue = estimatedCrowd * (10 + Math.floor(reputation/10) * 2);
   const parkingRevenue = Math.min(Math.floor(maxCapacity / 8), Math.floor(estimatedCrowd / 6)) * (20 + Math.floor(reputation/10) * 2);
