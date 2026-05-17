@@ -7,7 +7,7 @@
  * counter-attacks, crossings, and free kicks.
  */
 
-import { useRef, useEffect, memo } from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 
 export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'counter_attack' | 'crossing' | 'free_kick' | 'yellow_card' | 'red_card' | 'idle';
 
