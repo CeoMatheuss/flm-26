@@ -444,14 +444,24 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.05 }}
                         >
-                          <StoreCard 
-                            item={item} 
-                            clubFans={club.fans || 0} 
-                            isPremium={isPremium}
-                            isActive={isActive(item.id)}
-                            onPurchase={() => handlePurchase(item)} 
-                            onViewDetails={() => openDetails(item)}
-                          />
+                          {item.category === 'sponsorship' ? (
+                            <SponsorshipCard
+                              item={item}
+                              clubFans={club.fans || 0}
+                              isActive={isActive(item.id)}
+                              onPurchase={() => handlePurchase(item)}
+                              onViewDetails={() => openDetails(item)}
+                            />
+                          ) : (
+                            <StoreCard 
+                              item={item} 
+                              clubFans={club.fans || 0} 
+                              isPremium={isPremium}
+                              isActive={isActive(item.id)}
+                              onPurchase={() => handlePurchase(item)} 
+                              onViewDetails={() => openDetails(item)}
+                            />
+                          )}
                         </motion.div>
                       ))}
                   </AnimatePresence>
@@ -1113,6 +1123,170 @@ function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDeta
       {!isBlocked && (
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] rounded-full -mr-16 -mt-16 pointer-events-none group-hover:bg-emerald-500/10 transition-all" />
       )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Card de Patrocínio Premium — Contrato corporativo elegante
+// ─────────────────────────────────────────────────────────────────────────────
+function SponsorshipCard({ item, clubFans, isActive, onPurchase, onViewDetails }: any) {
+  const isBlocked = (clubFans || 0) < (item.min_fans || 0);
+  const price = (item.price_cents || 0) / 100;
+  const isFree = (item.price_cents || 0) === 0;
+
+  const rarity = (item.rarity || 'common').toLowerCase();
+  const rarityTheme: Record<string, { ring: string; glow: string; chip: string; accent: string; label: string }> = {
+    legendary: { ring: 'border-amber-400/40',  glow: 'from-amber-500/20 via-amber-500/5 to-transparent',  chip: 'bg-amber-500/15 text-amber-300 border-amber-400/30',   accent: 'text-amber-300',  label: 'LENDÁRIO' },
+    epic:      { ring: 'border-purple-400/40', glow: 'from-purple-500/20 via-purple-500/5 to-transparent', chip: 'bg-purple-500/15 text-purple-300 border-purple-400/30', accent: 'text-purple-300', label: 'ÉPICO' },
+    rare:      { ring: 'border-sky-400/40',    glow: 'from-sky-500/20 via-sky-500/5 to-transparent',       chip: 'bg-sky-500/15 text-sky-300 border-sky-400/30',          accent: 'text-sky-300',    label: 'RARO' },
+    common:    { ring: 'border-emerald-400/30',glow: 'from-emerald-500/15 via-emerald-500/5 to-transparent',chip: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30',accent: 'text-emerald-300', label: 'COMUM' },
+  };
+  const t = rarityTheme[rarity] || rarityTheme.common;
+
+  const weekly = item.bonus_data?.dinheiroSemanal || (item.bonus_data?.daily_cash ? item.bonus_data.daily_cash * 7 : 0);
+  const winBonus = item.bonus_data?.winBonus || item.bonus_data?.bonusVitoria || 0;
+  const titleBonus = item.bonus_data?.titleBonus || item.bonus_data?.bonusTitulo || 0;
+  const duration = item.bonus_data?.duration || item.duration_days || null;
+  const torcidaPorDia = item.bonus_data?.torcidaPorDia || 0;
+
+  const progress = Math.min(100, Math.round(((clubFans || 0) / Math.max(1, item.min_fans || 1)) * 100));
+
+  return (
+    <div
+      onClick={onViewDetails}
+      className={`group relative overflow-hidden rounded-[1.75rem] border-2 transition-all duration-500 flex flex-col h-full cursor-pointer backdrop-blur-sm ${
+        isBlocked
+          ? 'border-white/5 bg-gradient-to-b from-zinc-950 to-black grayscale opacity-80'
+          : `${t.ring} bg-gradient-to-b from-zinc-950 via-[#0A0D14] to-black hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] hover:-translate-y-1`
+      }`}
+    >
+      {/* Glow superior por raridade */}
+      <div className={`pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b ${t.glow} opacity-80`} />
+
+      {/* Pattern sutil estilo contrato */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{
+        backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 1px, transparent 12px)',
+      }} />
+
+      {/* Header — Logo + Raridade */}
+      <div className="relative z-10 px-5 pt-5 pb-3 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`relative w-14 h-14 rounded-2xl border-2 ${t.ring} bg-black/60 flex items-center justify-center shadow-xl shrink-0 overflow-hidden`}>
+            {item.image_url ? (
+              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+            ) : (
+              <DollarSign className={`h-6 w-6 ${t.accent}`} />
+            )}
+          </div>
+          <div className="min-w-0">
+            <Badge className={`border uppercase font-black text-[9px] tracking-widest px-2 py-0.5 ${t.chip}`}>
+              {t.label}
+            </Badge>
+            <h3 className="mt-1 text-base sm:text-lg font-black uppercase italic tracking-tighter leading-none truncate">
+              {item.name}
+            </h3>
+          </div>
+        </div>
+        {isBlocked ? (
+          <div className="bg-red-500/20 p-1.5 rounded-lg border border-red-500/30 shrink-0">
+            <Lock className="h-3.5 w-3.5 text-red-400" />
+          </div>
+        ) : isActive ? (
+          <Badge className="bg-emerald-500 text-white border-none font-black text-[9px] uppercase tracking-widest px-2 py-1 shrink-0 animate-pulse">
+            Vigente
+          </Badge>
+        ) : null}
+      </div>
+
+      {/* Descrição */}
+      <p className="relative z-10 px-5 text-[11px] text-white/55 leading-relaxed font-medium line-clamp-2">
+        {item.description}
+      </p>
+
+      {/* Cláusulas do contrato */}
+      <div className="relative z-10 px-5 mt-4 space-y-1.5">
+        {weekly > 0 && (
+          <ContractRow icon={<DollarSign className="h-3.5 w-3.5" />} label="Pagamento" value={`R$ ${(weekly/1000).toLocaleString('pt-BR')}k`} suffix="/semana" accent="text-emerald-300" />
+        )}
+        {winBonus > 0 && (
+          <ContractRow icon={<TrendingUp className="h-3.5 w-3.5" />} label="Bônus vitória" value={`+R$ ${winBonus.toLocaleString('pt-BR')}`} accent="text-sky-300" />
+        )}
+        {titleBonus > 0 && (
+          <ContractRow icon={<Crown className="h-3.5 w-3.5" />} label="Bônus título" value={`+R$ ${titleBonus.toLocaleString('pt-BR')}`} accent="text-amber-300" />
+        )}
+        {torcidaPorDia > 0 && (
+          <ContractRow icon={<Users className="h-3.5 w-3.5" />} label="Torcedores" value={`+${torcidaPorDia.toLocaleString('pt-BR')}`} suffix="/dia" accent="text-blue-300" />
+        )}
+        {duration && (
+          <ContractRow icon={<History className="h-3.5 w-3.5" />} label="Duração" value={`${duration}${typeof duration === 'number' && duration < 10 ? ' temp.' : ' dias'}`} accent="text-white/70" />
+        )}
+      </div>
+
+      {/* Requisito de torcida + barra de progresso */}
+      <div className="relative z-10 mt-4 mx-5 mb-3 p-3 rounded-2xl border border-white/5 bg-black/40">
+        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
+          <span className={isBlocked ? 'text-red-300' : 'text-white/60'}>
+            <Users className="inline h-3 w-3 mr-1 -mt-0.5" />
+            {(item.min_fans || 0).toLocaleString('pt-BR')} torcedores
+          </span>
+          <span className={isBlocked ? 'text-red-300' : 'text-emerald-300'}>
+            {(clubFans || 0).toLocaleString('pt-BR')}
+          </span>
+        </div>
+        <div className="mt-1.5 h-1.5 rounded-full bg-white/5 overflow-hidden">
+          <div
+            className={`h-full transition-all duration-700 ${isBlocked ? 'bg-red-400/60' : 'bg-gradient-to-r from-emerald-400 to-emerald-500'}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Ações */}
+      <div className="relative z-10 px-5 pb-5 mt-auto flex gap-2">
+        <Button
+          variant="outline"
+          onClick={(e) => { e.stopPropagation(); onViewDetails(); }}
+          className="w-11 h-11 shrink-0 rounded-xl bg-white/5 border-white/10 hover:bg-white/10 text-white p-0"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+        <Button
+          disabled={isBlocked || isActive}
+          onClick={(e) => { e.stopPropagation(); onPurchase(); }}
+          className={`flex-1 h-11 rounded-xl font-black uppercase italic text-xs sm:text-sm tracking-wider transition-all duration-300 shadow-lg ${
+            isBlocked
+              ? 'bg-white/5 text-white/40 border border-white/5'
+              : isActive
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-[0_0_25px_rgba(16,185,129,0.35)]'
+          }`}
+        >
+          {isActive ? (
+            <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-4 w-4" /> Contrato Ativo</span>
+          ) : isBlocked ? (
+            <span className="flex items-center justify-center gap-2"><Lock className="h-3.5 w-3.5" /> Bloqueado</span>
+          ) : isFree ? (
+            <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-4 w-4" /> Assinar Contrato</span>
+          ) : (
+            <span className="flex items-center justify-center gap-2"><CreditCard className="h-4 w-4" /> R$ {price.toLocaleString('pt-BR')}</span>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ContractRow({ icon, label, value, suffix, accent }: { icon: React.ReactNode; label: string; value: string; suffix?: string; accent: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-white/[0.025] border border-white/5">
+      <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider text-white/50">
+        <span className={accent}>{icon}</span>
+        {label}
+      </div>
+      <div className={`text-[12px] font-black tracking-tight ${accent}`}>
+        {value}{suffix && <span className="text-white/40 font-bold ml-0.5">{suffix}</span>}
+      </div>
     </div>
   );
 }
