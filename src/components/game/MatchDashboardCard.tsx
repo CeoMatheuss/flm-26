@@ -179,8 +179,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       .subscribe();
 
     // Listen for custom league update events from other components
-    const handleSync = () => loadNextMatch();
+    const handleSync = () => {
+      console.log('[MatchDashboardCard] Recebi sinal de atualização. Recarregando próxima partida...');
+      loadNextMatch();
+    };
     window.addEventListener('league_match_updated', handleSync);
+    window.addEventListener('flm:match-finalized', handleSync);
 
     const interval = setInterval(loadNextMatch, 60000);
     return () => { 
