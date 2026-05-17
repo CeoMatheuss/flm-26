@@ -11,12 +11,16 @@ import React, { useRef, useEffect, memo } from 'react';
 
 export type HighlightType = 'goal' | 'penalty' | 'woodwork' | 'corner' | 'chance' | 'save' | 'penalty_shootout' | 'counter_attack' | 'crossing' | 'free_kick' | 'yellow_card' | 'red_card' | 'idle';
 
+export type HighlightOutcome = 'goal' | 'save' | 'miss' | 'corner' | 'woodwork' | 'neutral';
+
 interface HighlightMiniCanvasProps {
   type: HighlightType;
   team: 'home' | 'away';
   playerName?: string;
   onComplete?: () => void;
   currentMinute?: number;
+  /** Real outcome of the event — drives aftermath labels so the 2D never lies about goals. */
+  outcome?: HighlightOutcome;
 }
 
 const COLORS = {
