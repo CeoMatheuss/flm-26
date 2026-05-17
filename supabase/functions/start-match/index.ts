@@ -481,6 +481,17 @@ const STYLE_MODS: Record<string, StyleMod> = {
   // NOVOS estilos pedidos
   'retranca-total': { atk: 0.65, def: 1.45, pressureExtra: -0.30, staminaDrain: 0.85, attrBoost: { defending: 12, marking: 10, positioning: 6 } },
   'pressao-alta':   { atk: 1.15, def: 0.90, pressureExtra: 0.30, staminaDrain: 1.20, attrBoost: { aggression: 8, workRate: 5 } },
+  // EXPANSÃO TÁTICA
+  'transicao-rapida':  { atk: 1.10, def: 1.00, pressureExtra: 0.05,  staminaDrain: 1.05, attrBoost: { speed: 10, dribbling: 4 } },
+  'cruzamentos':       { atk: 1.08, def: 0.97, pressureExtra: 0.00,  staminaDrain: 1.02, attrBoost: { crossing: 12, heading: 6, longShots: 3 } },
+  'jogo-inteligente':  { atk: 1.04, def: 1.06, pressureExtra: 0.05,  staminaDrain: 0.98, attrBoost: { vision: 6, composure: 5, positioning: 4 } },
+  'defesa-compacta':   { atk: 0.85, def: 1.25, pressureExtra: -0.15, staminaDrain: 0.92, attrBoost: { defending: 10, marking: 8, positioning: 8 } },
+  'ataque-total':      { atk: 1.30, def: 0.75, pressureExtra: 0.20,  staminaDrain: 1.25, attrBoost: { shooting: 8, dribbling: 5, aggression: 4 } },
+  'pressao-pos-perda': { atk: 1.10, def: 0.95, pressureExtra: 0.35,  staminaDrain: 1.25, attrBoost: { aggression: 10, workRate: 8 } },
+  'futebol-criativo':  { atk: 1.12, def: 0.95, pressureExtra: 0.05,  staminaDrain: 1.02, attrBoost: { vision: 10, dribbling: 8, passing: 5 } },
+  'controle-total':    { atk: 1.05, def: 1.05, pressureExtra: 0.20,  staminaDrain: 1.10, attrBoost: { passing: 8, vision: 5, workRate: 5 } },
+  'bloco-medio':       { atk: 0.95, def: 1.12, pressureExtra: 0.00,  staminaDrain: 0.95, attrBoost: { positioning: 6, marking: 5 } },
+  'verticalidade':     { atk: 1.10, def: 0.98, pressureExtra: 0.00,  staminaDrain: 1.00, attrBoost: { passing: 6, longShots: 6, vision: 4 } },
 };
 
 // ── MATCHUP MATRIX ──────────────────────────────────────────
