@@ -7,7 +7,13 @@ const NORMALIZED_POSITIONS: Player['position'][] = ['GOL', 'ZAG', 'LAT', 'VOL', 
 
 const isAvailableForSquad = (player: Player) => {
   const raw = player as any;
-  return !raw.isLoaned && !raw.loanedOut && !raw.removed && !raw.inactive;
+  const status = String(raw.status ?? raw.contractStatus ?? '').toLowerCase();
+  return !raw.isLoaned && !raw.loanedOut && !raw.removed && !raw.inactive && !raw.sold && status !== 'sold' && status !== 'removed';
+};
+
+const isAvailableForMatch = (player: Player) => {
+  const raw = player as any;
+  return isAvailableForSquad(player) && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended;
 };
 
 const safePosition = (position: unknown): Player['position'] => (
@@ -43,7 +49,6 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
   const activeYouthIds = new Set(youthProspects.map((prospect) => prospect.id));
   [...players, ...youthProspects.map(youthProspectToPlayer)].forEach((player) => {
     if (!player?.id || !isAvailableForSquad(player)) return;
-    if ((player as any).isYouth && (player as any).contractStatus === 'base' && !activeYouthIds.has(player.id)) return;
     const previous = byId.get(player.id);
     byId.set(player.id, {
       ...previous,
@@ -56,27 +61,47 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
   });
 
   const rebuilt = Array.from(byId.values());
-  const hasReserve = rebuilt.slice(11).some((player) => isAvailableForSquad(player) && !player.injury);
-  const hasStarterIssue = rebuilt.slice(0, Math.min(11, rebuilt.length)).some((player) => !isAvailableForSquad(player) || !!player.injury);
-  return rebuilt.length > 0 && (!hasReserve || hasStarterIssue || rebuilt.length <= 18) ? autoLineup(rebuilt, formation) : rebuilt;
+  if (rebuilt.length === 0) return rebuilt;
+
+  const starters = rebuilt.slice(0, 11);
+  const bench = rebuilt.slice(11, 18);
+  const starterIssue = starters.length < Math.min(11, rebuilt.length) || starters.some((player) => !isAvailableForMatch(player));
+  const benchNeedsBalance = rebuilt.length > 11 && (
+    bench.length === 0 ||
+    !bench.some((player) => isAvailableForMatch(player) && player.position === 'GOL') ||
+    !bench.some((player) => isAvailableForMatch(player) && ['ZAG', 'LAT'].includes(player.position)) ||
+    !bench.some((player) => isAvailableForMatch(player) && ['VOL', 'MEI'].includes(player.position)) ||
+    !bench.some((player) => isAvailableForMatch(player) && player.position === 'ATA')
+  );
+
+  const ordered = (starterIssue || benchNeedsBalance) ? autoLineup(rebuilt, formation) : rebuilt;
+  return ordered.map((player, index) => {
+    const raw = player as any;
+    const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
+    return {
+      ...player,
+      squadRole: index < 11 ? 'titular' : index < 18 ? (isBaseYouth ? 'promessa' : 'reserva') : (isBaseYouth ? 'promessa' : 'rotacao'),
+    } as Player;
+  });
 };
 
 export const squadsDiffer = (a: Player[], b: Player[]) => {
   if (a.length !== b.length) return true;
   return a.some((player, index) => {
     const next = b[index];
-    return !next || player.id !== next.id || player.overall !== next.overall || player.stamina !== next.stamina;
+    return !next || player.id !== next.id || player.overall !== next.overall || player.stamina !== next.stamina || player.position !== next.position || player.squadRole !== next.squadRole || !!player.injury !== !!next.injury;
   });
 };
 
 export const syncTacticsWithSquad = (tactics: TacticsConfig, players: Player[]): TacticsConfig => {
   const validIds = new Set(players.map((player) => player.id));
+  const { lineup: _lineup, startingXI: _startingXI, starting_xi: _starting_xi, ...cleanTactics } = tactics as any;
   return {
-    ...tactics,
-    playerInstructions: (tactics.playerInstructions ?? []).filter((instruction) => validIds.has(instruction.playerId)),
-    captainId: tactics.captainId && validIds.has(tactics.captainId) ? tactics.captainId : players[0]?.id,
-    freeKickTakerId: tactics.freeKickTakerId && validIds.has(tactics.freeKickTakerId) ? tactics.freeKickTakerId : players.find(p => p.position === 'MEI')?.id ?? players[0]?.id,
-    penaltyTakerId: tactics.penaltyTakerId && validIds.has(tactics.penaltyTakerId) ? tactics.penaltyTakerId : players.find(p => p.position === 'ATA')?.id ?? players[0]?.id,
-    cornerTakerId: tactics.cornerTakerId && validIds.has(tactics.cornerTakerId) ? tactics.cornerTakerId : players.find(p => p.position === 'MEI')?.id ?? players[0]?.id,
+    ...cleanTactics,
+    playerInstructions: (cleanTactics.playerInstructions ?? []).filter((instruction: any) => validIds.has(instruction.playerId)),
+    captainId: cleanTactics.captainId && validIds.has(cleanTactics.captainId) ? cleanTactics.captainId : players[0]?.id,
+    freeKickTakerId: cleanTactics.freeKickTakerId && validIds.has(cleanTactics.freeKickTakerId) ? cleanTactics.freeKickTakerId : players.find(p => p.position === 'MEI')?.id ?? players[0]?.id,
+    penaltyTakerId: cleanTactics.penaltyTakerId && validIds.has(cleanTactics.penaltyTakerId) ? cleanTactics.penaltyTakerId : players.find(p => p.position === 'ATA')?.id ?? players[0]?.id,
+    cornerTakerId: cleanTactics.cornerTakerId && validIds.has(cleanTactics.cornerTakerId) ? cleanTactics.cornerTakerId : players.find(p => p.position === 'MEI')?.id ?? players[0]?.id,
   };
 };

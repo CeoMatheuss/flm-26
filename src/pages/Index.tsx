@@ -261,6 +261,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const { isPremium } = usePremiumStatus(userId);
   const game = useGame(initialState, userId, isPremium);
   const mp = useMultiplayer(userId, displayName, game.club.name, game.club.country);
+  const rosterSyncKey = useMemo(() => (
+    game.club.players.map((p: any, index: number) => `${index}:${p.id}:${p.position}:${p.overall}:${p.stamina}:${p.squadRole}:${p.contractStatus}:${!!p.injury}`).join('|')
+  ), [game.club.players]);
   usePresence(userId);
   usePendingMatchFlush(userId);
   useAutoSimulator(userId);
@@ -703,7 +706,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
     mp.syncSquad(game.club.players, game.tactics, clubMeta);
     const interval = setInterval(() => mp.syncSquad(game.club.players, game.tactics, clubMeta), 10000);
     return () => clearInterval(interval);
-  }, [mp.currentLeague?.id, game.club.players.length, game.infrastructure.stadium.level, (game.club as any).shieldConfig]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mp.currentLeague?.id, rosterSyncKey, game.tactics, game.infrastructure.stadium.level, (game.club as any).shieldConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Show changelog
   useEffect(() => {
