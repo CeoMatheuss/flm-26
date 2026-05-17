@@ -18,13 +18,15 @@ interface Props {
 }
 
 interface LobbyState {
-  state: 'waiting_other' | 'both_ready' | 'start_with_ai';
+  state: 'waiting_other' | 'one_ready' | 'both_ready' | 'start_with_ai';
   remaining_ms: number;
   home_joined: boolean;
   away_joined: boolean;
+  at_least_one_joined?: boolean;
   home_user_id: string;
   away_user_id: string;
   auto_sim_at: string | null;
+  kickoff_at?: string | null;
 }
 
 export function MatchLobbyScreen({ matchType, matchId, userId, myClub, oppClub, onReady, onAutoSimulated, onCancel }: Props) {
@@ -148,11 +150,30 @@ export function MatchLobbyScreen({ matchType, matchId, userId, myClub, oppClub, 
               {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">
-              {expired
-                ? 'Adversário não compareceu'
-                : 'Se ninguém entrar, partida será simulada automaticamente'}
+              {lobby?.at_least_one_joined
+                ? '✅ Você entrou — a partida não será simulada automaticamente'
+                : expired
+                ? 'Ninguém compareceu — será simulada automaticamente'
+                : 'Se nenhum técnico entrar, a partida será simulada automaticamente'}
             </p>
           </div>
+
+          {/* Status visual */}
+          {lobby && (
+            <div className="text-center">
+              <Badge className={`text-[10px] ${
+                lobby.state === 'both_ready' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                lobby.state === 'one_ready' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                lobby.state === 'start_with_ai' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                'bg-muted text-muted-foreground'
+              }`}>
+                {lobby.state === 'both_ready' ? '🟢 Partida iniciando' :
+                 lobby.state === 'one_ready' ? '🔵 Jogador conectado — pronto para iniciar' :
+                 lobby.state === 'start_with_ai' ? '🤖 Simulação automática' :
+                 '⏳ Aguardando jogadores'}
+              </Badge>
+            </div>
+          )}
 
           {/* Actions */}
           {!lobby && (
@@ -173,7 +194,14 @@ export function MatchLobbyScreen({ matchType, matchId, userId, myClub, oppClub, 
             </Button>
           )}
 
-          {(lobby?.state === 'start_with_ai' || expired) && (
+          {/* Basta 1 jogador entrar para poder iniciar (contra IA do ausente). Sem auto-sim. */}
+          {lobby?.state === 'one_ready' && (
+            <Button onClick={onReady} className="w-full h-11 gap-2 bg-blue-600 hover:bg-blue-700">
+              <Play className="h-4 w-4" /> Iniciar contra IA do adversário
+            </Button>
+          )}
+
+          {(lobby?.state === 'start_with_ai' || expired) && !lobby?.at_least_one_joined && (
             <div className="space-y-2">
               <Button onClick={onReady} className="w-full h-11 gap-2">
                 <Bot className="h-4 w-4" /> Jogar contra IA do adversário

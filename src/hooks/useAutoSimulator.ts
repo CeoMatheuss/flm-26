@@ -12,7 +12,8 @@ export function useAutoSimulator(userId: string | undefined) {
         await Promise.all([
           supabase.functions.invoke('world-match-simulator'),
           supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' } }),
-          supabase.functions.invoke('process-transfer', { body: { action: 'resolve-decisions' } })
+          supabase.functions.invoke('process-transfer', { body: { action: 'resolve-decisions' } }),
+          supabase.functions.invoke('legacy-auto-sim'),
         ]);
       } catch (err) {
         console.error('[AutoSim] Erro na simulação inicial:', err);
@@ -27,7 +28,8 @@ export function useAutoSimulator(userId: string | undefined) {
         await Promise.all([
           supabase.functions.invoke('world-match-simulator'),
           supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' } }),
-          supabase.functions.invoke('process-transfer', { body: { action: 'resolve-decisions' } })
+          supabase.functions.invoke('process-transfer', { body: { action: 'resolve-decisions' } }),
+          supabase.functions.invoke('legacy-auto-sim'),
         ]);
       } catch (err) {
         console.error('[AutoSim] Erro ao invocar simuladores:', err);
