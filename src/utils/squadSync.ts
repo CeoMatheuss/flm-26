@@ -39,7 +39,7 @@ export const youthProspectToPlayer = (prospect: YouthProspect): Player => ({
 
 export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspect[], formation: TacticsConfig['formation']) => {
   const byId = new Map<string, Player>();
-  [...players, ...youthProspects.map(youthProspectToPlayer)].forEach((player) => {
+  [...youthProspects.map(youthProspectToPlayer), ...players].forEach((player) => {
     if (!player?.id || !isAvailableForSquad(player)) return;
     const previous = byId.get(player.id);
     byId.set(player.id, {
