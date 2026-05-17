@@ -359,30 +359,22 @@ export function useMatchSimulation() {
       });
 
       if (isFinalWhistle) {
-        // ... keep existing final whistle logic
-      }
-      return;
-    }
-
-        if (isFinalWhistle) {
-          console.log("[MATCH] Apito final detectado nos eventos.");
-          stopTick();
-          if (!persistedRef.current) {
-            persistedRef.current = true;
-            supabase.from('live_matches')
-              .update({ status: 'finished', current_minute: nextEvent.minute })
-              .eq('id', data.matchDbId)
-              .then(async () => {
-                console.log("[MATCH] Sincronizando tabela da liga...");
-                // Aciona a atualização da tabela via RPC
-                try {
-                  const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
-                  if (rpcError) console.error("[MATCH] Erro ao sincronizar tabela:", rpcError);
-                } catch (err) {
-                  console.error("[MATCH] Exceção ao sincronizar tabela:", err);
-                }
-              });
-          }
+        console.log("[MATCH] Apito final detectado nos eventos.");
+        stopTick();
+        if (!persistedRef.current) {
+          persistedRef.current = true;
+          supabase.from('live_matches')
+            .update({ status: 'finished', current_minute: nextEvent.minute })
+            .eq('id', data.matchDbId)
+            .then(async () => {
+              console.log("[MATCH] Sincronizando tabela da liga...");
+              try {
+                const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
+                if (rpcError) console.error("[MATCH] Erro ao sincronizar tabela:", rpcError);
+              } catch (err) {
+                console.error("[MATCH] Exceção ao sincronizar tabela:", err);
+              }
+            });
         }
       }
       return;
