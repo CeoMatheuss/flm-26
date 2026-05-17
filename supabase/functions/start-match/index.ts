@@ -711,23 +711,24 @@ function simulateFullMatch(
   const homeAttackVsDefense = (homeAtkAvg + homeMidAvg * 0.5) / Math.max(1, awayDefAvg);
   const awayAttackVsDefense = (awayAtkAvg + 50 * 0.5) / Math.max(1, homeDefAvg);
 
-  const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - awayStrength;
+  const strengthDiff = (homeStrength * homeAdv * moraleMod * fatigueMod) - (awayStrength * awayMoraleMod * awayFatigueMod);
 
   // ── MATCHUP MULTIPLIERS ──────────────────────────────────────
   const homeMatchup = getMatchup(playStyle, awayPlayStyle);
   const awayMatchup = getMatchup(awayPlayStyle, playStyle);
   console.log(`[Matchup] Home(${playStyle}) vs Away(${awayPlayStyle}) | homeAtk×${homeMatchup.homeAtk} homeDef×${homeMatchup.homeDef} | awayAtk×${awayMatchup.homeAtk} awayDef×${awayMatchup.homeDef}`);
+  console.log(`[Form] HOME mor=${avgMorale.toFixed(0)} sta=${avgStamina.toFixed(0)} (mod ${(moraleMod*fatigueMod).toFixed(2)}) | AWAY mor=${awayAvgMorale.toFixed(0)} sta=${awayAvgStaminaInit.toFixed(0)} (mod ${(awayMoraleMod*awayFatigueMod).toFixed(2)})`);
 
-  // Home expected goals: ataque do mandante vs defesa do visitante (peso de atributos REFORÇADO)
+  // Home expected goals — agora também escalado pelo moral+stamina do mandante
   const homeExpected = clamp(
-    ((1.1 + (strengthDiff / 100) * 2.2 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 1.1) * homeMatchup.homeAtk) /
-    Math.max(0.7, awayDefensiveMod * 0.85 * awayMatchup.homeDef + 0.15),
+    ((1.1 + (strengthDiff / 100) * 2.2 * offensiveMod * tempoMod + (homeAttackVsDefense - 1) * 1.1) * homeMatchup.homeAtk * moraleMod * fatigueMod) /
+    Math.max(0.7, awayDefensiveMod * 0.85 * awayMatchup.homeDef * awayMoraleMod * awayFatigueMod + 0.15),
     0.1, 4.0
   );
-  // Away expected goals: ataque do visitante vs defesa do mandante (peso de atributos REFORÇADO)
+  // Away expected goals — simétrico, com moral/stamina visitante atacando e mandante defendendo
   const awayExpected = clamp(
-    ((1.1 - (strengthDiff / 100) * 1.8 + (awayAttackVsDefense - 1) * 1.1 * awayOffensiveMod * awayTempoMod) * awayMatchup.homeAtk) /
-    Math.max(0.7, defensiveMod * 0.85 * homeMatchup.homeDef + 0.15),
+    ((1.1 - (strengthDiff / 100) * 1.8 + (awayAttackVsDefense - 1) * 1.1 * awayOffensiveMod * awayTempoMod) * awayMatchup.homeAtk * awayMoraleMod * awayFatigueMod) /
+    Math.max(0.7, defensiveMod * 0.85 * homeMatchup.homeDef * moraleMod * fatigueMod + 0.15),
     0.1, 4.0
   );
   
