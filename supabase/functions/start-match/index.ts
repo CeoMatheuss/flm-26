@@ -839,10 +839,11 @@ function simulateFullMatch(
 
   // ── PENALTY EVENTS ──────────────────────────────────────────
   const penaltyMins: { minute: number; team: 'home' | 'away'; isGoal: boolean }[] = [];
-  const penaltyChance = (pressingMod - 0.9) * 0.1 + 0.07;
+  const penaltyChance = clamp((pressingMod - 0.9) * 0.1 + 0.07 + (homeExtras.penaltyBonus + awayExtras.penaltyBonus) * 0.5, 0.02, 0.35);
+  const homePenBias = 0.55 + (homeExtras.penaltyBonus - awayExtras.penaltyBonus) * 2;
   for (let i = 0; i < 2; i++) {
     if (rng() < penaltyChance) {
-      const team: 'home' | 'away' = rng() < 0.55 ? 'home' : 'away';
+      const team: 'home' | 'away' = rng() < clamp(homePenBias, 0.25, 0.85) ? 'home' : 'away';
       const m = pickUnique(allGamePool.filter(m => m >= 20));
       if (m > 0) {
         const kicker = team === 'home'
