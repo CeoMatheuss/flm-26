@@ -124,24 +124,83 @@ function assignPlayersToSlots(players: Player[], formation: Formation) {
   const starters = players.slice(0, 11);
   if (starters.length < 11) return new Array(11).fill(null);
 
-  const cats = {
-    GOL: starters.filter(p => p.position === 'GOL').sort((a, b) => b.overall - a.overall),
-    DEF: starters.filter(p => ['ZAG', 'LAT'].includes(p.position)).sort((a, b) => b.overall - a.overall),
-    MID: starters.filter(p => ['VOL', 'MEI'].includes(p.position)).sort((a, b) => b.overall - a.overall),
-    ATK: starters.filter(p => p.position === 'ATA').sort((a, b) => b.overall - a.overall),
+  const layout = formationLayouts[formation] || formationLayouts['4-4-2'];
+  const assigned: (Player | null)[] = new Array(11).fill(null);
+  const available = new Set(starters.map(p => p.id));
+
+  // Score: compat real + bônus se a posição natural bate exatamente, + bônus secundária
+  const score = (p: Player, slotPos: string) => {
+    const compat = positionCompatibility[p.position]?.[slotPos] ?? 0.3;
+    let s = compat;
+    if (p.position === slotPos) s += 1.0;            // posição natural bate
+    if (p.secondaryPosition === slotPos) s += 0.25;  // posição secundária bate
+    return s;
   };
 
-  const assigned: (Player | null)[] = new Array(11).fill(null);
-  if (cats.GOL[0]) assigned[0] = cats.GOL[0];
+  // Ordem de prioridade: posições mais específicas primeiro (GOL > LAT > ZAG > ATA > VOL > MEI)
+  const priority: Record<string, number> = { GOL: 6, LAT: 5, ZAG: 4, ATA: 3, VOL: 2, MEI: 1 };
+  const slotOrder = layout
+    .map((slot, idx) => ({ slot, idx }))
+    .sort((a, b) => (priority[b.slot.position] ?? 0) - (priority[a.slot.position] ?? 0));
 
-  let i = 1;
-  cats.DEF.forEach(p => { if (i < 11) assigned[i++] = p; });
-  cats.MID.forEach(p => { if (i < 11) assigned[i++] = p; });
-  cats.ATK.forEach(p => { if (i < 11) assigned[i++] = p; });
+  // 1ª passada: atribui cada slot ao melhor jogador disponível
+  for (const { slot, idx } of slotOrder) {
+    let best: Player | null = null;
+    let bestScore = -Infinity;
+    for (const p of starters) {
+      if (!available.has(p.id)) continue;
+      const sc = score(p, slot.position) + p.overall / 1000; // desempate por OVR
+      if (sc > bestScore) { bestScore = sc; best = p; }
+    }
+    if (best) {
+      assigned[idx] = best;
+      available.delete(best.id);
+    }
+  }
 
-  const used = new Set(assigned.filter(Boolean).map(p => p!.id));
-  const rest = starters.filter(p => !used.has(p.id));
+  // Preenche slots vazios com qualquer jogador restante
+  const rest = starters.filter(p => available.has(p.id));
   for (let k = 0; k < 11; k++) if (!assigned[k] && rest.length) assigned[k] = rest.shift()!;
+
+  // 2ª passada: dentro de slots que compartilham a MESMA posição (ex: 2 ZAG, 2 LAT, 3 MEI),
+  // reordena os jogadores atribuídos por x do slot (esquerda → direita) usando OVR
+  // (OVR maior tende ao centro para ZAG/MEI; para LAT/ATA mantém por OVR esquerda → direita).
+  const groups = new Map<string, number[]>();
+  layout.forEach((slot, idx) => {
+    const key = slot.position;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(idx);
+  });
+
+  groups.forEach((indices, pos) => {
+    if (indices.length < 2) return;
+    const slotsSorted = [...indices].sort((a, b) => layout[a].x - layout[b].x);
+    const playersInGroup = indices
+      .map(i => assigned[i])
+      .filter((p): p is Player => !!p);
+    if (playersInGroup.length !== slotsSorted.length) return;
+
+    // ZAG e MEI: melhor OVR no centro. LAT/ATA/VOL: ordena por OVR esquerda → direita (estável).
+    let ordered: Player[];
+    if (pos === 'ZAG' || pos === 'MEI') {
+      const byOvr = [...playersInGroup].sort((a, b) => b.overall - a.overall);
+      // distribui: melhores ao centro, piores nas pontas
+      ordered = new Array(slotsSorted.length);
+      let l = 0, r = slotsSorted.length - 1, take = 0;
+      // preenche das pontas para o centro com os piores; melhores ficam no meio
+      const reversed = [...byOvr].reverse(); // piores primeiro
+      while (l <= r) {
+        if (l === r) { ordered[l] = reversed[take++]; break; }
+        ordered[l++] = reversed[take++];
+        ordered[r--] = reversed[take++];
+      }
+    } else {
+      ordered = [...playersInGroup].sort((a, b) => b.overall - a.overall);
+    }
+
+    slotsSorted.forEach((slotIdx, i) => { assigned[slotIdx] = ordered[i]; });
+  });
+
   return assigned;
 }
 
