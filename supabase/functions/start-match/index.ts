@@ -540,6 +540,79 @@ function getStyleMod(style: string): StyleMod {
   return STYLE_MODS[style] || STYLE_MODS['equilibrado'];
 }
 
+// ── EXTRA TACTICAL OPTIONS ───────────────────────────────────
+// Aplica os campos marking / passingStyle / defenseLine / width / formation
+// sobre os modificadores táticos. Tudo simétrico entre home e away.
+interface TacticalExtras {
+  atkMul: number;      // multiplica offensiveMod
+  defMul: number;      // multiplica defensiveMod
+  pressBonus: number;  // soma em pressingMod
+  drainMul: number;    // multiplica desgaste de stamina
+  foulBias: number;    // peso extra no sorteio de cartões/faltas
+  penaltyBonus: number;// soma no penaltyChance
+  offsideMul: number;  // multiplica chance de impedimento marcado a favor
+  possessionBias: number; // soma na razão de posse (-0.1..+0.1)
+  shortPassBoost: number; // boost em creationPower / passes
+  longShotBoost: number;  // boost em finalizações de longe
+  crossBoost: number;     // boost em jogadas aéreas/cruzamento
+}
+
+function getTacticalExtras(t: any): TacticalExtras {
+  const marking = t?.marking || 'zona';
+  const passing = t?.passingStyle || 'misto';
+  const dline = t?.defenseLine || 'media';
+  const width = t?.width || 'normal';
+  const formation: string = t?.formation || '4-4-2';
+
+  let atkMul = 1, defMul = 1, pressBonus = 0, drainMul = 1;
+  let foulBias = 0, penaltyBonus = 0, offsideMul = 1, possessionBias = 0;
+  let shortPassBoost = 0, longShotBoost = 0, crossBoost = 0;
+
+  // Marcação
+  if (marking === 'individual') {
+    defMul *= 1.08; pressBonus += 0.10; drainMul *= 1.08;
+    foulBias += 0.6; penaltyBonus += 0.025;
+  } else if (marking === 'zona') {
+    defMul *= 1.03;
+  } else if (marking === 'mista') {
+    defMul *= 1.05; pressBonus += 0.05;
+  }
+
+  // Linha defensiva
+  if (dline === 'alta') {
+    atkMul *= 1.05; defMul *= 0.92; pressBonus += 0.10;
+    offsideMul *= 1.6; drainMul *= 1.05;
+  } else if (dline === 'baixa') {
+    atkMul *= 0.92; defMul *= 1.10; pressBonus -= 0.10;
+    offsideMul *= 0.6; drainMul *= 0.95;
+  }
+
+  // Estilo de passe
+  if (passing === 'curto') {
+    possessionBias += 0.06; shortPassBoost += 0.10;
+    atkMul *= 0.97; drainMul *= 0.97;
+  } else if (passing === 'direto') {
+    possessionBias -= 0.05; longShotBoost += 0.12; atkMul *= 1.05;
+  } else if (passing === 'longo') {
+    possessionBias -= 0.07; longShotBoost += 0.05; crossBoost += 0.15; atkMul *= 1.07;
+    drainMul *= 1.02;
+  }
+
+  // Largura
+  if (width === 'larga') {
+    atkMul *= 1.04; defMul *= 0.97; crossBoost += 0.18;
+  } else if (width === 'estreita') {
+    atkMul *= 0.97; defMul *= 1.04; shortPassBoost += 0.06;
+  }
+
+  // Formação (impacto sutil — só viés)
+  if (formation.startsWith('5-') || formation === '4-5-1') { defMul *= 1.05; atkMul *= 0.95; }
+  else if (formation === '3-4-3' || formation === '4-3-3' || formation === '4-2-4') { atkMul *= 1.05; defMul *= 0.96; }
+  else if (formation === '4-2-3-1' || formation === '4-3-2-1') { possessionBias += 0.03; }
+
+  return { atkMul, defMul, pressBonus, drainMul, foulBias, penaltyBonus, offsideMul, possessionBias, shortPassBoost, longShotBoost, crossBoost };
+}
+
 // ── MAIN SIMULATION ──────────────────────────────────────────
 
 function simulateFullMatch(
@@ -667,23 +740,31 @@ function simulateFullMatch(
   const awayAvgStaminaInit = away.reduce((s, p) => s + p.stamina, 0) / 11;
   const awayFatigueMod = 0.8 + (awayAvgStaminaInit / 100) * 0.2;
   
-  // Tactical impact on simulation (HOME) — uses style table
+  // Extras táticos (marking/passing/defenseLine/width/formation)
+  const homeExtras = getTacticalExtras(tactics);
+  const awayExtras = getTacticalExtras(awayTacticsInput);
+  console.log(`[Tactics] HOME mark=${tactics?.marking||'zona'} pass=${tactics?.passingStyle||'misto'} line=${tactics?.defenseLine||'media'} width=${tactics?.width||'normal'} form=${tactics?.formation||'4-4-2'}`);
+  console.log(`[Tactics] AWAY mark=${awayTacticsInput?.marking||'zona'} pass=${awayTacticsInput?.passingStyle||'misto'} line=${awayTacticsInput?.defenseLine||'media'} width=${awayTacticsInput?.width||'normal'} form=${awayTacticsInput?.formation||'4-4-2'}`);
+
+  // Tactical impact on simulation (HOME) — uses style table + extras
   const pressingBase = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
-  const pressingMod = clamp(pressingBase + homeStyleMod.pressureExtra, 0.5, 2.0);
-  const offensiveMod = homeStyleMod.atk;
-  const defensiveMod = homeStyleMod.def;
+  const pressingMod = clamp(pressingBase + homeStyleMod.pressureExtra + homeExtras.pressBonus, 0.5, 2.2);
+  const offensiveMod = homeStyleMod.atk * homeExtras.atkMul;
+  const defensiveMod = homeStyleMod.def * homeExtras.defMul;
   const tempoMod = tempo === 'muito-rapido' ? 1.15 : tempo === 'rapido' ? 1.08 : tempo === 'normal' ? 1.0 : 0.9;
 
   // Away tactical mods
   const awayPressingBase = awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8;
-  const awayPressingMod = clamp(awayPressingBase + awayStyleMod.pressureExtra, 0.5, 2.0);
-  const awayOffensiveMod = awayStyleMod.atk;
-  const awayDefensiveMod = awayStyleMod.def;
+  const awayPressingMod = clamp(awayPressingBase + awayStyleMod.pressureExtra + awayExtras.pressBonus, 0.5, 2.2);
+  const awayOffensiveMod = awayStyleMod.atk * awayExtras.atkMul;
+  const awayDefensiveMod = awayStyleMod.def * awayExtras.defMul;
   const awayTempoMod = awayTempo === 'muito-rapido' ? 1.15 : awayTempo === 'rapido' ? 1.08 : awayTempo === 'normal' ? 1.0 : 0.9;
 
-  // Stamina drain modifiers for pressing/tempo (multiplied by style drain)
-  const staminaDrainPressing = (pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8) * homeStyleMod.staminaDrain;
+  // Stamina drain modifiers for pressing/tempo (multiplied by style drain + extras)
+  const staminaDrainPressing = (pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8) * homeStyleMod.staminaDrain * homeExtras.drainMul;
   const staminaDrainTempo = tempo === 'muito-rapido' ? 1.2 : tempo === 'rapido' ? 1.1 : 1.0;
+  const awayStaminaDrainPressing = (awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8) * awayStyleMod.staminaDrain * awayExtras.drainMul;
+  const awayStaminaDrainTempo = awayTempo === 'muito-rapido' ? 1.2 : awayTempo === 'rapido' ? 1.1 : 1.0;
 
   // ── ATTRIBUTE-BASED STRENGTH ──────────────────────────────
   const homeDefenders = home.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
@@ -758,10 +839,11 @@ function simulateFullMatch(
 
   // ── PENALTY EVENTS ──────────────────────────────────────────
   const penaltyMins: { minute: number; team: 'home' | 'away'; isGoal: boolean }[] = [];
-  const penaltyChance = (pressingMod - 0.9) * 0.1 + 0.07;
+  const penaltyChance = clamp((pressingMod - 0.9) * 0.1 + 0.07 + (homeExtras.penaltyBonus + awayExtras.penaltyBonus) * 0.5, 0.02, 0.35);
+  const homePenBias = 0.55 + (homeExtras.penaltyBonus - awayExtras.penaltyBonus) * 2;
   for (let i = 0; i < 2; i++) {
     if (rng() < penaltyChance) {
-      const team: 'home' | 'away' = rng() < 0.55 ? 'home' : 'away';
+      const team: 'home' | 'away' = rng() < clamp(homePenBias, 0.25, 0.85) ? 'home' : 'away';
       const m = pickUnique(allGamePool.filter(m => m >= 20));
       if (m > 0) {
         const kicker = team === 'home'
@@ -966,7 +1048,10 @@ function simulateFullMatch(
   // ── CARDS ──────────────────────────────────────────────────
   // Times com moral/stamina baixos cometem mais faltas → favorece esses jogadores no sorteio.
   for (const m of cardMins) {
-    const teamIdx: 0 | 1 = rng() < 0.5 ? 0 : 1;
+    // Times com marcação individual / pressing alto cometem mais faltas
+    const homeFoulW = 1 + homeExtras.foulBias + Math.max(0, pressingMod - 1) * 0.8;
+    const awayFoulW = 1 + awayExtras.foulBias + Math.max(0, awayPressingMod - 1) * 0.8;
+    const teamIdx: 0 | 1 = rng() < homeFoulW / (homeFoulW + awayFoulW) ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
@@ -1024,11 +1109,28 @@ function simulateFullMatch(
     stats.shots[teamIdx]++;
     // Chance outcome favors misses/saves when shooter is tired/desmotivated
     const sForm = formMult(shooter);
-    const chancePool = sForm >= 1.0
+    // Defesa adversária com linha alta força mais impedimentos contra o atacante
+    const oppExtras = team === 'home' ? awayExtras : homeExtras;
+    const myExtras = team === 'home' ? homeExtras : awayExtras;
+    const basePool = sForm >= 1.0
       ? ['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
       : sForm >= 0.85
         ? ['woodwork', 'great_save', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
         : ['great_save', 'great_save', 'offside_trap', 'long_shot_miss', 'long_shot_miss', 'header_miss', 'header_miss', 'buildup_play'];
+    const chancePool: string[] = [...basePool];
+    // Linha alta adversária → +impedimentos
+    if (oppExtras.offsideMul > 1.2) chancePool.push('offside_trap', 'offside_trap');
+    else if (oppExtras.offsideMul < 0.8) {
+      // tira um offside_trap se houver
+      const idx = chancePool.indexOf('offside_trap');
+      if (idx >= 0) chancePool.splice(idx, 1);
+    }
+    // Bola longa / largura larga → mais cruzamentos / cabeceios e contra-ataques
+    if (myExtras.crossBoost > 0.1) chancePool.push('corner_danger', 'header_miss', 'free_kick_near');
+    // Passe curto → mais construção
+    if (myExtras.shortPassBoost > 0.05) chancePool.push('buildup_play', 'buildup_play');
+    // Chutão / passe longo → mais chutes de longe
+    if (myExtras.longShotBoost > 0.08) chancePool.push('long_shot_miss', 'woodwork');
     const evType = pick(chancePool);
     const descs: Record<string, string> = {
       woodwork: `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área e a bola bate no travessão! ${gkName} do ${opp} apenas observou. A torcida grita!`,
@@ -1064,7 +1166,7 @@ function simulateFullMatch(
   for (const m of possessionMins.sort((a, b) => a - b)) {
     // Drain stamina
     drainStamina(home, m, staminaDrainPressing, staminaDrainTempo);
-    drainStamina(away, m, 1.0, 1.0);
+    drainStamina(away, m, awayStaminaDrainPressing, awayStaminaDrainTempo);
 
     // Update score at this minute
     const [sh, sa] = getScoreAtMinute(m, false);
@@ -1403,10 +1505,13 @@ function simulateFullMatch(
   const aggregateHomeGoals = finalHomeGoals + extraHomeGoals;
   const aggregateAwayGoals = finalAwayGoals + extraAwayGoals;
 
-  // Possession stats
+  // Possession stats — agora influenciado por estilo de passe / largura
   const effectiveHome = homeStrength * homeAdv * moraleMod;
   const possStyle = playStyle === 'posse' ? 1.15 : playStyle === 'contra-ataque' ? 0.85 : 1.0;
-  const possRatio = (effectiveHome * possStyle) / (effectiveHome * possStyle + awayStrength);
+  const awayPossStyle = awayPlayStyle === 'posse' ? 1.15 : awayPlayStyle === 'contra-ataque' ? 0.85 : 1.0;
+  const homePossWeight = effectiveHome * possStyle * (1 + homeExtras.possessionBias);
+  const awayPossWeight = awayStrength * awayPossStyle * (1 + awayExtras.possessionBias);
+  const possRatio = homePossWeight / (homePossWeight + awayPossWeight);
   stats.possession = [Math.round(possRatio * 100), 100 - Math.round(possRatio * 100)];
 
   // ── PLAYER RATINGS (recompute from event log + role fit) ──
