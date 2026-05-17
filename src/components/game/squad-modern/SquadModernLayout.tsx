@@ -406,7 +406,7 @@ export function SquadModernLayout({
                        </span>
                        <button
                          onClick={() => setIsTacticsOpen(false)}
-                         className="xl:hidden w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center"
+                         className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center"
                          aria-label="Fechar painel tático"
                        >
                          <X className="w-4 h-4 text-white/70" />
