@@ -270,7 +270,7 @@ export function FormationView({
       className={cn(
         'relative w-full mx-auto bg-[#0a1f0f] overflow-visible shadow-xl select-none',
         'rounded-xl sm:rounded-2xl border-2 sm:border-[5px] border-emerald-900/40',
-        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/9] max-w-5xl'
+        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/9] max-w-[1100px]'
       )}
     >
       {/* Grama */}
