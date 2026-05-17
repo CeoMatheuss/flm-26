@@ -199,34 +199,35 @@ function PlayerDetailContent({
             </div>
           </section>
 
-          {/* Attributes Grid */}
-          <section>
-            <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-              <Zap className="w-4 h-4" /> Atributos Principais
+          {/* Attributes by Category */}
+          <section className="space-y-6">
+            <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] flex items-center gap-3">
+              <Zap className="w-4 h-4" /> Atributos Detalhados
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
-              {attrConfig.map((cfg) => {
-                const { value: val, sourceKey } = getAttrValue(player, cfg.from as any);
-                const d = (delta as any)[sourceKey] ?? 0;
-                return (
-                  <Tooltip key={cfg.key as string}>
-                    <TooltipTrigger asChild>
-                      <div className="cursor-help group">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">{cfg.icon}</span>
-                            <span className="text-[11px] font-bold text-white/60 uppercase tracking-wider group-hover:text-white transition-colors">{cfg.label}</span>
+            {buildAttrCategories(player).map((cat) => (
+              <div key={cat.title} className="space-y-3">
+                <div className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em]">
+                  {cat.icon} {cat.title}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                  {cat.items.map((item) => {
+                    const d = (delta as any)[item.key] ?? 0;
+                    return (
+                      <div key={item.key} className="group">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-sm">{item.icon}</span>
+                            <span className="text-[11px] font-bold text-white/60 uppercase tracking-wider truncate group-hover:text-white transition-colors">
+                              {item.label}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <span className={cn(
                               "text-xs font-black tabular-nums",
-                              val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
-                            )}>{val}</span>
+                              item.value >= 80 ? 'text-emerald-400' : item.value >= 60 ? 'text-sky-400' : 'text-red-400'
+                            )}>{item.value}</span>
                             {d !== 0 && (
-                              <span className={cn(
-                                'text-[10px] font-black',
-                                d > 0 ? 'text-emerald-400' : 'text-red-400'
-                              )}>
+                              <span className={cn('text-[10px] font-black', d > 0 ? 'text-emerald-400' : 'text-red-400')}>
                                 {d > 0 ? <ArrowUp className="w-2.5 h-2.5 inline" /> : <ArrowDown className="w-2.5 h-2.5 inline" />}
                               </span>
                             )}
@@ -235,20 +236,16 @@ function PlayerDetailContent({
                         <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${val}%` }}
-                            className={cn('h-full bg-gradient-to-r rounded-full transition-all duration-700', attrColorClass(val))}
+                            animate={{ width: `${item.value}%` }}
+                            className={cn('h-full bg-gradient-to-r rounded-full transition-all duration-700', attrColorClass(item.value))}
                           />
                         </div>
                       </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-zinc-900 border-white/10 p-3 shadow-2xl">
-                      <div className="font-black text-xs mb-1 uppercase tracking-widest">{cfg.label}: {val}</div>
-                      <p className="text-[10px] text-white/50 leading-relaxed italic">{evolutionReason(player, cfg.label, d)}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </section>
 
           {/* Statistics Grid */}
