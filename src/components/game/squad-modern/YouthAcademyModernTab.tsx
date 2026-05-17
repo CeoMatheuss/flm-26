@@ -161,6 +161,59 @@ export function YouthAcademyModernTab({
         </div>
       </section>
 
+      {/* Quick Upgrade Widget */}
+      {academyLevel < 30 && !isConstructing && (() => {
+        const cost = getAcademyUpgradeCost(academyLevel);
+        const canAfford = budget >= cost;
+        const nextLevel = academyLevel + 1;
+        const currentMax = getYouthMaxOverall(academyLevel);
+        const nextMax = getYouthMaxOverall(nextLevel);
+        const progressPct = (academyLevel / 30) * 100;
+        return (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative p-6 sm:p-8 rounded-[2rem] bg-gradient-to-br from-emerald-500/10 via-zinc-900/40 to-zinc-900/40 border border-emerald-500/20 backdrop-blur-xl overflow-hidden"
+          >
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shrink-0">
+                  <Hammer className="w-7 h-7 text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">Evoluir Base</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Nv {academyLevel} → {nextLevel}</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black italic uppercase tracking-tight text-white truncate">
+                    OVR máx. {currentMax} <span className="text-emerald-400">→ {nextMax}</span>
+                  </h3>
+                  <div className="mt-2 h-1.5 bg-white/5 rounded-full overflow-hidden max-w-xs">
+                    <div className="h-full bg-emerald-500" style={{ width: `${progressPct}%` }} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Custo</p>
+                  <p className={cn("text-base sm:text-lg font-black italic", canAfford ? "text-white" : "text-red-400")}>
+                    {formatMoney(cost)}
+                  </p>
+                </div>
+                <Button
+                  onClick={onUpgradeAcademy}
+                  disabled={!canAfford}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black uppercase tracking-widest text-xs px-6 py-6 rounded-2xl shadow-[0_0_25px_rgba(16,185,129,0.3)] disabled:opacity-40 disabled:shadow-none"
+                >
+                  <ArrowUpRight className="w-4 h-4 mr-1" /> Evoluir
+                </Button>
+              </div>
+            </div>
+          </motion.section>
+        );
+      })()}
+
       <AnimatePresence>
         {isConstructing && (
           <motion.div
