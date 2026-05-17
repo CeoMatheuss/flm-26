@@ -1146,7 +1146,7 @@ function simulateFullMatch(
   for (const m of possessionMins.sort((a, b) => a - b)) {
     // Drain stamina
     drainStamina(home, m, staminaDrainPressing, staminaDrainTempo);
-    drainStamina(away, m, 1.0, 1.0);
+    drainStamina(away, m, awayStaminaDrainPressing, awayStaminaDrainTempo);
 
     // Update score at this minute
     const [sh, sa] = getScoreAtMinute(m, false);
