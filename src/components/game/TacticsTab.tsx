@@ -50,8 +50,13 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
     penaltyTakerId: rawTactics.penaltyTakerId,
     cornerTakerId: rawTactics.cornerTakerId,
   };
+  const canUseInMatch = (player: Player) => {
+    const raw = player as any;
+    const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
+    return !isBaseYouth && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended && !raw.isLoaned && !raw.loanedOut && !raw.inactive && !raw.removed;
+  };
   const starters = safePlayers.slice(0, 11);
-  const bench = safePlayers.slice(11);
+  const bench = safePlayers.slice(11).filter(canUseInMatch);
 
   const setField = <K extends keyof TacticsConfig>(key: K, value: TacticsConfig[K]) => {
     onUpdate({ ...safeTactics, [key]: value });
