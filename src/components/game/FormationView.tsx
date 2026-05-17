@@ -311,11 +311,12 @@ export function FormationView({
         {safeLayout.map((slot, i) => {
           const player = assigned[i];
 
-          // Insets adaptativos: mobile portrait precisa de mais margem p/ não cortar chips e nomes
-          const INSET_X = isPortrait ? 11 : 8;
-          const INSET_Y = isPortrait ? 6 : 4;
+          // Insets adaptativos: garante margem suficiente para os chips e labels não cortarem nas bordas
+          const INSET_X = isPortrait ? 11 : 7;
+          const INSET_Y = isPortrait ? 7 : 9;
           const sx = INSET_X + (slot.x * (100 - 2 * INSET_X)) / 100;
           const sy = INSET_Y + (slot.y * (100 - 2 * INSET_Y)) / 100;
+          // Em landscape: gol à esquerda (y=92 → left baixo). x do campo vira eixo vertical.
           const left = isPortrait ? sx : 100 - sy;
           const top = isPortrait ? sy : sx;
 
