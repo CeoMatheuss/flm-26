@@ -377,3 +377,65 @@ function ActionBtn({ icon, label, onClick, className }: { icon: React.ReactNode;
     </button>
   );
 }
+
+type AttrItem = { key: string; label: string; icon: string; value: number };
+type AttrCategory = { title: string; icon: string; items: AttrItem[] };
+
+function buildAttrCategories(player: Player): AttrCategory[] {
+  const a: any = player.attributes || {};
+  const v = (k: string, fallback = 50) => {
+    const n = a[k];
+    return typeof n === 'number' ? Math.max(0, Math.min(99, Math.round(n))) : fallback;
+  };
+  const isGk = player.position === 'GOL';
+
+  const cats: AttrCategory[] = [
+    {
+      title: 'Físicos', icon: '💪',
+      items: [
+        { key: 'workRate', label: 'Resistência', icon: '⚡', value: v('workRate') },
+        { key: 'speed', label: 'Velocidade', icon: '🏃', value: v('speed') },
+        { key: 'physical', label: 'Força', icon: '💪', value: v('physical') },
+      ],
+    },
+    {
+      title: 'Técnicos', icon: '⚽',
+      items: [
+        { key: 'dribbling', label: 'Domínio / Drible', icon: '🌀', value: v('dribbling') },
+        { key: 'passing', label: 'Passe', icon: '🎯', value: v('passing') },
+        { key: 'vision', label: 'Passe em Profund.', icon: '🎨', value: v('vision', v('passing')) },
+        { key: 'crossing', label: 'Cruzamento', icon: '📌', value: v('crossing', v('passing')) },
+        { key: 'longShots', label: 'Chute', icon: '💥', value: v('longShots', v('shooting')) },
+        { key: 'setPieces', label: 'Bola Parada', icon: '🎯', value: v('setPieces') },
+        { key: 'shooting', label: 'Finalização', icon: '🦵', value: v('shooting') },
+        { key: 'heading', label: 'Cabeceio', icon: '🧱', value: v('heading') },
+      ],
+    },
+    {
+      title: 'Defensivos', icon: '🛡️',
+      items: [
+        { key: 'marking', label: 'Marcação', icon: '🛡️', value: v('marking') },
+        { key: 'defending', label: 'Desarme / Intercept.', icon: '🧱', value: v('defending') },
+        { key: 'positioning', label: 'Posicionamento', icon: '📍', value: v('positioning') },
+      ],
+    },
+    {
+      title: 'Mentais', icon: '🧠',
+      items: [
+        { key: 'composure', label: 'Fair Play', icon: '🤝', value: v('composure', 60) },
+      ],
+    },
+  ];
+
+  if (isGk) {
+    cats.push({
+      title: 'Goleiro', icon: '🧤',
+      items: [
+        { key: 'goalkeeping', label: 'Defesa de Goleiro', icon: '🧤', value: v('goalkeeping', v('defending')) },
+        { key: 'positioning', label: 'Posicion. de Goleiro', icon: '📍', value: v('positioning') },
+      ],
+    });
+  }
+
+  return cats;
+}
