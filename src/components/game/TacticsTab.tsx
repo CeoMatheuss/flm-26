@@ -68,8 +68,8 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
   return (
     <div className={cn(
       hideSwapButton
-        ? 'w-full h-full flex flex-col overflow-hidden bg-zinc-950'
-        : 'fixed inset-0 z-[100] bg-zinc-950 flex flex-col overflow-hidden animate-in fade-in duration-200'
+        ? 'w-full min-h-[70vh] flex flex-col overflow-hidden overflow-x-hidden bg-zinc-950'
+        : 'fixed inset-0 z-[100] bg-zinc-950 flex flex-col overflow-hidden overflow-x-hidden animate-in fade-in duration-200'
     )}>
       {/* Header compacto */}
       <header className="shrink-0 border-b border-white/5 bg-zinc-950/90 backdrop-blur-xl px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2">
