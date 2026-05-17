@@ -122,7 +122,8 @@ export function InfrastructureWrapper({
           </div>
 
           {/* Menu interno horizontal */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 p-1 bg-muted/20 rounded-lg border border-border/30">
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-1 p-1 bg-muted/20 rounded-lg border border-border/30">
+            {tabBtn('upgrades', 'Upgrades', ArrowUpRight)}
             {tabBtn('training', 'Treinos', Dumbbell)}
             {tabBtn('training2d', '2D', Gamepad2)}
             {tabBtn('physio', 'Fisioterapia', HeartPulse)}
