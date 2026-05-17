@@ -541,7 +541,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
             await supabase.rpc('sync_match_persistence' as any, { _match_id: data.id });
           } catch (e) {
             console.warn('[MatchDashboardCard] sync_match_persistence falhou:', e);
-          }
+            window.dispatchEvent(new CustomEvent('flm:match-finalized', { detail: { matchId: data.id } }));
           setLiveMatch(null);
           return;
         }
