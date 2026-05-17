@@ -154,7 +154,9 @@ export const getPlayerStatus = (p: any, isStarter: boolean, isNegotiating?: bool
   if (p.onTransferList) return 'lista-transferencia';
   if (p.isAfastado) return 'afastado';
   if (isStarter) return 'titular';
-  if (p.age <= 20 && p.overall >= 70) return 'promessa';
+  // Todo jogador disponível que não é titular vai pro banco de reservas.
+  // (antes a flag 'promessa' fazia jovens promissores sumirem da UI porque
+  // nenhuma aba filtrava por esse status.)
   return 'reserva';
 };
 

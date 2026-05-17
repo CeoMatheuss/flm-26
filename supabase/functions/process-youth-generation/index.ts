@@ -247,7 +247,18 @@ Deno.serve(async (req) => {
     const interception = position === 'ZAG' || position === 'VOL' ? Math.min(99, overall + 10) : Math.max(10, overall - 15);
     const stamina_stat = overall + Math.floor(Math.random() * 10) - 5;
 
-    const marketValue = (overall * overall * 1200) + (potential * potential * 2500);
+    // 💰 Valor de mercado realista (espelha public.youth_market_value / getPlayerBaseValue)
+    const baseV = overall >= 90 ? overall * 250000
+      : overall >= 85 ? overall * 150000
+      : overall >= 80 ? overall * 80000
+      : overall >= 75 ? overall * 50000
+      : overall >= 70 ? overall * 30000
+      : overall >= 65 ? overall * 20000
+      : overall >= 55 ? overall * 10000
+      : overall * 5000;
+    const ageF = age <= 17 ? 1.5 : age <= 20 ? 1.4 : 1.2;
+    const potM = potential >= 90 ? 1.4 : potential >= 82 ? 1.25 : potential >= 75 ? 1.1 : 1.0;
+    const marketValue = Math.max(50000, Math.floor(baseV * ageF * potM));
 
     const { data: prospect, error: insertError } = await adminClient
       .from('youth_prospects')

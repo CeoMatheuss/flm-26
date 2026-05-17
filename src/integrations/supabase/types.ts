@@ -5838,6 +5838,10 @@ export type Database = {
         }[]
       }
       world_leagues_redistribute_kickoff: { Args: never; Returns: Json }
+      youth_market_value: {
+        Args: { p_age: number; p_overall: number; p_potential: number }
+        Returns: number
+      }
       youth_potential_bounds: {
         Args: { lvl: number }
         Returns: {
