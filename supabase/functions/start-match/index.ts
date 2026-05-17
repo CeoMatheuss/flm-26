@@ -1025,11 +1025,14 @@ function simulateFullMatch(
       if (kicker) { kicker.goals++; kicker.rating = Math.min(10, kicker.rating + 1.2); }
       if (gk) gk.rating = Math.max(3, gk.rating - 0.8);
       
+      const desc = `${buildup} 🎯 PÊNALTI PARA O ${tName.toUpperCase()}! ${kicker?.name || 'Batedor'} se concentra... ⚽ GOOOOL!!! Cobrança perfeita no canto! [${scoreH}x${scoreA}]`;
+      console.log(`[GOAL_LOG] PENALTY Goal at ${pen.minute}' for ${team} | Scorer: ${kicker?.name} | Score: ${scoreH}x${scoreA}`);
+
       allPlanned.push({
         minute: pen.minute, type: 'penalty', team, isGoal: true,
         playerName: kicker?.name, animType: 'penalty',
         ballX: team === 'home' ? 0.95 : 0.05, ballY: 0.5,
-        description: `${buildup} 🎯 PÊNALTI PARA O ${tName.toUpperCase()}! ${kicker?.name || 'Batedor'} se concentra... ⚽ GOOOOL!!! Cobrança perfeita no canto! [${scoreH}x${scoreA}]`,
+        description: desc,
       });
     } else {
       if (kicker) kicker.rating = Math.max(3, kicker.rating - 1.0);
