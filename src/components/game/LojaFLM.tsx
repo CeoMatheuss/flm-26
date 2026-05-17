@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { ShopItemDetails } from './ShopItemDetails';
 import { StoreDashboard } from './shop/StoreDashboard';
 import { useStoreManager } from '@/hooks/useStoreManager';
+import { useMarketingDelivery } from '@/hooks/useMarketingDelivery';
 import { formatMoney } from '@/lib/formatMoney';
 import { PacotinhosTab } from './PacotinhosTab';
 
