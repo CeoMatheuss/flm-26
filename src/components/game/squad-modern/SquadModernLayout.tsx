@@ -146,6 +146,9 @@ export function SquadModernLayout({
     type: 'transfer' | 'loan-out';
     player: Player;
     value: number;
+    listingFeeRate: number;
+    agentFeeRate: number;
+    adminFeeRate: number;
     listingFee: number;
     agentFee: number;
     adminFee: number;
@@ -155,11 +158,15 @@ export function SquadModernLayout({
 
   const openMarketConfirm = (p: Player) => {
     const value = getPlayerValue(p);
-    const listingFee = Math.max(50_000, Math.round(value * 0.01));
-    const agentFee = Math.round(value * 0.02);
-    const adminFee = 25_000;
+    const listingFeeRate = 0.005;
+    const agentFeeRate = 0.0075;
+    const adminFeeRate = 0.0025;
+    const listingFee = Math.round(value * listingFeeRate);
+    const agentFee = Math.round(value * agentFeeRate);
+    const adminFee = Math.round(value * adminFeeRate);
     setConfirmAction({
       type: 'transfer', player: p, value,
+      listingFeeRate, agentFeeRate, adminFeeRate,
       listingFee, agentFee, adminFee,
       total: listingFee + agentFee + adminFee,
     });
@@ -167,11 +174,15 @@ export function SquadModernLayout({
 
   const openLoanConfirm = (p: Player) => {
     const value = getPlayerValue(p);
-    const listingFee = Math.max(20_000, Math.round(value * 0.005));
-    const agentFee = Math.round(value * 0.01);
-    const adminFee = 15_000;
+    const listingFeeRate = 0.0025;
+    const agentFeeRate = 0.0035;
+    const adminFeeRate = 0.0015;
+    const listingFee = Math.round(value * listingFeeRate);
+    const agentFee = Math.round(value * agentFeeRate);
+    const adminFee = Math.round(value * adminFeeRate);
     setConfirmAction({
       type: 'loan-out', player: p, value,
+      listingFeeRate, agentFeeRate, adminFeeRate,
       listingFee, agentFee, adminFee,
       total: listingFee + agentFee + adminFee,
     });
@@ -236,6 +247,18 @@ export function SquadModernLayout({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const closeConfirmAction = (event?: React.SyntheticEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!submitting) setConfirmAction(null);
+  };
+
+  const submitConfirmAction = (event?: React.SyntheticEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!submitting) void confirmListing();
   };
 
   const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player) => {
