@@ -31,7 +31,25 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
 
   // Guardas defensivas: evita crash (tela preta) quando players/tactics ainda não carregaram
   const safePlayers: Player[] = Array.isArray(players) ? players : [];
-  const safeTactics: TacticsConfig = tactics || ({ formation: '4-4-2', playStyle: 'equilibrado', tempo: 'normal', pressing: 'medio' } as any);
+  const rawTactics: any = tactics || {};
+  // Se playStyle salvo for um valor legado/desconhecido, cai pra 'equilibrado' (que existe sempre)
+  const validStyle: PlayStyle = (playStyleEffects as any)[rawTactics.playStyle] ? rawTactics.playStyle : 'equilibrado';
+  const safeTactics: TacticsConfig = {
+    formation: rawTactics.formation || '4-4-2',
+    playStyle: validStyle,
+    tempo: rawTactics.tempo || 'normal',
+    pressing: rawTactics.pressing || 'medio',
+    marking: rawTactics.marking || 'zona',
+    passingStyle: rawTactics.passingStyle || 'misto',
+    defenseLine: rawTactics.defenseLine || 'media',
+    width: rawTactics.width || 'normal',
+    playerInstructions: Array.isArray(rawTactics.playerInstructions) ? rawTactics.playerInstructions : [],
+    autoUpdateLineup: rawTactics.autoUpdateLineup ?? true,
+    captainId: rawTactics.captainId,
+    freeKickTakerId: rawTactics.freeKickTakerId,
+    penaltyTakerId: rawTactics.penaltyTakerId,
+    cornerTakerId: rawTactics.cornerTakerId,
+  };
   const starters = safePlayers.slice(0, 11);
   const bench = safePlayers.slice(11);
 
