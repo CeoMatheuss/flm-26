@@ -261,10 +261,94 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
       }
     };
     
-    const interval = setInterval(checkYouthGen, 300_000); // Check every 5 minutes
+    const interval = setInterval(checkYouthGen, 60_000); // Check every 1 minute (faster sync)
     checkYouthGen();
     return () => clearInterval(interval);
   }, [userId, lastYouthGenAt, infrastructure.youthAcademy.level]);
+
+  // 🔄 Realtime sync: qualquer prospect inserido em youth_prospects entra imediatamente
+  // na aba Juniores, mesmo se a geração ocorreu por outro caminho (cron, admin, evento).
+  useEffect(() => {
+    if (!userId) return;
+    let clubId: string | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    const mapRow = (p: any): YouthProspect => ({
+      id: p.id,
+      name: p.name,
+      age: p.age,
+      position: p.position,
+      overall: p.overall,
+      potential: p.potential,
+      attributes: p.attributes,
+      marketValue: Number(p.market_value ?? 0),
+      personality: p.personality,
+      dominantFoot: p.dominant_foot,
+      rarity: p.rarity,
+      nationality: p.nationality,
+      morale: p.morale ?? 100,
+      monthsInAcademy: p.months_in_academy ?? 0,
+      potentialTier: getPotentialTier(p.potential ?? 60, p.overall ?? 40),
+      evolutionStatus: 'evoluindo',
+      height: p.height,
+      weight: p.weight,
+      tacticalIQ: p.tactical_iq,
+      interception: p.interception,
+      staminaStat: p.stamina_stat,
+      energy: p.energy ?? 100,
+      fatigue: p.fatigue ?? 0,
+      contractStatus: p.contract_status ?? 'base',
+      evolutionHistory: [],
+      salary: 500, stamina: 100, goals: 0, assists: 0, contract: 3, gamesPlayed: 0, trainingProgress: 0,
+    } as YouthProspect);
+
+    (async () => {
+      const { data: club } = await supabase
+        .from('clubs').select('id').eq('user_id', userId).maybeSingle();
+      if (cancelled || !club?.id) return;
+      clubId = club.id;
+
+      // Backfill: prospects que possam ter sido inseridos enquanto offline
+      const { data: rows } = await supabase
+        .from('youth_prospects').select('*').eq('club_id', clubId);
+      if (rows && rows.length) {
+        setYouthProspects(prev => {
+          const known = new Set(prev.map(p => p.id));
+          const additions = rows.filter(r => !known.has(r.id)).map(mapRow);
+          return additions.length ? [...prev, ...additions] : prev;
+        });
+      }
+
+      channel = supabase
+        .channel(`youth-prospects-${clubId}`)
+        .on('postgres_changes', {
+          event: 'INSERT', schema: 'public', table: 'youth_prospects',
+          filter: `club_id=eq.${clubId}`,
+        }, (payload) => {
+          const np = mapRow(payload.new);
+          setYouthProspects(prev => prev.some(p => p.id === np.id) ? prev : [...prev, np]);
+          toast.success(`🌟 Novo talento na base: ${np.name}!`, {
+            description: `${np.position} • OVR ${np.overall} • POT ${np.potential}`,
+            icon: '🎓',
+          });
+        })
+        .on('postgres_changes', {
+          event: 'DELETE', schema: 'public', table: 'youth_prospects',
+          filter: `club_id=eq.${clubId}`,
+        }, (payload) => {
+          const id = (payload.old as any)?.id;
+          if (!id) return;
+          setYouthProspects(prev => prev.filter(p => p.id !== id));
+        })
+        .subscribe();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   const chargeYouthInvestment = useCallback((
     clubBudget: number,
