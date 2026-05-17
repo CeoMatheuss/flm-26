@@ -1301,8 +1301,9 @@ function simulateFullMatch(
           kickMinute += 1;
           const baseProb = 0.78;
           const skillBoost = (aT.shooting + (aT.composure || 60) + (aT.setPieces || 60)) / 300 * 0.15;
-          const gkSave = (homeKeeper?.goalkeeping || 60) / 100 * 0.10;
-          const scored = rng() < (baseProb + skillBoost - gkSave);
+          const gkSave = (homeKeeper?.goalkeeping || 60) / 100 * 0.10 * formMult(homeKeeper);
+          const takerForm = (0.6 + 0.4 * formMult(aT));
+          const scored = rng() < ((baseProb + skillBoost) * takerForm - gkSave);
           if (scored) shootoutAwayGoals++;
           finalEvents.push({
             minute: kickMinute, type: 'penalty_shootout', team: 'away', animType: 'penalty',
