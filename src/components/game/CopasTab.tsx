@@ -398,16 +398,14 @@ export function CopasTab({ userId }: Props) {
           )}
         </div>
 
-        {cup.status === 'finished' && (
-          <div className="relative z-10 mt-6 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-center">
-            <p className="text-xs md:text-sm font-black text-yellow-400 uppercase tracking-widest">
-              🏆 Copas nacionais retornam no dia 10
-            </p>
-            <p className="text-[10px] md:text-xs text-yellow-200/70 font-medium mt-1">
-              Prepare seu elenco para a próxima edição do torneio.
-            </p>
-          </div>
-        )}
+        <div className="relative z-10 mt-6 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-center">
+          <p className="text-xs md:text-sm font-black text-yellow-400 uppercase tracking-widest">
+            🏆 Copas nacionais retornam no dia 10
+          </p>
+          <p className="text-[10px] md:text-xs text-yellow-200/70 font-medium mt-1">
+            Prepare seu elenco para a próxima edição do torneio.
+          </p>
+        </div>
       </div>
 
 
