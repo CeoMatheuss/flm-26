@@ -68,10 +68,18 @@ Deno.serve(async (req) => {
     if (isHome) update.home_joined = true;
     if (isAway) update.away_joined = true;
 
-    const lobbyOpenedAt = (row as any).lobby_opened_at ? new Date((row as any).lobby_opened_at).getTime() : null;
-    if (!lobbyOpenedAt) {
+    // Horário oficial da partida (kickoff). Diferente do "lobby_opened_at" (instante do primeiro join).
+    const r0: any = row;
+    const kickoffIso: string | null = r0.match_date || r0.scheduled_at || r0.kickoff_at || null;
+    const kickoffMs = kickoffIso ? new Date(kickoffIso).getTime() : null;
+    // O auto-sim só dispara 5min APÓS o horário oficial. Se for setado relativo ao join,
+    // um jogador entrando 10min depois "reiniciaria" o timer — errado.
+    const baseMs = kickoffMs && kickoffMs > 0 ? kickoffMs : now;
+    if (!r0.auto_sim_at) {
+      update.auto_sim_at = new Date(baseMs + LOBBY_WAIT_MS).toISOString();
+    }
+    if (!r0.lobby_opened_at) {
       update.lobby_opened_at = new Date(now).toISOString();
-      update.auto_sim_at = new Date(now + LOBBY_WAIT_MS).toISOString();
     }
 
     const { data: updated, error: updErr } = await admin.from(table).update(update).eq('id', matchId).select('*').maybeSingle();
@@ -80,13 +88,20 @@ Deno.serve(async (req) => {
     }
 
     const r2: any = updated || { ...row, ...update };
-    const openedAt = r2.lobby_opened_at ? new Date(r2.lobby_opened_at).getTime() : now;
-    const elapsed = now - openedAt;
-    const remainingMs = Math.max(0, LOBBY_WAIT_MS - elapsed);
+    const referenceMs = baseMs;
+    const remainingMs = Math.max(0, (referenceMs + LOBBY_WAIT_MS) - now);
+    const atLeastOneJoined = !!(r2.home_joined || r2.away_joined);
 
-    let state: 'waiting_other' | 'both_ready' | 'start_with_ai';
+    // Estados:
+    //  - both_ready: ambos prontos → começa imediatamente
+    //  - one_ready: ao menos 1 entrou → pode iniciar contra IA do ausente (sem auto-sim)
+    //  - waiting_other: ninguém entrou ainda mas dentro da janela
+    //  - start_with_ai: janela expirou; se ninguém entrou → será auto-simulado pelo cron
+    let state: 'waiting_other' | 'one_ready' | 'both_ready' | 'start_with_ai';
     if (r2.home_joined && r2.away_joined) {
       state = 'both_ready';
+    } else if (atLeastOneJoined) {
+      state = 'one_ready';
     } else if (remainingMs === 0) {
       state = 'start_with_ai';
     } else {
@@ -98,9 +113,11 @@ Deno.serve(async (req) => {
       remaining_ms: remainingMs,
       home_joined: !!r2.home_joined,
       away_joined: !!r2.away_joined,
+      at_least_one_joined: atLeastOneJoined,
       home_user_id: homeUserId,
       away_user_id: awayUserId,
       auto_sim_at: r2.auto_sim_at,
+      kickoff_at: kickoffIso,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e) {
     console.error('[match-lobby-join] Error:', e);
