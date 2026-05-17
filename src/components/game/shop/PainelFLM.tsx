@@ -326,6 +326,104 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
         </Card>
       </div>
 
+      {/* Produtos Ativos */}
+      <SectionTitle icon={<Package className="h-4 w-4 text-emerald-400" />} title="Produtos Ativos" subtitle="Compras em vigor e seus benefícios" />
+      <Card className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden">
+        <CardContent className="p-0">
+          {(() => {
+            const items: Array<{
+              id: string; name: string; category: keyof typeof CATEGORIES; startedAt: string; expiresAt: string | null;
+              bonus: { cash?: number; daily?: number; weekly?: number; fans?: number; members?: number };
+            }> = [];
+            for (const s of sponsorships) {
+              items.push({
+                id: `s-${s.id}`,
+                name: s.sponsor_name,
+                category: 'sponsorship',
+                startedAt: s.started_at || s.created_at,
+                expiresAt: s.expires_at,
+                bonus: {
+                  weekly: Number(s.contract_value_cents || 0) / 100,
+                  cash: Number(s.bonus_data?.immediate_cash || 0),
+                  fans: Number(s.bonus_data?.immediate_fans || 0),
+                },
+              });
+            }
+            for (const e of activeEffects) {
+              const cat = ((CATEGORIES as any)[e.category] ? e.category : 'other') as keyof typeof CATEGORIES;
+              items.push({
+                id: `e-${e.id}`,
+                name: e?.bonus_data?.name || CATEGORIES[cat]?.label || e.category,
+                category: cat,
+                startedAt: e.started_at || e.created_at,
+                expiresAt: e.expires_at,
+                bonus: {
+                  daily: Number(e?.bonus_data?.dinheiroDia || e?.bonus_data?.daily_cash || 0),
+                  cash: Number(e?.bonus_data?.immediate_cash || 0),
+                  fans: Number(e?.bonus_data?.immediate_fans || 0),
+                  members: Number(e?.bonus_data?.initialMembers || e?.bonus_data?.immediate_members || 0),
+                },
+              });
+            }
+            if (items.length === 0) {
+              return <div className="py-16 text-center text-[11px] text-white/40 italic">Nenhum produto ativo no momento.</div>;
+            }
+            return (
+              <ul className="divide-y divide-white/5">
+                {items.map((it) => {
+                  const meta = CATEGORIES[it.category] || CATEGORIES.other;
+                  const Icon = meta.icon;
+                  const remainingMs = it.expiresAt ? new Date(it.expiresAt).getTime() - Date.now() : null;
+                  const days = remainingMs != null ? Math.max(0, Math.floor(remainingMs / 86400000)) : null;
+                  const hours = remainingMs != null ? Math.max(0, Math.floor((remainingMs % 86400000) / 3600000)) : null;
+                  const expired = remainingMs != null && remainingMs <= 0;
+                  return (
+                    <li key={it.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition">
+                      <div className={`p-2 rounded-xl ${meta.bg} border ${meta.border} shrink-0`}>
+                        <Icon className={`h-4 w-4 ${meta.color}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center flex-wrap gap-2">
+                          <p className="text-xs font-black uppercase italic truncate">{it.name}</p>
+                          <Badge className={`text-[8px] uppercase font-black tracking-widest border-none px-1.5 py-0 ${expired ? 'bg-rose-500/15 text-rose-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                            {expired ? <><Clock className="h-2.5 w-2.5 mr-1" />Expirado</> : <><CheckCircle2 className="h-2.5 w-2.5 mr-1" />Ativo</>}
+                          </Badge>
+                          <Badge className={`text-[8px] uppercase font-black tracking-widest border-none px-1.5 py-0 ${meta.bg} ${meta.color}`}>
+                            {meta.label}
+                          </Badge>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-white/60 font-medium">
+                          {it.bonus.weekly ? <span className="text-emerald-300">💰 +{fmt(it.bonus.weekly)}/sem</span> : null}
+                          {it.bonus.daily ? <span className="text-emerald-300">💰 +{fmt(it.bonus.daily)}/dia</span> : null}
+                          {it.bonus.cash ? <span className="text-emerald-300">🎁 +{fmt(it.bonus.cash)} bônus</span> : null}
+                          {it.bonus.fans ? <span className="text-pink-300">👥 +{it.bonus.fans.toLocaleString('pt-BR')} torcedores</span> : null}
+                          {it.bonus.members ? <span className="text-amber-300">🤝 +{it.bonus.members.toLocaleString('pt-BR')} sócios</span> : null}
+                        </div>
+                        <p className="mt-1 text-[10px] text-white/40 font-medium">
+                          <Sparkles className="h-2.5 w-2.5 inline mr-1" />
+                          Desde {new Date(it.startedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          {it.expiresAt && (
+                            <> · <Clock className="h-2.5 w-2.5 inline mx-1" />
+                              {expired
+                                ? 'encerrado'
+                                : days != null && days > 0
+                                  ? `termina em ${days}d ${hours}h`
+                                  : `termina em ${hours}h`}
+                              {' · '}
+                              <span className="text-white/30">{new Date(it.expiresAt).toLocaleDateString('pt-BR')}</span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
       {/* Histórico unificado */}
       <Card className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden">
         <CardHeader className="border-b border-white/5 bg-white/5 px-4 py-3">
