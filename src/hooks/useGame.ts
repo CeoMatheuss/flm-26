@@ -296,6 +296,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     // State
     club: clubState.club,
     setClub: clubState.setClub,
+    addFinance: financeState.addFinance,
     tactics,
     leagueTeams,
     finances: financeState.finances,
