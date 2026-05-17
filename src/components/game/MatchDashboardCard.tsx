@@ -179,14 +179,19 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       .subscribe();
 
     // Listen for custom league update events from other components
-    const handleSync = () => loadNextMatch();
+    const handleSync = () => {
+      console.log('[MatchDashboardCard] Recebi sinal de atualização. Recarregando próxima partida...');
+      loadNextMatch();
+    };
     window.addEventListener('league_match_updated', handleSync);
+    window.addEventListener('flm:match-finalized', handleSync);
 
     const interval = setInterval(loadNextMatch, 60000);
     return () => { 
       cancelled = true; 
       clearInterval(interval); 
       supabase.removeChannel(channel); 
+      window.removeEventListener('flm:match-finalized', handleSync);
       window.removeEventListener('league_match_updated', handleSync);
     };
   }, [userId]);
@@ -537,6 +542,7 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
           } catch (e) {
             console.warn('[MatchDashboardCard] sync_match_persistence falhou:', e);
           }
+          window.dispatchEvent(new CustomEvent('flm:match-finalized', { detail: { matchId: data.id } }));
           setLiveMatch(null);
           return;
         }
