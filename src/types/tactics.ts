@@ -6,7 +6,11 @@ export type Formation =
 export type PlayStyle =
   | 'ofensivo' | 'equilibrado' | 'defensivo' | 'contra-ataque' | 'posse'
   | 'tiki-taka' | 'gegenpressing' | 'parking-bus' | 'long-ball'
-  | 'retranca-total' | 'pressao-alta';
+  | 'retranca-total' | 'pressao-alta'
+  // NOVOS estilos expandidos
+  | 'transicao-rapida' | 'cruzamentos' | 'jogo-inteligente'
+  | 'defesa-compacta' | 'ataque-total' | 'pressao-pos-perda'
+  | 'futebol-criativo' | 'controle-total' | 'bloco-medio' | 'verticalidade';
 
 // Os 6 estilos principais (mostrados sempre)
 export const MAIN_PLAY_STYLES: PlayStyle[] = [
@@ -17,6 +21,9 @@ export const MAIN_PLAY_STYLES: PlayStyle[] = [
 // Estilos avançados (em accordion)
 export const ADVANCED_PLAY_STYLES: PlayStyle[] = [
   'posse', 'tiki-taka', 'gegenpressing', 'parking-bus', 'long-ball',
+  'transicao-rapida', 'cruzamentos', 'jogo-inteligente',
+  'defesa-compacta', 'ataque-total', 'pressao-pos-perda',
+  'futebol-criativo', 'controle-total', 'bloco-medio', 'verticalidade',
 ];
 
 export interface PlayStyleEffect {
