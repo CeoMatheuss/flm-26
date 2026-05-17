@@ -49,7 +49,6 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
   const activeYouthIds = new Set(youthProspects.map((prospect) => prospect.id));
   [...players, ...youthProspects.map(youthProspectToPlayer)].forEach((player) => {
     if (!player?.id || !isAvailableForSquad(player)) return;
-    if ((player as any).isYouth && (player as any).contractStatus === 'base' && !activeYouthIds.has(player.id)) return;
     const previous = byId.get(player.id);
     byId.set(player.id, {
       ...previous,
