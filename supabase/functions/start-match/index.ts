@@ -42,12 +42,13 @@ function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
 interface SimPlayer {
   id: string; name: string; position: string; team: 'home' | 'away'; ovr: number;
-  rating: number; goals: number; assists: number; yellowCards: number; isOnPitch: boolean;
-  stamina: number; morale: number; baseStamina: number;
+  rating: number; goals: number; assists: number; yellowCards: number; redCards: number; isOnPitch: boolean;
+  stamina: number; morale: number; baseStamina: number; age: number;
   speed: number; shooting: number; passing: number; defending: number; physical: number;
   dribbling: number; heading: number; marking: number; vision: number; crossing: number;
   longShots: number; workRate: number; composure: number; aggression: number;
   goalkeeping: number; setPieces: number; positioning: number;
+  fairPlay: number; discipline: number; intelligence: number; emotionalControl: number;
   personality?: string;
   injured?: boolean;
 }
