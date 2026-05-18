@@ -1280,7 +1280,10 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const keyTarget = { x: isHome ? W * 0.72 : W * 0.28, y: shooterPos.y };
           ballX = lastPass.x + (keyTarget.x - lastPass.x) * easeOut(keyT);
           ballY = lastPass.y + (keyTarget.y - lastPass.y) * easeOut(keyT);
-          drawAllPlayers(drift * 0.4, true, ballX, ballY, 25);
+          
+          // Approaching the box: High pressure
+          drawAllPlayers(drift * 0.4, true, ballX, ballY, 0, attTeam, 0.65, 0.7);
+          
           drawPlayer(lastPass.x, lastPass.y, teamColor, teamLight, '8', 8, keyT < 0.3);
           const runnerX = (isHome ? W * 0.60 : W * 0.40) + (keyTarget.x - (isHome ? W * 0.60 : W * 0.40)) * easeOut(keyT);
           drawPlayer(runnerX, keyTarget.y, teamColor, teamLight, '10', 9, true, playerName);
@@ -1299,7 +1302,10 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const runY = shooterPos.y;
           ballX = runX + (isHome ? 8 : -8);
           ballY = runY;
-          drawAllPlayers(drift * 0.35, true, ballX, ballY, 30);
+          
+          // Entering the area: Maximum pressure
+          drawAllPlayers(drift * 0.35, true, ballX, ballY, 0, attTeam, 0.85, 0.9);
+          
           const def1X = shooterPos.x + (isHome ? 18 : -18);
           const def1Y = shooterPos.y - 20 + drT * 10;
           drawPlayer(def1X, def1Y, gkColor, gkLight, '3', 7);
@@ -1318,7 +1324,8 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
 
         } else if (t < 0.72) {
           const shotT = (t - 0.58) / 0.14;
-          drawAllPlayers(drift * 0.25, true, goalX, goalY, 30);
+          // Shot moment: Keep pressure high
+          drawAllPlayers(drift * 0.25, true, goalX, goalY, 0, attTeam, 0.9, 0.95);
           const sX = shooterPos.x + (isHome ? 6 : -6) * easeOut(Math.min(shotT * 2, 1));
           drawPlayer(sX, shooterPos.y, teamColor, teamLight, '10', 10, shotT < 0.25, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
