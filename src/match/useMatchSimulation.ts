@@ -336,18 +336,32 @@ export function useMatchSimulation() {
       
       if (!persistedRef.current && data.matchDbId) {
         persistedRef.current = true;
+        
+        // Finalize match atomically in server-side
         supabase.from('live_matches')
-          .update({ status: 'finished', current_minute: data.maxMinute })
+          .update({ 
+            status: 'finished', 
+            current_minute: data.maxMinute,
+            finished_at: new Date().toISOString()
+          })
           .eq('id', data.matchDbId)
           .then(async () => {
-            console.log("[MATCH] Finalizado via Cronômetro. Sincronizando...");
+            console.log("[MATCH] Finalizado via Cronômetro. Sincronizando persistence...");
             const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
-            if (rpcError) console.error("[MATCH] Erro ao sincronizar:", rpcError);
-            // Emit custom event to refresh widgets globally
-            window.dispatchEvent(new CustomEvent('flm:match-finalized', { detail: { matchId: data.matchDbId } }));
+            if (rpcError) console.error("[MATCH] Erro ao sincronizar persistence:", rpcError);
+            
+            // Emit custom event to refresh widgets globally and clear caches
+            window.dispatchEvent(new CustomEvent('flm:match-finalized', { 
+              detail: { 
+                matchId: data.matchDbId,
+                homeGoals: data.finalHomeGoals,
+                awayGoals: data.finalAwayGoals
+              } 
+            }));
+            
+            console.log("[MATCH] Persistence sync complete.");
           });
       }
-      return;
       return;
     }
 
@@ -394,16 +408,30 @@ export function useMatchSimulation() {
         stopTick();
         if (!persistedRef.current && data.matchDbId) {
           persistedRef.current = true;
+          
           supabase.from('live_matches')
-            .update({ status: 'finished', current_minute: nextEvent.minute })
+            .update({ 
+              status: 'finished', 
+              current_minute: nextEvent.minute,
+              finished_at: new Date().toISOString()
+            })
             .eq('id', data.matchDbId)
             .then(async () => {
-              console.log("[MATCH] Sincronizando tabela da liga...");
+              console.log("[MATCH] Finalizado via Apito Final. Sincronizando persistence...");
               try {
                 const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
-                if (rpcError) console.error("[MATCH] Erro ao sincronizar tabela:", rpcError);
+                if (rpcError) console.error("[MATCH] Erro ao sincronizar persistence:", rpcError);
+                
                 // Emit custom event to refresh widgets globally
-                window.dispatchEvent(new CustomEvent('flm:match-finalized', { detail: { matchId: data.matchDbId } }));
+                window.dispatchEvent(new CustomEvent('flm:match-finalized', { 
+                  detail: { 
+                    matchId: data.matchDbId,
+                    homeGoals: state.homeGoals,
+                    awayGoals: state.awayGoals
+                  } 
+                }));
+                
+                console.log("[MATCH] Persistence sync complete.");
               } catch (err) {
                 console.error("[MATCH] Exceção ao sincronizar tabela:", err);
               }

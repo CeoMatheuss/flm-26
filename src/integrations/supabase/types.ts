@@ -5948,6 +5948,10 @@ export type Database = {
       }
       fix_league_forcefully: { Args: { p_league_id: string }; Returns: Json }
       fix_world_leagues_kickoffs: { Args: never; Returns: undefined }
+      force_advance_league_round: {
+        Args: { _is_world?: boolean; _league_id: string }
+        Returns: undefined
+      }
       generate_beginner_cup_fixtures: {
         Args: { _cup_id: string }
         Returns: undefined
