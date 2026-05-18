@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useCallback, useRef, type SyntheticEvent } from 'react';
 import { QuickSwapPanel } from '../squad/QuickSwapPanel';
 import { Button } from '@/components/ui/button';
-import { Repeat, ShoppingCart, ArrowLeftRight } from 'lucide-react';
+import { Repeat, ShoppingCart, ArrowLeftRight, ArrowRightLeft } from 'lucide-react';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Player, Club } from '@/types/game';
