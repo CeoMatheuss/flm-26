@@ -1543,7 +1543,10 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                 <div className="flex items-start gap-2">
                   <Badge variant="outline" className="text-[10px] sm:text-xs font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
                   <p className={`text-xs sm:text-sm font-bold leading-snug ${getEventColor(latestEvent.type)}`}>
-                    {getEventIcon(latestEvent.type)} {latestEvent.description}
+                    {!latestEvent.description.includes(getEventIcon(latestEvent.type)) && (
+                      <span className="mr-1">{getEventIcon(latestEvent.type)}</span>
+                    )}
+                    {latestEvent.description}
                   </p>
                 </div>
               </Card>
