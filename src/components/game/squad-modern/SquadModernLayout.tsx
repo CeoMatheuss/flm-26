@@ -707,7 +707,17 @@ export function SquadModernLayout({
                   <Button
                     type="button"
                     disabled={submitting || (confirmAction.total && (club.budget ?? 0) < confirmAction.total)}
-                    onClick={submitConfirmAction}
+                    onClick={(e) => {
+                      if (confirmAction.type === 'renew') {
+                        handleAction('renew', confirmAction.player, 'confirm');
+                        setConfirmAction(null);
+                      } else if (confirmAction.type === 'auction') {
+                        handleAction('auction', confirmAction.player, 'confirm');
+                        setConfirmAction(null);
+                      } else {
+                        submitConfirmAction(e);
+                      }
+                    }}
                     className={cn(
                       "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950 shadow-lg transition-all active:scale-95",
                       confirmAction.type === 'renew' ? "bg-amber-400 hover:bg-amber-300" :
