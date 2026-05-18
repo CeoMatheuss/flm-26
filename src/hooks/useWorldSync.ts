@@ -77,6 +77,7 @@ export class WorldSyncEngine {
       });
 
       if (error) throw error;
+      const checksums = serverChecksums as { squad_checksum: string; standings_checksum: string };
 
       // 2. Comparar com estado local (SyncState)
       const { data: syncState } = await supabase
@@ -88,8 +89,8 @@ export class WorldSyncEngine {
       if (!syncState) return true;
 
       const isDivergent = 
-        serverChecksums.squad_checksum !== syncState.squad_checksum ||
-        serverChecksums.standings_checksum !== syncState.standings_checksum;
+        checksums.squad_checksum !== syncState.squad_checksum ||
+        checksums.standings_checksum !== syncState.standings_checksum;
 
       if (isDivergent) {
         console.warn('[WorldSyncEngine] Dessincronização detectada! Forçando resync...');
