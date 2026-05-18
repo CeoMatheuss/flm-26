@@ -115,7 +115,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           .from('national_cup_matches')
           .select(baseSelect)
           .or(`home_team_id.in.(${idsCsv}),away_team_id.in.(${idsCsv})`)
-          .eq('status', 'finished')
+          .in('status', ['finished', 'played'])
           .gte('played_at', finishedSince)
           .order('played_at', { ascending: false })
           .limit(1);
