@@ -891,6 +891,7 @@ export type Database = {
           red_cards: number | null
           team_id: string | null
           team_name: string | null
+          total_rating: number | null
           yellow_cards: number | null
         }
         Insert: {
@@ -911,6 +912,7 @@ export type Database = {
           red_cards?: number | null
           team_id?: string | null
           team_name?: string | null
+          total_rating?: number | null
           yellow_cards?: number | null
         }
         Update: {
@@ -931,6 +933,7 @@ export type Database = {
           red_cards?: number | null
           team_id?: string | null
           team_name?: string | null
+          total_rating?: number | null
           yellow_cards?: number | null
         }
         Relationships: [
@@ -1908,6 +1911,7 @@ export type Database = {
           round: number
           scheduled_at: string | null
           status: string
+          synced: boolean | null
         }
         Insert: {
           auto_sim_at?: string | null
@@ -1929,6 +1933,7 @@ export type Database = {
           round?: number
           scheduled_at?: string | null
           status?: string
+          synced?: boolean | null
         }
         Update: {
           auto_sim_at?: string | null
@@ -1950,6 +1955,7 @@ export type Database = {
           round?: number
           scheduled_at?: string | null
           status?: string
+          synced?: boolean | null
         }
         Relationships: [
           {
@@ -2792,6 +2798,7 @@ export type Database = {
           scheduled_at: string
           stadium: string | null
           status: string
+          synced: boolean | null
           updated_at: string | null
           winner_team_id: string | null
         }
@@ -2815,6 +2822,7 @@ export type Database = {
           scheduled_at: string
           stadium?: string | null
           status?: string
+          synced?: boolean | null
           updated_at?: string | null
           winner_team_id?: string | null
         }
@@ -2838,6 +2846,7 @@ export type Database = {
           scheduled_at?: string
           stadium?: string | null
           status?: string
+          synced?: boolean | null
           updated_at?: string | null
           winner_team_id?: string | null
         }
@@ -4995,6 +5004,7 @@ export type Database = {
           season_year: number
           stadium: string | null
           status: string | null
+          synced: boolean | null
         }
         Insert: {
           away_goals?: number | null
@@ -5013,6 +5023,7 @@ export type Database = {
           season_year: number
           stadium?: string | null
           status?: string | null
+          synced?: boolean | null
         }
         Update: {
           away_goals?: number | null
@@ -5031,6 +5042,7 @@ export type Database = {
           season_year?: number
           stadium?: string | null
           status?: string | null
+          synced?: boolean | null
         }
         Relationships: [
           {
@@ -5076,6 +5088,7 @@ export type Database = {
           season_month: number
           season_year: number
           team_id: string
+          total_rating: number | null
           updated_at: string | null
           yellow_cards: number | null
         }
@@ -5098,6 +5111,7 @@ export type Database = {
           season_month: number
           season_year: number
           team_id: string
+          total_rating?: number | null
           updated_at?: string | null
           yellow_cards?: number | null
         }
@@ -5120,6 +5134,7 @@ export type Database = {
           season_month?: number
           season_year?: number
           team_id?: string
+          total_rating?: number | null
           updated_at?: string | null
           yellow_cards?: number | null
         }
@@ -5881,6 +5896,10 @@ export type Database = {
       sync_match_persistence: {
         Args: { _match_id: string }
         Returns: undefined
+      }
+      sync_match_stats: {
+        Args: { p_competition_type: string; p_match_id: string }
+        Returns: Json
       }
       update_club_budget: {
         Args: { p_amount: number; p_description: string; p_user_id: string }

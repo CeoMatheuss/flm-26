@@ -2260,22 +2260,11 @@ Deno.serve(async (req) => {
         }).eq('id', String(matchId));
 
         // Update player stats for both teams
-        // In league_player_stats, teamId is the member_id (UUID)
-        // We need to resolve member_id from league_id + user_id or team_id
-        const { data: members } = await adminClient
-          .from('league_members')
-          .select('id, user_id, is_bot')
-          .eq('league_id', leagueMatch.league_id);
-        
-        const homeMember = members?.find(m => m.id === leagueMatch.home_team_id);
-        const awayMember = members?.find(m => m.id === leagueMatch.away_team_id);
-
-        if (homeMember) {
-          await updateStatsForCompetition('league', leagueMatch.league_id, homeMember.id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
-        }
-        if (awayMember) {
-          await updateStatsForCompetition('league', leagueMatch.league_id, awayMember.id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
-        }
+        console.info('[Sync] Calling sync_match_stats for league match');
+        await adminClient.rpc('sync_match_stats', { 
+          p_match_id: String(matchId), 
+          p_competition_type: 'league' 
+        });
 
         // Update Standings via RPC for consistency
         await adminClient.rpc('update_league_standings', { _league_id: leagueMatch.league_id });
@@ -2319,8 +2308,11 @@ Deno.serve(async (req) => {
         }).eq('id', String(matchId));
 
         // Update cup player stats
-        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.home_team_id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
-        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.away_team_id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+        console.info('[Sync] Calling sync_match_stats for cup match');
+        await adminClient.rpc('sync_match_stats', { 
+          p_match_id: String(matchId), 
+          p_competition_type: 'cup' 
+        });
 
         // Decrement suspensions for cup
         const allMatchPlayerIds = result.allPlayers.map(p => p.id).filter(id => id && !id.startsWith('bot-'));
@@ -2376,31 +2368,14 @@ Deno.serve(async (req) => {
         }
         // O trigger update_standings_after_match já cuida da world_league_table,
         // mas chamamos a recalculação completa por segurança (garante last_5 e gols somados corretamente).
-        try {
-          await adminClient.rpc('recalculate_league_table_from_matches', { p_league_id: worldMatch.league_id });
-        } catch (e) {
-          console.warn('[Sync] recalculate_league_table failed:', e);
-        }
+        // Sincronizar estatísticas da world match
+        console.info('[Sync] Calling sync_match_stats for world match');
+        await adminClient.rpc('sync_match_stats', { 
+          p_match_id: String(matchId), 
+          p_competition_type: 'world' 
+        });
       }
 
-      // 3.4. Global/World Stats (Always update for any competitive match)
-      if (isLeagueMatch || isCupMatch) {
-        // Find or create global league entry if needed, but usually we just want to update world_player_stats
-        // We can use a default league_id if not a league match
-        const worldLeagueId = leagueMatch?.league_id || '00000000-0000-0000-0000-000000000000';
-        for (const p of result.allPlayers) {
-          if (!p.isOnPitch && p.goals === 0) continue;
-          await adminClient.rpc('upsert_world_player_stats', {
-            _player_id: p.id,
-            _team_name: p.team === 'home' ? effHomeTeam : effAwayTeam,
-            _league_id: worldLeagueId,
-            _goals: p.goals,
-            _assists: p.assists,
-            _rating: p.rating,
-            _is_mvp: result.manOfTheMatch === p.name
-          });
-        }
-      }
       // 3.5. PERSIST INJURIES (New in V4)
       for (const p of result.allPlayers) {
         if (p.injured && p.injuryData && p.team === 'home') {
