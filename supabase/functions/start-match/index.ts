@@ -2280,7 +2280,7 @@ Deno.serve(async (req) => {
       // 3.2. National Cup Match Logic
       const { data: cupMatch } = await adminClient
         .from('national_cup_matches')
-        .select('cup_id, home_team_id, away_team_id')
+        .select('cup_id, home_team_id, away_team_id, round')
         .eq('id', String(matchId))
         .maybeSingle();
 
