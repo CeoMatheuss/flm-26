@@ -109,7 +109,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   const finalStarters = starters.filter((p): p is Player => !!p);
 
-  // 3. Intelligent Balanced Reserves (7 slots)
+  // 3. Intelligent Balanced Reserves (11 slots)
   const reserves: Player[] = [];
   const remainingPlayers = allPlayers.filter(p => !used.has(p.id) && canPlayMatch(p));
 
