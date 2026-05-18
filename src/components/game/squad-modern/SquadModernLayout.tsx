@@ -315,7 +315,7 @@ export function SquadModernLayout({
   };
 
   return (
-    <div className="h-full flex flex-col bg-zinc-950 text-white selection:bg-emerald-500/30 overflow-hidden">
+    <div className="h-full min-h-[calc(100vh-180px)] flex flex-col bg-zinc-950 text-white selection:bg-emerald-500/30 overflow-hidden">
       <SquadHeader 
         club={club} 
         season={season} 
@@ -367,7 +367,7 @@ export function SquadModernLayout({
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="h-full p-2 sm:p-6"
+                    className="h-full min-h-[60vh] p-2 sm:p-6"
                   >
                     {activeTab === 'base' ? (
                       <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
