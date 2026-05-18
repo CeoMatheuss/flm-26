@@ -558,44 +558,122 @@ export function SquadModernLayout({
               </div>
 
               <div className="p-5 space-y-4">
-                <p className="text-sm text-white/80 leading-relaxed">
-                  {confirmAction.type === 'transfer'
-                    ? '📢 Tem certeza que deseja anunciar este jogador no mercado?'
-                    : '🤝 Tem certeza que deseja colocar este jogador para empréstimo?'}
-                </p>
+                {confirmAction.type === 'transfer' || confirmAction.type === 'loan-out' ? (
+                  <>
+                    <p className="text-sm text-white/80 leading-relaxed">
+                      {confirmAction.type === 'transfer'
+                        ? '📢 Tem certeza que deseja anunciar este jogador no mercado?'
+                        : '🤝 Tem certeza que deseja colocar este jogador para empréstimo?'}
+                    </p>
 
-                <div className="bg-white/[0.03] rounded-2xl border border-white/5 p-4 space-y-2.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/50">Valor sugerido</span>
-                    <span className="font-bold text-white">{formatMoney(confirmAction.value)}</span>
-                  </div>
-                  <div className="h-px bg-white/5 my-2" />
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">💰 Taxa de anúncio ({(confirmAction.listingFeeRate * 100).toFixed(2)}%)</span>
-                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.listingFee)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">💼 Taxa de empresário ({(confirmAction.agentFeeRate * 100).toFixed(2)}%)</span>
-                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.agentFee)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">📋 Custos administrativos ({(confirmAction.adminFeeRate * 100).toFixed(2)}%)</span>
-                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.adminFee)}</span>
-                  </div>
-                  <div className="h-px bg-white/5 my-2" />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-black text-white uppercase tracking-wider text-[11px]">Total a debitar</span>
-                    <span className="font-black text-rose-300">{formatMoney(confirmAction.total)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-white/40 pt-1">
-                    <span>Saldo atual</span>
-                    <span>{formatMoney(club.budget ?? 0)}</span>
-                  </div>
-                </div>
+                    <div className="bg-white/[0.03] rounded-2xl border border-white/5 p-4 space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/50">Valor sugerido</span>
+                        <span className="font-bold text-white">{formatMoney(confirmAction.value || 0)}</span>
+                      </div>
+                      <div className="h-px bg-white/5 my-2" />
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/60">💰 Taxa de anúncio</span>
+                        <span className="font-bold text-amber-300">{formatMoney(confirmAction.listingFee || 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/60">💼 Taxa de empresário</span>
+                        <span className="font-bold text-amber-300">{formatMoney(confirmAction.agentFee || 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/60">📋 Custos administrativos</span>
+                        <span className="font-bold text-amber-300">{formatMoney(confirmAction.adminFee || 0)}</span>
+                      </div>
+                      <div className="h-px bg-white/5 my-2" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-black text-white uppercase tracking-wider text-[11px]">Total a debitar</span>
+                        <span className="font-black text-rose-300">{formatMoney(confirmAction.total || 0)}</span>
+                      </div>
+                    </div>
 
-                {(club.budget ?? 0) < confirmAction.total && (
-                  <p className="text-[11px] text-rose-400 font-bold">⚠️ Saldo insuficiente para arcar com as taxas.</p>
-                )}
+                    {budget < (confirmAction.total || 0) && (
+                      <p className="text-[11px] text-rose-400 font-bold">⚠️ Saldo insuficiente para arcar com as taxas.</p>
+                    )}
+                  </>
+                ) : confirmAction.type === 'auction' ? (
+                  <p className="text-sm text-white/80 leading-relaxed">
+                    🔨 Deseja enviar <strong>{confirmAction.player.name}</strong> para o leilão do final da temporada? O valor arrecadado dependerá dos lances recebidos.
+                  </p>
+                ) : confirmAction.type === 'renew' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Proposta de Renovação</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Novo Salário</p>
+                        <p className="text-sm font-black text-emerald-400">{formatMoney((confirmAction.player.salary || 0) * 1.15)}/s</p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Luvas (Bônus)</p>
+                        <p className="text-sm font-black text-amber-400">{formatMoney(getPlayerValue(confirmAction.player) * 0.05)}</p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 col-span-2">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Duração do Contrato</p>
+                        <p className="text-sm font-black text-sky-400">3 Temporadas Adicionais</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : confirmAction.type === 'shirt-number' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Escolher Número da Camisa</p>
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar pr-2 grid grid-cols-4 gap-2">
+                      {Array.from({ length: 99 }, (_, i) => i + 1).map(num => {
+                        const occupiedBy = players.find(pl => pl.shirtNumber === num && pl.id !== confirmAction.player.id);
+                        return (
+                          <button
+                            key={num}
+                            disabled={!!occupiedBy}
+                            onClick={() => {
+                              const updated = players.map(pl => 
+                                pl.id === confirmAction.player.id ? { ...pl, shirtNumber: num } : pl
+                              );
+                              onUpdatePlayers(updated);
+                              toast.success(`Camisa #${num} atribuída a ${confirmAction.player.name}`);
+                              setConfirmAction(null);
+                            }}
+                            className={cn(
+                              "h-10 rounded-lg flex flex-col items-center justify-center border transition-all relative overflow-hidden",
+                              occupiedBy 
+                                ? "bg-red-500/10 border-red-500/20 opacity-50 cursor-not-allowed" 
+                                : "bg-white/5 border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10"
+                            )}
+                          >
+                            <span className="text-xs font-black">{num}</span>
+                            {occupiedBy && (
+                              <span className="text-[6px] uppercase font-bold text-red-400 absolute bottom-1 truncate px-1 w-full text-center">
+                                {occupiedBy.name.split(' ')[0]}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : confirmAction.type === 'train' ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-white/80 leading-relaxed italic">
+                      Selecione o foco de treinamento individual para <strong>{confirmAction.player.name}</strong>:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Finalização', 'Passe', 'Marcação', 'Drible', 'Físico', 'Velocidade'].map(foco => (
+                        <button
+                          key={foco}
+                          onClick={() => {
+                            toast.success(`Foco em ${foco} definido para ${confirmAction.player.name}`);
+                            setConfirmAction(null);
+                          }}
+                          className="p-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-wider hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all"
+                        >
+                          {foco}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="p-4 border-t border-white/5 bg-zinc-950/50 flex items-center gap-3">
