@@ -93,7 +93,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           .from('national_cup_matches')
           .select(baseSelect)
           .or(`home_team_id.in.(${idsCsv}),away_team_id.in.(${idsCsv})`)
-          .neq('status', 'finished')
+          .not('status', 'in', '("finished","played")')
           .order('scheduled_at', { ascending: true })
           .limit(1);
 
@@ -115,7 +115,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           .from('national_cup_matches')
           .select(baseSelect)
           .or(`home_team_id.in.(${idsCsv}),away_team_id.in.(${idsCsv})`)
-          .eq('status', 'finished')
+          .in('status', ['finished', 'played'])
           .gte('played_at', finishedSince)
           .order('played_at', { ascending: false })
           .limit(1);
@@ -191,7 +191,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         .from('league_matches')
         .select(`id, round, status, scheduled_at, home_team_id, away_team_id, home_user_id, away_user_id, home_score, away_score, played_at`)
         .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
-        .neq('status', 'finished')
+        .not('status', 'in', '("finished","played")')
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
@@ -212,7 +212,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         } else {
           const filtered = candidates.filter(c => {
             const localM = club.matches?.find(m => m.id === c.matchId);
-            return !localM?.played && c.status !== 'finished';
+            return !localM?.played && c.status !== 'finished' && c.status !== 'played';
           });
           filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
           setNextMatch(filtered[0] || null);

@@ -2349,6 +2349,40 @@ Deno.serve(async (req) => {
           .eq('id', tournamentMatchId);
       }
 
+      // 3.3.5 World Matches (Brasileirão / Premier League / etc — sistema global)
+      const { data: worldMatch } = await adminClient
+        .from('world_matches')
+        .select('id, league_id, home_team_id, away_team_id, status')
+        .eq('id', String(matchId))
+        .maybeSingle();
+
+      if (worldMatch) {
+        console.info('[Sync] Updating world_matches', { matchId, league_id: worldMatch.league_id });
+        const { error: wmErr } = await adminClient.from('world_matches').update({
+          home_goals: result.homeGoals,
+          away_goals: result.awayGoals,
+          status: 'finished',
+          played_at: new Date().toISOString(),
+          match_data: {
+            events: result.events,
+            stats: result.stats,
+            playerRatings: result.playerRatings,
+            goalScorers: result.goalScorers,
+            manOfTheMatch: result.manOfTheMatch,
+          } as any
+        }).eq('id', String(matchId));
+        if (wmErr) {
+          console.error('[Sync] world_matches update error:', wmErr);
+        }
+        // O trigger update_standings_after_match já cuida da world_league_table,
+        // mas chamamos a recalculação completa por segurança (garante last_5 e gols somados corretamente).
+        try {
+          await adminClient.rpc('recalculate_league_table_from_matches', { p_league_id: worldMatch.league_id });
+        } catch (e) {
+          console.warn('[Sync] recalculate_league_table failed:', e);
+        }
+      }
+
       // 3.4. Global/World Stats (Always update for any competitive match)
       if (isLeagueMatch || isCupMatch) {
         // Find or create global league entry if needed, but usually we just want to update world_player_stats
