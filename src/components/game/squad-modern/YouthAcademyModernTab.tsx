@@ -93,12 +93,9 @@ export function YouthAcademyModernTab({
     }).sort((a, b) => (b.potential || 0) - (a.potential || 0));
   }, [prospects, searchTerm, filterPos]);
 
-  const copinhaUnlocked = currentSeason >= 2;
-  const eligibleForCopinha = prospects.filter(p => p.age <= 20).length;
-
   return (
     <div className="space-y-8 pb-20 sm:pb-0">
-      {/* Academy Overview & Investment */}
+      {/* Academy Overview */}
       <section className="relative p-6 sm:p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/5 backdrop-blur-xl overflow-hidden">
         <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
           <GraduationCap className="w-48 h-48 text-emerald-500" />
@@ -134,8 +131,6 @@ export function YouthAcademyModernTab({
               </div>
             </div>
           </div>
-
-          {/* Investment plans removed as requested */}
         </div>
       </section>
 
@@ -222,7 +217,7 @@ export function YouthAcademyModernTab({
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/5 rounded-2xl overflow-x-auto scrollbar-hide">
-           <div className="px-4 py-2 flex items-center gap-2 border-r border-white/5 mr-2">
+           <div className="px-4 py-2 flex items-center gap-2 mr-2">
               <Clock className="w-3.5 h-3.5 text-emerald-400" />
               <div className="flex flex-col">
                  <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] leading-none mb-1">Próximo Talento</span>
@@ -230,60 +225,37 @@ export function YouthAcademyModernTab({
               </div>
            </div>
 
-           <TabButton 
-             active={activeSubTab === 'plantel'} 
-             onClick={() => setActiveSubTab('plantel')} 
-             label="Plantel" 
-             icon={<GraduationCap className="w-3.5 h-3.5" />} 
-           />
-           {/* Investimento tab button removed */}
-           <TabButton 
-             active={activeSubTab === 'copinha'} 
-             onClick={() => setActiveSubTab('copinha')} 
-             label="Copinha" 
-             icon={<Trophy className="w-3.5 h-3.5" />} 
-           />
-           <TabButton 
-             active={activeSubTab === 'upgrade'} 
-             onClick={() => setActiveSubTab('upgrade')} 
-             label="Evolução" 
-             icon={<Hammer className="w-3.5 h-3.5" />} 
-           />
-           <TabButton 
-             active={activeSubTab === 'mural'} 
-             onClick={() => setActiveSubTab('mural')} 
-             label="Mural" 
-             icon={<Newspaper className="w-3.5 h-3.5" />} 
-           />
+           <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+             <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+             <span className="text-[10px] font-black text-white uppercase tracking-widest">Plantel</span>
+           </div>
         </div>
 
-        {activeSubTab === 'plantel' && (
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
-              <input 
-                type="text"
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl h-10 pl-9 pr-4 text-xs font-bold text-white placeholder:text-white/20 focus:border-emerald-500/50 outline-none transition-all"
-              />
-            </div>
-            <select 
-              value={filterPos}
-              onChange={(e) => setFilterPos(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl h-10 px-3 text-xs font-bold text-white outline-none focus:border-emerald-500/50 transition-all"
-            >
-              <option value="ALL">Todas</option>
-              <option value="GOL">GOL</option>
-              <option value="ZAG">ZAG</option>
-              <option value="LAT">LAT</option>
-              <option value="VOL">VOL</option>
-              <option value="MEI">MEI</option>
-              <option value="ATA">ATA</option>
-            </select>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
+            <input 
+              type="text"
+              placeholder="Buscar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl h-10 pl-9 pr-4 text-xs font-bold text-white placeholder:text-white/20 focus:border-emerald-500/50 outline-none transition-all"
+            />
           </div>
-        )}
+          <select 
+            value={filterPos}
+            onChange={(e) => setFilterPos(e.target.value)}
+            className="bg-white/5 border border-white/10 rounded-xl h-10 px-3 text-xs font-bold text-white outline-none focus:border-emerald-500/50 transition-all"
+          >
+            <option value="ALL">Todas</option>
+            <option value="GOL">GOL</option>
+            <option value="ZAG">ZAG</option>
+            <option value="LAT">LAT</option>
+            <option value="VOL">VOL</option>
+            <option value="MEI">MEI</option>
+            <option value="ATA">ATA</option>
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
@@ -310,6 +282,7 @@ export function YouthAcademyModernTab({
           </div>
         </div>
 
+        {/* Selected Prospect Details */}
         <div className="xl:col-span-1">
           <AnimatePresence mode="wait">
             {selectedProspect ? (
@@ -317,52 +290,132 @@ export function YouthAcademyModernTab({
                 key={selectedProspect.id}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="sticky top-28 p-8 rounded-[2.5rem] bg-zinc-900/60 border border-emerald-500/20 backdrop-blur-2xl flex flex-col gap-8 shadow-2xl"
               >
-                <YouthPlayerSidebar 
-                  prospect={selectedProspect}
-                  onPromote={onPromote}
-                  onSell={onSell}
-                  onClose={() => setSelectedProspect(null)}
-                />
+                <div className="text-center">
+                  <div className="relative inline-block mx-auto mb-6">
+                    <div className={cn(
+                      "w-32 h-32 rounded-[2.5rem] flex flex-col items-center justify-center border-4 bg-zinc-950/80 shadow-2xl relative overflow-hidden",
+                      selectedProspect.overall >= 70 ? "border-amber-400/50 shadow-amber-400/20" : "border-white/10"
+                    )}>
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent" />
+                      <span className={cn(
+                        "text-5xl font-black italic z-10",
+                        selectedProspect.overall >= 70 ? "text-amber-400" : "text-white"
+                      )}>
+                        {selectedProspect.overall}
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 z-10">OVR</span>
+                    </div>
+                    {selectedProspect.overall >= 70 && (
+                      <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-amber-400 border-4 border-zinc-900 flex items-center justify-center shadow-lg">
+                        <Trophy className="w-5 h-5 text-zinc-900" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white truncate">
+                    {selectedProspect.name}
+                  </h3>
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/30">
+                      {selectedProspect.position}
+                    </span>
+                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                      {selectedProspect.age} ANOS
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Potential Display */}
+                  <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/5">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center gap-2">
+                         <Star className="w-3 h-3 text-amber-400" /> Potencial
+                      </span>
+                      <span className="text-xl font-black text-amber-400 italic">~{selectedProspect.potential}</span>
+                    </div>
+                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${selectedProspect.potential}%` }}
+                        className="h-full bg-gradient-to-r from-amber-600 to-amber-400" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Attributes Grid */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {['FIS', 'TEC', 'TAC', 'DEF', 'VEL', 'MEN'].map((attr) => (
+                      <div key={attr} className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 text-center group hover:bg-emerald-500/5 transition-all">
+                        <p className="text-[8px] font-black text-white/20 uppercase mb-1">{attr}</p>
+                        <p className="text-sm font-black text-white italic group-hover:text-emerald-400">
+                          {Math.floor(selectedProspect.overall * (0.85 + Math.random() * 0.3))}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Raridade / Tag */}
+                  <div className={cn(
+                    "p-4 rounded-3xl border flex items-center gap-4",
+                    selectedProspect.rarity === 'Craque geracional' ? "bg-amber-500/10 border-amber-500/20" :
+                    selectedProspect.rarity === 'Promessa' ? "bg-cyan-500/10 border-cyan-500/20" :
+                    selectedProspect.rarity === 'Bom talento' ? "bg-blue-500/10 border-blue-500/20" :
+                    "bg-emerald-500/5 border-emerald-500/10"
+                  )}>
+                    <div className={cn(
+                      "w-10 h-10 rounded-2xl flex items-center justify-center",
+                      selectedProspect.rarity === 'Craque geracional' ? "bg-amber-500/20 text-amber-400" :
+                      selectedProspect.rarity === 'Promessa' ? "bg-cyan-500/20 text-cyan-400" :
+                      selectedProspect.rarity === 'Bom talento' ? "bg-blue-500/20 text-blue-400" :
+                      "bg-emerald-500/10 text-emerald-400"
+                    )}>
+                       <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Raridade</p>
+                      <p className={cn(
+                        "text-xs font-black uppercase italic",
+                        selectedProspect.rarity === 'Craque geracional' ? "text-amber-400" :
+                        selectedProspect.rarity === 'Promessa' ? "text-cyan-400" :
+                        selectedProspect.rarity === 'Bom talento' ? "text-blue-400" :
+                        "text-emerald-400"
+                      )}>
+                         {selectedProspect.rarity || 'Comum'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <Button 
+                    onClick={() => {
+                      onPromote(selectedProspect.id);
+                      setSelectedProspect(null);
+                    }}
+                    className="w-full h-16 rounded-3xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(16,185,129,0.3)] transition-all active:scale-95 group"
+                  >
+                    <ArrowUpRight className="w-6 h-6 mr-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    Promover ao Profissional
+                  </Button>
+                </div>
               </motion.div>
             ) : (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="h-full min-h-[400px] flex flex-col items-center justify-center p-8 rounded-[2rem] bg-zinc-900/20 border border-white/5 text-center"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-                  <Star className="w-8 h-8 text-white/20" />
+              <div className="sticky top-28 p-10 rounded-[2.5rem] bg-zinc-900/20 border-2 border-dashed border-white/5 flex flex-col items-center justify-center text-center opacity-40">
+                <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mb-8">
+                  <Info className="w-10 h-10 text-white/20" />
                 </div>
-                <h4 className="text-sm font-black italic uppercase text-white/40 tracking-widest">
-                  Selecione um Jogador
-                </h4>
-                <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-2 max-w-[150px]">
-                  Clique em um talento para ver detalhes e opções
+                <p className="text-sm font-black uppercase italic tracking-widest text-white/40 leading-relaxed">
+                  Selecione um jovem talento da academia para analisar seu potencial e promovê-lo ao time principal
                 </p>
-              </motion.div>
+              </div>
             )}
           </AnimatePresence>
         </div>
       </div>
-  );
-}
-
-function TabButton({ active, onClick, label, icon }: { active: boolean; onClick: () => void; label: string; icon: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
-        active 
-          ? "bg-emerald-500 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]" 
-          : "text-white/40 hover:text-white hover:bg-white/5"
-      )}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
+    </div>
   );
 }
