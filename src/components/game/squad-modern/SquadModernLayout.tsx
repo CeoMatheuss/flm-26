@@ -659,16 +659,20 @@ export function SquadModernLayout({
                       Selecione o foco de treinamento individual para <strong>{confirmAction.player.name}</strong>:
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      {['Finalização', 'Passe', 'Marcação', 'Drible', 'Físico', 'Velocidade'].map(foco => (
+                      {['speed', 'shooting', 'passing', 'defending', 'physical', 'dribbling'].map(key => (
                         <button
-                          key={foco}
+                          key={key}
                           onClick={() => {
-                            toast.success(`Foco em ${foco} definido para ${confirmAction.player.name}`);
+                            // @ts-ignore
+                            const focusLabel = { speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Marcação', physical: 'Físico', dribbling: 'Drible' }[key];
+                            // @ts-ignore
+                            handleAction('train', confirmAction.player, key);
+                            toast.success(`Foco em ${focusLabel} definido para ${confirmAction.player.name}`);
                             setConfirmAction(null);
                           }}
                           className="p-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-wider hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all"
                         >
-                          {foco}
+                          {{ speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Marcação', physical: 'Físico', dribbling: 'Drible' }[key as 'speed' | 'shooting' | 'passing' | 'defending' | 'physical' | 'dribbling']}
                         </button>
                       ))}
                     </div>
