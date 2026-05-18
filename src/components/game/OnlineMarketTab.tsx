@@ -745,12 +745,15 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                             <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{listing.player_position}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <p className="font-bold text-xs truncate">{listing.player_name}</p>
-                              {listing.seller_id === userId && (
-                                <Badge variant="secondary" className="text-[7px] h-3 px-1 bg-primary text-black border-0">SEU</Badge>
+                              {listing.seller_id === userId ? (
+                                <Badge variant="secondary" className="text-[7px] h-3.5 px-1.5 bg-primary text-black border-0 font-black">SEU ANÚNCIO</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[7px] h-3.5 px-1.5 border-emerald-500/30 text-emerald-400 font-bold uppercase tracking-tighter">À Venda</Badge>
                               )}
                             </div>
+
                             <button className="text-[10px] text-primary hover:underline cursor-pointer truncate block" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
                               {listing.seller_club_name}
                             </button>
