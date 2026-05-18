@@ -627,10 +627,10 @@ export function useClubState(initialState: any, userId?: string) {
         squad_status: 'reserve' as const,
         squadRole: 'reserva' as const,
         contract: 2,
-        contractStatus: 'profissional' as const
+        ...({ contractStatus: 'profissional' } as any)
       };
       
-      return { ...prev, budget: prev.budget - value, players: [...prev.players, boughtPlayerObj] };
+      return { ...prev, budget: prev.budget - value, players: [...prev.players, boughtPlayerObj as Player] };
     });
 
     if (userId && boughtPlayerObj) {
@@ -648,7 +648,7 @@ export function useClubState(initialState: any, userId?: string) {
             const { data: clubRef } = await supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle();
             if (clubRef) {
               await supabase.from('world_players').update({ 
-                team_id: clubId, 
+                team_id: clubRef.id, 
                 squad_status: 'reserve' 
               }).eq('name', pObj.name).eq('overall', pObj.overall);
             }
@@ -678,9 +678,9 @@ export function useClubState(initialState: any, userId?: string) {
         contract: Math.floor(Math.random() * 3 + 2),
         squad_status: 'reserve' as const,
         squadRole: 'reserva' as const,
-        contractStatus: 'profissional' as const
+        ...({ contractStatus: 'profissional' } as any)
       };
-      return { ...prev, budget: prev.budget - cost, players: [...prev.players, signedPlayerObj] };
+      return { ...prev, budget: prev.budget - cost, players: [...prev.players, signedPlayerObj as Player] };
     });
 
     if (userId && signedPlayerObj) {
