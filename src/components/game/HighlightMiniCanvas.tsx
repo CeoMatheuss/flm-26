@@ -1232,6 +1232,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       // STANDARD FLOW (goal, save, woodwork, corner, chance)
       // ══════════════════════════════════════════════
       } else {
+        const attTeam = team;
         if (t < 0.30) {
           const passT = t / 0.30;
           const numPasses = passPoints.length;
@@ -1243,8 +1244,12 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const to = passPoints[passIdx];
           ballX = from.x + (to.x - from.x) * easeOut(localT);
           ballY = from.y + (to.y - from.y) * easeOut(localT);
-          const shiftAmt = passT * 20;
-          drawAllPlayers(drift * 0.5, true, ballX, ballY, shiftAmt);
+          
+          // Increasing pressure and compactness as play progresses
+          const pressure = 0.2 + passT * 0.4;
+          const compactness = 0.3 + passT * 0.3;
+          drawAllPlayers(drift * 0.5, true, ballX, ballY, 0, attTeam, pressure, compactness);
+          
           // Draw pass trails for all completed passes
           for (let i = 0; i < passIdx; i++) {
             const pf = i === 0 ? { x: isHome ? W * 0.15 : W * 0.85, y: H * 0.50 } : passPoints[i - 1];
