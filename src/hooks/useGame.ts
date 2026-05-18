@@ -83,18 +83,22 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
 
     const rebuiltPlayers = rebuildClubSquad(clubState.club.players, infraState.youthProspects, tactics.formation);
     const rebuiltTactics = syncTacticsWithSquad(tactics, rebuiltPlayers);
-    const playersChanged = squadsDiffer(clubState.club.players, rebuiltPlayers);
-    const tacticsChanged = JSON.stringify(rebuiltTactics) !== JSON.stringify(tactics);
+    
+    // Explicit comparison to avoid loops
+    const currentIds = clubState.club.players.map((p: any) => p.id).join(',');
+    const nextIds = rebuiltPlayers.map((p: any) => p.id).join(',');
+    const currentStatuses = clubState.club.players.map((p: any) => p.squad_status).join(',');
+    const nextStatuses = rebuiltPlayers.map((p: any) => p.squad_status).join(',');
 
-    if (playersChanged) {
+    if (currentIds !== nextIds || currentStatuses !== nextStatuses) {
+      console.log('[useGame] Rebuilding squad to ensure visibility of all categories');
       clubState.setClub(prev => ({ ...prev, players: rebuiltPlayers }));
-      console.log('[useGame] Elenco, juniores e banco reconstruídos automaticamente.');
     }
 
-    if (tacticsChanged) {
+    if (JSON.stringify(rebuiltTactics) !== JSON.stringify(tactics)) {
       setTactics(rebuiltTactics);
     }
-  }, [tactics, clubState.club.players, infraState.youthProspects, clubState.setClub]);
+  }, [tactics.formation, clubState.club.players.length, infraState.youthProspects.length]);
 
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
