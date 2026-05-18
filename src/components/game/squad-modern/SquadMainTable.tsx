@@ -132,7 +132,7 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
         </div>
         
         <div className="flex items-center gap-2">
-           <span className="text-[10px] font-black uppercase tracking-widest text-white/20 mr-2">Ordernar por:</span>
+           <span className="text-[10px] font-black uppercase tracking-widest text-white/20 mr-2">Ordenar por:</span>
            <SortBtn active={sortBy === 'overall'} onClick={() => setSortBy('overall')} label="OVR" />
            <SortBtn active={sortBy === 'value'} onClick={() => setSortBy('value')} label="VALOR" />
            <SortBtn active={sortBy === 'age'} onClick={() => setSortBy('age')} label="IDADE" />
