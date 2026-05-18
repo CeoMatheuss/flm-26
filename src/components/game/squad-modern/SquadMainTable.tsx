@@ -106,7 +106,7 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
       if (sortBy === 'overall') return b.overall - a.overall;
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'age') return b.age - a.age;
-      if (sortBy === 'value') return getPlayerValue(b, (player as any).clubReputation || 50) - getPlayerValue(a, (player as any).clubReputation || 50);
+      if (sortBy === 'value') return getPlayerValue(b) - getPlayerValue(a);
       return 0;
     });
   }, [players, starterIds, activeTab, search, sortBy, negotiations]);
