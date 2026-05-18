@@ -111,7 +111,10 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
   }, [players, starterIds, activeTab, search, sortBy, negotiations]);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden min-w-[700px] bg-zinc-950/20 rounded-[2rem]">
+    <div className={cn(
+      "flex flex-col h-full overflow-hidden min-w-[700px] bg-zinc-950/20 rounded-[2rem] transition-all duration-500",
+      pendingSwapId && "ring-2 ring-emerald-500/30 bg-emerald-500/5"
+    )}>
       {/* Search & Filters */}
       <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
         <div className="relative w-full sm:w-64">
