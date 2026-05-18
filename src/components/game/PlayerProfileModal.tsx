@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoutReport } from '@/types/game';
-import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash } from 'lucide-react';
+import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getPlayerValue } from '@/utils/playerGenerator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
@@ -68,6 +70,68 @@ interface Props {
 export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport, isOwnPlayer, onListForSale, onLoanOut, onAuction, onChangeNumber, canAuction, canLoanOut, playersCount = 99 }: Props) {
   const [shirtNumber, setShirtNumber] = useState<number>(player.shirtNumber || 0);
   const [editingNumber, setEditingNumber] = useState(false);
+  const [listingId, setListingId] = useState<string | null>(null);
+  const [loanListingId, setLoanListingId] = useState<string | null>(null);
+  const [isCheckingListing, setIsCheckingListing] = useState(false);
+
+  useEffect(() => {
+    if (isOwnPlayer && !isFreeAgent) {
+      checkListingStatus();
+    }
+  }, [player.id, isOwnPlayer, isFreeAgent]);
+
+  const checkListingStatus = async () => {
+    setIsCheckingListing(true);
+    try {
+      // Check transfer listings
+      const { data: transferData } = await supabase
+        .from('transfer_listings')
+        .select('id')
+        .eq('status', 'active')
+        .eq('player_data->>id', player.id)
+        .maybeSingle();
+
+      setListingId(transferData?.id || null);
+
+      // Check loan listings
+      const { data: loanData } = await supabase
+        .from('loan_listings')
+        .select('id')
+        .eq('status', 'active')
+        .eq('player_data->>id', player.id)
+        .maybeSingle();
+
+      setLoanListingId(loanData?.id || null);
+    } catch (error) {
+      console.error('Error checking listing status:', error);
+    } finally {
+      setIsCheckingListing(false);
+    }
+  };
+
+  const handleCancelListing = async () => {
+    try {
+      if (listingId) {
+        const { error } = await supabase.functions.invoke('process-transfer', {
+          body: { action: 'delist', listingId }
+        });
+        if (error) throw error;
+        toast.success('Anúncio de venda removido!');
+        setListingId(null);
+      } else if (loanListingId) {
+        const { error } = await supabase
+          .from('loan_listings')
+          .update({ status: 'cancelled' })
+          .eq('id', loanListingId);
+        if (error) throw error;
+        toast.success('Anúncio de empréstimo removido!');
+        setLoanListingId(null);
+      }
+    } catch (error) {
+      console.error('Error cancelling listing:', error);
+      toast.error('Erro ao remover anúncio');
+    }
+  };
 
   const avgRating = player.seasonRatings && player.seasonRatings.length > 0
     ? (player.seasonRatings.reduce((a, b) => a + b, 0) / player.seasonRatings.length)
@@ -108,6 +172,16 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
               <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => onAuction(player)} disabled={!auctionEligible || !canAuction}>
                 <Gavel className="h-3 w-3" /> Leilão
                 {!auctionEligible && <span className="text-[8px] text-muted-foreground">(OVR 65+ / ≤35a)</span>}
+              </Button>
+            )}
+            {(listingId || loanListingId) && (
+              <Button 
+                size="sm" 
+                variant="destructive" 
+                className="h-7 text-[10px] gap-1" 
+                onClick={handleCancelListing}
+              >
+                <XCircle className="h-3 w-3" /> Remover Anúncio
               </Button>
             )}
             {onChangeNumber && (
