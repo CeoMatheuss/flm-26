@@ -820,7 +820,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       <PurchaseSuccessOverlay />
       <VersionUpdateOverlay state={versionGuard} onRollback={versionGuard.rollback} />
       <DatabaseResetWidget userId={userId} />
-      <UpdatePopupWidget userId={userId} />
+      {/* Widget de atualização removido a pedido */}
       <UpdateAnnouncementModal open={showChangelog} onClose={() => { localStorage.setItem('flm-last-version-seen', GAME_VERSION); setShowChangelog(false); }} />
       <PromotionManager 
         youthProspects={game.youthProspects} 
