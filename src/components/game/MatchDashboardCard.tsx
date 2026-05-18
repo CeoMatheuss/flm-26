@@ -579,7 +579,15 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
 
     fetchLive();
     const interval = setInterval(fetchLive, 3000);
-    return () => clearInterval(interval);
+    const onFinalized = () => {
+      setLiveMatch(null);
+    };
+    window.addEventListener('flm:match-finalized', onFinalized);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('flm:match-finalized', onFinalized);
+    };
   }, []);
 
   // Determine match status and data
