@@ -70,7 +70,10 @@ export function SquadModernLayout({
     if (pendingSwap && mainContentRef.current) {
       const p = pendingSwap;
       const isStarter = starterIds.has(p.id);
-      const isFora = players.findIndex(pl => pl.id === p.id) >= 22; // Fora da convocação (após 11 titulares + 11 reservas)
+      
+      // Encontrar o índice real no array players para determinar se está "fora"
+      const playerIndex = players.findIndex(pl => pl.id === p.id);
+      const isFora = playerIndex >= 22; // Fora da convocação (11 titulares + 11 reservas)
       
       let targetTab = '';
       if (isStarter) {
@@ -78,7 +81,7 @@ export function SquadModernLayout({
       } else if (isFora) {
         targetTab = 'reservas';
       } else {
-        // Se for reserva
+        // Se for reserva (está entre o índice 11 e 21)
         targetTab = 'titulares';
       }
 
