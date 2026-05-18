@@ -2055,7 +2055,41 @@ Deno.serve(async (req) => {
           capacity: resolvedStadiumCapacity, homeFans: resolvedHomeFans, awayFans: resolvedAwayFans,
         });
       } else {
-        console.info('[start-match] No home user resolved (likely friendly vs BOT) — using client values', { matchId });
+        console.info('[start-match] No home user resolved (likely friendly vs BOT) — resolving from world_teams/players', { matchId });
+        
+        // Try to resolve teams from match tables if not provided correctly
+        const mId = String(matchId);
+        let hTeamId: string | null = null;
+        let aTeamId: string | null = null;
+
+        // Check world_matches
+        const { data: wm } = await adminClient.from('world_matches').select('home_team_id, away_team_id').eq('id', mId).maybeSingle();
+        if (wm) {
+          hTeamId = wm.home_team_id;
+          aTeamId = wm.away_team_id;
+        } else {
+          // Check cup matches
+          const { data: cm } = await adminClient.from('national_cup_matches').select('home_team_id, away_team_id').eq('id', mId).maybeSingle();
+          if (cm) {
+            hTeamId = cm.home_team_id;
+            aTeamId = cm.away_team_id;
+          }
+        }
+
+        if (hTeamId && effHomePlayers.length < 18) {
+          const players = await fetchTeamPlayers(hTeamId);
+          if (players.length > 0) {
+            effHomePlayers = players;
+            console.info(`[start-match] Loaded ${players.length} players for Home team BOT`);
+          }
+        }
+        if (aTeamId && (!effAwayPlayers || effAwayPlayers.length < 18)) {
+          const players = await fetchTeamPlayers(aTeamId);
+          if (players.length > 0) {
+            effAwayPlayers = players;
+            console.info(`[start-match] Loaded ${players.length} players for Away team BOT`);
+          }
+        }
       }
     } catch (e) {
       console.warn('[start-match] Authoritative resolution failed, falling back to client data', e);
