@@ -333,12 +333,13 @@ export default function MatchPage() {
             homeGoals: state.homeGoals,
             awayGoals: state.awayGoals,
             competition: locState?.competition || 'Amistoso',
-            finished: true
+            finished: true,
+            refreshNeeded: true // Signal to refresh widgets
           },
         },
       });
     } else {
-      navigate('/', { replace: true, state: { matchFinished: true } });
+      navigate('/', { replace: true, state: { matchFinished: true, refreshNeeded: true } });
     }
   };
 
