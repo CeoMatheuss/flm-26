@@ -41,7 +41,14 @@ export function useAutoSimulator(userId: string | undefined) {
 }
 
 export function triggerAutoSim() {
-  supabase.functions.invoke('world-match-simulator').then(() => {
-    console.log('[AutoSim] Simulação disparada manualmente.');
+  // Centralized trigger for all simulation engines
+  Promise.all([
+    supabase.functions.invoke('world-match-simulator'),
+    supabase.functions.invoke('legacy-auto-sim')
+  ]).then(() => {
+    console.log('[AutoSim] Simulação global disparada manualmente.');
+    // Notify UI that league data might have changed
+    window.dispatchEvent(new CustomEvent('league_match_updated'));
+    window.dispatchEvent(new CustomEvent('flm:match-finalized'));
   });
 }
