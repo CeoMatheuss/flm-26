@@ -86,18 +86,37 @@ Deno.serve(async (req) => {
   const now = new Date();
   
   try {
-    // 1. Fetch Scheduled Matches
+    // 1. Fetch Scheduled or Stuck Matches
+    // We fetch matches that are scheduled AND their time has passed, 
+    // OR matches stuck in 'simulating' for more than 20 minutes.
+    const stuckThreshold = new Date(now.getTime() - 20 * 60 * 1000).toISOString();
+    
     const { data: matches } = await sb.from("world_matches")
       .select(`*, 
         home_team:world_teams!world_matches_home_team_id_fkey(id, name, strength),
         away_team:world_teams!world_matches_away_team_id_fkey(id, name, strength)
       `)
-      .eq("status", "scheduled")
+      .or(`status.eq.scheduled,and(status.eq.simulating,scheduled_at.lte.${stuckThreshold})`)
       .lte("scheduled_at", now.toISOString())
       .limit(50);
 
     if (matches && matches.length > 0) {
+      // Pre-fetch all players for all teams in batch to avoid N+1 queries
+      const teamIds = [...new Set(matches.flatMap(m => [m.home_team_id, m.away_team_id]))];
+      const { data: allPlayers } = await sb.from('world_players')
+        .select('id, team_id, name, position, overall')
+        .in('team_id', teamIds);
+
       for (const m of matches) {
+        // Atomic Lock: Mark as simulating to prevent race conditions
+        const { data: locked } = await sb.from("world_matches")
+          .update({ status: 'simulating' })
+          .eq('id', m.id)
+          .or('status.eq.scheduled,status.eq.simulating') // allow re-sim if stuck
+          .select('id');
+        
+        if (!locked || locked.length === 0) continue;
+
         // Simple Simulation Logic (League Match Engine)
         const hs = (m.home_team?.strength || 65) * 1.1;
         const as = (m.away_team?.strength || 65);
@@ -105,9 +124,10 @@ Deno.serve(async (req) => {
         const ag = Math.floor(Math.random() * 4 + (as > hs ? 1 : 0));
 
         // Calculate scorers and assisters based on attributes
-        const homePlayers = players.filter(p => p.team_id === m.home_team_id);
-        const awayPlayers = players.filter(p => p.team_id === m.away_team_id);
+        const homePlayers = (allPlayers || []).filter(p => p.team_id === m.home_team_id);
+        const awayPlayers = (allPlayers || []).filter(p => p.team_id === m.away_team_id);
         const match_data_stats: any = { homeScorers: [], awayScorers: [] };
+
 
         for (let i = 0; i < hg; i++) {
             const scorer = pickPlayerByRole(homePlayers, 'finishing');
@@ -129,28 +149,32 @@ Deno.serve(async (req) => {
           synced: false, match_data: match_data_stats 
         }).eq("id", m.id);
 
-        if (updateErr) console.error(`Error updating match ${m.id}:`, updateErr);
+        if (updateErr) {
+          console.error(`Error updating match ${m.id}:`, updateErr);
+          continue;
+        }
 
-        // Fetch players for discipline/stats
-        const { data: players } = await sb.from('world_players').select('id, team_id, name, position, overall').in('team_id', [m.home_team_id, m.away_team_id]);
-        
-        if (players) {
-          const availability = processPlayerDiscipline(players);
+        // Process discipline for these specific players
+        const matchPlayers = (allPlayers || []).filter(p => p.team_id === m.home_team_id || p.team_id === m.away_team_id);
+        if (matchPlayers.length > 0) {
+          const availability = processPlayerDiscipline(matchPlayers);
           if (availability.length > 0) {
             await sb.from('world_player_availability').upsert(availability, { onConflict: 'player_id,type' });
           }
         }
+
 
         // Generate News for synchronization feedback
         const newsTitle = getHeadline(hg === ag ? 'draw' : (hg > ag ? 'win' : 'loss'), hg > ag ? m.home_team.name : m.away_team.name, hg > ag ? m.away_team.name : m.home_team.name);
         
         // ── SYNC PLAYER STATS TO RANKINGS ────────────────────────
         try {
-          const statsPayload = players.map(p => {
+          const statsPayload = matchPlayers.map(p => {
             const isHome = p.team_id === m.home_team_id;
             const pScorers = isHome ? match_data_stats.homeScorers : match_data_stats.awayScorers;
             const goals = pScorers.filter(s => s.id === p.id).length;
-            const assists = pScorers.filter(s => s.assistId === p.id).length; // match_data_stats needs assistId
+            const assists = pScorers.filter(s => s.assistId === p.id).length;
+
             
             return {
               player_id: p.id,
