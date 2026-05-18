@@ -28,7 +28,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        'relative w-full min-h-[340px] rounded-[2rem] overflow-hidden group transition-all duration-300',
+        'relative w-full min-h-[280px] rounded-[1.5rem] overflow-hidden group transition-all duration-300',
         'border-2 shadow-2xl',
         (player as any).rarity && (player as any).rarity !== 'Comum'
           ? (player as any).rarity === 'Craque geracional' ? 'border-amber-400 shadow-amber-400/20' :
@@ -90,16 +90,18 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
                  <Sparkles className="w-3 h-3" />
                </div>
              )}
-             <button
-               onClick={(e) => {
-                 e.stopPropagation();
-                 onOpenQuickSwap?.();
-               }}
-               className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30 hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
-               title="Troca Rápida"
-             >
-               <span className="text-[10px] block">🔄</span>
-             </button>
+             {onOpenQuickSwap && (
+               <button
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   onOpenQuickSwap?.();
+                 }}
+                 className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30 hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
+                 title="Troca Rápida"
+               >
+                 <span className="text-[10px] block">🔄</span>
+               </button>
+             )}
              {isStarter && (
                <div className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30">
                  <Shield className="w-3 h-3 text-emerald-400" />
@@ -109,7 +111,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         </div>
 
         {/* Name - Big and Bold */}
-        <div className="mt-3 mb-2">
+        <div className="mt-1 mb-1">
           <h3 className="text-lg font-black italic text-white uppercase tracking-tighter leading-none truncate group-hover:text-emerald-300 transition-colors">
             {player.name.split(' ').pop()}
           </h3>
@@ -119,7 +121,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="grid grid-cols-2 gap-2 mb-1">
           <StatMini icon={<Zap className="w-2.5 h-2.5" />} label="STAM" value={player.stamina} color="text-emerald-400" />
           <StatMini icon={<Heart className="w-2.5 h-2.5" />} label="MOR" value={player.morale} color="text-pink-400" />
         </div>
