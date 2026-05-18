@@ -3,7 +3,7 @@ import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
-import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle, Tag, Handshake } from 'lucide-react';
+import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle, Tag, Handshake, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
@@ -218,13 +218,10 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
   const status = getPlayerStatus(player, isStarter, isNegotiating);
   const sm = statusMeta[status] || statusMeta.reserva;
 
-  // Lógica de Overall Dinâmico: Se for titular, mostrar overall da posição da escalação (se possível)
-  // Como SquadMainTable não tem a formação/requirements direta, usamos heurística se estiver na aba titulares
-  const showDynamic = activeTab === 'titulares' && isStarter;
-  // Simplificação: No PlayerRow da lista, mantemos o Overall Base, mas adicionamos o indicador de adaptação se for o caso.
-  // No FLM, a tela de elenco foca no valor intrínseco, a tela Tática foca no dinâmico.
-  // Porém, o prompt pede "O overall mostrado no campo deve mudar automaticamente", o que já fizemos no FormationView.
-  // Para a lista, vamos adicionar o badge de adaptação.
+  const isForSale = player.onTransferList || status === 'lista-transferencia';
+  const isForLoan = player.onLoanList || status === 'lista-emprestimo';
+  const isLoanedOut = player.isLoaned || status === 'emprestado';
+  const isLoanedIn = player.isReceivedLoan || status === 'recebido-emprestimo';
 
   return (
     <motion.button
@@ -237,12 +234,21 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
         "w-full text-left rounded-2xl border flex flex-col sm:grid sm:grid-cols-12 sm:items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3 transition-all duration-300 group relative overflow-hidden min-h-[80px]",
         selected 
           ? (isPendingSwap ? "bg-primary/20 border-primary ring-2 ring-primary/50 animate-pulse" : "bg-emerald-500/10 border-emerald-500/30 shadow-xl")
-          : (canBeSwapped ? "bg-white/[0.05] border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10")
+          : (canBeSwapped ? "bg-white/[0.05] border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10"),
+        isForSale && "border-emerald-500/40 bg-emerald-500/[0.03] shadow-[inset_0_0_30px_rgba(16,185,129,0.05)]",
+        isForLoan && "border-cyan-500/40 bg-cyan-500/[0.03]",
+        isLoanedIn && "border-indigo-500/40 bg-indigo-500/[0.03]",
+        isLoanedOut && "border-zinc-500/40 bg-zinc-500/[0.03] opacity-80"
       )}
     >
-      {/* Decorative Glow */}
-      <div className={cn("absolute inset-y-0 left-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity", tier.bg.split(' ')[0])} />
-
+      {/* Decorative Glow & Visual Identity */}
+      {(isForSale || isForLoan || isLoanedIn) && (
+        <div className={cn(
+          "absolute inset-y-0 left-0 w-1",
+          isForSale ? "bg-emerald-500" : isForLoan ? "bg-cyan-500" : "bg-indigo-500"
+        )} />
+      )}
+      
       {/* Shirt Number / Index */}
       <div className="hidden sm:flex col-span-1 items-center justify-center">
         <span className="text-[10px] font-black text-white/20 italic tracking-tighter">
@@ -287,7 +293,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
               {player.name}
             </span>
             <span className="text-[14px] flex items-center gap-1.5 shrink-0">
-              {flagFor((player as any).country)}
+              {flagFor((player as any).country || player.nationality)}
               <button
                 onClick={(e) => {
                   if (onSwapAction) {
@@ -317,15 +323,25 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
                 <span className="text-[8px] font-black text-amber-400 uppercase tracking-tighter">💎 JOIA</span>
              )}
              
-             {/* Venda / Empréstimo Badge */}
-             {player.onTransferList && (
-               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-emerald-400 uppercase tracking-widest">
+             {/* Dynamic Status Badges */}
+             {isForSale && (
+               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
                  <Tag className="w-2.5 h-2.5" /> À VENDA
                </span>
              )}
-             {player.onLoanList && (
-               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[8px] font-black text-cyan-400 uppercase tracking-widest">
-                 <Handshake className="w-2.5 h-2.5" /> EMPRÉSTIMO
+             {isForLoan && (
+               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40 text-[8px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">
+                 <ArrowLeftRight className="w-2.5 h-2.5" /> EMPRÉSTIMO
+               </span>
+             )}
+             {isLoanedIn && (
+               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/40 text-[8px] font-black text-indigo-400 uppercase tracking-widest">
+                 <Handshake className="w-2.5 h-2.5" /> EMP. RECEBIDO {player.loanedFrom && `(${player.loanedFrom})`}
+               </span>
+             )}
+             {isLoanedOut && (
+               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-zinc-500/20 border border-zinc-500/40 text-[8px] font-black text-zinc-400 uppercase tracking-widest">
+                 <ArrowLeftRight className="w-2.5 h-2.5" /> EMPRESTADO {player.loanedTo && `→ ${player.loanedTo}`}
                </span>
              )}
 
@@ -338,7 +354,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
 
       {/* Country (Desktop) */}
       <div className="hidden sm:block col-span-1 text-center">
-        <span className="text-xl filter drop-shadow-sm">{flagFor((player as any).country)}</span>
+        <span className="text-xl filter drop-shadow-sm">{flagFor((player as any).country || player.nationality)}</span>
       </div>
 
       {/* Age */}
@@ -370,7 +386,9 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 overflow-hidden">
         <div className="flex flex-col items-end shrink-0">
           <span className="text-[10px] sm:text-[11px] font-black text-white/80 italic whitespace-nowrap">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
-          <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{player.contract} Anos</span>
+          <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
+            {isLoanedIn || isLoanedOut ? `${player.loanWeeksRemaining || 0} SEM (EMP)` : `${player.contract} Anos`}
+          </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="flex flex-col items-end min-w-[80px] sm:min-w-[100px]">
@@ -383,6 +401,8 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
     </motion.button>
   );
 }
+
+
 
 function MiniStat({ value, icon, color, label, onRest }: { value: number; icon: React.ReactNode; color: string; label?: string; onRest?: () => void }) {
   const v = Math.round(value || 0);

@@ -1,4 +1,4 @@
-export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'indisponivel' | 'emprestado' | 'afastado' | 'fora' | 'negociando';
+export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'lista-emprestimo' | 'indisponivel' | 'emprestado' | 'recebido-emprestimo' | 'afastado' | 'fora' | 'negociando';
 
 export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {
   titular: { 
@@ -37,11 +37,18 @@ export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg
     dot: 'bg-amber-400'
   },
   'lista-transferencia': { 
-    label: 'Listado', 
-    color: 'text-sky-400', 
-    bg: 'bg-sky-400/10', 
-    border: 'border-sky-400/20',
-    dot: 'bg-sky-400'
+    label: 'À Venda', 
+    color: 'text-emerald-400', 
+    bg: 'bg-emerald-400/10', 
+    border: 'border-emerald-400/20',
+    dot: 'bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.5)]'
+  },
+  'lista-emprestimo': { 
+    label: 'Empréstimo', 
+    color: 'text-cyan-400', 
+    bg: 'bg-cyan-400/10', 
+    border: 'border-cyan-400/20',
+    dot: 'bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.5)]'
   },
   indisponivel: { 
     label: 'Indisponível', 
@@ -56,6 +63,13 @@ export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg
     bg: 'bg-zinc-400/10', 
     border: 'border-zinc-400/20',
     dot: 'bg-zinc-400 border border-white/20'
+  },
+  'recebido-emprestimo': { 
+    label: 'Emp. Recebido', 
+    color: 'text-indigo-400', 
+    bg: 'bg-indigo-400/10', 
+    border: 'border-indigo-400/20',
+    dot: 'bg-indigo-400 shadow-[0_0_12px_rgba(129,140,248,0.5)]'
   },
   afastado: { 
     label: 'Afastado', 
@@ -148,15 +162,15 @@ export const attrColorClass = (val: number) => {
 
 export const getPlayerStatus = (p: any, isStarter: boolean, isNegotiating?: boolean): PlayerStatus => {
   if (isNegotiating) return 'negociando';
+  if (p.isReceivedLoan) return 'recebido-emprestimo';
   if (p.isLoaned) return 'emprestado';
   if (p.isInjured || p.injury) return 'lesionado';
   if (p.isSuspended) return 'suspenso';
   if (p.onTransferList) return 'lista-transferencia';
+  if (p.onLoanList) return 'lista-emprestimo';
   if (p.isAfastado) return 'afastado';
   if (isStarter) return 'titular';
   
-  // No SquadMainTable, o que define se é 'reserva' ou 'fora' é a aba.
-  // Aqui apenas retornamos 'reserva' como status base para quem não é titular/indisponível.
   return 'reserva';
 };
 

@@ -139,6 +139,11 @@ export interface Player {
   };
   onTransferList?: boolean;
   onLoanList?: boolean;
+  isLoaned?: boolean;
+  loanedTo?: string;
+  loanedFrom?: string;
+  loanWeeksRemaining?: number;
+  isReceivedLoan?: boolean;
 }
 
 export interface Scout {

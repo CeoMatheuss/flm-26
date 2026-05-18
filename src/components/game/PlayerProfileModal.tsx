@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoutReport } from '@/types/game';
-import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash, XCircle } from 'lucide-react';
+import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash, XCircle, Handshake, Clock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useState, useEffect } from 'react';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
@@ -155,7 +156,43 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
           </DialogTitle>
         </DialogHeader>
 
+        {/* Status Highlight Banner */}
+        {(player.onTransferList || player.onLoanList || player.isLoaned || player.isReceivedLoan) && (
+          <div className={cn(
+            "p-3 rounded-xl flex items-center justify-between animate-pulse",
+            player.onTransferList ? "bg-emerald-500/20 border border-emerald-500/40" :
+            player.onLoanList ? "bg-cyan-500/20 border border-cyan-500/40" :
+            player.isReceivedLoan ? "bg-indigo-500/20 border border-indigo-500/40" :
+            "bg-zinc-500/20 border border-zinc-500/40"
+          )}>
+            <div className="flex items-center gap-2">
+              {player.onTransferList ? <Tag className="h-4 w-4 text-emerald-400" /> :
+               player.onLoanList ? <ArrowLeftRight className="h-4 w-4 text-cyan-400" /> :
+               player.isReceivedLoan ? <Handshake className="h-4 w-4 text-indigo-400" /> :
+               <ArrowLeftRight className="h-4 w-4 text-zinc-400" />}
+              <span className={cn(
+                "text-xs font-black uppercase tracking-widest",
+                player.onTransferList ? "text-emerald-400" :
+                player.onLoanList ? "text-cyan-400" :
+                player.isReceivedLoan ? "text-indigo-400" :
+                "text-zinc-400"
+              )}>
+                {player.onTransferList ? "À VENDA" :
+                 player.onLoanList ? "PARA EMPRÉSTIMO" :
+                 player.isReceivedLoan ? `EMP. RECEBIDO (${player.loanedFrom})` :
+                 `EMPRESTADO (${player.loanedTo})`}
+              </span>
+            </div>
+            {(player.isLoaned || player.isReceivedLoan) && player.loanWeeksRemaining && (
+              <div className="flex items-center gap-1 text-[10px] font-bold text-white/60">
+                <Clock className="h-3 w-3" /> {player.loanWeeksRemaining} SEM
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons for own players */}
+
         {isOwnPlayer && (
           <div className="grid grid-cols-2 gap-1.5">
             {onListForSale && (
