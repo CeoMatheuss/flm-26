@@ -3,7 +3,7 @@ import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
-import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle, Tag, Handshake } from 'lucide-react';
+import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle, Tag, Handshake, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
