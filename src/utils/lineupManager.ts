@@ -144,7 +144,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     .filter(p => !used.has(p.id) && canPlayMatch(p))
     .sort((a, b) => b.overall - a.overall);
   
-  while (reserves.length < 7 && leftForReserves.length > 0) {
+  while (reserves.length < 11 && leftForReserves.length > 0) {
     const p = leftForReserves.shift()!;
     reserves.push(p);
     used.add(p.id);
