@@ -390,16 +390,16 @@ export function YouthAcademyModernTab({
                   </div>
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-2">
                   <Button 
                     onClick={() => {
                       onPromote(selectedProspect.id);
                       setSelectedProspect(null);
                     }}
-                    className="w-full h-16 rounded-3xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(16,185,129,0.3)] transition-all active:scale-95 group"
+                    className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-wider text-xs sm:text-sm shadow-[0_10px_30px_rgba(16,185,129,0.3)] transition-all active:scale-95 group whitespace-normal text-center px-3"
                   >
-                    <ArrowUpRight className="w-6 h-6 mr-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                    Promover ao Profissional
+                    <ArrowUpRight className="w-4 h-4 mr-2 shrink-0 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    <span className="leading-tight">Promover ao Profissional</span>
                   </Button>
                 </div>
               </motion.div>
