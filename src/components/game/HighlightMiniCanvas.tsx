@@ -742,11 +742,13 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
          * Phase 4: Aftermath (0.72 → 1.0)
          */
         const dir = isHome ? 1 : -1;
+        const attTeam = team;
 
         if (t < 0.15) {
           // Interception phase
           const intT = t / 0.15;
-          drawAllPlayers(drift * 0.6);
+          // Initial break: some pressure starting to build
+          drawAllPlayers(drift * 0.6, false, 0, 0, 0, attTeam, 0.2 * intT, 0.1 * intT);
           // Defender wins the ball at own half
           const interceptX = isHome ? W * 0.22 : W * 0.78;
           const interceptY = H * 0.4;
@@ -764,8 +766,8 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const runnerX = startX + (endX - startX) * easeOut(sprintT);
           const runnerY = H * 0.42;
 
-          // Shift everyone dramatically
-          drawAllPlayers(drift * 0.4, true, runnerX, runnerY, 35 * easeOut(sprintT));
+          // Counter-attack pressure: Rapidly increasing
+          drawAllPlayers(drift * 0.4, true, runnerX, runnerY, 0, attTeam, 0.5 * sprintT, 0.2 * sprintT);
 
           // Runner with ball
           drawPlayer(runnerX, runnerY, teamColor, teamLight, '10', 10, true, playerName);
@@ -790,7 +792,8 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const runX = entryX + (shooterPos.x - entryX) * easeOut(boxT);
           const runY = shooterPos.y;
 
-          drawAllPlayers(drift * 0.3, true, runX, runY, 40);
+          // High pressure into the box
+          drawAllPlayers(drift * 0.3, true, runX, runY, 0, attTeam, 0.75, 0.8);
 
           // GK coming out
           const gkBaseX = goalX + (isHome ? -15 : 15);
@@ -805,9 +808,11 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(boxT, '⚡ 1 CONTRA 1!', playerName);
 
         } else if (t < 0.72) {
-          // Shot phase (same as standard)
+          // Shot phase
           const shotT = (t - 0.58) / 0.14;
-          drawAllPlayers(drift * 0.25, true, goalX, goalY, 40);
+          // Maximum pressure during shot
+          drawAllPlayers(drift * 0.25, true, goalX, goalY, 0, attTeam, 0.9, 0.9);
+          
           const sX = shooterPos.x + dir * 6 * easeOut(Math.min(shotT * 2, 1));
           drawPlayer(sX, shooterPos.y, teamColor, teamLight, '10', 10, shotT < 0.25, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
@@ -823,9 +828,9 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(shotT, '🔥 CHUTOU NO CONTRA-ATAQUE!', playerName);
 
         } else {
-          // Aftermath — outcome-aware (counter_attack can be goal/save/miss)
+          // Aftermath
           const afterT = (t - 0.72) / 0.28;
-          drawAllPlayers(drift * 0.15);
+          drawAllPlayers(drift * 0.15, false, 0, 0, 0, attTeam, 0.4 * (1 - afterT), 0.3 * (1 - afterT));
           drawPlayer(shooterPos.x + dir * 10, shooterPos.y, teamColor, teamLight, '10', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
           drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 15 : 0), gkColor, gkLight, 'GK', 9);
