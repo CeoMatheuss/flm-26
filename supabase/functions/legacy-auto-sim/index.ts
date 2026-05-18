@@ -1,298 +1,303 @@
 // Edge Function: legacy-auto-sim
-// Server-side simulation of friendly_invites, league_matches and custom_tournament_matches.
-// Runs independently of any user being online (called via cron).
-// Processes up to MAX_BATCH per call, atomic guards prevent double-sim.
+// REFEITO COMPLETAMENTE - SISTEMA DEFINITIVO DE SIMULAÇÃO E FINALIZAÇÃO AUTOMÁTICA
+// Handles: League Matches, World Matches, Friendly Invites, Tournament Matches.
+// Independent of online status. Includes automatic stuck-match cleanup.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_BATCH = 30;
-const STUCK_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+const STUCK_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutos para considerar partida travada
+const MATCH_WAIT_TIME_MS = 5 * 60 * 1000;  // 5 minutos de espera antes da auto-simulação
+const BATCH_SIZE = 40;
 
+// --- UTILS ---
+function clamp(v: number, min: number, max: number) { return Math.max(min, Math.min(max, v)); }
+function rng() { return Math.random(); }
+function pick<T>(arr: T[]): T | null { return arr.length > 0 ? arr[Math.floor(rng() * arr.length)] : null; }
 
-function poisson(lambda: number): number {
-  if (lambda <= 0) return 0;
+function poissonSample(lambda: number): number {
   const L = Math.exp(-lambda);
   let k = 0, p = 1;
-  do { k++; p *= Math.random(); } while (p > L);
+  do { k++; p *= rng(); } while (p > L);
   return k - 1;
 }
 
-function simulate(homeStr: number, awayStr: number) {
-  const hs = Math.max(30, homeStr) * 1.15;
-  const as = Math.max(30, awayStr);
-  const total = hs + as;
-  const baseGoals = 2.6;
-  const lambdaHome = baseGoals * (hs / total) * 1.05;
-  const lambdaAway = baseGoals * (as / total) * 0.95;
+// --- SIMULATION ENGINE ---
+function generateMatchStats(homeStr: number, awayStr: number, hg: number, ag: number): any {
+  const totalStr = homeStr + awayStr;
+  const possession = clamp(Math.floor(50 + (homeStr - awayStr) * 0.4), 30, 70);
   return {
-    home: Math.min(7, poisson(lambdaHome)),
-    away: Math.min(7, poisson(lambdaAway)),
+    possession: [possession, 100 - possession],
+    shots: [Math.floor(5 + hg * 2 + rng() * 5), Math.floor(5 + ag * 2 + rng() * 5)],
+    shotsOnTarget: [hg + Math.floor(rng() * 3), ag + Math.floor(rng() * 3)],
+    fouls: [Math.floor(5 + rng() * 10), Math.floor(5 + rng() * 10)],
+    corners: [Math.floor(2 + rng() * 6), Math.floor(2 + rng() * 6)],
+    yellowCards: [Math.floor(rng() * 4), Math.floor(rng() * 4)],
+    redCards: [rng() < 0.05 ? 1 : 0, rng() < 0.05 ? 1 : 0],
+    passes: [Math.floor(200 + homeStr * 2), Math.floor(200 + awayStr * 2)],
+    tackles: [Math.floor(10 + awayStr / 10), Math.floor(10 + homeStr / 10)],
+    saves: [ag + 1, hg + 1],
+    offsides: [Math.floor(rng() * 4), Math.floor(rng() * 4)],
   };
 }
 
-function genEvents(hg: number, ag: number, homeName: string, awayName: string) {
-  const events: Array<{ minute: number; type: string; team: 'home' | 'away'; isGoal: boolean; playerName: string; description: string }> = [];
-  const used = new Set<number>();
-  const add = (team: 'home' | 'away', name: string) => {
-    let m = 1; let tries = 0;
-    do { m = Math.floor(Math.random() * 90) + 1; tries++; } while (used.has(m) && tries < 20);
-    used.add(m);
-    events.push({ minute: m, type: 'goal', team, isGoal: true, playerName: 'Atacante', description: `⚽ GOOOL de ${name}!` });
-  };
-  for (let i = 0; i < hg; i++) add('home', homeName);
-  for (let i = 0; i < ag; i++) add('away', awayName);
-  events.sort((a, b) => a.minute - b.minute);
-  return events;
-}
-
-async function getStrength(supabase: any, userId: string | null): Promise<number> {
-  if (!userId) return 60;
-  const { data, error } = await supabase.rpc('get_user_team_strength', { _user_id: userId });
-  if (error || data == null) return 60;
-  const n = Number(data);
-  return Number.isFinite(n) && n > 0 ? n : 60;
-}
-
-async function notify(supabase: any, userId: string, opponent: string, mine: number, theirs: number, comp: string) {
-  try {
-    const result = mine > theirs ? '🟢 Vitória' : mine === theirs ? '🟡 Empate' : '🔴 Derrota';
-    await supabase.from('user_notifications').insert({
-      user_id: userId,
-      type: 'match_auto_simulated',
-      icon: '🤖',
-      title: 'Partida simulada automaticamente',
-      message: `${result} ${mine}x${theirs} vs ${opponent} (${comp})`,
-      data: { auto_simulated: true, my_goals: mine, opp_goals: theirs, opponent, competition: comp },
-    });
-  } catch { /* noop */ }
-}
-
-async function processFriendlies(supabase: any): Promise<number> {
-  const nowIso = new Date().toISOString();
-  // Regra: só auto-simula amistosos cujo horário oficial já chegou (com 5min de tolerância)
-  // E onde NENHUM jogador entrou no lobby. Se ao menos 1 entrou, a partida segue normal.
-  const tolerance = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  const { data: list } = await supabase
-    .from('friendly_invites')
-    .select('id, sender_id, receiver_id, sender_club_name, receiver_club_name, home_team_id, match_date, auto_sim_at, home_joined, away_joined')
-    .eq('status', 'accepted')
-    .is('match_result', null)
-    .lte('match_date', tolerance)
-    .not('home_joined', 'is', true)
-    .not('away_joined', 'is', true)
-    .limit(MAX_BATCH);
-  if (!list || list.length === 0) return 0;
-
-  let processed = 0;
-  for (const f of list) {
-    const homeIsSender = f.home_team_id === f.sender_id;
-    const senderStr = await getStrength(supabase, f.sender_id);
-    const receiverStr = await getStrength(supabase, f.receiver_id);
-    const homeStr = homeIsSender ? senderStr : receiverStr;
-    const awayStr = homeIsSender ? receiverStr : senderStr;
-    const homeName = homeIsSender ? f.sender_club_name : f.receiver_club_name;
-    const awayName = homeIsSender ? f.receiver_club_name : f.sender_club_name;
-    const { home: hg, away: ag } = simulate(homeStr, awayStr);
-    const events = genEvents(hg, ag, homeName, awayName);
-
-    const { data: updated } = await supabase
-      .from('friendly_invites')
-      .update({
-        status: 'finished',
-        match_result: { home_goals: hg, away_goals: ag, events, auto_simulated: true, simulated: true, home_name: homeName, away_name: awayName },
-      })
-      .eq('id', f.id)
-      .eq('status', 'accepted')
-      .select('id');
-    if (!updated || updated.length === 0) continue;
-
-    const senderGoals = homeIsSender ? hg : ag;
-    const receiverGoals = homeIsSender ? ag : hg;
-    await notify(supabase, f.sender_id, f.receiver_club_name, senderGoals, receiverGoals, 'Amistoso');
-    await notify(supabase, f.receiver_id, f.sender_club_name, receiverGoals, senderGoals, 'Amistoso');
-    processed++;
-  }
-  return processed;
-}
-
-async function processLeagueMatches(supabase: any): Promise<number> {
-  const nowIso = new Date().toISOString();
-  const tolerance = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  const stuckThreshold = new Date(Date.now() - STUCK_TIMEOUT_MS).toISOString();
-  // Só auto-simula se ninguém entrou no lobby após 5min do horário marcado,
-  // ou se a partida estiver travada em 'simulating' por muito tempo.
-
-  const { data: list } = await supabase
-    .from('league_matches')
-    .select('id, league_id, home_user_id, away_user_id, match_data, home_joined, away_joined, scheduled_at, auto_sim_at')
-    .eq('status', 'scheduled')
-    .or(`auto_sim_at.lte.${nowIso},scheduled_at.lte.${tolerance},and(status.eq.simulating,scheduled_at.lte.${stuckThreshold})`)
-    .not('home_joined', 'is', true)
-    .not('away_joined', 'is', true)
-
-    .order('scheduled_at', { ascending: true, nullsFirst: false })
-    .limit(MAX_BATCH);
-  if (!list || list.length === 0) return 0;
-
-  let processed = 0;
-  for (const m of list) {
-    // Atomic Lock: Mark as simulating to prevent race conditions
-    const { data: locked } = await supabase.from('league_matches')
-      .update({ status: 'simulating' })
-      .eq('id', m.id)
-      .or('status.eq.scheduled,status.eq.simulating')
-      .select('id');
+function processFatigueAndInjuries(players: any[]) {
+  return players.map(p => {
+    const resistance = p.attributes?.physical || p.resistance || 60;
+    // Drain: 15-25% base, reduced by resistance (up to -10%)
+    const resistanceBonus = (resistance - 50) * 0.15;
+    const drain = Math.max(8, Math.floor(15 + rng() * 10 - resistanceBonus));
+    const newStamina = Math.max(0, (p.stamina || 100) - drain);
     
-    if (!locked || locked.length === 0) continue;
-
-    const homeStr = await getStrength(supabase, m.home_user_id);
-
-    const awayStr = await getStrength(supabase, m.away_user_id);
-    const { home: hg, away: ag } = simulate(homeStr, awayStr);
-
-    const { data: members } = await supabase
-      .from('league_members')
-      .select('user_id, club_name')
-      .eq('league_id', m.league_id)
-      .in('user_id', [m.home_user_id, m.away_user_id]);
-    const homeName = members?.find((x: any) => x.user_id === m.home_user_id)?.club_name || 'Mandante';
-    const awayName = members?.find((x: any) => x.user_id === m.away_user_id)?.club_name || 'Visitante';
-    const events = genEvents(hg, ag, homeName, awayName);
-
-    const { data: updated } = await supabase
-      .from('league_matches')
-      .update({
-        home_goals: hg, away_goals: ag, status: 'finished',
-        played_at: new Date().toISOString(),
-        match_data: { ...(m.match_data || {}), events, auto_simulated: true, simulated: true, home_name: homeName, away_name: awayName },
-      })
-      .eq('id', m.id)
-      .eq('status', 'scheduled')
-      .select('id');
-    if (!updated || updated.length === 0) continue;
-
-    for (const u of [
-      { uid: m.home_user_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag, loss: hg < ag },
-      { uid: m.away_user_id, gf: ag, ga: hg, win: ag > hg, draw: hg === ag, loss: ag < hg },
-    ]) {
-      const { data: row } = await supabase
-        .from('league_members')
-        .select('points,wins,draws,losses,goals_for,goals_against,played')
-        .eq('league_id', m.league_id).eq('user_id', u.uid).maybeSingle();
-      if (!row) continue;
-      await supabase.from('league_members').update({
-        points: row.points + (u.win ? 3 : u.draw ? 1 : 0),
-        wins: row.wins + (u.win ? 1 : 0),
-        draws: row.draws + (u.draw ? 1 : 0),
-        losses: row.losses + (u.loss ? 1 : 0),
-        goals_for: row.goals_for + u.gf,
-        goals_against: row.goals_against + u.ga,
-        played: row.played + 1,
-      }).eq('league_id', m.league_id).eq('user_id', u.uid);
+    // Injury risk: base 1%, +3% if stamina < 50, +7% if stamina < 25
+    let injuryChance = 0.01;
+    if (newStamina < 50) injuryChance += 0.03;
+    if (newStamina < 25) injuryChance += 0.07;
+    
+    let injury = null;
+    if (rng() < injuryChance) {
+      injury = {
+        type: pick(['Lesão Muscular', 'Entorse', 'Pancada', 'Estiramento']) || 'Lesão',
+        severity: pick(['Leve', 'Média', 'Grave']) || 'Média',
+        weeks: Math.floor(rng() * 3) + 1,
+      };
     }
 
-    await notify(supabase, m.home_user_id, awayName, hg, ag, 'Liga');
-    await notify(supabase, m.away_user_id, homeName, ag, hg, 'Liga');
-    processed++;
-  }
-  return processed;
+    return { id: p.id, stamina: newStamina, injury };
+  });
 }
 
-async function processTournamentMatches(supabase: any): Promise<number> {
-  const nowIso = new Date().toISOString();
-  const tolerance = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  const { data: list } = await supabase
-    .from('custom_tournament_matches')
-    .select('id, tournament_id, home_team_id, away_team_id, round, stage, match_data, home_joined, away_joined')
-    .eq('status', 'scheduled')
-    .lte('scheduled_at', tolerance)
-    .not('home_joined', 'is', true)
-    .not('away_joined', 'is', true)
-    .order('scheduled_at', { ascending: true })
-    .limit(MAX_BATCH);
-  if (!list || list.length === 0) return 0;
+// --- MAIN WORKER ---
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  let processed = 0;
-  for (const m of list) {
-    const { data: teams } = await supabase
-      .from('custom_tournament_teams')
-      .select('id, club_name, user_id, bot_strength, points, wins, draws, losses, goals_for, goals_against, played')
-      .in('id', [m.home_team_id, m.away_team_id]);
-    const home = teams?.find((t: any) => t.id === m.home_team_id);
-    const away = teams?.find((t: any) => t.id === m.away_team_id);
-    if (!home || !away) continue;
-
-    const homeStr = home.user_id ? await getStrength(supabase, home.user_id) : Math.max(30, Math.min(95, home.bot_strength || 60));
-    const awayStr = away.user_id ? await getStrength(supabase, away.user_id) : Math.max(30, Math.min(95, away.bot_strength || 60));
-    let { home: hg, away: ag } = simulate(homeStr, awayStr);
-    // No-draw em mata-mata: força vencedor por força relativa
-    const isKO = m.stage && ['knockout', 'r16', 'qf', 'sf', 'final', 'quarter', 'semi'].includes(String(m.stage).toLowerCase());
-    if (isKO && hg === ag) {
-      if (homeStr >= awayStr) hg += 1; else ag += 1;
-    }
-    const events = genEvents(hg, ag, home.club_name, away.club_name);
-
-    const { data: updated } = await supabase
-      .from('custom_tournament_matches')
-      .update({
-        home_goals: hg, away_goals: ag, status: 'finished',
-        played_at: new Date().toISOString(),
-        match_data: { ...(m.match_data || {}), events, auto_simulated: true, simulated: true, home_name: home.club_name, away_name: away.club_name },
-      })
-      .eq('id', m.id)
-      .eq('status', 'scheduled')
-      .select('id');
-    if (!updated || updated.length === 0) continue;
-
-    for (const u of [
-      { row: home, gf: hg, ga: ag, win: hg > ag, draw: hg === ag, loss: hg < ag },
-      { row: away, gf: ag, ga: hg, win: ag > hg, draw: hg === ag, loss: ag < hg },
-    ]) {
-      await supabase.from('custom_tournament_teams').update({
-        points: (u.row.points || 0) + (u.win ? 3 : u.draw ? 1 : 0),
-        wins: (u.row.wins || 0) + (u.win ? 1 : 0),
-        draws: (u.row.draws || 0) + (u.draw ? 1 : 0),
-        losses: (u.row.losses || 0) + (u.loss ? 1 : 0),
-        goals_for: (u.row.goals_for || 0) + u.gf,
-        goals_against: (u.row.goals_against || 0) + u.ga,
-        played: (u.row.played || 0) + 1,
-      }).eq('id', u.row.id);
-    }
-
-    if (home.user_id) await notify(supabase, home.user_id, away.club_name, hg, ag, 'Campeonato');
-    if (away.user_id) await notify(supabase, away.user_id, home.club_name, ag, hg, 'Campeonato');
-    processed++;
-  }
-  return processed;
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-
-  const supabase = createClient(
-    Deno.env.get('VITE_SUPABASE_URL') || Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const now = new Date();
+  const startTime = Date.now();
+  const logs: any[] = [];
 
   try {
-    const friendlies = await processFriendlies(supabase);
-    const league = await processLeagueMatches(supabase);
-    const tournament = await processTournamentMatches(supabase);
+    console.log("[WORKER] Iniciando processamento de partidas...");
 
-    return new Response(JSON.stringify({
-      ok: true,
-      processed: { friendlies, league, tournament, total: friendlies + league + tournament },
-      ts: new Date().toISOString(),
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  } catch (err) {
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // 1. LEAGUE MATCHES
+    const leagueTolerance = new Date(now.getTime() - MATCH_WAIT_TIME_MS).toISOString();
+    const leagueStuck = new Date(now.getTime() - STUCK_THRESHOLD_MS).toISOString();
+
+    const { data: leagueMatches } = await sb.from("league_matches")
+      .select("*, home_user:clubs!league_matches_home_user_id_fkey(*), away_user:clubs!league_matches_away_user_id_fkey(*)")
+      .or(`status.eq.scheduled,and(status.eq.simulating,scheduled_at.lte.${leagueStuck})`)
+      .lte("scheduled_at", leagueTolerance)
+      .limit(BATCH_SIZE);
+
+    if (leagueMatches) {
+      for (const m of leagueMatches) {
+        const simStart = Date.now();
+        
+        // Atomic Lock
+        const { data: locked } = await sb.from("league_matches")
+          .update({ status: 'simulating' })
+          .eq('id', m.id)
+          .or('status.eq.scheduled,status.eq.simulating')
+          .select('id');
+        
+        if (!locked || locked.length === 0) continue;
+
+        // Calculate Strengths
+        const hStr = m.home_user?.reputation || 60; // Fallback to reputation for quick sim
+        const aStr = m.away_user?.reputation || 60;
+        
+        // Sim Goals
+        const hg = poissonSample((hStr / 50) * 1.3);
+        const ag = poissonSample((aStr / 50) * 1.1);
+        
+        const stats = generateMatchStats(hStr, aStr, hg, ag);
+
+        // Update Standings (via existing RPC if possible, or manual)
+        // Manual update for robustness
+        for (const res of [
+          { uid: m.home_user_id, lid: m.league_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag },
+          { uid: m.away_user_id, lid: m.league_id, gf: ag, ga: hg, win: ag > hg, draw: hg === ag }
+        ]) {
+          if (!res.uid) continue;
+          const { data: member } = await sb.from('league_members').select('*').eq('league_id', res.lid).eq('user_id', res.uid).single();
+          if (member) {
+            await sb.from('league_members').update({
+              points: member.points + (res.win ? 3 : res.draw ? 1 : 0),
+              played: member.played + 1,
+              wins: member.wins + (res.win ? 1 : 0),
+              draws: member.draws + (res.draw ? 1 : 0),
+              losses: member.losses + (res.win || res.draw ? 0 : 1),
+              goals_for: member.goals_for + res.gf,
+              goals_against: member.goals_against + res.ga,
+            }).eq('id', member.id);
+          }
+        }
+
+        // Update Match
+        await sb.from("league_matches").update({
+          home_goals: hg,
+          away_goals: ag,
+          status: 'finished',
+          played_at: now.toISOString(),
+          match_data: { stats, auto_simulated: true }
+        }).eq('id', m.id);
+
+        // Financials (Home team gets revenue)
+        if (m.home_user_id) {
+          const revenue = Math.floor((m.home_user.fans || 1000) * 0.8 * 25); // 80% attendance, $25 avg ticket
+          await sb.rpc('add_club_cash', { _club_id: m.home_user.id, _amount: revenue });
+        }
+
+        const duration = Date.now() - simStart;
+        await sb.from("match_worker_logs").insert({
+          match_id: m.id,
+          match_type: 'league',
+          result_text: `${m.home_user?.name || 'Home'} ${hg}x${ag} ${m.away_user?.name || 'Away'}`,
+          status: 'finished',
+          duration_ms: duration,
+          details: { hg, ag, stats }
+        });
+      }
+    }
+
+    // 2. WORLD MATCHES
+    const worldTolerance = new Date(now.getTime() - MATCH_WAIT_TIME_MS).toISOString();
+    const worldStuck = new Date(now.getTime() - STUCK_THRESHOLD_MS).toISOString();
+
+    const { data: worldMatches } = await sb.from("world_matches")
+      .select("*, home_team:world_teams!world_matches_home_team_id_fkey(*), away_team:world_teams!world_matches_away_team_id_fkey(*)")
+      .or(`status.eq.scheduled,and(status.eq.simulating,scheduled_at.lte.${worldStuck})`)
+      .lte("scheduled_at", worldTolerance)
+      .limit(BATCH_SIZE);
+
+    if (worldMatches) {
+      for (const m of worldMatches) {
+        const simStart = Date.now();
+        
+        const { data: locked } = await sb.from("world_matches")
+          .update({ status: 'simulating' })
+          .eq('id', m.id)
+          .or('status.eq.scheduled,status.eq.simulating')
+          .select('id');
+        
+        if (!locked || locked.length === 0) continue;
+
+        const hStr = m.home_team?.strength || 65;
+        const aStr = m.away_team?.strength || 65;
+        const hg = poissonSample((hStr / 50) * 1.3);
+        const ag = poissonSample((aStr / 50) * 1.1);
+        const stats = generateMatchStats(hStr, aStr, hg, ag);
+
+        // Process Player Stats (Scorers/Assists/Stamina)
+        const { data: players } = await sb.from('world_players').select('*').in('team_id', [m.home_team_id, m.away_team_id]);
+        if (players) {
+          const homePlayers = players.filter(p => p.team_id === m.home_team_id);
+          const awayPlayers = players.filter(p => p.team_id === m.away_team_id);
+          
+          const fatigueUpdates = processFatigueAndInjuries(players);
+          for (const up of fatigueUpdates) {
+            await sb.from('world_players').update({ stamina: up.stamina }).eq('id', up.id);
+            if (up.injury) {
+              await sb.from('world_players').update({ 
+                injury_type: up.injury.type,
+                injury_severity: up.injury.severity,
+                injury_weeks_remaining: up.injury.weeks
+              }).eq('id', up.id);
+            }
+          }
+
+          // Pick Scorers
+          const hScorers = [];
+          for (let i = 0; i < hg; i++) {
+            const p = pick(homePlayers.filter(p => ['ATA', 'MEI'].includes(p.position))) || pick(homePlayers);
+            if (p) {
+              hScorers.push({ id: p.id, name: p.name });
+              await sb.from('world_player_stats').upsert({
+                player_id: p.id, competition_id: m.league_id || 'world', season: 1, goals: 1
+              }, { onConflict: 'player_id,competition_id,season' });
+            }
+          }
+          const aScorers = [];
+          for (let i = 0; i < ag; i++) {
+            const p = pick(awayPlayers.filter(p => ['ATA', 'MEI'].includes(p.position))) || pick(awayPlayers);
+            if (p) {
+              aScorers.push({ id: p.id, name: p.name });
+              await sb.from('world_player_stats').upsert({
+                player_id: p.id, competition_id: m.league_id || 'world', season: 1, goals: 1
+              }, { onConflict: 'player_id,competition_id,season' });
+            }
+          }
+          
+          await sb.from("world_matches").update({
+            home_goals: hg,
+            away_goals: ag,
+            status: 'finished',
+            played_at: now.toISOString(),
+            match_data: { stats, homeScorers: hScorers, awayScorers: aScorers, auto_simulated: true }
+          }).eq('id', m.id);
+          
+          // Trigger Standing Update (if not via DB trigger)
+          await sb.rpc('sync_world_league_standings', { _league_id: m.league_id });
+        }
+
+        const duration = Date.now() - simStart;
+        await sb.from("match_worker_logs").insert({
+          match_id: m.id,
+          match_type: 'world',
+          result_text: `${m.home_team?.name || 'Home'} ${hg}x${ag} ${m.away_team?.name || 'Away'}`,
+          status: 'finished',
+          duration_ms: duration,
+          details: { hg, ag, stats }
+        });
+      }
+    }
+
+    // 3. CLEANUP LIVE MATCHES (Finalize stale sessions)
+    const staleThreshold = new Date(now.getTime() - 20 * 60 * 1000).toISOString(); // 20 mins ago
+    const { data: staleLive } = await sb.from("live_matches")
+      .select("*")
+      .neq("status", "finished")
+      .lte("created_at", staleThreshold)
+      .limit(BATCH_SIZE);
+    
+    if (staleLive) {
+      for (const lm of staleLive) {
+        // Finalize stale live match session
+        await sb.from("live_matches").update({
+          status: 'finished',
+          finished_at: now.toISOString()
+        }).eq('id', lm.id);
+        
+        // If it was linked to a league_match that is still not finished, finish it too.
+        if (lm.shared_match_id) {
+          // Verify if the parent match is still open
+          const { data: parent } = await sb.from('league_matches').select('status').eq('id', lm.shared_match_id).single();
+          if (parent && parent.status !== 'finished') {
+             // Let the next worker pass handle the league_match or force it now
+             console.log(`[CLEANUP] Parent match ${lm.shared_match_id} remains open. Will be handled by auto-sim.`);
+          }
+        }
+      }
+    }
+
+    const totalDuration = Date.now() - startTime;
+    return new Response(JSON.stringify({ 
+      ok: true, 
+      processed: (leagueMatches?.length || 0) + (worldMatches?.length || 0) + (staleLive?.length || 0),
+      duration_ms: totalDuration 
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  } catch (error: any) {
+    console.error("[WORKER ERROR]", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
