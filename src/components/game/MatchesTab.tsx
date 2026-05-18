@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Swords, Users, Play, Loader2, Trophy, Shield } from 'lucide-react';
+import { Swords, Users, Play, Loader2, Trophy, Shield, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
+import { MatchLobbyScreen } from './MatchLobbyScreen';
 
 interface Props {
   userId: string;
@@ -24,6 +26,45 @@ export function MatchesTab({
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('bot');
   const [generating, setGenerating] = useState(false);
+  const [activeLobby, setActiveLobby] = useState<{ id: string; opponent: string; strength: number; type: 'friendly' | 'league' } | null>(null);
+
+  // Sistema clássico: carregar partida pendente para widget de espera
+  useEffect(() => {
+    const loadPending = async () => {
+      const { data: matches } = await supabase
+        .from('world_matches')
+        .select('id, home_team:world_teams!world_matches_home_team_id_fkey(name, strength, user_id), away_team:world_teams!world_matches_away_team_id_fkey(name, strength, user_id), status')
+        .or(`home_team_id.in.(select id from world_teams where user_id = '${userId}'),away_team_id.in.(select id from world_teams where user_id = '${userId}')`)
+        .eq('status', 'scheduled')
+        .order('scheduled_at', { ascending: true })
+        .limit(1);
+
+      if (matches && matches.length > 0) {
+        const m: any = matches[0];
+        const isHome = m.home_team.user_id === userId;
+        setActiveLobby({
+          id: m.id,
+          opponent: isHome ? m.away_team.name : m.home_team.name,
+          strength: isHome ? m.away_team.strength : m.home_team.strength,
+          type: 'friendly'
+        });
+      }
+    };
+    loadPending();
+  }, [userId]);
+
+  const handleLobbyReady = useCallback(() => {
+    if (!activeLobby) return;
+    navigate('/match', {
+      state: {
+        matchId: activeLobby.id,
+        competition: activeLobby.type === 'friendly' ? 'Amistoso' : 'Liga',
+        isFriendly: activeLobby.type === 'friendly',
+        // Outros estados serão carregados pela MatchPage via ID
+      }
+    });
+  }, [activeLobby, navigate]);
+
 
   const startFriendlyMatch = async (opponent: { name: string, logo?: string, strength: number }, isOnline = false) => {
     const isHome = Math.random() > 0.5;
@@ -87,14 +128,40 @@ export function MatchesTab({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xl font-black flex items-center gap-2">
-          <Swords className="h-6 w-6 text-primary" /> Amistosos!
-        </h2>
-        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-          Treino Livre
-        </Badge>
-      </div>
+      {activeLobby ? (
+        <Card className="border-primary/50 bg-primary/5 overflow-hidden">
+          <CardHeader className="py-3 px-4 bg-primary/10 flex flex-row items-center justify-between">
+            <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5 animate-pulse text-primary" /> Aguardando Partida
+            </CardTitle>
+            <Badge variant="outline" className="text-[9px] bg-background">5 MINUTOS DE ESPERA</Badge>
+          </CardHeader>
+          <CardContent className="p-0">
+            <MatchLobbyScreen 
+              matchId={activeLobby.id}
+              matchType={activeLobby.type}
+              userId={userId}
+              myClub={clubName}
+              oppClub={activeLobby.opponent}
+              onReady={handleLobbyReady}
+              onAutoSimulated={() => setActiveLobby(null)}
+              onCancel={() => setActiveLobby(null)}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-black flex items-center gap-2">
+              <Swords className="h-6 w-6 text-primary" /> Amistosos!
+            </h2>
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+              Treino Livre
+            </Badge>
+          </div>
+        </>
+      )}
+
 
       <Card className="bg-gradient-to-br from-primary/5 via-card to-background border-primary/20 overflow-hidden">
         <CardContent className="p-0">
