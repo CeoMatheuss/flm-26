@@ -88,10 +88,10 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   }
 
   // 2. Assign other starters based on formation requirements
-  for (let i = 1; i < requirements.length; i++) {
-    const reqPos = requirements[i] as Player['position'];
+  for (let i = 1; i < safeRequirements.length; i++) {
+    const reqPos = safeRequirements[i] as Player['position'];
     const bestPlayer = allPlayers
-      .filter(p => !used.has(p.id) && canPlayMatch(p))
+      .filter(p => !used.has(p.id) && canPlayMatch(p) && p.position !== 'GOL') // Proibir GOL nas outras posições de linha
       .sort((a, b) => getPlayerScoreForPos(b, reqPos) - getPlayerScoreForPos(a, reqPos))[0];
     
     if (bestPlayer) {
