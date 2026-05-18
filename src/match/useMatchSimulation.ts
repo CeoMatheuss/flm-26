@@ -287,15 +287,36 @@ export function useMatchSimulation() {
 
   const tick = useCallback(() => {
     const data = dataRef.current;
-    if (!data || isAnimatingRef.current || state.phase === 'finished') return;
+    if (!data || isAnimatingRef.current || state.phase === 'finished' || state.phase === 'break') return;
 
     const now = Date.now();
     const virtualElapsed = (now - data.startTime);
+    
+    // Adjusted progress if we have breaks (not implemented here yet, but checking state)
     const progress = Math.min(1, Math.max(0, virtualElapsed / data.durationMs));
     const currentMinute = Math.min(data.maxMinute, Math.floor(progress * data.maxMinute));
     const isComplete = virtualElapsed >= data.durationMs;
 
     const nextEvent = data.allEvents[nextVisibleEventIdxRef.current];
+    
+    // ── Break Handling ──────────────────────────────────────────
+    if (nextEvent && nextEvent.type === 'halftime_start' && nextEvent.minute <= currentMinute) {
+      nextVisibleEventIdxRef.current++;
+      console.log("[MATCH] Intervalo iniciado.");
+      setState(prev => ({
+        ...prev,
+        phase: 'break',
+        currentMinute: 45,
+        latestEvent: nextEvent,
+        visibleEvents: [...prev.visibleEvents, nextEvent]
+      }));
+      return;
+    }
+
+    if (nextEvent && nextEvent.type === 'halftime_end' && nextEvent.minute <= currentMinute) {
+      // This is processed when the user finishes the break or auto-resumes
+      // For now, we'll let the UI handle the timer and call a 'resume' method
+    }
     
     // Se a partida deveria estar encerrada, forçar encerramento e não processar mais nada
     if (isComplete) {
