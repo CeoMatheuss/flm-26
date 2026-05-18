@@ -862,8 +862,18 @@ export function useClubState(initialState: any, userId?: string) {
   }, []);
 
   const updatePlayers = useCallback((players: Player[]) => {
-    setClub(prev => ({ ...prev, players }));
-  }, []);
+    // Garantir limites de 11 titulares e 11 reservas ao atualizar
+    const formation = (club as any).tactics?.formation || '4-4-2';
+    const sIds = players.filter(p => (p as any).squad_status === 'starter').length;
+    const bIds = players.filter(p => (p as any).squad_status === 'bench').length;
+    
+    let nextPlayers = players;
+    if (sIds > 11 || bIds > 11) {
+      nextPlayers = autoLineup(players, formation);
+    }
+    
+    setClub(prev => ({ ...prev, players: nextPlayers }));
+  }, [club]);
 
   const addPackPlayers = useCallback((newPlayers: Player[], cost: number) => {
     setClub(prev => {

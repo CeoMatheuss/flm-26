@@ -22,6 +22,7 @@ import {
 interface Props {
   players: Player[];
   starterIds: Set<string>;
+  benchIds?: Set<string>; // Adicionado para filtrar exatamente 11 reservas
   selectedId: string | null;
   onSelect: (id: string) => void;
   activeTab: string;
@@ -31,7 +32,7 @@ interface Props {
   onOpenQuickSwap?: () => void;
 }
 
-export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId, onOpenQuickSwap }: Props) {
+export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId, onOpenQuickSwap }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
@@ -65,6 +66,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
       const raw = p as any;
       const ss = raw.squad_status as string | undefined;
       const isStarter = starterIds.has(p.id) || ss === 'starter';
+      const isBench = benchIds?.has(p.id) || ss === 'bench';
       const isNegotiating = negotiations[p.id];
       const status = getPlayerStatus(p, isStarter, isNegotiating);
       const isBaseYouth = !!raw.isYouth && raw.contractStatus !== 'profissional';
@@ -79,13 +81,12 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
       switch (activeTab) {
         case 'titulares':
           return isStarter && !unavailable;
-        // Reservas: TODOS os não-titulares profissionais disponíveis (banco + reservas).
         case 'reservas':
-          // Jogadores profissionais que não são titulares e estão disponíveis
-          // (Filtro corrigido: jogadores com status 'reserve' ou 'bench' que não sejam da base)
-          return !isStarter && !isBaseYouth && !unavailable;
+          // Apenas os 11 reservas oficiais disponíveis
+          return isBench && !unavailable;
         case 'fora':
-          return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
+          // Qualquer um que não seja titular nem reserva oficial, OU que esteja indisponível
+          return (!isStarter && !isBench && !isBaseYouth) || unavailable;
         case 'suspensos':
           return status === 'suspenso';
         case 'emprestados':
