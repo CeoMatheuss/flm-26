@@ -2189,10 +2189,10 @@ Deno.serve(async (req) => {
         const awayMember = members?.find(m => m.id === leagueMatch.away_team_id);
 
         if (homeMember) {
-          await updateStatsForCompetition('league', leagueMatch.league_id, homeMember.id, allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
+          await updateStatsForCompetition('league', leagueMatch.league_id, homeMember.id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
         }
         if (awayMember) {
-          await updateStatsForCompetition('league', leagueMatch.league_id, awayMember.id, allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+          await updateStatsForCompetition('league', leagueMatch.league_id, awayMember.id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
         }
 
         // Update Standings via RPC for consistency
