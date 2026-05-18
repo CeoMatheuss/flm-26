@@ -123,7 +123,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-2 mb-1">
-          <StatMini icon={<Zap className="w-2.5 h-2.5" />} label="STAM" value={player.stamina} color="text-emerald-400" />
+          <StatMini icon={<Zap className="w-2.5 h-2.5" />} label="COND" value={player.stamina} color="text-emerald-400" />
           <StatMini icon={<Heart className="w-2.5 h-2.5" />} label="MOR" value={player.morale} color="text-pink-400" />
         </div>
 
