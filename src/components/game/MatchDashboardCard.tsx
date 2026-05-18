@@ -407,16 +407,9 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           >
             <FileText className="h-3.5 w-3.5" /> VER RELATÓRIO
           </Button>
-          {nextMatch && (
-            <Button
-              size="sm"
-              variant="default"
-              className="gap-2 text-[10px] h-8 w-full font-bold"
-              onClick={() => setDismissedFinishedId(fm.matchId)}
-            >
-              <Play className="h-3.5 w-3.5" /> AVANÇAR P/ PRÓXIMA RODADA
-            </Button>
-          )}
+          <div className="text-[9px] text-muted-foreground text-center pt-1 animate-pulse">
+            ⏱️ Avançando automaticamente para próxima rodada...
+          </div>
         </div>
       </div>
     );
