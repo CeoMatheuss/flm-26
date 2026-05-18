@@ -212,7 +212,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         } else {
           const filtered = candidates.filter(c => {
             const localM = club.matches?.find(m => m.id === c.matchId);
-            return !localM?.played && c.status !== 'finished';
+            return !localM?.played && c.status !== 'finished' && c.status !== 'played';
           });
           filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
           setNextMatch(filtered[0] || null);
