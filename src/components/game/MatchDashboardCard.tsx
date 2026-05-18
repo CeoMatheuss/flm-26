@@ -11,6 +11,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useMatchShields } from '@/hooks/useMatchShields';
+import { syncEngine } from '@/hooks/useWorldSync';
 import { isDateBlockedByEvents, resolveMatchStadium } from '@/match/stadiumEvents';
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -52,12 +53,40 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   // Auto-advance to next round automatically after 3 seconds (no manual click needed)
   useEffect(() => {
     if (showFinished && recentFinished) {
-      const timer = setTimeout(() => {
-        console.log('[MatchDashboardCard] Auto-advance: avançando para próxima rodada...');
-        try { localStorage.setItem(DISMISS_KEY, recentFinished.matchId); } catch {}
-        setDismissedFinishedId(recentFinished.matchId);
-        // Force refresh of next match data
-        window.dispatchEvent(new CustomEvent('flm:match-finalized'));
+      const timer = setTimeout(async () => {
+        console.log('[MatchDashboardCard] Auto-advance: Validando integridade e avançando...');
+        
+        // 1. Tentar adquirir lock atômico no servidor
+        const locked = await syncEngine.acquireLock();
+        if (!locked) {
+          console.warn('[MatchDashboardCard] Falha ao adquirir lock de avanço. Outro processo pode estar ativo.');
+          return;
+        }
+
+        try {
+          // 2. Validar integridade antes de avançar
+          const isValid = await syncEngine.validateIntegrity();
+          if (!isValid) {
+            console.error('[MatchDashboardCard] Integridade divergente. Resync necessário.');
+            return;
+          }
+
+          // 3. Empurrar evento de finalização para a fila global
+          await syncEngine.pushEvent('match_finished_auto_advance', {
+            matchId: recentFinished.matchId,
+            round: recentFinished.round
+          }, recentFinished.matchId, recentFinished.round);
+
+          // 4. Dispensar visualmente
+          try { localStorage.setItem(DISMISS_KEY, recentFinished.matchId); } catch {}
+          setDismissedFinishedId(recentFinished.matchId);
+          
+          // 5. Notificar sistemas
+          window.dispatchEvent(new CustomEvent('flm:match-finalized'));
+          window.dispatchEvent(new CustomEvent('league_match_updated'));
+        } finally {
+          await syncEngine.releaseLock();
+        }
       }, 3000);
       return () => clearTimeout(timer);
     }

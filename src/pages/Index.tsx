@@ -31,6 +31,7 @@ import { usePendingMatchFlush } from '@/hooks/usePendingMatchFlush';
 import { useAutoSimulator } from '@/hooks/useAutoSimulator';
 import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 import { useLeagueFixer } from '@/hooks/useLeagueFixer';
+import { syncEngine } from '@/hooks/useWorldSync';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -90,6 +91,9 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     };
     load();
 
+    // Inicializar o World Sync Engine
+    syncEngine.setUserId(userId);
+
     // Sincronização Realtime para recarregar o estado se mudar no servidor
     const channel = supabase.channel(`sync-app-${userId}`)
       .on('postgres_changes', { 
@@ -105,7 +109,35 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // 🔄 World Sync Engine: Force Resync handler
+    const handleForceResync = async () => {
+      console.log('[Index] Forçando resincronização total com o servidor...');
+      const loadingToast = toast.loading('Sincronizando estado oficial...');
+      
+      const { data: saveRes } = await supabase
+        .from('game_saves')
+        .select('club_data')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (saveRes?.club_data) {
+        setLoadedState(saveRes.club_data as unknown as GameState);
+        toast.dismiss(loadingToast);
+        toast.success('Estado sincronizado com o servidor!');
+      } else {
+        toast.dismiss(loadingToast);
+        toast.error('Falha ao obter estado oficial.');
+      }
+    };
+
+    window.addEventListener('flm:force-resync', handleForceResync);
+
+    return () => { 
+      supabase.removeChannel(channel); 
+      window.removeEventListener('flm:force-resync', handleForceResync);
+    };
   }, [userId]);
 
   const handleClubCreated = useCallback(async (config: ClubConfig) => {
