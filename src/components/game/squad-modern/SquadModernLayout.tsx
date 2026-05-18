@@ -534,6 +534,7 @@ export function SquadModernLayout({
                       <SquadMainTable 
                         players={players} 
                         starterIds={starterIds}
+                        benchIds={benchIds}
                          selectedId={selectedId}
                          onSelect={handleSelect}
                          activeTab={activeTab}
