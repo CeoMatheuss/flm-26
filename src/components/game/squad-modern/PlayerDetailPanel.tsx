@@ -26,7 +26,8 @@ export type PlayerPanelAction =
   | 'auction'
   | 'shirt-number'
   | 'train'
-  | 'promote-youth';
+  | 'promote-youth'
+  | 'change-position';
 
 interface Props {
   player: Player | null;
