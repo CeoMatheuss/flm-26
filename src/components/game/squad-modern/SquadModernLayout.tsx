@@ -591,7 +591,7 @@ export function SquadModernLayout({
                       </div>
                     </div>
 
-                    {budget < (confirmAction.total || 0) && (
+                    {(club.budget ?? 0) < (confirmAction.total || 0) && (
                       <p className="text-[11px] text-rose-400 font-bold">⚠️ Saldo insuficiente para arcar com as taxas.</p>
                     )}
                   </>
