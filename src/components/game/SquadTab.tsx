@@ -155,7 +155,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
   const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
   const [loanSubmitting, setLoanSubmitting] = useState(false);
-  const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
+  const [squadSubTab, setSquadSubTab] = useState<Group>('starters');
   // activeTacticalView state removed to show both pitch and list as requested
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
