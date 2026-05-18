@@ -536,6 +536,13 @@ export function SquadModernLayout({
           }
         });
         break;
+      case 'change-position':
+        setConfirmAction({
+          type: 'change-position',
+          player: p,
+          newPosition: p.position
+        });
+        break;
     }
   };
 
