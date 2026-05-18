@@ -92,6 +92,11 @@ export default function MatchPage() {
   const location = useLocation();
   const locState = location.state as MatchPageState | null;
   const [initDone, setInitDone] = useState(false);
+  const initDoneRef = useRef(false);
+
+  useEffect(() => {
+    initDoneRef.current = initDone;
+  }, [initDone]);
   const [loadingMsg, setLoadingMsg] = useState('Preparando partida');
   const [preMatchDone, setPreMatchDone] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
