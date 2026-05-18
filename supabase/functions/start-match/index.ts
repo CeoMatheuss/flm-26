@@ -876,7 +876,7 @@ function simulateFullMatch(
 
   // ── PENALTY EVENTS ──────────────────────────────────────────
   const penaltyMins: { minute: number; team: 'home' | 'away'; isGoal: boolean }[] = [];
-  const penaltyChance = clamp((pressingMod - 0.9) * 0.1 + 0.07 + (homeExtras.penaltyBonus + awayExtras.penaltyBonus) * 0.5, 0.02, 0.35);
+  const penaltyChance = clamp((pressingMod - 0.9) * 0.05 + 0.05 + (homeExtras.penaltyBonus + awayExtras.penaltyBonus) * 0.2, 0.01, 0.20);
   const homePenBias = 0.55 + (homeExtras.penaltyBonus - awayExtras.penaltyBonus) * 2;
   for (let i = 0; i < 2; i++) {
     if (rng() < penaltyChance) {
