@@ -110,6 +110,19 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
             <div className="flex items-center gap-2">
                <span className="text-[10px] font-bold text-white/40 uppercase">{player.age} anos</span>
                {player.personality && <span className="text-xs" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>}
+               
+               {/* Disciplinary Status */}
+               <div className="flex items-center gap-1 ml-1">
+                 {Array.from({ length: yellowCount }).map((_, i) => (
+                   <span key={i} className="text-[10px] drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]">🟨</span>
+                 ))}
+                 {redCount > 0 && (
+                   <span className="text-[10px] drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]">🟥</span>
+                 )}
+                 {isSuspended && (
+                   <Badge variant="destructive" className="text-[8px] h-4 px-1 font-black uppercase tracking-tighter">SUSPENSO</Badge>
+                 )}
+               </div>
             </div>
           </div>
         </div>
