@@ -156,7 +156,7 @@ export function SquadModernLayout({
       age: prospect.age,
       country: prospect.nationality || 'Brasil',
       salary: prospect.salary || 0,
-      contract: prospect.contractDuration || 1,
+      contract: (prospect as any).contract || 1,
       stamina: 100,
       morale: 100,
       value: getPlayerValue(prospect as any),
