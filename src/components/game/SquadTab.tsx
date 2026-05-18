@@ -288,9 +288,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     // Se alguém pediu 'out' mas o banco ainda tem vaga, redireciona para 'reserves'.
     let effectiveTarget: Group = target;
     if (effectiveTarget === 'out') {
-      const benchSize = without.slice(STARTERS_END, RESERVES_END).length;
-      const benchCapacity = RESERVES_END - STARTERS_END; // 7 lugares
-      if (benchSize < benchCapacity) {
+      const benchSize = without.filter(p => p.squad_status === 'bench').length;
+      if (benchSize < BENCH_COUNT) {
         effectiveTarget = 'reserves';
       }
     }
@@ -299,11 +298,13 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     if (effectiveTarget === 'starters') {
       insertAt = 0; // promove ao topo dos titulares
     } else if (effectiveTarget === 'reserves') {
-      // Coloca logo após o 11º titular (cai no banco)
-      insertAt = Math.min(without.length, STARTERS_END);
+      // Coloca logo após os titulares
+      const starterCount = without.filter(p => p.squad_status === 'starter').length;
+      insertAt = Math.min(without.length, starterCount);
     } else {
       // 'out' — só usado quando banco realmente está lotado
-      insertAt = Math.min(without.length, RESERVES_END);
+      const starterAndBenchCount = without.filter(p => ['starter', 'bench'].includes(p.squad_status as any)).length;
+      insertAt = Math.min(without.length, starterAndBenchCount);
     }
     const newOrder = [...without.slice(0, insertAt), player, ...without.slice(insertAt)];
     onReorderPlayers(newOrder);
