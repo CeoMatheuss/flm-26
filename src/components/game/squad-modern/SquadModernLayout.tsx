@@ -185,7 +185,11 @@ export function SquadModernLayout({
   }, [players]);
 
   const handleSelect = (id: string) => {
-    if (pendingSwap && id !== pendingSwap.id) {
+    if (pendingSwap) {
+      if (id === pendingSwap.id) {
+        setPendingSwap(null);
+        return;
+      }
       handleSwap(pendingSwap.id, id);
       return;
     }
