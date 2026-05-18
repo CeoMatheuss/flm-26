@@ -52,6 +52,8 @@ interface SimPlayer {
   personality?: string;
   injured?: boolean;
   injuryData?: { type: string; severity: string; weeks: number; bodyPart: string };
+  isSub?: boolean;
+  squadStatus?: string;
 }
 
 interface SimEvent {
