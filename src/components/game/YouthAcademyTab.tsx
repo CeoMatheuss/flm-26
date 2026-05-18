@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Filter, GraduationCap, Coins, 
   Trophy, Info, Sparkles, ChevronRight,
@@ -95,13 +94,12 @@ export function YouthAcademyTab({
         constructionProgress={constructionProgress}
       />
 
-      <Tabs defaultValue="list" className="space-y-6">
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <TabsList className="bg-muted/50 p-1">
-            <TabsTrigger value="list" className="gap-2"><GraduationCap className="h-4 w-4" /> Elenco da Base</TabsTrigger>
-            <TabsTrigger value="copinha" className="gap-2"><Trophy className="h-4 w-4" /> Copinha</TabsTrigger>
-            <TabsTrigger value="news" className="gap-2"><Newspaper className="h-4 w-4" /> Notícias</TabsTrigger>
-          </TabsList>
+          <div className="bg-muted/50 p-2 rounded-lg flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-primary" />
+            <span className="text-sm font-bold uppercase tracking-wider">Plantel da Base</span>
+          </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
@@ -129,7 +127,7 @@ export function YouthAcademyTab({
           </div>
         </div>
 
-        <TabsContent value="list" className="space-y-4 m-0">
+        <div className="space-y-4">
           {!hasScouts && prospects.length > 0 && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
@@ -177,9 +175,8 @@ export function YouthAcademyTab({
               </AnimatePresence>
             </div>
           )}
-        </TabsContent>
-
-      {/* Removed Copinha and News tabs */}
+        </div>
+      </div>
 
       <YouthPlayerDetailModal 
         prospect={selectedPlayer}
