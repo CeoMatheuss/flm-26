@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { ovrTier, getPositionColor, flagFor, getPlayerStatus, statusMeta } from '../squadHelpers';
 import { useAttributeEvolution } from '../useAttributeEvolution';
 import { PotentialTier, potentialTierInfo } from '@/types/infrastructure';
+import swapIcon from '@/assets/swap-icon.png';
 
 interface Props {
   player: Player;
@@ -96,10 +97,10 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
                    e.stopPropagation();
                    onOpenQuickSwap?.();
                  }}
-                 className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30 hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
+                 className="p-0.5 rounded-lg hover:scale-110 transition-all active:scale-90"
                  title="Troca Rápida"
                >
-                 <span className="text-[10px] block">🔄</span>
+                 <img src={swapIcon} alt="Trocar" className="w-6 h-6 object-contain drop-shadow-md" />
                </button>
              )}
              {isStarter && (

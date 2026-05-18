@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Player } from '@/types/game';
 import { Zap, Heart, Shield, Activity, TrendingUp, Sparkles, Tag, Handshake } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
+import swapIcon from '@/assets/swap-icon.png';
 import { PotentialTier, potentialTierInfo, getPotentialTier } from '@/types/infrastructure';
 
 interface ModernPlayerCardProps {
@@ -35,10 +36,10 @@ export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPla
               e.stopPropagation();
               onOpenQuickSwap?.();
             }}
-            className="w-12 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
+            className="w-12 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 hover:scale-105"
             title="Troca Rápida"
           >
-            🔄
+            <img src={swapIcon} alt="Trocar" className="w-9 h-9 object-contain drop-shadow-lg" />
           </button>
         </div>
         <div className="text-right">
