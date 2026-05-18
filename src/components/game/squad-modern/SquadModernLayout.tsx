@@ -116,6 +116,7 @@ export function SquadModernLayout({
         setPendingSwap(null);
       } else {
         setPendingSwap(p);
+        toast.info(`Substituição iniciada: selecione o jogador para trocar com ${p.name}`);
       }
     };
     window.addEventListener('flm:start-swap', startSwapHandler);
