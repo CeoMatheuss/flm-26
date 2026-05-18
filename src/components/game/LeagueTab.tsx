@@ -46,7 +46,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       const league = teamData.world_leagues;
       setLeagueInfo({
         id: teamData.league_id,
-        name: league?.name || 'Liga Mundial',
+        name: league?.name || 'Liga',
         country: league?.country,
         division: league?.division || 1, // Store division
         flag: (league as any)?.country_ref?.flag_emoji || '⚽',
@@ -232,7 +232,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
           <Trophy className="h-12 w-12 text-muted-foreground/20" />
           <h3 className="text-lg font-bold">Liga não encontrada</h3>
           <p className="text-sm text-muted-foreground max-w-xs">
-            Você ainda não está inscrito em uma liga mundial. Aguarde a próxima temporada.
+            Você ainda não está inscrito em uma liga. Aguarde a próxima temporada.
           </p>
         </CardContent>
       </Card>
