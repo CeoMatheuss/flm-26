@@ -42,12 +42,13 @@ function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
 interface SimPlayer {
   id: string; name: string; position: string; team: 'home' | 'away'; ovr: number;
-  rating: number; goals: number; assists: number; yellowCards: number; isOnPitch: boolean;
-  stamina: number; morale: number; baseStamina: number;
+  rating: number; goals: number; assists: number; yellowCards: number; redCards: number; isOnPitch: boolean;
+  stamina: number; morale: number; baseStamina: number; age: number;
   speed: number; shooting: number; passing: number; defending: number; physical: number;
   dribbling: number; heading: number; marking: number; vision: number; crossing: number;
   longShots: number; workRate: number; composure: number; aggression: number;
   goalkeeping: number; setPieces: number; positioning: number;
+  fairPlay: number; discipline: number; intelligence: number; emotionalControl: number;
   personality?: string;
   injured?: boolean;
 }
@@ -192,7 +193,7 @@ function dribblePower(p: SimPlayer): number { return rolePower(p, 'dribble'); }
 // ── HELPERS ──────────────────────────────────────────────────
 
 function genAwayAttrs(ovr: number, pos: string) {
-  const variance = () => clamp(Math.floor(ovr + (rng() * 16 - 8)), 30, 99);
+  const variance = (base: number = ovr) => clamp(Math.floor(base + (rng() * 16 - 8)), 30, 99);
   const isGK = pos === 'GOL'; const isDef = pos === 'ZAG' || pos === 'LAT'; const isAtt = pos === 'ATA';
   return {
     speed: variance(), shooting: isAtt ? variance() + 5 : variance() - 5,
@@ -202,6 +203,8 @@ function genAwayAttrs(ovr: number, pos: string) {
     vision: variance(), crossing: variance(), longShots: variance(),
     workRate: variance(), composure: variance(), aggression: variance(),
     goalkeeping: isGK ? variance() + 10 : 0, setPieces: variance(), positioning: variance(),
+    fairPlay: variance(), discipline: variance(), intelligence: variance(), emotionalControl: variance(),
+    age: 18 + Math.floor(rng() * 18),
   };
 }
 
@@ -313,11 +316,21 @@ function generateAssistantTips(
     }
     
     // Yellow card warning
-    if (p.yellowCards > 0 && assistantSkill >= 5) {
+    if (p.yellowCards > 0 && assistantSkill >= 4) {
+      const riskLevel = p.fairPlay < 40 || p.aggression > 70 ? 'CRÍTICO' : 'Médio';
+      tips.push({
+        minute, type: 'assistant_tip', team: 'neutral',
+        playerName: p.name, priority: riskLevel === 'CRÍTICO' ? 'high' : 'medium',
+        description: `🟨 ${p.name} já tem cartão amarelo. Com ${p.fairPlay} de Fair Play e ${p.aggression} de Agressividade, o risco de expulsão é ${riskLevel}. Cuidado com as divididas!`,
+      });
+    }
+
+    // Fatigue warning for discipline
+    if (p.stamina < 45 && p.defending > 60 && assistantSkill >= 5) {
       tips.push({
         minute, type: 'assistant_tip', team: 'neutral',
         playerName: p.name, priority: 'medium',
-        description: `🟨 ${p.name} já tem cartão amarelo. Peça para ele evitar divididas duras. Uma expulsão agora seria devastadora para nosso esquema tático.`,
+        description: `⚠️ ${p.name} está cansado (${Math.round(p.stamina)}%). Isso aumenta a chance de chegar atrasado nos botes e cometer faltas desnecessárias.`,
       });
     }
   }
@@ -634,7 +647,8 @@ function simulateFullMatch(
   staffData?: any, awayFans: number = 500,
   tieBreakerMode: 'none' | 'extra_time' | 'penalties' | 'both' = 'none',
   awayPlayersInput?: any[],
-  awayTacticsInput?: any
+  awayTacticsInput?: any,
+  ticketPriceInput?: number
 ) {
   homeStrength = clamp(Math.round(homeStrength), 20, 99);
   awayStrength = clamp(Math.round(awayStrength), 20, 99);
@@ -647,8 +661,9 @@ function simulateFullMatch(
   const home: SimPlayer[] = homePlayers.slice(0, 11).map((p: any, i: number) => ({
     id: p.id, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
     position: p.position || 'MEI', team: 'home' as const, ovr: p.overall || 60,
-    rating: 6.0, goals: 0, assists: 0, yellowCards: 0, isOnPitch: true, injured: false,
+    rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, isOnPitch: true, injured: false,
     stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
+    age: p.age || 25,
     speed: p.attributes?.speed || 50, shooting: p.attributes?.shooting || 50,
     passing: p.attributes?.passing || 50, defending: p.attributes?.defending || 50,
     physical: p.attributes?.physical || 50, dribbling: p.attributes?.dribbling || 50,
@@ -658,18 +673,22 @@ function simulateFullMatch(
     composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
     goalkeeping: p.attributes?.goalkeeping || 0, setPieces: p.attributes?.setPieces || 50,
     positioning: p.attributes?.positioning || 50,
+    fairPlay: p.attributes?.fairPlay ?? (100 - (p.attributes?.aggression || 50)), // Fallback derived
+    discipline: p.attributes?.discipline ?? 60,
+    intelligence: p.attributes?.intelligence ?? Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
+    emotionalControl: p.attributes?.emotionalControl ?? (p.attributes?.composure || 50),
     personality: p.personality || 'introvertido',
   }));
 
   const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
-  // Use REAL away players when provided (multiplayer/tournaments)
   const useRealAway = Array.isArray(awayPlayersInput) && awayPlayersInput.length >= 11;
   const away: SimPlayer[] = useRealAway
     ? awayPlayersInput!.slice(0, 11).map((p: any, i: number) => ({
         id: p.id || `a${i}`, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
         position: p.position || 'MEI', team: 'away' as const, ovr: p.overall || 60,
-        rating: 6.0, goals: 0, assists: 0, yellowCards: 0, isOnPitch: true, injured: false,
+        rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, isOnPitch: true, injured: false,
         stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
+        age: p.age || 25,
         speed: p.attributes?.speed || 50, shooting: p.attributes?.shooting || 50,
         passing: p.attributes?.passing || 50, defending: p.attributes?.defending || 50,
         physical: p.attributes?.physical || 50, dribbling: p.attributes?.dribbling || 50,
@@ -679,6 +698,10 @@ function simulateFullMatch(
         composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
         goalkeeping: p.attributes?.goalkeeping || (p.position === 'GOL' ? 60 : 0),
         setPieces: p.attributes?.setPieces || 50, positioning: p.attributes?.positioning || 50,
+        fairPlay: p.attributes?.fairPlay ?? (100 - (p.attributes?.aggression || 50)),
+        discipline: p.attributes?.discipline ?? 60,
+        intelligence: p.attributes?.intelligence ?? Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
+        emotionalControl: p.attributes?.emotionalControl ?? (p.attributes?.composure || 50),
         personality: p.personality || 'introvertido',
       }))
     : Array.from({ length: 11 }, (_, i) => {
@@ -687,7 +710,7 @@ function simulateFullMatch(
         const attrs = genAwayAttrs(ovr, pos);
         return {
           id: `a${i}`, name: awayNames[i] || `Jog.${i + 1}`, position: pos,
-          team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
+          team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0,
           isOnPitch: true, injured: false, stamina: 70 + Math.floor(rng() * 20), baseStamina: 80, morale: 60 + Math.floor(rng() * 30),
           ...attrs,
         };
@@ -829,6 +852,10 @@ function simulateFullMatch(
 
   console.log(`[Sim] H:${homeStrength} A:${awayStrength} | λH:${homeExpected.toFixed(2)} λA:${awayExpected.toFixed(2)} | Final: ${totalHomeGoals}x${totalAwayGoals}`);
 
+  // ── REFEREE SYSTEM ─────────────────────────────────────────
+  const refRigidity = 20 + Math.floor(rng() * 70); // 20 (frouxo) to 90 (rigido)
+  console.log(`[Referee] Rigidity: ${refRigidity}`);
+
   // ── UNIQUE MINUTES ──────────────────────────────────────────
   const usedMinutes = new Set<number>([0, 45, 46]);
   function pickUnique(pool: number[]): number {
@@ -850,7 +877,7 @@ function simulateFullMatch(
 
   // ── PENALTY EVENTS ──────────────────────────────────────────
   const penaltyMins: { minute: number; team: 'home' | 'away'; isGoal: boolean }[] = [];
-  const penaltyChance = clamp((pressingMod - 0.9) * 0.1 + 0.07 + (homeExtras.penaltyBonus + awayExtras.penaltyBonus) * 0.5, 0.02, 0.35);
+  const penaltyChance = clamp((pressingMod - 0.9) * 0.05 + 0.05 + (homeExtras.penaltyBonus + awayExtras.penaltyBonus) * 0.2, 0.01, 0.20);
   const homePenBias = 0.55 + (homeExtras.penaltyBonus - awayExtras.penaltyBonus) * 2;
   for (let i = 0; i < 2; i++) {
     if (rng() < penaltyChance) {
@@ -872,18 +899,25 @@ function simulateFullMatch(
   }
 
   // ── SUPPORT EVENTS ──────────────────────────────────────────
+  // Reduzido drasticamente para ser mais realista.
   const cardMins: number[] = [];
-  for (let i = 0; i < 2 + Math.floor(rng() * 4); i++) {
-    const m = pickUnique(allGamePool.filter(m => m >= 15)); if (m > 0) cardMins.push(m);
+  // Max 4 cartões potenciais (muitos serão filtrados por atributos/árbitro depois)
+  const maxPotentialCards = rng() < 0.3 ? 1 : rng() < 0.7 ? 2 : 4; 
+  for (let i = 0; i < maxPotentialCards; i++) {
+    const m = pickUnique(allGamePool.filter(m => m >= 10)); if (m > 0) cardMins.push(m);
   }
+  
   const dangerousFoulMins: number[] = [];
-  for (let i = 0; i < 1 + Math.floor(rng() * 3); i++) {
+  // Max 2 faltas perigosas (geralmente lances de gol ou cartões)
+  const maxPotentialFouls = rng() < 0.5 ? 1 : 2;
+  for (let i = 0; i < maxPotentialFouls; i++) {
     const m = pickUnique(allGamePool.filter(m => m >= 10)); if (m > 0) dangerousFoulMins.push(m);
   }
   // NOTE: Substitutions are 100% manual now — controlled by the player from MatchPage.
   // No server-side automatic substitutions are generated.
   const chanceMins: number[] = [];
-  for (let i = 0; i < 10 + Math.floor(rng() * 8); i++) {
+  // Reduzido para 6 a 12 chances por jogo para dar mais espaço à posse normal
+  for (let i = 0; i < 6 + Math.floor(rng() * 7); i++) {
     const m = pickUnique(allGamePool); if (m > 0) chanceMins.push(m);
   }
   const possessionMins: number[] = [];
@@ -1057,8 +1091,24 @@ function simulateFullMatch(
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const opp = team === 'home' ? awayTeam : homeTeam;
+    
     const attacker = pickByRole(allPlayers.filter(p => p.team === team && p.isOnPitch), 'dribble');
     const defender = pickByRole(allPlayers.filter(p => p.team !== team && p.isOnPitch), 'tackle');
+    
+    if (defender) {
+      // Nem toda dividida é falta. Jogadores com bom posicionamento e inteligência roubam a bola limpa.
+      const tackleSkill = (defender.defending * 0.4 + defender.intelligence * 0.3 + defender.positioning * 0.3) * formMult(defender);
+      const dribbleSkill = (attacker?.dribbling || 50) * formMult(attacker);
+      
+      const foulChance = clamp(0.4 + (dribbleSkill - tackleSkill) / 100 + (defender.aggression / 200), 0.1, 0.8);
+      
+      if (rng() > foulChance) {
+        // Desarme limpo! Não gera evento de falta perigosa.
+        stats.tackles[teamIdx === 0 ? 1 : 0]++;
+        continue;
+      }
+    }
+
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
     allPlanned.push({
       minute: m, type: 'dangerous_foul', team,
@@ -1067,22 +1117,35 @@ function simulateFullMatch(
     });
   }
 
-  // ── CARDS ──────────────────────────────────────────────────
-  // Times com moral/stamina baixos cometem mais faltas → favorece esses jogadores no sorteio.
+  // ── CARDS & FOULED ──────────────────────────────────────────
   for (const m of cardMins) {
-    // Times com marcação individual / pressing alto cometem mais faltas
-    const homeFoulW = 1 + homeExtras.foulBias + Math.max(0, pressingMod - 1) * 0.8;
-    const awayFoulW = 1 + awayExtras.foulBias + Math.max(0, awayPressingMod - 1) * 0.8;
+    const homeFoulW = 1 + homeExtras.foulBias + Math.max(0, pressingMod - 1) * 0.5;
+    const awayFoulW = 1 + awayExtras.foulBias + Math.max(0, awayPressingMod - 1) * 0.5;
+    
+    // Choose team based on tactical aggression
     const teamIdx: 0 | 1 = rng() < homeFoulW / (homeFoulW + awayFoulW) ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    // Weight: jogador cansado/desmotivado tem 3x mais chance de tomar amarelo
+    
+    if (pool.length === 0) continue;
+
+    // Weight: agressividade, cansaço e falta de disciplina aumentam chance de cartão
     const weights = pool.map(p => {
-      const fatigue = Math.max(0, 100 - p.stamina);   // 0..100
-      const lowMor = Math.max(0, 70 - p.morale);      // 0..70
-      return 1 + fatigue * 0.04 + lowMor * 0.05;
+      let w = 1.0;
+      w += (p.aggression / 100) * 2.0;
+      w += ((100 - p.stamina) / 100) * 1.5; // Cansaço gera erros
+      w += ((100 - p.discipline) / 100) * 1.0;
+      w += ((100 - p.emotionalControl) / 100) * 1.0;
+      
+      // Redutores
+      w *= (120 - p.fairPlay) / 100; // Fair play alto reduz chance drasticamente
+      if (p.age > 28) w *= 0.8;      // Experiência ajuda a controlar o tempo da jogada
+      if (p.intelligence > 70) w *= 0.85; 
+      
+      return Math.max(0.1, w);
     });
+
     const total = weights.reduce((a, b) => a + b, 0);
     let pickRoll = rng() * total;
     let player: SimPlayer | null = null;
@@ -1090,25 +1153,46 @@ function simulateFullMatch(
       pickRoll -= weights[i];
       if (pickRoll <= 0) { player = pool[i]; break; }
     }
-    if (!player && pool.length) player = pool[pool.length - 1];
+    if (!player) player = pool[pool.length - 1];
+
     if (player) {
-      const isRed = rng() < 0.15 || player.yellowCards >= 1; // 15% direto ou se já tiver amarelo
-      if (isRed) {
+      // A decisão do árbitro depende da rigidez e do lance
+      const intensity = rng() * 60 + (player.aggression * 0.4);
+      const threshold = 110 - refRigidity * 0.5; // Árbitro rígido baixa o limite para cartão
+      
+      if (intensity < threshold * 0.6) {
+        // Apenas uma falta leve, segue o jogo (reduz interrupções)
+        continue;
+      }
+
+      const isSecondYellow = player.yellowCards === 1;
+      const isDirectRed = !isSecondYellow && intensity > 92 && rng() < 0.04; // Vermelho direto é RARO (4% de lances violentos)
+      
+      if (isDirectRed || isSecondYellow) {
         player.redCards++;
-        stats.fouls[teamIdx]++; stats.redCards[teamIdx]++;
+        stats.redCards[teamIdx]++;
+        stats.fouls[teamIdx]++;
+        const desc = isDirectRed 
+          ? `🟥 EXPULSÃO DIRETA! ${player.name} do ${tName} faz uma entrada criminosa e recebe o CARTÃO VERMELHO!`
+          : `🟨🟥 SEGUNDO AMARELO! ${player.name} do ${tName} chega atrasado, comete falta e é EXPULSO!`;
+        
         allPlanned.push({
           minute: m, type: 'red_card', team, animType: 'card',
-          playerName: player.name,
-          description: `🟥 EXPULSÃO! ${player.name} do ${tName} recebe o CARTÃO VERMELHO e vai para o chuveiro mais cedo!`,
+          playerName: player.name, description: desc,
         });
-      } else {
+      } else if (intensity > threshold * 0.8) {
+        // Cartão Amarelo
         player.yellowCards++;
-        stats.fouls[teamIdx]++; stats.yellowCards[teamIdx]++;
+        stats.yellowCards[teamIdx]++;
+        stats.fouls[teamIdx]++;
         allPlanned.push({
           minute: m, type: 'yellow_card', team, animType: 'card',
           playerName: player.name,
-          description: `🟨 CARTÃO AMARELO para ${player.name} do ${tName}! Falta dura no meio-campo!`,
+          description: `🟨 CARTÃO AMARELO para ${player.name} do ${tName}! Falta tática para interromper o avanço.`,
         });
+      } else {
+        // Apenas falta, sem cartão
+        stats.fouls[teamIdx]++;
       }
     }
   }
@@ -1687,6 +1771,7 @@ function simulateFullMatch(
     rankingChange: reportResult.rankingChange,
     attendance: estimatedCrowd,
     ticketRevenue,
+    allPlayers, // Exporting processed players (ratings, cards, goals)
   };
 }
 
@@ -2104,10 +2189,10 @@ Deno.serve(async (req) => {
         const awayMember = members?.find(m => m.id === leagueMatch.away_team_id);
 
         if (homeMember) {
-          await updateStatsForCompetition('league', leagueMatch.league_id, homeMember.id, allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
+          await updateStatsForCompetition('league', leagueMatch.league_id, homeMember.id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
         }
         if (awayMember) {
-          await updateStatsForCompetition('league', leagueMatch.league_id, awayMember.id, allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+          await updateStatsForCompetition('league', leagueMatch.league_id, awayMember.id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
         }
 
         // Update Standings via RPC for consistency
@@ -2145,8 +2230,8 @@ Deno.serve(async (req) => {
         }).eq('id', String(matchId));
 
         // Update cup player stats
-        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.home_team_id, allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
-        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.away_team_id, allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.home_team_id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
+        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.away_team_id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
       }
 
       // 3.3. Custom Tournament Logic
@@ -2173,7 +2258,7 @@ Deno.serve(async (req) => {
         // Find or create global league entry if needed, but usually we just want to update world_player_stats
         // We can use a default league_id if not a league match
         const worldLeagueId = leagueMatch?.league_id || '00000000-0000-0000-0000-000000000000';
-        for (const p of allPlayers) {
+        for (const p of result.allPlayers) {
           if (!p.isOnPitch && p.goals === 0) continue;
           await adminClient.rpc('upsert_world_player_stats', {
             _player_id: p.id,
