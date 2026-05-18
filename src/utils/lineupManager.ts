@@ -152,7 +152,15 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   const otherPlayers = allPlayers.filter(p => !used.has(p.id));
   
-  return [...finalStarters, ...reserves, ...otherPlayers];
+  return [
+    ...finalStarters.map(p => ({ ...p, squad_status: 'starter' as const, squadRole: 'titular' as const })),
+    ...reserves.map(p => ({ ...p, squad_status: 'bench' as const, squadRole: 'reserva' as const })),
+    ...otherPlayers.map(p => ({
+      ...p,
+      squad_status: 'reserve' as const,
+      squadRole: ((p as any).isYouth && (p as any).contractStatus !== 'profissional' ? 'promessa' : 'reserva') as Player['squadRole'],
+    })),
+  ];
 }
 
 export function detectActualFormation(players: Player[]): Formation {
