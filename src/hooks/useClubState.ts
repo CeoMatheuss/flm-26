@@ -909,6 +909,8 @@ export function useClubState(initialState: any, userId?: string) {
   }, [club]);
 
   const addPackPlayers = useCallback((newPlayers: Player[], cost: number) => {
+    let playersWithId: Player[] = [];
+    
     setClub(prev => {
       if (prev.budget < cost) return prev;
       
@@ -916,8 +918,11 @@ export function useClubState(initialState: any, userId?: string) {
         ...p, 
         contract: 2,
         squad_status: 'reserve' as const,
-        squadRole: 'reserva' as const
+        squadRole: 'reserva' as const,
+        contractStatus: 'profissional' as const
       }));
+      
+      playersWithId = playersToAdd;
       
       return { 
         ...prev, 
@@ -926,10 +931,53 @@ export function useClubState(initialState: any, userId?: string) {
       };
     });
     
+    // 🚀 Sincronização Imediata e Robusta
+    if (userId) {
+      const persist = async () => {
+        try {
+          // 1. Obter estado atualizado para salvar no game_saves
+          const { data: saveData } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
+          if (saveData?.club_data) {
+            const state = saveData.club_data as any;
+            const playersToAdd = playersWithId;
+            
+            state.club.budget = (state.club.budget || 0) - cost;
+            state.club.players = [...(state.club.players || []), ...playersToAdd];
+            
+            await supabase.from('game_saves').update({ club_data: state }).eq('user_id', userId);
+            
+            // 2. Sincronizar orçamento na tabela clubs
+            await supabase.from('clubs').update({ budget: state.club.budget }).eq('user_id', userId);
+
+            // 3. Registrar no world_players para o mercado/ranking
+            const { data: clubRef } = await supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle();
+            if (clubRef) {
+              const worldPayload = playersToAdd.map(p => ({
+                team_id: clubRef.id,
+                name: p.name,
+                position: p.position,
+                overall: p.overall,
+                age: p.age,
+                market_value: p.marketValue || 0,
+                salary: p.salary || 500,
+                attributes: p.attributes as any,
+                nationality: p.nationality || 'Brasil',
+                squad_status: 'reserve' as any
+              }));
+              await supabase.from('world_players').insert(worldPayload);
+            }
+          }
+        } catch (err) {
+          console.error('[addPackPlayers] Erro na persistência crítica:', err);
+        }
+      };
+      persist();
+    }
+    
     window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
     
     return { cost };
-  }, []);
+  }, [userId]);
 
   const addBonus = useCallback((amount: number, description: string) => {
     setClub(prev => ({ ...prev, budget: (prev.budget ?? 0) + amount }));
