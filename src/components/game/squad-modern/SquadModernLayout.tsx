@@ -341,6 +341,7 @@ export function SquadModernLayout({
         
         // Publicar no jornal
         await supabase.from('newspaper_entries').insert({
+          user_id: userId,
           text: `PROMESSA NO PROFISSIONAL: ${player.name} acaba de assinar seu primeiro contrato profissional com o ${clubName}!`,
           category: 'CONTRATAÇÃO',
           metadata: {
