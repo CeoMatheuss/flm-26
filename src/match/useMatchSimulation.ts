@@ -304,6 +304,7 @@ export function useMatchSimulation() {
       setState(prev => ({
         ...prev,
         phase: 'finished',
+        currentMoment: 'Partida Encerrada',
         currentMinute: data.maxMinute,
         progress: 1,
         homeGoals: Math.max(prev.homeGoals, data.finalHomeGoals),
@@ -311,7 +312,7 @@ export function useMatchSimulation() {
         onAnimationComplete: () => { isAnimatingRef.current = false; },
       }));
       
-      if (!persistedRef.current) {
+      if (!persistedRef.current && data.matchDbId) {
         persistedRef.current = true;
         supabase.from('live_matches')
           .update({ status: 'finished', current_minute: data.maxMinute })
@@ -348,6 +349,7 @@ export function useMatchSimulation() {
         return {
           ...prev,
           phase: isFinalWhistle ? 'finished' : prev.phase,
+          currentMoment: isFinalWhistle ? 'Partida Encerrada' : moment,
           currentMinute: nextEvent.minute,
           progress,
           homeGoals: hG,
@@ -368,7 +370,7 @@ export function useMatchSimulation() {
       if (isFinalWhistle) {
         console.log("[MATCH] Apito final detectado nos eventos.");
         stopTick();
-        if (!persistedRef.current) {
+        if (!persistedRef.current && data.matchDbId) {
           persistedRef.current = true;
           supabase.from('live_matches')
             .update({ status: 'finished', current_minute: nextEvent.minute })

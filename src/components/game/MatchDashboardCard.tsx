@@ -162,8 +162,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         if (candidates.length === 0) {
           setNextMatch(null);
         } else {
-          candidates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-          setNextMatch(candidates[0]);
+          const filtered = candidates.filter(c => {
+            const localM = club.matches?.find(m => m.id === c.matchId);
+            return !localM?.played && c.status !== 'finished';
+          });
+          filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          setNextMatch(filtered[0] || null);
         }
         setLoading(false);
       }
@@ -539,14 +543,15 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
           await supabase
             .from('live_matches')
             .update({ status: 'finished', current_minute: maxMin })
-            .eq('id', data.id)
-            .eq('status', 'live');
-          // Tenta sincronizar a tabela da liga (idempotente).
+            .eq('id', data.id);
+          
           try {
             await supabase.rpc('sync_match_persistence' as any, { _match_id: data.id });
           } catch (e) {
             console.warn('[MatchDashboardCard] sync_match_persistence falhou:', e);
           }
+          
+          // Emit event to notify other components (like MatchDashboardCard itself)
           window.dispatchEvent(new CustomEvent('flm:match-finalized', { detail: { matchId: data.id } }));
           setLiveMatch(null);
           return;
