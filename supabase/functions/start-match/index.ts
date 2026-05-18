@@ -915,7 +915,8 @@ function simulateFullMatch(
   // NOTE: Substitutions are 100% manual now — controlled by the player from MatchPage.
   // No server-side automatic substitutions are generated.
   const chanceMins: number[] = [];
-  for (let i = 0; i < 10 + Math.floor(rng() * 8); i++) {
+  // Reduzido para 6 a 12 chances por jogo para dar mais espaço à posse normal
+  for (let i = 0; i < 6 + Math.floor(rng() * 7); i++) {
     const m = pickUnique(allGamePool); if (m > 0) chanceMins.push(m);
   }
   const possessionMins: number[] = [];
