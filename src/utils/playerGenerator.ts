@@ -168,23 +168,15 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
 }
 
 /**
- * Distribuição obrigatória do elenco completo — exatos 35 jogadores:
- * Titulares (11) + Reservas (11) + Base/Juniores (13)
- * Total: 35 jogadores
- * 
- * Distribuição de posições (mínimos):
- * - 3 Goleiros
- * - 6 Zagueiros
- * - 6 Laterais (3 LD + 3 LE)
- * - 5 Volantes
- * - 8 Meio-campistas
- * - 7 Atacantes (Pontas/Centroavantes)
+ * Gera um elenco inicial equilibrado para novos times.
+ * OVR 45-55, 20-25 jogadores, idades entre 16 e 35 anos.
  */
-export function generateInitialSquad(clubName?: string, tier: 'strong' | 'medium' | 'weak' = 'medium'): Player[] {
+export function generateInitialSquad(clubName?: string, tier: 'strong' | 'medium' | 'weak' | 'starter' = 'starter'): Player[] {
   const ovrRange: Record<string, [number, number]> = {
     strong: [72, 85],
     medium: [62, 75],
-    weak: [50, 65]
+    weak: [50, 65],
+    starter: [45, 55]
   };
 
   const range = ovrRange[tier];
@@ -196,94 +188,54 @@ export function generateInitialSquad(clubName?: string, tier: 'strong' | 'medium
     isYouth?: boolean;
   };
 
+  // Blueprint para um elenco funcional e equilibrado (20-25 jogadores)
   const blueprint: Slot[] = [
-    // Goleiros (3)
-    { pos: 'GOL' }, { pos: 'GOL' }, { pos: 'GOL', isYouth: true },
+    // Goleiros (2)
+    { pos: 'GOL' }, { pos: 'GOL', isYouth: true },
     
-    // Zagueiros (6)
-    { pos: 'ZAG', secondary: 'VOL' }, { pos: 'ZAG' }, { pos: 'ZAG' }, 
-    { pos: 'ZAG', secondary: 'LAT' }, { pos: 'ZAG', isYouth: true }, { pos: 'ZAG', isYouth: true },
+    // Defesa (7)
+    { pos: 'ZAG' }, { pos: 'ZAG' }, { pos: 'ZAG', isYouth: true },
+    { pos: 'LAT', side: 'R' }, { pos: 'LAT', side: 'R', isYouth: true },
+    { pos: 'LAT', side: 'L' }, { pos: 'LAT', side: 'L', isYouth: true },
     
-    // Laterais (6: 3 LD + 3 LE)
-    { pos: 'LAT', side: 'R', secondary: 'MEI' }, { pos: 'LAT', side: 'R' }, { pos: 'LAT', side: 'R', isYouth: true },
-    { pos: 'LAT', side: 'L', secondary: 'MEI' }, { pos: 'LAT', side: 'L' }, { pos: 'LAT', side: 'L', isYouth: true },
+    // Meio (6)
+    { pos: 'VOL' }, { pos: 'VOL', isYouth: true },
+    { pos: 'MEI' }, { pos: 'MEI' }, { pos: 'MEI', isYouth: true }, { pos: 'MEI', isYouth: true },
     
-    // Volantes (5)
-    { pos: 'VOL', secondary: 'MEI' }, { pos: 'VOL' }, { pos: 'VOL', secondary: 'ZAG' }, 
-    { pos: 'VOL', isYouth: true }, { pos: 'VOL', isYouth: true },
-    
-    // Meio-campistas (8)
-    { pos: 'MEI', secondary: 'VOL' }, { pos: 'MEI' }, { pos: 'MEI', secondary: 'ATA' }, { pos: 'MEI' },
-    { pos: 'MEI', isYouth: true }, { pos: 'MEI', isYouth: true }, { pos: 'MEI', isYouth: true }, { pos: 'MEI', isYouth: true },
-    
-    // Atacantes (7)
-    { pos: 'ATA', side: 'L', secondary: 'MEI' }, { pos: 'ATA', side: 'L', isYouth: true },
-    { pos: 'ATA', side: 'R', secondary: 'MEI' }, { pos: 'ATA', side: 'R', isYouth: true },
-    { pos: 'ATA', side: 'C' }, { pos: 'ATA', side: 'C' }, { pos: 'ATA', side: 'C', isYouth: true },
+    // Ataque (7)
+    { pos: 'ATA', side: 'C' }, { pos: 'ATA', side: 'C', isYouth: true },
+    { pos: 'ATA', side: 'L' }, { pos: 'ATA', side: 'L', isYouth: true },
+    { pos: 'ATA', side: 'R' }, { pos: 'ATA', side: 'R', isYouth: true },
+    { pos: 'ATA', side: 'C' }, // Extra striker for variety
   ];
 
   const squad: Player[] = blueprint.map(slot => {
-    // Youth players are younger and have more potential but lower current OVR
-    const ageRange: [number, number] = slot.isYouth ? [16, 19] : [20, 34];
-    const currentOvrRange: [number, number] = slot.isYouth 
-      ? [Math.max(30, range[0] - 15), range[0]] 
-      : range;
-
-    const p = generatePlayer(currentOvrRange, ageRange, slot.pos, clubName);
+    const ageRange: [number, number] = slot.isYouth ? [16, 21] : [22, 35];
+    const p = generatePlayer(range, ageRange, slot.pos, clubName);
     
     if (slot.side) p.side = slot.side;
     if (slot.secondary) p.secondaryPosition = slot.secondary;
     if (slot.isYouth) {
       p.isYouth = true;
-      p.potential = Math.min(99, p.overall + Math.floor(Math.random() * 20) + 5);
+      p.potential = Math.min(99, p.overall + Math.floor(Math.random() * 25) + 10);
       p.squadRole = 'promessa';
     } else {
-      p.potential = Math.min(99, p.overall + Math.floor(Math.random() * 10));
-      p.squadRole = p.overall > range[1] - 5 ? 'titular' : 'reserva';
+      p.potential = Math.min(99, p.overall + Math.floor(Math.random() * 15));
+      p.squadRole = p.overall > range[1] - 3 ? 'titular' : 'reserva';
     }
     
-    // Add market value
     p.marketValue = getPlayerValue(p);
-    
     return p;
   });
 
-  // ── Pré-escalação 4-3-3 com os 11 melhores nas posições corretas ──
-  const formation433: Array<{ pos: Player['position']; side?: 'L' | 'R' | 'C' }> = [
-    { pos: 'GOL' },
-    { pos: 'LAT', side: 'R' }, { pos: 'ZAG' }, { pos: 'ZAG' }, { pos: 'LAT', side: 'L' },
-    { pos: 'VOL' }, { pos: 'MEI' }, { pos: 'MEI' },
-    { pos: 'ATA', side: 'R' }, { pos: 'ATA', side: 'C' }, { pos: 'ATA', side: 'L' },
-  ];
+  // Marcar os 11 melhores como titulares iniciais
+  const sortedStarters = [...squad].sort((a, b) => b.overall - a.overall).slice(0, 11);
+  const starterIds = new Set(sortedStarters.map(p => p.id));
 
-  const used = new Set<string>();
-  const starters: Player[] = [];
-  for (const slot of formation433) {
-    let candidates = squad
-      .filter(p => !used.has(p.id) && p.position === slot.pos && (!slot.side || p.side === slot.side))
-      .sort((a, b) => b.overall - a.overall);
-    
-    if (candidates.length === 0) {
-      candidates = squad
-        .filter(p => !used.has(p.id) && p.position === slot.pos)
-        .sort((a, b) => b.overall - a.overall);
-    }
-    
-    if (candidates[0]) {
-      starters.push({ ...candidates[0], squadRole: 'titular' as Player['squadRole'] });
-      used.add(candidates[0].id);
-    }
-  }
-
-  // The rest are bench and reserves
-  const others = squad.filter(p => !used.has(p.id)).sort((a, b) => b.overall - a.overall);
-  const bench = others.slice(0, 11).map(p => ({ ...p, squadRole: 'reserva' as Player['squadRole'] }));
-  const reserves = others.slice(11).map(p => ({ ...p, squadRole: (p.isYouth ? 'promessa' : 'reserva') as Player['squadRole'] }));
-
-
-
-
-  return [...starters, ...bench, ...reserves];
+  return squad.map(p => ({
+    ...p,
+    squadRole: starterIds.has(p.id) ? 'titular' : (p.isYouth ? 'promessa' : 'reserva')
+  }));
 }
 
 export function generateMarketPlayer(): Player {
