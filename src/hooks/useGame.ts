@@ -79,26 +79,31 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
 
   // 🔄 Reconstrói elenco completo: profissionais + juniores + banco + tática.
   useEffect(() => {
-    if (clubState.club.players.length === 0 && infraState.youthProspects.length === 0) return;
+    // Se o elenco estiver vazio, forçamos a geração inicial baseada no initialClub
+    if (clubState.club.players.length === 0) {
+      console.log('[useGame] Elenco vazio detectado. Forçando regeneração completa.');
+      const initialSquad = require('@/utils/playerGenerator').generateInitialSquad(clubState.club.name || 'Meu Clube', 'medium');
+      clubState.setClub(prev => ({ ...prev, players: initialSquad }));
+      return;
+    }
 
     const rebuiltPlayers = rebuildClubSquad(clubState.club.players, infraState.youthProspects, tactics.formation);
     const rebuiltTactics = syncTacticsWithSquad(tactics, rebuiltPlayers);
     
-    // Explicit comparison to avoid loops
     const currentIds = clubState.club.players.map((p: any) => p.id).join(',');
     const nextIds = rebuiltPlayers.map((p: any) => p.id).join(',');
     const currentStatuses = clubState.club.players.map((p: any) => p.squad_status).join(',');
     const nextStatuses = rebuiltPlayers.map((p: any) => p.squad_status).join(',');
 
     if (currentIds !== nextIds || currentStatuses !== nextStatuses) {
-      console.log('[useGame] Rebuilding squad to ensure visibility of all categories');
+      console.log('[useGame] Sincronizando categorias de elenco (Titulares/Reservas/Juniores)');
       clubState.setClub(prev => ({ ...prev, players: rebuiltPlayers }));
     }
 
     if (JSON.stringify(rebuiltTactics) !== JSON.stringify(tactics)) {
       setTactics(rebuiltTactics);
     }
-  }, [tactics.formation, clubState.club.players.length, infraState.youthProspects.length]);
+  }, [tactics.formation, clubState.club.players.length, infraState.youthProspects.length, clubState.club.name]);
 
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
