@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Filter, GraduationCap, Coins, 
   Trophy, Info, Sparkles, ChevronRight,
@@ -95,13 +94,12 @@ export function YouthAcademyTab({
         constructionProgress={constructionProgress}
       />
 
-      <Tabs defaultValue="list" className="space-y-6">
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <TabsList className="bg-muted/50 p-1">
-            <TabsTrigger value="list" className="gap-2"><GraduationCap className="h-4 w-4" /> Elenco da Base</TabsTrigger>
-            <TabsTrigger value="copinha" className="gap-2"><Trophy className="h-4 w-4" /> Copinha</TabsTrigger>
-            <TabsTrigger value="news" className="gap-2"><Newspaper className="h-4 w-4" /> Notícias</TabsTrigger>
-          </TabsList>
+          <div className="bg-muted/50 p-2 rounded-lg flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-primary" />
+            <span className="text-sm font-bold uppercase tracking-wider">Plantel da Base</span>
+          </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
@@ -129,7 +127,7 @@ export function YouthAcademyTab({
           </div>
         </div>
 
-        <TabsContent value="list" className="space-y-4 m-0">
+        <div className="space-y-4">
           {!hasScouts && prospects.length > 0 && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
@@ -177,118 +175,8 @@ export function YouthAcademyTab({
               </AnimatePresence>
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="copinha" className="m-0 animate-in fade-in slide-in-from-bottom-2">
-           <Card className="game-card-accent border-amber-500/30 overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-8 opacity-5">
-                <Trophy className="h-48 w-48" />
-              </div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Trophy className="h-6 w-6 text-amber-400" />
-                  Copa São Paulo de Juniores
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <h4 className="text-lg font-bold">A maior vitrine do futebol de base</h4>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        A Copinha é o momento onde os olheiros de todo o mundo estão de olho. 
-                        Participar garante um boost imenso na evolução dos seus jogadores Sub-20.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className="p-4 rounded-xl bg-card border border-border/50">
-                          <p className="text-2xl font-black text-amber-400">{eligibleForCopinha}</p>
-                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Elegíveis (≤20a)</p>
-                       </div>
-                       <div className="p-4 rounded-xl bg-card border border-border/50">
-                          <p className="text-2xl font-black text-primary">{currentSeason >= 2 ? 'Aberta' : 'Bloqueada'}</p>
-                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Status Inscrição</p>
-                       </div>
-                    </div>
-
-                    <Button 
-                      size="lg"
-                      disabled={!copinhaUnlocked || eligibleForCopinha < 11}
-                      onClick={onEnrollCopinha}
-                      className="w-full gap-2 bg-gradient-to-r from-amber-600 to-amber-400 hover:from-amber-700 hover:to-amber-500 text-black font-black"
-                    >
-                      <Trophy className="h-5 w-5" />
-                      Inscrever na Copinha
-                    </Button>
-                    {!copinhaUnlocked && <p className="text-[10px] text-center text-muted-foreground">Disponível a partir da Temporada 2</p>}
-                    {eligibleForCopinha < 11 && <p className="text-[10px] text-center text-red-400">Você precisa de pelo menos 11 jogadores Sub-20</p>}
-                  </div>
-
-                  <div className="relative aspect-video rounded-2xl overflow-hidden border border-amber-500/20 shadow-2xl">
-                    <img 
-                      src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=800" 
-                      className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700"
-                      alt="Estádio lotado"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-black/60 backdrop-blur-sm border border-white/10">
-                       <p className="text-xs font-bold text-white mb-1 flex items-center gap-2">
-                          <Sparkles className="h-3 w-3 text-amber-400" /> Benefícios da Vitória
-                       </p>
-                       <ul className="text-[10px] text-gray-300 space-y-1">
-                          <li>• +15 OVR para os destaques do título</li>
-                          <li>• Valor de mercado quadriplicado</li>
-                          <li>• Reputação da base elevada ao máximo</li>
-                       </ul>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-           </Card>
-        </TabsContent>
-
-        <TabsContent value="news" className="m-0 animate-in fade-in slide-in-from-bottom-2">
-           <Card className="game-card border-primary/20">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Newspaper className="h-5 w-5 text-primary" />
-                  Mural da Academia
-                </CardTitle>
-                <CardDescription>
-                  Fique por dentro do que acontece nos bastidores da nossa fábrica de talentos.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Automatic News Items */}
-                  {[
-                    { title: 'Treino de Finalização em Alta', text: 'Os atacantes da base mostraram pontaria afiada no coletivo de hoje.', date: 'Hoje', type: 'training' },
-                    { title: 'Olheiro Impressionado', text: 'Um olheiro europeu foi visto nas arquibancadas observando nossos meias.', date: 'Ontem', type: 'market' },
-                    { title: 'Exemplo de Conduta', text: 'A nova safra de jogadores tem se destacado pela disciplina e moral elevada.', date: '2 dias atrás', type: 'morale' }
-                  ].map((news, i) => (
-                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 hover:bg-muted/30 transition-all cursor-default group">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                        news.type === 'training' ? 'bg-primary/20 text-primary' : 
-                        news.type === 'market' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'
-                      }`}>
-                        {news.type === 'training' ? <Dumbbell className="h-6 w-6" /> : 
-                         news.type === 'market' ? <Search className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{news.title}</h4>
-                          <span className="text-[10px] text-muted-foreground">{news.date}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{news.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       <YouthPlayerDetailModal 
         prospect={selectedPlayer}
