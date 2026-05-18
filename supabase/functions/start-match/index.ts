@@ -51,6 +51,7 @@ interface SimPlayer {
   fairPlay: number; discipline: number; intelligence: number; emotionalControl: number;
   personality?: string;
   injured?: boolean;
+  injuryData?: { type: string; severity: string; weeks: number; bodyPart: string };
 }
 
 interface SimEvent {
@@ -82,8 +83,21 @@ function getMoraleMultiplier(morale: number): number {
 }
 
 function effectiveAttr(player: SimPlayer, attr: keyof SimPlayer): number {
-  const val = Number(player[attr]) || 50;
-  return val * getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
+  let val = Number(player[attr]) || 50;
+  
+  const mult = getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
+  
+  // Apply individual attribute penalties for low stamina (<50%)
+  if (player.stamina < 50) {
+    const penalty = 1 - (50 - player.stamina) / 100; // 50% stamina = 1.0, 0% = 0.5
+    if (['speed', 'shooting', 'passing', 'defending', 'dribbling', 'marking', 'positioning'].includes(attr as string)) {
+      val *= penalty;
+    }
+  }
+
+  if (player.injured) val *= 0.6; // Severe penalty for playing injured
+
+  return val * mult;
 }
 
 // Individual "form" multiplier (morale × stamina) used to scale action probabilities.
@@ -1293,17 +1307,43 @@ function simulateFullMatch(
 
     // Injury check for exhausted players — moral baixa aumenta o risco
     const checkInjury = (squad: SimPlayer[], teamKey: 'home' | 'away') => {
+      const teamName = teamKey === 'home' ? homeTeam : awayTeam;
       for (const p of squad) {
-        if (!p.isOnPitch || p.injured || p.stamina >= 40) continue;
+        if (!p.isOnPitch || p.injured) continue;
+        
+        // Critical risk below 25%, High below 40%
+        const isCritical = p.stamina < 25;
+        const isHighRisk = p.stamina < 40;
+        
+        if (!isHighRisk) continue;
+
         const moraleRisk = p.morale < 40 ? 1.6 : p.morale < 60 ? 1.2 : 1.0;
-        const baseRisk = 0.04 + (40 - p.stamina) / 800; // 0..0.09
-        if (rng() < baseRisk * moraleRisk) {
+        const baseRisk = isCritical ? 0.08 : 0.03; // Increased base risk
+        const finalRisk = baseRisk * moraleRisk * (1.1 - p.physical/100);
+
+        if (rng() < finalRisk) {
           p.injured = true;
-          p.isOnPitch = false;
+          const severity = rng() < 0.1 ? 'grave' : rng() < 0.4 ? 'moderada' : 'leve';
+          const bodyPart = pick(['muscular', 'tornozelo', 'joelho', 'ligamento']);
+          const weeks = severity === 'grave' ? 4 + Math.floor(rng() * 8) : severity === 'moderada' ? 2 + Math.floor(rng() * 3) : 1;
+          
+          p.injuryData = { type: 'Lesão ' + bodyPart, severity, weeks, bodyPart };
+          
           allPlanned.push({
-            minute: m, type: 'injury', team: teamKey,
-            playerName: p.name, animType: 'foul',
-            description: `🏥 LESÃO! ${p.name} sente dores musculares e precisa ser substituído! O cansaço cobrou seu preço!`,
+            minute: m,
+            type: 'injury',
+            team: teamKey,
+            playerName: p.name,
+            priority: 'high',
+            description: `🚑 LESÃO! ${p.name} do ${teamName} sentiu o ${bodyPart} e precisa de atendimento médico! ${severity === 'grave' ? 'Parece sério!' : 'Ele tenta continuar mas está visivelmente limitado.'}`,
+          });
+
+          // Also send a system message (simulated here as a priority neutral event for the UI to catch)
+          allPlanned.push({
+            minute: m,
+            type: 'system_notification',
+            team: 'neutral',
+            description: `🏥 DM: ${p.name} sofreu uma ${p.injuryData.type}. Tempo estimado: ${weeks} semanas.`,
           });
         }
       }
@@ -1450,6 +1490,23 @@ function simulateFullMatch(
 
 
   for (const ev of allPlanned.filter(e => e.minute <= 44)) finalEvents.push(ev);
+
+  finalEvents.push({
+    minute: 45, type: 'halftime_start', team: 'neutral',
+    description: `🏁 Fim do primeiro tempo! Intervalo de descanso e ajustes táticos.`,
+  });
+
+  // Stamina recovery during halftime
+  for (const p of [...home, ...away]) {
+    if (p.isOnPitch && !p.injured) {
+      p.stamina = Math.min(100, p.stamina + 8 + (p.physical / 20));
+    }
+  }
+
+  finalEvents.push({
+    minute: 45, type: 'halftime_end', team: 'neutral',
+    description: `⚽ Jogadores de volta! O segundo tempo vai começar.`,
+  });
 
   finalEvents.push({
     minute: 45, type: 'added_time', team: 'neutral', animType: 'halftime',
@@ -2269,6 +2326,19 @@ Deno.serve(async (req) => {
             _rating: p.rating,
             _is_mvp: result.manOfTheMatch === p.name
           });
+        }
+      }
+      // 3.5. PERSIST INJURIES (New in V4)
+      for (const p of result.allPlayers) {
+        if (p.injured && p.injuryData && p.team === 'home') {
+          console.info('[Sync] Persisting injury for player', p.name);
+          await adminClient.from('world_players').update({
+            injury_type: p.injuryData.type,
+            injury_severity: p.injuryData.severity,
+            injury_weeks_remaining: p.injuryData.weeks,
+            injury_body_part: p.injuryData.bodyPart,
+            injury_is_relapse: false
+          }).eq('id', p.id);
         }
       }
     } catch (err) {

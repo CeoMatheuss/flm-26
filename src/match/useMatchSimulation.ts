@@ -38,7 +38,7 @@ const EMPTY_STATS: MatchStats = {
 };
 
 export interface MatchState {
-  phase: 'idle' | 'loading' | 'live' | 'halftime' | 'finished' | 'error';
+  phase: 'idle' | 'loading' | 'live' | 'halftime' | 'finished' | 'error' | 'break';
   currentMinute: number;
   progress: number;
   homeTeam: string;
@@ -58,6 +58,7 @@ export interface MatchState {
   currentMoment: string;
   playerStamina: Record<string, number>;
   assistantTips: SimEvent[];
+  resumeFromBreak: () => void;
   onAnimationComplete?: () => void;
 }
 
@@ -82,7 +83,7 @@ const INITIAL: MatchState = {
   currentMoment: 'equilíbrio',
   playerStamina: {},
   assistantTips: [],
-  
+  resumeFromBreak: () => {},
 };
 
 interface MatchData {
@@ -287,15 +288,36 @@ export function useMatchSimulation() {
 
   const tick = useCallback(() => {
     const data = dataRef.current;
-    if (!data || isAnimatingRef.current || state.phase === 'finished') return;
+    if (!data || isAnimatingRef.current || state.phase === 'finished' || state.phase === 'break') return;
 
     const now = Date.now();
     const virtualElapsed = (now - data.startTime);
+    
+    // Adjusted progress if we have breaks (not implemented here yet, but checking state)
     const progress = Math.min(1, Math.max(0, virtualElapsed / data.durationMs));
     const currentMinute = Math.min(data.maxMinute, Math.floor(progress * data.maxMinute));
     const isComplete = virtualElapsed >= data.durationMs;
 
     const nextEvent = data.allEvents[nextVisibleEventIdxRef.current];
+    
+    // ── Break Handling ──────────────────────────────────────────
+    if (nextEvent && nextEvent.type === 'halftime_start' && nextEvent.minute <= currentMinute) {
+      nextVisibleEventIdxRef.current++;
+      console.log("[MATCH] Intervalo iniciado.");
+      setState(prev => ({
+        ...prev,
+        phase: 'break',
+        currentMinute: 45,
+        latestEvent: nextEvent,
+        visibleEvents: [...prev.visibleEvents, nextEvent]
+      }));
+      return;
+    }
+
+    if (nextEvent && nextEvent.type === 'halftime_end' && nextEvent.minute <= currentMinute) {
+      // This is processed when the user finishes the break or auto-resumes
+      // For now, we'll let the UI handle the timer and call a 'resume' method
+    }
     
     // Se a partida deveria estar encerrada, forçar encerramento e não processar mais nada
     if (isComplete) {
@@ -477,6 +499,31 @@ export function useMatchSimulation() {
     return true;
   }, [computeStatsFromEvents, recalculateScoreFromEvents, startTick]);
 
+  const resumeFromBreak = useCallback(() => {
+    const data = dataRef.current;
+    if (!data || state.phase !== 'break') return;
+
+    const nextEvent = data.allEvents[nextVisibleEventIdxRef.current];
+    if (nextEvent && nextEvent.type === 'halftime_end') {
+      nextVisibleEventIdxRef.current++;
+      
+      // Update startTime so elapsed time doesn't count the break
+      const currentElapsedForMin45 = (45 / data.maxMinute) * data.durationMs;
+      data.startTime = Date.now() - currentElapsedForMin45;
+
+      setState(prev => ({
+        ...prev,
+        phase: 'live',
+        visibleEvents: [...prev.visibleEvents, nextEvent],
+        latestEvent: nextEvent
+      }));
+    }
+  }, [state.phase]);
+
+  const loadMatchSnapshot = useCallback((snapshot: any) => {
+    return hydrateMatchRow(snapshot);
+  }, [hydrateMatchRow]);
+
   const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
     setState(s => ({ ...s, phase: 'loading' }));
     const { data, error } = await supabase.from('live_matches').select('*').eq('id', matchDbId).maybeSingle();
@@ -511,7 +558,6 @@ export function useMatchSimulation() {
       }
       const ok = await loadMatch(data.matchDbId);
       if (!ok) {
-        // loadMatch já setou phase='error' internamente
         return { success: false, error: 'Falha ao carregar partida criada.' };
       }
       return { success: true };
@@ -533,5 +579,5 @@ export function useMatchSimulation() {
   const destroy = useCallback(() => { stopTick(); dataRef.current = null; }, [stopTick]);
 
   const onAnimationComplete = useCallback(() => { isAnimatingRef.current = false; }, []);
-  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, destroy, onAnimationComplete };
+  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, resumeFromBreak, destroy, onAnimationComplete };
 }

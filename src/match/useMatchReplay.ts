@@ -20,6 +20,7 @@ const INITIAL: MatchState = {
   stadiumName: '', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null,
   competition: '', isHome: true,
   currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
+  resumeFromBreak: () => {},
 };
 
 const TICK_MS = 300;
@@ -101,6 +102,7 @@ export function useMatchReplay() {
       homeGoals, awayGoals, visibleEvents, latestEvent, stats: liveStats,
       stadiumName: 'Campeonato', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null, competition: 'Campeonato', isHome: true,
       currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
+      resumeFromBreak: () => {},
     });
 
     if (isComplete) stopTick();

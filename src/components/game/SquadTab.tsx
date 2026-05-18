@@ -640,8 +640,9 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 <span className="text-xs shrink-0" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>
               )}
               {player.injury && (
-                <Badge className="text-[8px] px-1 h-4 gap-0.5 bg-red-500/20 text-red-400 border-red-500/30" variant="outline">
-                  <HeartPulse className="h-2.5 w-2.5" />{player.injury.weeksRemaining}j
+                <Badge className="text-[9px] px-1.5 h-5 gap-1 bg-red-500/20 text-red-400 border-red-500/30 font-black animate-pulse" variant="outline">
+                  <HeartPulse className="h-3 w-3" />
+                  {player.injury.type === 'fadiga' ? 'FADIGA' : (player.injury as any).type || 'LESÃO'} — {player.injury.weeksRemaining}j
                 </Badge>
               )}
               {isCandidate && samePosition && (

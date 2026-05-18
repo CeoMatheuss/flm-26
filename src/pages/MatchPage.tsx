@@ -101,7 +101,7 @@ export default function MatchPage() {
   const [preMatchDone, setPreMatchDone] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
 
-  const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, destroy } = useMatchSimulation();
+  const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, resumeFromBreak, destroy } = useMatchSimulation();
 
   const doStartMatch = useCallback(async (players: Player[], updatedTactics?: TacticsConfig) => {
     if (!locState) return;
@@ -304,7 +304,7 @@ export default function MatchPage() {
     }
   };
 
-  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} awayStrength={locState?.awayStrength} />;
+  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} awayStrength={locState?.awayStrength} resumeFromBreak={resumeFromBreak} />;
 }
 
 /* ── PRE-MATCH SCREEN ─────────────────────────────────────── */
@@ -686,9 +686,10 @@ function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () 
 
 /* ── MATCH VIEWER ─────────────────────────────────────────── */
 
-export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 60 }: {
+export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFromBreak, awayStrength = 60 }: {
   matchState: MatchState; onExit: () => void;
   homePlayers?: Player[]; tactics?: TacticsConfig;
+  resumeFromBreak?: () => void;
   awayStrength?: number;
 }) {
   const {
@@ -864,6 +865,108 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
       });
     return () => { cancelled = true; };
   }, [matchDbId]);
+
+  // NEW: Halftime Timer Component
+  const HalftimeTimer = ({ onComplete }: { onComplete: () => void }) => {
+    const [timeLeft, setTimeLeft] = useState(120); // 2 minutes in seconds
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            onComplete();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }, [onComplete]);
+
+    const formatTime = (s: number) => {
+      const mins = Math.floor(s / 60);
+      const secs = s % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+      <div className="bg-background/40 backdrop-blur-md border border-primary/30 rounded-xl px-4 py-3 flex flex-col items-center gap-1">
+        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Segundo tempo começa em</p>
+        <p className="text-3xl font-black font-mono text-foreground tracking-tighter">{formatTime(timeLeft)}</p>
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          className="mt-2 h-8 px-6 font-bold"
+          onClick={onComplete}
+        >
+          Voltar Agora
+        </Button>
+      </div>
+    );
+  };
+  // Fatigue/Injury Alert System
+  const MatchAlerts = ({ matchState, starters, onOpenSubs }: { matchState: MatchState, starters: Player[], onOpenSubs: () => void }) => {
+    const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+    const [lastAlertTime, setLastAlertTime] = useState(0);
+
+    const activeAlerts = useMemo(() => {
+      const alerts: { id: string, type: 'fatigue' | 'injury', player: Player, stamina: number }[] = [];
+      const now = Date.now();
+      
+      // Intelligent cooldown: only one new alert every 15 seconds
+      if (now - lastAlertTime < 15000) return [];
+
+      starters.forEach(p => {
+        if (dismissedAlerts.has(p.id)) return;
+        
+        const stamina = liveStaminaMap[p.id] ?? 100;
+        const isInjured = matchState.visibleEvents.some(ev => ev.type === 'injury' && ev.playerName === p.name);
+
+        if (isInjured) {
+          alerts.push({ id: p.id, type: 'injury', player: p, stamina });
+        } else if (stamina < 30) {
+          alerts.push({ id: p.id, type: 'fatigue', player: p, stamina });
+        }
+      });
+
+      return alerts.slice(0, 1); // Only show one alert at a time
+    }, [starters, dismissedAlerts, matchState.visibleEvents, lastAlertTime]);
+
+    if (activeAlerts.length === 0) return null;
+
+    const alert = activeAlerts[0];
+    
+    return (
+      <Card className={`border-l-4 ${alert.type === 'injury' ? 'border-l-red-500 bg-red-500/5' : 'border-l-orange-500 bg-orange-500/5'} animate-in slide-in-from-right-4 duration-500`}>
+        <CardContent className="p-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${alert.type === 'injury' ? 'bg-red-500/20 text-red-500' : 'bg-orange-500/20 text-orange-500'}`}>
+              {alert.type === 'injury' ? <Activity className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-tight">
+                {alert.type === 'injury' ? '🚑 Atleta lesionado' : '⚠️ Atleta esgotado'}
+              </p>
+              <p className="text-sm font-bold">{alert.player.name} ({alert.stamina}%)</p>
+              <p className="text-[10px] text-muted-foreground">Substitua para manter o desempenho do time.</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Button size="sm" className="h-7 text-[10px] font-bold" onClick={onOpenSubs}>
+              Substituir
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => {
+              setDismissedAlerts(prev => new Set(prev).add(alert.id));
+              setLastAlertTime(Date.now());
+            }}>
+              Fechar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Local version counter — bumps on every substitution to force re-render of all consumers
   const [subStateVersion, setSubStateVersion] = useState(0);
   // Tracks when each player entered the field (minute). Starters default to 0.
@@ -1092,6 +1195,8 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
 
   // Validation helper for substitutions — used by widget click + queue
 
+  
+
   const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
     if (isFinished) return { ok: false, reason: '🚫 Partida finalizada — substituições encerradas.' };
     if (currentMinute > 90)
@@ -1217,10 +1322,13 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
               </div>
 
               <CardContent className="p-4 sm:p-6 space-y-4">
-                {isHalftime ? (
-                  <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 text-center space-y-2 animate-fade-in">
-                    <p className="text-3xl">⏸️</p>
-                    <p className="text-xl font-black text-primary uppercase tracking-tighter">Intervalo</p>
+                {matchState.phase === 'break' || isHalftime ? (
+                  <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 text-center space-y-4 animate-fade-in">
+                    <div className="space-y-1">
+                      <p className="text-3xl">⏸️</p>
+                      <p className="text-xl font-black text-primary uppercase tracking-tighter">Intervalo</p>
+                    </div>
+
                     <div className="flex items-center justify-center gap-6">
                        <div className="text-center">
                          <div className="mb-1 flex justify-center">{homeShield ? <ShieldCrest size={32} {...homeShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}</div>
@@ -1235,6 +1343,10 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
                          <div className="mb-1 flex justify-center">{awayShield ? <ShieldCrest size={32} {...awayShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}</div>
                          <p className="text-[10px] font-bold uppercase truncate max-w-[80px]">{awayTeam}</p>
                        </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <HalftimeTimer onComplete={() => resumeFromBreak()} />
                     </div>
                   </div>
                 ) : (
@@ -1475,6 +1587,9 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
                 </button>
               )}
             </div>
+
+            {/* Fatigue & Injury Alerts (V4) */}
+            <MatchAlerts matchState={matchState} starters={currentStarters} onOpenSubs={() => setExpandedWidget('subs')} />
 
             {/* Expanded Widget */}
             {expandedWidget === 'stats' && (
