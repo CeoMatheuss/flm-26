@@ -122,9 +122,9 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   // Balanced logic: 2 Def, 2 Mid, 2 Atk or similar based on availability
   const slots = [
-    { pos: ['ZAG', 'LAT'], count: 2 },
-    { pos: ['VOL', 'MEI'], count: 2 },
-    { pos: ['ATA'], count: 2 }
+    { pos: ['ZAG', 'LAT'], count: 3 },
+    { pos: ['VOL', 'MEI'], count: 4 },
+    { pos: ['ATA'], count: 3 }
   ];
 
   slots.forEach(slot => {
