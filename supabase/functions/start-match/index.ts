@@ -51,6 +51,7 @@ interface SimPlayer {
   fairPlay: number; discipline: number; intelligence: number; emotionalControl: number;
   personality?: string;
   injured?: boolean;
+  injuryData?: { type: string; severity: string; weeks: number; bodyPart: string };
 }
 
 interface SimEvent {
