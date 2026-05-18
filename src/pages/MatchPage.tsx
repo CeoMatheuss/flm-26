@@ -864,6 +864,46 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
       });
     return () => { cancelled = true; };
   }, [matchDbId]);
+
+  // NEW: Halftime Timer Component
+  const HalftimeTimer = ({ onComplete }: { onComplete: () => void }) => {
+    const [timeLeft, setTimeLeft] = useState(120); // 2 minutes in seconds
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            onComplete();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }, [onComplete]);
+
+    const formatTime = (s: number) => {
+      const mins = Math.floor(s / 60);
+      const secs = s % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+      <div className="bg-background/40 backdrop-blur-md border border-primary/30 rounded-xl px-4 py-3 flex flex-col items-center gap-1">
+        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Segundo tempo começa em</p>
+        <p className="text-3xl font-black font-mono text-foreground tracking-tighter">{formatTime(timeLeft)}</p>
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          className="mt-2 h-8 px-6 font-bold"
+          onClick={onComplete}
+        >
+          Voltar Agora
+        </Button>
+      </div>
+    );
+  };
+
   // Local version counter — bumps on every substitution to force re-render of all consumers
   const [subStateVersion, setSubStateVersion] = useState(0);
   // Tracks when each player entered the field (minute). Starters default to 0.
