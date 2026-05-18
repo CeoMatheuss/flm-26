@@ -17,6 +17,8 @@ interface FreeAgent {
   player_name: string;
   player_position: string;
   player_age: number;
+  player_overall: number;
+  player_potential: number;
   visible_stats: any;
   origin: string;
   origin_club_name: string | null;
@@ -79,7 +81,6 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
     const { data } = await supabase
       .from('free_agents_market')
       .select('*')
-      .gte('available_until', new Date().toISOString())
       .order('player_overall', { ascending: false })
       .limit(200);
     if (data) setAgents(data as any);
@@ -331,39 +332,99 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
           </TabsTrigger>
         </TabsList>
 
-        {/* ── DISPONÍVEIS — Drop schedule notice ── */}
-        <TabsContent value="available" className="mt-3">
-          <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-6 text-center space-y-4">
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center">
-              <Clock className="h-7 w-7 text-primary" />
+        {/* ── DISPONÍVEIS ── */}
+        <TabsContent value="available" className="mt-3 space-y-3">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar jogador..."
+                className="pl-8 h-8 text-[11px] bg-card/50"
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+              />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-foreground">Novos Agentes Livres no Mercado</h3>
-              <p className="text-[11px] text-muted-foreground leading-relaxed max-w-sm mx-auto">
-                Jogadores que não receberam lances no leilão são enviados <span className="font-bold text-primary">automaticamente</span> para o mercado livre.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto">
-              <div className="p-2.5 rounded-xl bg-accent/40 border border-border/20">
-                <p className="text-[9px] text-muted-foreground">Frequência</p>
-                <p className="text-xs font-bold text-foreground mt-0.5">Semanal</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-accent/40 border border-border/20">
-                <p className="text-[9px] text-muted-foreground">Quantidade</p>
-                <p className="text-xs font-bold text-primary mt-0.5">10 jogadores</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-accent/40 border border-border/20">
-                <p className="text-[9px] text-muted-foreground">Decisão</p>
-                <p className="text-xs font-bold text-foreground mt-0.5">7 horas</p>
-              </div>
-            </div>
-
-            <div className="pt-2 text-[10px] text-muted-foreground leading-relaxed max-w-md mx-auto">
-              <EyeOff className="h-3 w-3 inline mr-1 text-primary" />
-              Atributos ocultos até a assinatura. Você só verá nome, idade, posição e estatísticas básicas.
-            </div>
+            <select
+              value={posFilter}
+              onChange={e => setPosFilter(e.target.value)}
+              className="h-8 rounded-md border border-input bg-card/50 px-2 text-[10px] outline-none"
+            >
+              <option value="all">Todas Posições</option>
+              {Object.keys(posColors).map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
           </div>
+
+          <ScrollArea className="h-[400px] pr-2">
+            {filtered.length === 0 ? (
+              <div className="text-center py-10 text-xs text-muted-foreground bg-card/50 rounded-xl border border-border/15">
+                <Globe className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                Nenhum jogador livre encontrado com esses filtros.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {filtered.map(agent => {
+                  const hasOffer = !!pendingOffersByAgent[agent.id];
+                  return (
+                    <Card key={agent.id} className="border-border/20 bg-card/40 hover:bg-card/60 transition-colors overflow-hidden">
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={`text-[9px] px-1 h-5 ${posColors[agent.player_position]}`}>{agent.player_position}</Badge>
+                            <div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-bold truncate max-w-[120px]">{agent.player_name}</span>
+                                {agent.visible_stats?.rarity === 'Raro' && (
+                                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[8px] h-3.5 px-1">RARO</Badge>
+                                )}
+                              </div>
+                              <p className="text-[9px] text-muted-foreground">{agent.player_age} anos • OVR: {agent.player_overall}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-bold text-primary">{formatMoney(agent.player_data?.salary || 500)}/mês</p>
+                            <p className="text-[8px] text-muted-foreground">Valor: {formatMoney(agent.player_data?.value || 50000)}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-1 mt-2 mb-3">
+                          <div className="bg-accent/30 rounded p-1 text-center">
+                            <p className="text-[8px] text-muted-foreground">Gols</p>
+                            <p className="text-[10px] font-bold">{agent.visible_stats?.goals || 0}</p>
+                          </div>
+                          <div className="bg-accent/30 rounded p-1 text-center">
+                            <p className="text-[8px] text-muted-foreground">Ast</p>
+                            <p className="text-[10px] font-bold">{agent.visible_stats?.assists || 0}</p>
+                          </div>
+                          <div className="bg-accent/30 rounded p-1 text-center">
+                            <p className="text-[8px] text-muted-foreground">Nota</p>
+                            <p className="text-[10px] font-bold">{agent.visible_stats?.avgRating || '-'}</p>
+                          </div>
+                          <div className="bg-accent/30 rounded p-1 text-center">
+                            <p className="text-[8px] text-muted-foreground">Pot</p>
+                            <p className="text-[10px] font-bold text-emerald-400">{agent.visible_stats?.potential || '?'}</p>
+                          </div>
+                        </div>
+
+                        <Button 
+                          size="sm" 
+                          className="w-full h-8 text-[11px] gap-1.5" 
+                          variant={hasOffer ? "secondary" : "default"}
+                          disabled={hasOffer}
+                          onClick={() => openOfferDialog(agent)}
+                        >
+                          {hasOffer ? (
+                            <> <Clock className="h-3 w-3" /> Proposta em análise </>
+                          ) : (
+                            <> <Send className="h-3 w-3" /> Fazer Proposta </>
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
         </TabsContent>
 
         {/* ── ATIVAS ── */}
