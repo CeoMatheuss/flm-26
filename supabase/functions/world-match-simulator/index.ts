@@ -58,7 +58,7 @@ function pickPlayerByRole(players: any[], role: 'finishing' | 'creation'): any {
     }
     return players[0];
 }
-\n// Logic to process injuries and cards
+// Logic to process injuries and cards
 function processPlayerDiscipline(players: any[]) {
   const availabilityUpdates: any[] = [];
   players.forEach(p => {
