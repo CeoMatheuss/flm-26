@@ -2260,22 +2260,11 @@ Deno.serve(async (req) => {
         }).eq('id', String(matchId));
 
         // Update player stats for both teams
-        // In league_player_stats, teamId is the member_id (UUID)
-        // We need to resolve member_id from league_id + user_id or team_id
-        const { data: members } = await adminClient
-          .from('league_members')
-          .select('id, user_id, is_bot')
-          .eq('league_id', leagueMatch.league_id);
-        
-        const homeMember = members?.find(m => m.id === leagueMatch.home_team_id);
-        const awayMember = members?.find(m => m.id === leagueMatch.away_team_id);
-
-        if (homeMember) {
-          await updateStatsForCompetition('league', leagueMatch.league_id, homeMember.id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
-        }
-        if (awayMember) {
-          await updateStatsForCompetition('league', leagueMatch.league_id, awayMember.id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
-        }
+        console.info('[Sync] Calling sync_match_stats for league match');
+        await adminClient.rpc('sync_match_stats', { 
+          p_match_id: String(matchId), 
+          p_competition_type: 'league' 
+        });
 
         // Update Standings via RPC for consistency
         await adminClient.rpc('update_league_standings', { _league_id: leagueMatch.league_id });
