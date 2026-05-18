@@ -162,7 +162,22 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               isPendingSwap={pendingSwapId === p.id}
               canBeSwapped={!!pendingSwapId && pendingSwapId !== p.id}
               onRest={() => onRest(p.id)}
-              onClick={() => onSelect(p.id)}
+              onClick={() => {
+                if (pendingSwapId) {
+                  // Se já houver uma troca pendente, realizar a troca
+                  // @ts-ignore - handleSwap exists in parent context but we invoke handleSelect here
+                  onSelect(p.id);
+                } else {
+                  // Caso contrário, abrir o painel ou iniciar troca rápida
+                  // @ts-ignore
+                  onSelect(p.id);
+                }
+              }}
+              onSwapAction={(e) => {
+                e.stopPropagation();
+                // Dispara o evento de início de troca para o pai capturar
+                window.dispatchEvent(new CustomEvent('flm:start-swap', { detail: { player: p } }));
+              }}
               onOpenQuickSwap={onOpenQuickSwap}
               activeTab={activeTab}
             />
