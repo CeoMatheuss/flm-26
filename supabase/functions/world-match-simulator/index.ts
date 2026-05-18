@@ -104,7 +104,6 @@ Deno.serve(async (req) => {
       for (const m of wMatches) {
         const hs = Math.max(30, m.home_team?.strength || 65) * 1.15;
         const as = Math.max(30, m.away_team?.strength || 65);
-        const as = Math.max(30, m.away_team?.strength || 65);
         const { home: hg, away: ag } = { home: Math.min(7, Math.floor(Math.random() * 3 + (hs / (hs+as) * 2))), away: Math.min(7, Math.floor(Math.random() * 3 + (as / (hs+as) * 2))) };
 
         const { data: hPlayers } = await sb.from('world_players').select('*').eq('team_id', m.home_team_id);
