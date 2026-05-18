@@ -1347,15 +1347,6 @@ function simulateFullMatch(
           });
         }
       }
-    }
-          p.isOnPitch = false;
-          allPlanned.push({
-            minute: m, type: 'injury', team: teamKey,
-            playerName: p.name, animType: 'foul',
-            description: `🏥 LESÃO! ${p.name} sente dores musculares e precisa ser substituído! O cansaço cobrou seu preço!`,
-          });
-        }
-      }
     };
     checkInjury(home, 'home');
     checkInjury(away, 'away');
