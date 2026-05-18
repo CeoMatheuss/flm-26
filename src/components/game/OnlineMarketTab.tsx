@@ -950,23 +950,45 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                     {filtered.map(l => {
                       const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
                       return (
-                        <div key={l.id} className="rounded-xl border border-cyan-500/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
-                          <div className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
-                            <span className={`text-xs font-black ${getOvrColor(l.player_overall)}`}>{l.player_overall}</span>
-                            <span className={`text-[7px] font-bold ${pos.text}`}>{l.player_position}</span>
+                        <div
+                          key={l.id}
+                          className="group relative rounded-xl overflow-hidden border-2 border-dashed border-cyan-500/40 hover:border-cyan-400/80 hover:shadow-[0_0_22px_-6px_hsl(190_85%_55%/0.55)] transition-all duration-300 animate-fade-in"
+                          style={{ background: 'hsl(var(--card))' }}
+                        >
+                          {/* Diagonal stripe banner */}
+                          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-cyan-500 via-sky-300 to-cyan-500" />
+                          <div className="absolute top-0 right-0 z-10">
+                            <div className="px-2 py-0.5 text-[8px] font-black tracking-widest uppercase rounded-bl-lg shadow-lg bg-cyan-500 text-cyan-950 flex items-center gap-1">
+                              <Handshake className="h-2.5 w-2.5" /> Empréstimo
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate">{l.player_name}</p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {l.player_age} anos • {l.seller_club_name}
-                            </p>
-                            <p className="text-[10px] text-cyan-400 font-semibold">
-                              💰 R$ {((l.salary || 0) / 1000).toFixed(0)}k/mês • ⏳ 1 temporada
-                            </p>
+
+                          <div className="flex items-center gap-2.5 p-3 pt-3.5">
+                            <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border} shrink-0`}>
+                              <span className={`text-sm font-black ${getOvrColor(l.player_overall)}`}>{l.player_overall}</span>
+                              <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{l.player_position}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold truncate">{l.player_name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">
+                                {l.player_age} anos • <span className="text-primary">{l.seller_club_name}</span>
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[9px] font-bold text-cyan-300">
+                                  <DollarSign className="h-2.5 w-2.5" /> R${((l.salary || 0) / 1000).toFixed(1)}k/mês
+                                </span>
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/30 text-[9px] font-bold text-sky-300">
+                                  <Timer className="h-2.5 w-2.5" /> 1 temporada
+                                </span>
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/30 border border-border/30 text-[9px] font-semibold text-muted-foreground">
+                                  Salário 100% pago pelo cessionário
+                                </span>
+                              </div>
+                            </div>
+                            <Button size="sm" className="h-8 px-2.5 text-[10px] rounded-lg gap-1 bg-cyan-600 hover:bg-cyan-500 text-white" disabled={loading} onClick={() => setNegotiateLoan(l)}>
+                              <Handshake className="h-3 w-3" /> Negociar
+                            </Button>
                           </div>
-                          <Button size="sm" className="h-8 px-2.5 text-[10px] rounded-lg gap-1" disabled={loading} onClick={() => setNegotiateLoan(l)}>
-                            <ArrowLeftRight className="h-3 w-3" /> Negociar
-                          </Button>
                         </div>
                       );
                     })}
