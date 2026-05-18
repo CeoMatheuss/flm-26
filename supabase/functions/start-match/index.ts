@@ -673,10 +673,10 @@ function simulateFullMatch(
     composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
     goalkeeping: p.attributes?.goalkeeping || 0, setPieces: p.attributes?.setPieces || 50,
     positioning: p.attributes?.positioning || 50,
-    fairPlay: p.attributes?.fairPlay || (100 - (p.attributes?.aggression || 50)), // Fallback derived
-    discipline: p.attributes?.discipline || 60,
-    intelligence: p.attributes?.intelligence || Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
-    emotionalControl: p.attributes?.emotionalControl || (p.attributes?.composure || 50),
+    fairPlay: p.attributes?.fairPlay ?? (100 - (p.attributes?.aggression || 50)), // Fallback derived
+    discipline: p.attributes?.discipline ?? 60,
+    intelligence: p.attributes?.intelligence ?? Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
+    emotionalControl: p.attributes?.emotionalControl ?? (p.attributes?.composure || 50),
     personality: p.personality || 'introvertido',
   }));
 
