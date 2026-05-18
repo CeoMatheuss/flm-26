@@ -513,7 +513,9 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       drawPitch();
 
       if (isIdle) {
-        drawAllPlayers(drift);
+        // Idle: Slow tactical shifting to keep the field "alive"
+        const tacticalShift = Math.sin(drift * 0.5) * 0.05;
+        drawAllPlayers(drift, false, 0, 0, 0, null, tacticalShift, 0.1);
         drawIdleOverlay(drift);
         animRef.current = requestAnimationFrame(animate);
         return;
