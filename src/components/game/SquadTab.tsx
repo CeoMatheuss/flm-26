@@ -941,17 +941,27 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             <div className="space-y-3 xl:col-span-4 w-full">
               <div className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-xl border border-white/5">
                 <div className="flex items-center gap-1">
-                  {(['starters', 'reserves', 'out'] as const).map((tab) => (
-                    <Button
-                      key={tab}
-                      variant={squadSubTab === tab ? 'default' : 'ghost'}
-                      size="sm"
-                      className="rounded-lg px-2 h-7 text-[8px] font-black uppercase tracking-widest whitespace-nowrap"
-                      onClick={() => setSquadSubTab(tab)}
-                    >
-                      {tab === 'starters' ? '11' : tab === 'reserves' ? 'BANCO' : 'OUT'}
-                    </Button>
-                  ))}
+                  {(['starters', 'reserves', 'out', 'injured', 'suspended'] as const).map((tab) => {
+                    const count = tab === 'starters' ? startersList.length : 
+                                 tab === 'reserves' ? reservesList.length : 
+                                 tab === 'injured' ? injuredList.length :
+                                 tab === 'suspended' ? suspendedList.length :
+                                 outList.length;
+                    
+                    if (count === 0 && (tab === 'injured' || tab === 'suspended')) return null;
+
+                    return (
+                      <Button
+                        key={tab}
+                        variant={squadSubTab === tab ? 'default' : 'ghost'}
+                        size="sm"
+                        className="rounded-lg px-2 h-7 text-[8px] font-black uppercase tracking-widest whitespace-nowrap"
+                        onClick={() => setSquadSubTab(tab)}
+                      >
+                        {tab === 'starters' ? '11' : tab === 'reserves' ? 'BANCO' : tab === 'injured' ? 'DM' : tab === 'suspended' ? 'SUSP' : 'OUT'}
+                      </Button>
+                    );
+                  })}
                 </div>
                 
                 <div className="flex items-center gap-2">
