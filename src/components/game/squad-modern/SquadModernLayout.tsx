@@ -195,6 +195,7 @@ export function SquadModernLayout({
   };
 
   const openLoanConfirm = (p: Player) => {
+    setPanelOpen(false); // Fechar o painel lateral ao abrir a confirmação
     const value = getPlayerValue(p);
     const listingFeeRate = 0.01;
     const agentFeeRate = 0.01;
