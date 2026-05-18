@@ -710,9 +710,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             )}
           </div>
 
-          {(() => {
+          {isLoadingListings && listings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary opacity-50" />
+              <p className="text-xs text-muted-foreground animate-pulse">Sincronizando mercado...</p>
+            </div>
+          ) : (() => {
             const filtered = filterListings(allMarketListings);
-
             const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
             const safePage = Math.min(currentPage, totalPages || 1);
             const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
@@ -723,6 +727,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 Nenhum jogador disponível no mercado online.
               </div>
             );
+
 
             return (
               <>
