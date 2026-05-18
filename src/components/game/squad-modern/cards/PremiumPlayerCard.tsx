@@ -169,10 +169,11 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
 }
 
 function StatMini({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+  const displayLabel = label === 'STAM' ? 'COND' : label === 'MOR' ? 'MOR' : label;
   return (
     <div className="flex flex-col gap-0.5">
       <div className="flex items-center gap-1 text-[8px] font-black text-white/30 uppercase tracking-tighter">
-        {icon} {label}
+        {icon} {displayLabel}
       </div>
       <div className="h-1 bg-white/5 rounded-full overflow-hidden">
         <motion.div 
