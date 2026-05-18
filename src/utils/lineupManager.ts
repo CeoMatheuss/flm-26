@@ -24,7 +24,7 @@ export const formationRequirements: Record<Formation, string[]> = {
 
 /**
  * Intelligent Lineup System
- * Automatically reorders players to find the best 11 starters and 7 balanced reserves.
+ * Automatically reorders players to find the best 11 starters and 11 balanced reserves.
  */
 export function autoLineup(players: Player[], formation: Formation): Player[] {
   const requirements = formationRequirements[formation];
@@ -109,7 +109,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   const finalStarters = starters.filter((p): p is Player => !!p);
 
-  // 3. Intelligent Balanced Reserves (7 slots)
+  // 3. Intelligent Balanced Reserves (11 slots)
   const reserves: Player[] = [];
   const remainingPlayers = allPlayers.filter(p => !used.has(p.id) && canPlayMatch(p));
 
@@ -122,9 +122,9 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   // Balanced logic: 2 Def, 2 Mid, 2 Atk or similar based on availability
   const slots = [
-    { pos: ['ZAG', 'LAT'], count: 2 },
-    { pos: ['VOL', 'MEI'], count: 2 },
-    { pos: ['ATA'], count: 2 }
+    { pos: ['ZAG', 'LAT'], count: 3 },
+    { pos: ['VOL', 'MEI'], count: 4 },
+    { pos: ['ATA'], count: 3 }
   ];
 
   slots.forEach(slot => {
@@ -139,12 +139,12 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     }
   });
 
-  // Fill remaining reserve slots (up to 7) with best remaining
+  // Fill remaining reserve slots (up to 11) with best remaining
   const leftForReserves = allPlayers
     .filter(p => !used.has(p.id) && canPlayMatch(p))
     .sort((a, b) => b.overall - a.overall);
   
-  while (reserves.length < 7 && leftForReserves.length > 0) {
+  while (reserves.length < 11 && leftForReserves.length > 0) {
     const p = leftForReserves.shift()!;
     reserves.push(p);
     used.add(p.id);
