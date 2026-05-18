@@ -321,28 +321,32 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   }, [club.players, suspendedPlayers]);
 
 
-  // Live countdown timer — sistema antigo: contagem regressiva de 5 minutos exatos
+  // Live countdown timer — sincronizado com o horário da liga (ScheduledAt)
   useEffect(() => {
     if (!nextMatch?.date || nextMatch.status === 'finished') return;
     const update = () => {
       const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
       
-      // Janela clássica de 5 minutos
+      // Janela clássica de 5 minutos APÓS o horário agendado para o lobby
       const LOBBY_WINDOW_MS = 5 * 60 * 1000;
       const diff = scheduledTime - now;
 
+      // Se o horário agendado já passou
       if (diff <= 0) {
+        // Se ainda estiver dentro da janela de 5 minutos
         if (Math.abs(diff) < LOBBY_WINDOW_MS) {
           setTimeLeft('🔴 AO VIVO');
           setIsReady(true);
         } else {
+          // Se passou dos 5 minutos e não iniciou, está sendo simulado pelo servidor
           setTimeLeft('⌛ SIMULANDO');
           setIsReady(false);
         }
         return;
       }
 
+      // Ainda não chegou no horário do jogo
       setIsReady(false);
       const totalSeconds = Math.floor(diff / 1000);
       const h = Math.floor(totalSeconds / 3600);
