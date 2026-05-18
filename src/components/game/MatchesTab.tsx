@@ -262,6 +262,8 @@ export function MatchesTab({
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }
