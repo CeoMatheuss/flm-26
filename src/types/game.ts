@@ -137,6 +137,8 @@ export interface Player {
     suspensionReason?: string;
     competitionType?: string;
   };
+  onTransferList?: boolean;
+  onLoanList?: boolean;
 }
 
 export interface Scout {
