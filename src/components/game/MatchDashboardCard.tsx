@@ -515,17 +515,29 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         )}
 
         <div className="flex flex-col gap-1.5 pt-1">
+          {suspendedInLineup.length > 0 && isReady && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded p-1.5 flex items-center gap-2 justify-center mx-2 mb-1">
+              <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+              <p className="text-[9px] text-red-200 font-bold leading-tight">
+                {suspendedInLineup.length} jogador(es) suspenso(s) escalado(s). Ajuste seu elenco!
+              </p>
+            </div>
+          )}
           <Button
             size="sm"
             variant={isReady ? 'default' : 'outline'}
             className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady ? 'animate-pulse' : ''}`}
             onClick={handleGoToMatch}
-            disabled={!isReady || nextMatch.status === 'finished'}
+            disabled={!isReady || nextMatch.status === 'finished' || suspendedInLineup.length > 0}
           >
             {nextMatch.status === 'finished' ? (
               <><X className="h-3.5 w-3.5" /> PARTIDA ENCERRADA</>
             ) : isReady ? (
-              <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
+              suspendedInLineup.length > 0 ? (
+                <><X className="h-3.5 w-3.5" /> JOGADOR SUSPENSO</>
+              ) : (
+                <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
+              )
             ) : (
               <><Eye className="h-3.5 w-3.5" /> AGUARDANDO HORÁRIO</>
             )}
