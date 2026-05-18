@@ -87,12 +87,15 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (error.message === 'Email not confirmed') {
+      if (error.message === 'Email not confirmed' || error.message?.includes('Email not confirmed')) {
         setPendingEmail(email);
         setStep('verify-email');
         startResendTimer();
-        toast.info('Email não confirmado. Verifique sua caixa de entrada.');
-        await supabase.auth.resend({ type: 'signup', email });
+        toast.info('Email não confirmado. Enviando código de verificação...');
+        // Envia o código customizado em vez do link do Supabase
+        await supabase.functions.invoke('auth-service', {
+          body: { action: 'send-code', email }
+        });
       } else {
         toast.error(error.message);
       }
