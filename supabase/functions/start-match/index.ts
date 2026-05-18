@@ -1918,6 +1918,16 @@ Deno.serve(async (req) => {
     let effAwayTeam: string = awayTeam;
     let effHomePlayers: any[] = Array.isArray(homePlayers) ? homePlayers : [];
     let effAwayPlayers: any[] | undefined = Array.isArray(awayPlayers) ? awayPlayers : undefined;
+
+    // Helper to fetch players from world_players if missing or incomplete
+    const fetchTeamPlayers = async (teamId: string) => {
+      const { data } = await adminClient
+        .from('world_players')
+        .select('*')
+        .eq('team_id', teamId)
+        .order('overall', { ascending: false });
+      return data || [];
+    };
     let effHomeStrength: number = validatedHomeStrength;
     let effAwayStrength: number = validatedAwayStrength;
     let effTactics: any = tactics || {};
