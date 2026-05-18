@@ -737,9 +737,40 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                     const shield = listing.seller_shield as any;
                     const pos = posColors[listing.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
 
+                    const isOwn = listing.seller_id === userId;
                     return (
-                      <div key={listing.id} className="rounded-xl border border-border/15 hover:border-primary/25 transition-all duration-300 overflow-hidden" style={{ background: 'hsl(var(--card))' }}>
-                        <div className={`flex items-center gap-2.5 p-3 bg-gradient-to-r ${getOvrBg(listing.player_overall)}`}>
+                      <div
+                        key={listing.id}
+                        className={cn(
+                          "group relative rounded-xl overflow-hidden transition-all duration-300 animate-fade-in",
+                          "border-2",
+                          isOwn
+                            ? "border-amber-400/60 shadow-[0_0_22px_-6px_hsl(45_90%_55%/0.55)]"
+                            : "border-emerald-500/40 hover:border-emerald-400/80 hover:shadow-[0_0_24px_-4px_hsl(150_70%_45%/0.55)]"
+                        )}
+                        style={{ background: 'hsl(var(--card))' }}
+                      >
+                        {/* Animated top ribbon */}
+                        <div className={cn(
+                          "absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r",
+                          isOwn
+                            ? "from-amber-500 via-yellow-400 to-amber-500"
+                            : "from-emerald-500 via-emerald-300 to-emerald-500",
+                          "animate-pulse"
+                        )} />
+                        {/* Corner status badge */}
+                        <div className="absolute top-0 right-0 z-10">
+                          <div className={cn(
+                            "px-2 py-0.5 text-[8px] font-black tracking-widest uppercase rounded-bl-lg shadow-lg flex items-center gap-1",
+                            isOwn
+                              ? "bg-amber-500 text-amber-950"
+                              : "bg-emerald-500 text-emerald-950"
+                          )}>
+                            {isOwn ? (<><Crown className="h-2.5 w-2.5" /> Seu Anúncio</>) : (<><Send className="h-2.5 w-2.5" /> À Venda</>)}
+                          </div>
+                        </div>
+
+                        <div className={`flex items-center gap-2.5 p-3 pt-3.5 bg-gradient-to-r ${getOvrBg(listing.player_overall)}`}>
                           <div className="shrink-0">
                             {shield ? (
                               <ShieldCrest primaryColor={shield.primaryColor} secondaryColor={shield.secondaryColor} pattern={shield.pattern} shape={shield.shape || 'classic'} size={28} />
@@ -752,15 +783,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                             <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{listing.player_position}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <p className="font-bold text-xs truncate">{listing.player_name}</p>
-                              {listing.seller_id === userId ? (
-                                <Badge variant="secondary" className="text-[7px] h-3.5 px-1.5 bg-primary text-black border-0 font-black">SEU ANÚNCIO</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-[7px] h-3.5 px-1.5 border-emerald-500/30 text-emerald-400 font-bold uppercase tracking-tighter">À Venda</Badge>
-                              )}
-                            </div>
-
+                            <p className="font-bold text-xs truncate">{listing.player_name}</p>
                             <button className="text-[10px] text-primary hover:underline cursor-pointer truncate block" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
                               {listing.seller_club_name}
                             </button>
@@ -769,14 +792,16 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                               <span>•</span>
                               <span className="flex items-center gap-0.5"><Zap className="h-2 w-2 text-emerald-400" /> {pd?.stamina ?? 100}%</span>
                               <span>•</span>
-                              <span className={cn("px-1 rounded-[2px] bg-muted/30 font-bold", posColors[listing.player_position]?.text)}>{listing.player_position}</span>
+                              <span className="flex items-center gap-0.5">😊 {pd?.morale ?? 80}%</span>
                               <span>•</span>
                               <span>{pd?.gamesPlayed ?? 0}j</span>
                               <span>⚽{pd?.goals ?? 0}</span>
                               <span>🅰️{pd?.assists ?? 0}</span>
                             </div>
+                            {pd?.salary != null && (
+                              <p className="text-[9px] text-muted-foreground mt-0.5">Salário: <span className="font-semibold text-foreground/90">R${(pd.salary / 1000).toFixed(1)}k</span>/mês</p>
+                            )}
                           </div>
-
 
                           {listing.transfer_count > 2 && (
                             <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 shrink-0 gap-0.5">
@@ -784,12 +809,14 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                             </Badge>
                           )}
                           <div className="shrink-0 text-right">
-                            <p className="text-sm font-black text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
-                            <div className="flex gap-1 mt-1.5">
-                              <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => openOfferDialog(listing)} disabled={loading || budget < listing.asking_price * 0.5 || listing.seller_id === userId}>
+                            <div className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 shadow-[0_0_12px_-4px_hsl(150_70%_45%/0.6)]">
+                              <p className="text-[7px] uppercase tracking-wider text-emerald-300/80 font-bold leading-none">Pedido</p>
+                              <p className="text-sm font-black text-emerald-300 leading-tight">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+                            </div>
+                            <div className="flex gap-1 mt-1.5 justify-end">
+                              <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1 bg-emerald-600 hover:bg-emerald-500 text-white" onClick={() => openOfferDialog(listing)} disabled={loading || budget < listing.asking_price * 0.5 || isOwn}>
                                 <Send className="h-3 w-3" /> Proposta
                               </Button>
-
                               <Button size="sm" variant="outline" className="h-7 px-2 text-[9px] rounded-lg" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
                                 <Eye className="h-3 w-3" />
                               </Button>
