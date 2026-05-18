@@ -91,11 +91,38 @@ export function SquadModernLayout({
     }
   }, [youthProspects.length, activeTab]);
 
+  // Derive starter set from squad_status when available; fallback to first 11.
   const starterIds = useMemo(() => {
     const ids = new Set<string>();
-    players.slice(0, 11).forEach(p => ids.add(p.id));
+    const explicit = players.filter(p => (p as any).squad_status === 'starter');
+    if (explicit.length > 0) {
+      explicit.forEach(p => ids.add(p.id));
+    } else {
+      players.slice(0, 11).forEach(p => ids.add(p.id));
+    }
     return ids;
   }, [players]);
+
+  // Sincroniza Juniores: prospects do banco + jogadores do elenco marcados como isYouth (base).
+  const mergedYouthProspects = useMemo(() => {
+    const byId = new Map<string, YouthProspect>();
+    (youthProspects || []).forEach(yp => byId.set(yp.id, yp));
+    (players || []).forEach(p => {
+      const raw = p as any;
+      const isBaseYouth = !!raw.isYouth && raw.contractStatus !== 'profissional';
+      if (!isBaseYouth || byId.has(p.id)) return;
+      byId.set(p.id, {
+        ...(p as any),
+        potential: Number(raw.potential ?? Math.max(50, (p.overall ?? 45) + 5)),
+        monthsInAcademy: Number(raw.monthsInAcademy ?? 0),
+        contractStatus: raw.contractStatus ?? 'base',
+        nationality: raw.country ?? raw.nationality ?? 'Brasil',
+        rarity: raw.rarity ?? 'comum',
+        dominantFoot: raw.dominantFoot ?? 'right',
+      } as YouthProspect);
+    });
+    return Array.from(byId.values());
+  }, [players, youthProspects]);
 
   const selectedPlayer = useMemo(
     () => players.find(p => p.id === selectedId) ?? null,
@@ -345,7 +372,7 @@ export function SquadModernLayout({
                     {activeTab === 'base' ? (
                       <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
                          <YouthAcademyModernTab
-                           prospects={youthProspects}
+                           prospects={mergedYouthProspects}
                            onPromote={onPromoteYouth}
                            monthlyInvestment={youthInvestment}
                            onSetInvestment={onSetYouthInvestment}

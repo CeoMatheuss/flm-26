@@ -60,21 +60,35 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
 
   const filtered = useMemo(() => {
     return players.filter(p => {
-      const isStarter = starterIds.has(p.id);
+      const raw = p as any;
+      const ss = raw.squad_status as string | undefined;
+      const isStarter = starterIds.has(p.id) || ss === 'starter';
       const isNegotiating = negotiations[p.id];
       const status = getPlayerStatus(p, isStarter, isNegotiating);
-      const isBaseYouth = (p as any).isYouth && (p as any).contractStatus !== 'profissional';
-      
+      const isBaseYouth = !!raw.isYouth && raw.contractStatus !== 'profissional';
+
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
 
+      // Unavailable status takes precedence over any tab classification.
+      const unavailable =
+        status === 'lesionado' || status === 'suspenso' || status === 'emprestado' ||
+        status === 'lista-transferencia' || status === 'afastado' || status === 'indisponivel' || !!p.injury;
+
       switch (activeTab) {
-        case 'titulares': return isStarter && status !== 'lesionado' && status !== 'suspenso';
-        // Reservas: profissionais/promovidos disponíveis fora do XI titular; atletas da base ficam na aba Juniores.
-        case 'reservas': return !isStarter && !isBaseYouth && (status === 'reserva' || status === 'promessa');
-        case 'fora': return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
-        case 'suspensos': return status === 'suspenso';
-        case 'emprestados': return status === 'emprestado';
-        default: return true;
+        case 'titulares':
+          return isStarter && !unavailable;
+        // Reservas: TODOS os não-titulares profissionais disponíveis (banco + reservas).
+        // Atletas da base (isYouth) ficam exclusivamente na aba Juniores.
+        case 'reservas':
+          return !isStarter && !isBaseYouth && !unavailable;
+        case 'fora':
+          return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
+        case 'suspensos':
+          return status === 'suspenso';
+        case 'emprestados':
+          return status === 'emprestado';
+        default:
+          return true;
       }
     }).sort((a, b) => {
       // Regra de Ouro: Organização fixa por posição
@@ -91,7 +105,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
       if (sortBy === 'value') return getPlayerValue(b) - getPlayerValue(a);
       return 0;
     });
-  }, [players, starterIds, activeTab, search, sortBy]);
+  }, [players, starterIds, activeTab, search, sortBy, negotiations]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden min-w-[700px]">
