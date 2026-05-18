@@ -294,6 +294,7 @@ export function SquadModernLayout({
     adminFee?: number;
     total?: number;
     renewalProposal?: { salary: number; bonus: number; duration: number };
+    promotionProposal?: { salary: number; bonus: number; duration: number };
   }>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -336,9 +337,18 @@ export function SquadModernLayout({
     const { type, player, value, total } = confirmAction;
 
     if (type === 'promote-youth') {
+      if (!confirmAction.promotionProposal) return;
+      const proposal = confirmAction.promotionProposal;
+      
       setSubmitting(true);
       try {
         await onPromoteYouth(player.id);
+        
+        // Atualizar contrato e salário conforme escolhido
+        const updated = players.map(pl => 
+          pl.id === player.id ? { ...pl, salary: proposal.salary, contract: proposal.duration } : pl
+        );
+        onUpdatePlayers(updated);
         
         // Publicar no jornal
         await supabase.from('newspaper_entries').insert({
@@ -350,7 +360,9 @@ export function SquadModernLayout({
             club_name: clubName,
             player_name: player.name,
             player_overall: player.overall,
-            player_position: player.position
+            player_position: player.position,
+            contract_salary: proposal.salary,
+            contract_duration: proposal.duration
           }
         });
 
@@ -513,7 +525,15 @@ export function SquadModernLayout({
         }
         break;
       case 'promote-youth':
-        setConfirmAction({ type: 'promote-youth', player: p });
+        setConfirmAction({ 
+          type: 'promote-youth', 
+          player: p,
+          promotionProposal: {
+            salary: 500,
+            bonus: 0,
+            duration: 3
+          }
+        });
         break;
     }
   };
@@ -937,21 +957,43 @@ export function SquadModernLayout({
                       ))}
                     </div>
                   </div>
-                ) : confirmAction.type === 'promote-youth' ? (
+                ) : confirmAction.type === 'promote-youth' && confirmAction.promotionProposal ? (
                   <div className="space-y-4">
                     <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Contrato Profissional</p>
                     <div className="p-5 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 space-y-4">
                       <p className="text-sm text-white/80 leading-relaxed">
-                        Deseja assinar o primeiro contrato profissional de <strong>{confirmAction.player.name}</strong>?
+                        Defina os termos do primeiro contrato profissional de <strong>{confirmAction.player.name}</strong>:
                       </p>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="p-3 rounded-xl bg-zinc-950/50 border border-white/5">
                           <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Salário Profissional</p>
-                          <p className="text-sm font-black text-emerald-400">{formatMoney(500)}/s</p>
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="number"
+                              value={confirmAction.promotionProposal.salary}
+                              onChange={(e) => setConfirmAction({
+                                ...confirmAction,
+                                promotionProposal: { ...confirmAction.promotionProposal!, salary: Number(e.target.value) }
+                              })}
+                              className="bg-transparent text-sm font-black text-emerald-400 outline-none w-full"
+                            />
+                            <span className="text-[10px] text-white/20">/s</span>
+                          </div>
                         </div>
                         <div className="p-3 rounded-xl bg-zinc-950/50 border border-white/5">
-                          <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Duração</p>
-                          <p className="text-sm font-black text-sky-400">3 Temporadas</p>
+                          <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Duração (Anos)</p>
+                          <select 
+                            value={confirmAction.promotionProposal.duration}
+                            onChange={(e) => setConfirmAction({
+                              ...confirmAction,
+                              promotionProposal: { ...confirmAction.promotionProposal!, duration: Number(e.target.value) }
+                            })}
+                            className="bg-transparent text-sm font-black text-sky-400 outline-none w-full"
+                          >
+                            {[1, 2, 3, 4, 5].map(y => (
+                              <option key={y} value={y} className="bg-zinc-900">{y} Temporadas</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                       <p className="text-[10px] text-white/40 italic">
