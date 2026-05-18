@@ -36,7 +36,7 @@ export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPla
               e.stopPropagation();
               onOpenQuickSwap?.();
             }}
-            className="w-12 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 hover:scale-105"
+            className="w-12 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 hover:scale-110"
             title="Troca Rápida"
           >
             <img src={swapIcon} alt="Trocar" className="w-9 h-9 object-contain drop-shadow-lg" />
