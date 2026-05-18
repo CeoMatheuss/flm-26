@@ -30,6 +30,12 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const requirements = formationRequirements[formation];
   if (!requirements) return players;
 
+  // Garantir que a formação sempre comece com GOL
+  const safeRequirements = [...requirements];
+  if (safeRequirements[0] !== 'GOL') {
+    safeRequirements[0] = 'GOL';
+  }
+
   const canPlayMatch = (player: Player) => {
     const raw = player as any;
     const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
