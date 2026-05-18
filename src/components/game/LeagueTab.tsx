@@ -147,11 +147,11 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         setFixtures(enhancedFixtures);
       }
 
-      // 3. Load Player Stats
+      // 3. Load Player Stats from the new Stats Engine
       const { data: statsData } = await supabase
-        .from('world_player_stats')
+        .from('player_competition_stats')
         .select('*, player:world_players(name, position), team:world_teams(name, logo)')
-        .eq('league_id', teamData.league_id)
+        .eq('competition_id', teamData.league_id)
         .order('goals', { ascending: false })
         .limit(50);
       
@@ -172,7 +172,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_table' }, () => loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'world_leagues' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_player_stats' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'player_competition_stats' }, () => loadData())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -213,7 +213,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
   }, [playerStats]);
 
   const topRatings = useMemo(() => {
-    return [...playerStats].filter(s => s.matches_played >= 3).sort((a, b) => b.avg_rating - a.avg_rating).slice(0, 10);
+    return [...playerStats].filter(s => s.games_played >= 3).sort((a, b) => b.avg_rating - a.avg_rating).slice(0, 10);
   }, [playerStats]);
 
   if (loading && standings.length === 0) {
@@ -526,7 +526,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-black text-primary">{s.goals} ⚽</p>
-                        <p className="text-[9px] text-muted-foreground">{s.matches_played} jogos</p>
+                        <p className="text-[9px] text-muted-foreground">{s.games_played} jogos</p>
                       </div>
                     </div>
                   ))}
@@ -556,7 +556,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-black text-blue-500">{s.assists} 👟</p>
-                        <p className="text-[9px] text-muted-foreground">MD {s.matches_played}</p>
+                        <p className="text-[9px] text-muted-foreground">MD {s.games_played}</p>
                       </div>
                     </div>
                   ))}
