@@ -25,6 +25,7 @@ export function useAutoSimulator(userId: string | undefined) {
 
     return () => clearInterval(interval);
   }, [userId]);
+}
 
 export function triggerAutoSim() {
   // Centralized trigger for all simulation engines
