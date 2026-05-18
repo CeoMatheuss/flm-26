@@ -895,13 +895,17 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         const dir = isHome ? 1 : -1;
         const wingY = H * 0.88; // near bottom touchline
         const crossTarget = { x: shooterPos.x, y: shooterPos.y };
+        const attTeam = team;
 
         if (t < 0.25) {
           const passT = t / 0.25;
           const startX = isHome ? W * 0.35 : W * 0.65;
           const wingX = isHome ? W * 0.72 : W * 0.28;
           const runX = startX + (wingX - startX) * easeOut(passT);
-          drawAllPlayers(drift * 0.5, true, runX, wingY, 15 * easeOut(passT));
+          
+          // Moderate pressure during build-up
+          drawAllPlayers(drift * 0.5, true, runX, wingY, 0, attTeam, 0.4 * passT, 0.3 * passT);
+          
           // Midfielder passes to winger
           drawPlayer(startX, H * 0.6, teamColor, teamLight, '8', 8, passT < 0.3);
           drawPlayer(runX, wingY, teamColor, teamLight, '7', 9, passT > 0.4, 'Ponta');
@@ -916,7 +920,8 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           const runX = wingStartX + (bylineX - wingStartX) * easeOut(runT);
           const runY = wingY - runT * 15; // slight inside cut
 
-          drawAllPlayers(drift * 0.4, true, runX, runY, 25);
+          // High pressure as winger approaches byline
+          drawAllPlayers(drift * 0.4, true, runX, runY, 0, attTeam, 0.6, 0.5);
 
           // Winger with ball
           drawPlayer(runX, runY, teamColor, teamLight, '7', 10, true, 'Ponta');
@@ -937,17 +942,19 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
 
         } else if (t < 0.60) {
           // Cross delivery — ball arcs from wing to box
-          const crossT = (t - 0.42) / 0.18;
+          const crossT = (crossTarget.x - (isHome ? W * 0.88 : W * 0.12)) / (shooterPos.x - (isHome ? W * 0.88 : W * 0.12)); // Simplified
+          const currentCrossT = (t - 0.42) / 0.18;
           const crossFromX = isHome ? W * 0.88 : W * 0.12;
           const crossFromY = wingY - 15;
 
-          drawAllPlayers(drift * 0.3, true, crossTarget.x, crossTarget.y, 30);
+          // Maximum pressure in the box during the cross
+          drawAllPlayers(drift * 0.3, true, crossTarget.x, crossTarget.y, 0, attTeam, 0.8, 0.85);
 
           // Winger after cross
-          drawPlayer(crossFromX, crossFromY, teamColor, teamLight, '7', 9, crossT < 0.2, 'Ponta');
+          drawPlayer(crossFromX, crossFromY, teamColor, teamLight, '7', 9, currentCrossT < 0.2, 'Ponta');
 
           // Attacker running to meet cross
-          const headerRunX = crossTarget.x - dir * 15 * (1 - easeOut(crossT));
+          const headerRunX = crossTarget.x - dir * 15 * (1 - easeOut(currentCrossT));
           drawPlayer(headerRunX, crossTarget.y, teamColor, teamLight, '9', 10, true, playerName);
 
           // Defenders trying to clear
@@ -959,20 +966,20 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawPlayer(gkBaseX, goalY, gkColor, gkLight, 'GK', 9);
 
           // Curved ball flight
-          drawCurvedPass(crossFromX, crossFromY, crossTarget.x, crossTarget.y, crossT, -50);
+          drawCurvedPass(crossFromX, crossFromY, crossTarget.x, crossTarget.y, currentCrossT, -50);
           // Ball along arc
           const cpX = (crossFromX + crossTarget.x) / 2;
           const cpY = (crossFromY + crossTarget.y) / 2 - 50;
-          const bct = easeOut(crossT);
+          const bct = easeOut(currentCrossT);
           const bx = (1 - bct) * (1 - bct) * crossFromX + 2 * (1 - bct) * bct * cpX + bct * bct * crossTarget.x;
           const by = (1 - bct) * (1 - bct) * crossFromY + 2 * (1 - bct) * bct * cpY + bct * bct * crossTarget.y;
           drawBall(bx, by, 1.1, drift * 8, true);
-          drawEventLabel(crossT, '📐 CRUZAMENTO NA ÁREA!');
+          drawEventLabel(currentCrossT, '📐 CRUZAMENTO NA ÁREA!');
 
         } else if (t < 0.75) {
           // Header/volley
           const headT = (t - 0.60) / 0.15;
-          drawAllPlayers(drift * 0.25, true, goalX, goalY, 30);
+          drawAllPlayers(drift * 0.25, true, goalX, goalY, 0, attTeam, 0.9, 0.9);
 
           // Header: player jumps (y offset)
           const jumpY = shooterPos.y - Math.sin(easeOut(headT) * Math.PI) * 18;
@@ -995,9 +1002,9 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(headT, '⬆️ CABECEIO!', playerName);
 
         } else {
-          // Aftermath — outcome-aware (crossing can be header goal, save, miss)
+          // Aftermath
           const afterT = (t - 0.75) / 0.25;
-          drawAllPlayers(drift * 0.15);
+          drawAllPlayers(drift * 0.15, false, 0, 0, 0, attTeam, 0.4 * (1 - afterT), 0.3 * (1 - afterT));
           drawPlayer(shooterPos.x, shooterPos.y, teamColor, teamLight, '9', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
           drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 18 : 0), gkColor, gkLight, 'GK', 9);
