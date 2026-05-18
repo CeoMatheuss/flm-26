@@ -255,12 +255,16 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       .on('postgres_changes', { event: '*', schema: 'public', table: 'player_negotiations', filter: `user_id=eq.${userId}` }, () => { loadMyRenewals(); })
       .subscribe();
 
+    const backupInterval = setInterval(loadListings, 30000); // 1 min backup refresh
+
     return () => { 
       supabase.removeChannel(ch1); 
       supabase.removeChannel(ch2); 
       supabase.removeChannel(ch3);
       supabase.removeChannel(ch4);
+      clearInterval(backupInterval);
     };
+
   }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, loadMyRenewals, resolveDecisions, userId]);
 
   const listPlayer = async (player: Player) => {
