@@ -49,6 +49,7 @@ export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenC
           <PlayerDetailContent
             player={player}
             status={status ?? 'reserva'}
+            onSwap={onSwap}
             delta={delta}
             onClose={() => onOpenChange(false)}
             onAction={onAction}
