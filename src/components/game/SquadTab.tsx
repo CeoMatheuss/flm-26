@@ -1098,58 +1098,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 <TabsContent value="suspended" className="mt-2 space-y-1.5">
                   {suspendedList.map(({ player }) => renderPlayerRow(player, 'suspended'))}
                 </TabsContent>
-                          if (pendingSwap && pendingSwap.from === 'starters') {
-                            completeSwap(player.id);
-                          } else {
-                            setViewingPlayer(player);
-                          }
-                        }}
-                        onSwap={(p) => startSwap(p, 'reserves')}
-                        isPendingSwap={pendingSwap?.player.id === player.id}
-                      />
-                    ))
-                  )}
-                </TabsContent>
-                <TabsContent value="injured" className="mt-2 space-y-1.5">
-                  {injuredList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => setViewingPlayer(player)}
-                    />
-                  ))}
-                </TabsContent>
-
-                <TabsContent value="suspended" className="mt-2 space-y-1.5">
-                  {suspendedList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => setViewingPlayer(player)}
-                    />
-                  ))}
-                </TabsContent>
-                <TabsContent value="out" className="mt-2 space-y-1.5">
-                  {outList.length === 0 ? (
-                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Vazio</div>
-                  ) : (
-                    outList.map(({ player }) => (
-                      <SquadCard 
-                        key={player.id} 
-                        player={player} 
-                        onClick={() => {
-                          if (pendingSwap && pendingSwap.from === 'starters') {
-                            completeSwap(player.id);
-                          } else {
-                            setViewingPlayer(player);
-                          }
-                        }}
-                        onSwap={(p) => startSwap(p, 'out')}
-                        isPendingSwap={pendingSwap?.player.id === player.id}
-                      />
-                    ))
-                  )}
-                </TabsContent>
               </Tabs>
             </div>
           </div>
