@@ -112,12 +112,12 @@ Deno.serve(async (req) => {
         for (let i = 0; i < hg; i++) {
             const scorer = pickPlayerByRole(homePlayers, 'finishing');
             const assister = Math.random() < 0.7 ? pickPlayerByRole(homePlayers.filter(p => p.id !== scorer?.id), 'creation') : null;
-            match_data_stats.homeScorers.push({ name: scorer?.name, id: scorer?.id, assist: assister?.name });
+            match_data_stats.homeScorers.push({ name: scorer?.name, id: scorer?.id, assist: assister?.name, assistId: assister?.id });
         }
         for (let i = 0; i < ag; i++) {
             const scorer = pickPlayerByRole(awayPlayers, 'finishing');
             const assister = Math.random() < 0.7 ? pickPlayerByRole(awayPlayers.filter(p => p.id !== scorer?.id), 'creation') : null;
-            match_data_stats.awayScorers.push({ name: scorer?.name, id: scorer?.id, assist: assister?.name });
+            match_data_stats.awayScorers.push({ name: scorer?.name, id: scorer?.id, assist: assister?.name, assistId: assister?.id });
         }
 
         // Update Match with synced=false (Trigger trigger_update_standings will handle the sync)
