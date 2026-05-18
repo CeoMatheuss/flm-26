@@ -1079,8 +1079,24 @@ function simulateFullMatch(
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const opp = team === 'home' ? awayTeam : homeTeam;
+    
     const attacker = pickByRole(allPlayers.filter(p => p.team === team && p.isOnPitch), 'dribble');
     const defender = pickByRole(allPlayers.filter(p => p.team !== team && p.isOnPitch), 'tackle');
+    
+    if (defender) {
+      // Nem toda dividida é falta. Jogadores com bom posicionamento e inteligência roubam a bola limpa.
+      const tackleSkill = (defender.defending * 0.4 + defender.intelligence * 0.3 + defender.positioning * 0.3) * formMult(defender);
+      const dribbleSkill = (attacker?.dribbling || 50) * formMult(attacker);
+      
+      const foulChance = clamp(0.4 + (dribbleSkill - tackleSkill) / 100 + (defender.aggression / 200), 0.1, 0.8);
+      
+      if (rng() > foulChance) {
+        // Desarme limpo! Não gera evento de falta perigosa.
+        stats.tackles[teamIdx === 0 ? 1 : 0]++;
+        continue;
+      }
+    }
+
     stats.fouls[teamIdx === 0 ? 1 : 0]++;
     allPlanned.push({
       minute: m, type: 'dangerous_foul', team,
