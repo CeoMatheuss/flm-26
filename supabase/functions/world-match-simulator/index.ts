@@ -40,10 +40,10 @@ Deno.serve(async (req) => {
 
     if (errSched) debug.push({ stage: "select_scheduled", err: errSched.message });
 
-    // Stuck "simulating" matches (older than 15min)
+    // Stuck "live" matches (older than 15min) — failed prior simulations
     const { data: stuckMatches, error: errStuck } = await sb.from("world_matches")
       .select("*, home_team:world_teams!world_matches_home_team_id_fkey(id,name,strength), away_team:world_teams!world_matches_away_team_id_fkey(id,name,strength)")
-      .eq("status", "simulating")
+      .eq("status", "live")
       .lte("scheduled_at", stuckCut)
       .limit(BATCH_SIZE);
 
