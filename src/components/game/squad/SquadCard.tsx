@@ -79,15 +79,6 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
               </div>
             )}
             <div className="absolute -bottom-1 -right-1 z-20">
-               {isEvolving ? (
-                <div className="bg-emerald-500 rounded-full p-0.5 shadow-lg border border-white/20" title="Evoluindo">
-                  <TrendingUp className="w-3 h-3 text-white" />
-                </div>
-              ) : isDeclining ? (
-                <div className="bg-red-500 rounded-full p-0.5 shadow-lg border border-white/20" title="Declinando">
-                  <TrendingDown className="w-3 h-3 text-white" />
-                </div>
-              ) : null}
             </div>
           </div>
 
