@@ -231,7 +231,7 @@ export function generateInitialSquad(clubName?: string, tier: 'strong' | 'medium
     }
     
     // Add market value
-    p.marketValue = getPlayerBaseValue(p);
+    p.marketValue = getPlayerValue(p);
     
     return p;
   });
@@ -289,7 +289,10 @@ export function generateFreeAgents(count: number): Player[] {
   });
 }
 
-// getPlayerValue and getPlayerBaseValue are now defined at the end of the file.
+export function getPlayerBaseValue(player: Player): number {
+  return getPlayerValue(player);
+}
+
 
 
 
