@@ -145,16 +145,25 @@ export function SquadModernLayout({
     }
   }, [youthProspects.length, activeTab]);
 
-  // Derive starter set from squad_status when available; fallback to first 11.
-  const starterIds = useMemo(() => {
-    const ids = new Set<string>();
-    const explicit = players.filter(p => (p as any).squad_status === 'starter');
-    if (explicit.length > 0) {
-      explicit.forEach(p => ids.add(p.id));
-    } else {
-      players.slice(0, 11).forEach(p => ids.add(p.id));
+  // Derive starter and bench sets from squad_status when available.
+  // 11 Starters + 11 Balanced Reserves.
+  const { starterIds, benchIds } = useMemo(() => {
+    const sIds = new Set<string>();
+    const bIds = new Set<string>();
+    
+    players.forEach(p => {
+      const ss = (p as any).squad_status;
+      if (ss === 'starter') sIds.add(p.id);
+      else if (ss === 'bench') bIds.add(p.id);
+    });
+
+    // Fallback if status not explicitly set
+    if (sIds.size === 0) {
+      players.slice(0, 11).forEach(p => sIds.add(p.id));
+      players.slice(11, 22).forEach(p => bIds.add(p.id));
     }
-    return ids;
+
+    return { starterIds: sIds, benchIds: bIds };
   }, [players]);
 
   // Sincroniza Juniores: prospects do banco + jogadores do elenco marcados como isYouth (base).
