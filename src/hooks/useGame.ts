@@ -79,13 +79,9 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
 
   // 🔄 Reconstrói elenco completo: profissionais + juniores + banco + tática.
   useEffect(() => {
-    // Se o elenco estiver vazio, forçamos a geração inicial baseada no initialClub
-    if (clubState.club.players.length === 0) {
-      console.log('[useGame] Elenco vazio detectado. Forçando regeneração completa.');
-      const initialSquad = require('@/utils/playerGenerator').generateInitialSquad(clubState.club.name || 'Meu Clube', 'medium');
-      clubState.setClub(prev => ({ ...prev, players: initialSquad }));
-      return;
-    }
+    // Se o elenco estiver vazio, o initialClub carregará o padrão, mas forçamos reconstrução se necessário
+    if (clubState.club.players.length === 0 && infraState.youthProspects.length === 0) return;
+
 
     const rebuiltPlayers = rebuildClubSquad(clubState.club.players, infraState.youthProspects, tactics.formation);
     const rebuiltTactics = syncTacticsWithSquad(tactics, rebuiltPlayers);
