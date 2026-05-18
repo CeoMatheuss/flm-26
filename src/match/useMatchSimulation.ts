@@ -58,6 +58,7 @@ export interface MatchState {
   currentMoment: string;
   playerStamina: Record<string, number>;
   assistantTips: SimEvent[];
+  resumeFromBreak: () => void;
   onAnimationComplete?: () => void;
 }
 
