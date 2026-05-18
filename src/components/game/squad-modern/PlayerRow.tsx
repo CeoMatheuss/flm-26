@@ -50,11 +50,6 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
         <div className={cn('absolute inset-0 opacity-10 bg-gradient-to-br', tier.bg)} />
         <span className={cn('text-lg font-black italic leading-none z-10 flex items-center gap-0.5', tier.color)}>
           {player.overall}
-          {overallDelta !== 0 && (
-            <span className="shrink-0">
-              {overallDelta > 0 ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}
-            </span>
-          )}
         </span>
         <span className="text-[7px] uppercase font-black tracking-widest text-white/40 mt-0.5 z-10">OVR</span>
       </div>
