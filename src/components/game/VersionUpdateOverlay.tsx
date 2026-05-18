@@ -13,7 +13,7 @@ interface Props {
  * Bloqueia interação com o jogo (simulação, transferências, etc).
  */
 export function VersionUpdateOverlay({ state, onRollback }: Props) {
-  if (state.status === 'ready' || state.status === 'checking') return null;
+  if (state.status === 'ready' || state.status === 'checking' || state.status === 'observation') return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm p-4">
@@ -21,18 +21,12 @@ export function VersionUpdateOverlay({ state, onRollback }: Props) {
         <div className="flex items-center gap-3">
           {state.status === 'failed' ? (
             <AlertTriangle className="h-8 w-8 text-destructive" />
-          ) : state.status === 'observation' ? (
-            <ShieldCheck className="h-8 w-8 text-success" />
           ) : (
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
           )}
           <div>
             <h2 className="text-lg font-bold">
-              {state.status === 'failed'
-                ? 'Falha na atualização'
-                : state.status === 'observation'
-                ? 'Atualização concluída'
-                : 'Atualizando seu jogo...'}
+              {state.status === 'failed' ? 'Falha na atualização' : 'Atualizando seu jogo...'}
             </h2>
             <Badge variant="outline" className="mt-1 text-xs">
               {state.userVersion} → {state.gameVersion}
@@ -66,12 +60,6 @@ export function VersionUpdateOverlay({ state, onRollback }: Props) {
               </Button>
             </div>
           </>
-        )}
-
-        {state.status === 'observation' && (
-          <Button className="w-full" onClick={() => window.location.reload()}>
-            Continuar
-          </Button>
         )}
       </div>
     </div>
