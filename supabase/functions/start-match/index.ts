@@ -674,65 +674,69 @@ function simulateFullMatch(
   const assistantSkill = hasAssistant ? (staffData.find((s: any) => s.role === 'assistente')?.skill || 5) : 0;
 
   // ── BUILD PLAYERS ──────────────────────────────────────────
-  const home: SimPlayer[] = homePlayers.slice(0, 11).map((p: any, i: number) => ({
-    id: p.id, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
-    position: p.position || 'MEI', team: 'home' as const, ovr: p.overall || 60,
-    rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, isOnPitch: true, injured: false,
-    stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
-    age: p.age || 25,
-    speed: p.attributes?.speed || 50, shooting: p.attributes?.shooting || 50,
-    passing: p.attributes?.passing || 50, defending: p.attributes?.defending || 50,
-    physical: p.attributes?.physical || 50, dribbling: p.attributes?.dribbling || 50,
-    heading: p.attributes?.heading || 50, marking: p.attributes?.marking || 50,
-    vision: p.attributes?.vision || 50, crossing: p.attributes?.crossing || 50,
-    longShots: p.attributes?.longShots || 50, workRate: p.attributes?.workRate || 50,
-    composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
-    goalkeeping: p.attributes?.goalkeeping || 0, setPieces: p.attributes?.setPieces || 50,
-    positioning: p.attributes?.positioning || 50,
-    fairPlay: p.attributes?.fairPlay ?? (100 - (p.attributes?.aggression || 50)), // Fallback derived
-    discipline: p.attributes?.discipline ?? 60,
-    intelligence: p.attributes?.intelligence ?? Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
-    emotionalControl: p.attributes?.emotionalControl ?? (p.attributes?.composure || 50),
-    personality: p.personality || 'introvertido',
-  }));
+  const mapPlayer = (p: any, i: number, team: 'home' | 'away'): SimPlayer => {
+    const pPos = p.position || 'MEI';
+    const pOvr = p.overall || 60;
+    return {
+      id: p.id || `${team}-${i}`, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
+      position: pPos, team, ovr: pOvr,
+      rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, isOnPitch: false, injured: false,
+      stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
+      age: p.age || 25,
+      speed: p.attributes?.speed || pOvr, shooting: p.attributes?.shooting || pOvr,
+      passing: p.attributes?.passing || pOvr, defending: p.attributes?.defending || pOvr,
+      physical: p.attributes?.physical || pOvr, dribbling: p.attributes?.dribbling || pOvr,
+      heading: p.attributes?.heading || pOvr, marking: p.attributes?.marking || pOvr,
+      vision: p.attributes?.vision || pOvr, crossing: p.attributes?.crossing || pOvr,
+      longShots: p.attributes?.longShots || pOvr, workRate: p.attributes?.workRate || pOvr,
+      composure: p.attributes?.composure || pOvr, aggression: p.attributes?.aggression || pOvr,
+      goalkeeping: p.attributes?.goalkeeping || (pPos === 'GOL' ? pOvr : 0),
+      setPieces: p.attributes?.setPieces || pOvr, positioning: p.attributes?.positioning || pOvr,
+      fairPlay: p.attributes?.fairPlay ?? (100 - (p.attributes?.aggression || 50)),
+      discipline: p.attributes?.discipline ?? 60,
+      intelligence: p.attributes?.intelligence ?? Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
+      emotionalControl: p.attributes?.emotionalControl ?? (p.attributes?.composure || 50),
+      personality: p.personality || 'introvertido',
+      squadStatus: p.squad_status || (i < 11 ? 'starter' : i < 18 ? 'bench' : 'reserve')
+    };
+  };
 
-  const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
+  const homeSquad = homePlayers.map((p, i) => {
+    const sp = mapPlayer(p, i, 'home');
+    if (sp.squadStatus === 'starter') sp.isOnPitch = true;
+    return sp;
+  });
+
+  // Ensure 11 starters
+  if (homeSquad.filter(p => p.isOnPitch).length < 11) {
+    homeSquad.slice(0, 11).forEach(p => p.isOnPitch = true);
+  }
+
   const useRealAway = Array.isArray(awayPlayersInput) && awayPlayersInput.length >= 11;
-  const away: SimPlayer[] = useRealAway
-    ? awayPlayersInput!.slice(0, 11).map((p: any, i: number) => ({
-        id: p.id || `a${i}`, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
-        position: p.position || 'MEI', team: 'away' as const, ovr: p.overall || 60,
-        rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, isOnPitch: true, injured: false,
-        stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
-        age: p.age || 25,
-        speed: p.attributes?.speed || 50, shooting: p.attributes?.shooting || 50,
-        passing: p.attributes?.passing || 50, defending: p.attributes?.defending || 50,
-        physical: p.attributes?.physical || 50, dribbling: p.attributes?.dribbling || 50,
-        heading: p.attributes?.heading || 50, marking: p.attributes?.marking || 50,
-        vision: p.attributes?.vision || 50, crossing: p.attributes?.crossing || 50,
-        longShots: p.attributes?.longShots || 50, workRate: p.attributes?.workRate || 50,
-        composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
-        goalkeeping: p.attributes?.goalkeeping || (p.position === 'GOL' ? 60 : 0),
-        setPieces: p.attributes?.setPieces || 50, positioning: p.attributes?.positioning || 50,
-        fairPlay: p.attributes?.fairPlay ?? (100 - (p.attributes?.aggression || 50)),
-        discipline: p.attributes?.discipline ?? 60,
-        intelligence: p.attributes?.intelligence ?? Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
-        emotionalControl: p.attributes?.emotionalControl ?? (p.attributes?.composure || 50),
-        personality: p.personality || 'introvertido',
-      }))
-    : Array.from({ length: 11 }, (_, i) => {
+  const awaySquad: SimPlayer[] = useRealAway
+    ? awayPlayersInput!.map((p: any, i: number) => {
+        const sp = mapPlayer(p, i, 'away');
+        if (sp.squadStatus === 'starter') sp.isOnPitch = true;
+        return sp;
+      })
+    : Array.from({ length: 18 }, (_, i) => {
         const pos = i === 0 ? 'GOL' : i < 5 ? 'ZAG' : i < 9 ? 'MEI' : 'ATA';
         const ovr = clamp(Math.floor(awayStrength + (rng() * 8 - 4)), 30, 99);
         const attrs = genAwayAttrs(ovr, pos);
         return {
-          id: `a${i}`, name: awayNames[i] || `Jog.${i + 1}`, position: pos,
-          team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0,
-          isOnPitch: true, injured: false, stamina: 70 + Math.floor(rng() * 20), baseStamina: 80, morale: 60 + Math.floor(rng() * 30),
-          ...attrs,
+          ...mapPlayer({ name: `BOT ${awayNames[i % awayNames.length]}`, overall: ovr, position: pos, attributes: attrs }, i, 'away'),
+          isOnPitch: i < 11,
+          squadStatus: i < 11 ? 'starter' : 'bench'
         };
       });
 
-  const allPlayers = [...home, ...away];
+  if (awaySquad.filter(p => p.isOnPitch).length < 11) {
+    awaySquad.slice(0, 11).forEach(p => p.isOnPitch = true);
+  }
+
+  const home = homeSquad.filter(p => p.isOnPitch);
+  const away = awaySquad.filter(p => p.isOnPitch);
+  const allPlayers = [...homeSquad, ...awaySquad];
 
   // ── PERSONALITY MODIFIERS ────────────────────────────────────
   const hasLider = home.some(p => p.personality === 'lider' && p.morale > 70);
