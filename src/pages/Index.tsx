@@ -48,6 +48,12 @@ const Index = () => {
   const { session, loading, signOut } = useAuth();
   if (loading) return <GameLoadingScreen message="Conectando ao servidor" subMessage="Verificando sua sessão" />;
   if (!session) return <AuthPage />;
+  
+  // Bloqueio de segurança: só libera se o email estiver confirmado
+  if (session.user && !session.user.email_confirmed_at) {
+    return <AuthPage initialStep="verify-email" initialEmail={session.user.email} />;
+  }
+
   return <GameApp userId={session.user.id} userEmail={session.user.email || ''} onSignOut={signOut} />;
 };
 
