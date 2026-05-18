@@ -100,7 +100,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
           window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
           
           toast.success(`Pagamento confirmado! Seu item "${payload.new.metadata?.item_name || 'Premium'}" já foi entregue.`);
-        }
+          
+          // Re-sincronizar elenco e estado imediatamente
+          await fetchItems();
+          await fetchHistory();
       })
       .subscribe();
       
