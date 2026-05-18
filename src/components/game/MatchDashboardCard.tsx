@@ -11,6 +11,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useMatchShields } from '@/hooks/useMatchShields';
+import { syncEngine } from '@/hooks/useWorldSync';
 import { isDateBlockedByEvents, resolveMatchStadium } from '@/match/stadiumEvents';
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
