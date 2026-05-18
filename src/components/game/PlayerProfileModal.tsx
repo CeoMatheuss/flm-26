@@ -8,7 +8,7 @@ import { ScoutReport } from '@/types/game';
 import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useState } from 'react';
-import { getPlayerBaseValue, getPlayerVariableBonus, getPlayerValue } from '@/utils/playerGenerator';
+import { getPlayerValue } from '@/utils/playerGenerator';
 
 const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
@@ -314,14 +314,11 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
               <div>
                 <p className="text-xs font-semibold mb-1.5">💰 Valor de Mercado</p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  <div className="bg-muted/30 rounded p-2 text-center">
-                    <p className="text-[10px] text-muted-foreground">Valor Fixo (atributos)</p>
-                    <p className="font-bold text-sm text-emerald-400">R${(getPlayerBaseValue(player) / 1000).toFixed(0)}k</p>
+                  <div className="bg-muted/30 rounded p-2 text-center col-span-2">
+                    <p className="text-[10px] text-muted-foreground">Valor de Mercado</p>
+                    <p className="font-bold text-sm text-emerald-400">R${(getPlayerValue(player) / 1000).toFixed(0)}k</p>
                   </div>
-                  <div className="bg-muted/30 rounded p-2 text-center">
-                    <p className="text-[10px] text-muted-foreground">Valor Total (estimado)</p>
-                    <p className="font-bold text-sm text-primary">R${(getPlayerValue(player) / 1000).toFixed(0)}k</p>
-                  </div>
+
                 </div>
                 <p className="text-[9px] text-muted-foreground mt-1">O valor variável (±10%) depende da sequência de vitórias/derrotas e colocação na liga.</p>
               </div>
