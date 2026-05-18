@@ -11,13 +11,6 @@ const isAvailableForSquad = (player: Player) => {
   return !raw.isLoaned && !raw.loanedOut && !raw.removed && !raw.inactive && !raw.sold && status !== 'sold' && status !== 'removed';
 };
 
-const isAvailableForMatch = (player: Player) => {
-  const raw = player as any;
-  const isSuspended = player.squad_status === 'suspended' || !!player.disciplinary?.isSuspended || !!raw.isSuspended || !!raw.suspended;
-  const isInjured = player.squad_status === 'injured' || !!player.injury || !!raw.isInjured;
-  return isAvailableForSquad(player) && !isInjured && !isSuspended;
-};
-
 const safePosition = (position: unknown): Player['position'] => (
   NORMALIZED_POSITIONS.includes(position as Player['position']) ? position as Player['position'] : 'MEI'
 );
@@ -47,86 +40,75 @@ export const youthProspectToPlayer = (prospect: YouthProspect): Player => ({
 } as Player & { contractStatus: string });
 
 export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspect[], formation: TacticsConfig['formation']) => {
+  if (!players || !Array.isArray(players)) return [];
+  
   const byId = new Map<string, Player>();
   
-  // Merge players and youth prospects
-  [...players, ...youthProspects.map(youthProspectToPlayer)].forEach((player) => {
+  // 1. Process regular players first
+  players.forEach((player) => {
     if (!player?.id || !isAvailableForSquad(player)) return;
-    const previous = byId.get(player.id);
     byId.set(player.id, {
-      ...previous,
       ...player,
       position: safePosition(player.position),
       stamina: Number(player.stamina ?? 100),
       morale: Number(player.morale ?? 100),
-      attributes: player.attributes ?? previous?.attributes,
-      squad_status: player.squad_status || previous?.squad_status || 'reserve'
+      // Preserve squad_status if it exists, otherwise it will be assigned later
     } as Player);
   });
 
-  const rebuilt = Array.from(byId.values());
-  if (rebuilt.length === 0) return rebuilt;
-
-  // If no explicit squad_status, we need to assign them based on current order or best overall
-  const hasExplicitStatuses = rebuilt.some(p => p.squad_status === 'starter' || p.squad_status === 'bench');
-  
-  if (!hasExplicitStatuses) {
-    // Sort by overall to pick best ones
-    const sorted = [...rebuilt].sort((a, b) => b.overall - a.overall);
-    sorted.forEach((p, idx) => {
-      if (idx < 11) p.squad_status = 'starter';
-      else if (idx < 18) p.squad_status = 'bench';
-      else p.squad_status = 'reserve';
+  // 2. Process youth prospects (only if not already in players by ID)
+  if (youthProspects && Array.isArray(youthProspects)) {
+    youthProspects.forEach(prospect => {
+      if (byId.has(prospect.id)) return;
+      const player = youthProspectToPlayer(prospect);
+      byId.set(player.id, player);
     });
   }
 
-  // Priority status updates: Suspended/Injured take precedence over being on pitch
-  rebuilt.forEach(p => {
-    const raw = p as any;
-    if (p.squad_status === 'suspended' || !!p.disciplinary?.isSuspended || !!raw.isSuspended || !!raw.suspended) {
-      p.squad_status = 'suspended';
-    } else if (p.squad_status === 'injured' || !!p.injury || !!raw.isInjured) {
-      p.squad_status = 'injured';
-    }
-  });
+  const all = Array.from(byId.values());
+  if (all.length === 0) return [];
 
-  // Re-order rebuilt array to have starters first, then bench, then reserves/injured/suspended
-  const starters = rebuilt.filter(p => p.squad_status === 'starter');
-  const bench = rebuilt.filter(p => p.squad_status === 'bench');
-  const reserves = rebuilt.filter(p => p.squad_status === 'reserve');
-  const injured = rebuilt.filter(p => p.squad_status === 'injured');
-  const suspended = rebuilt.filter(p => p.squad_status === 'suspended');
-  const out = rebuilt.filter(p => !['starter', 'bench', 'reserve', 'injured', 'suspended'].includes(p.squad_status as any));
+  // 3. Assign statuses if missing or inconsistent
+  const startersCount = all.filter(p => p.squad_status === 'starter').length;
+  
+  // If we have less than 11 starters, or no explicit statuses, trigger a full re-lineup
+  if (startersCount < 11) {
+     return autoLineup(all, formation);
+  }
 
-  const ordered = [...starters, ...bench, ...reserves, ...injured, ...suspended, ...out];
+  // 4. Final ordering: Starters (0-10), then Bench, then Reserves
+  const starters = all.filter(p => p.squad_status === 'starter').sort((a,b) => b.overall - a.overall).slice(0, 11);
+  const others = all.filter(p => !starters.some(s => s.id === p.id));
+  const bench = others.filter(p => p.squad_status === 'bench').sort((a,b) => b.overall - a.overall);
+  const reserves = others.filter(p => p.squad_status !== 'bench').sort((a,b) => b.overall - a.overall);
 
-  return ordered.map((player, index) => {
-    const raw = player as any;
-    const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
-    return {
-      ...player,
-      squadRole: player.squad_status === 'starter' ? 'titular' : player.squad_status === 'bench' ? (isBaseYouth ? 'promessa' : 'reserva') : (isBaseYouth ? 'promessa' : 'rotacao'),
-    } as Player;
-  });
+  return [...starters, ...bench, ...reserves];
 };
 
 export const squadsDiffer = (a: Player[], b: Player[]) => {
+  if (!a || !b) return true;
   if (a.length !== b.length) return true;
-  return a.some((player, index) => {
-    const next = b[index];
-    return !next || player.id !== next.id || player.overall !== next.overall || player.stamina !== next.stamina || player.position !== next.position || player.squadRole !== next.squadRole || !!player.injury !== !!next.injury;
-  });
+  // Deep check for identity and critical roles
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].id !== b[i].id) return true;
+    if (a[i].squad_status !== b[i].squad_status) return true;
+  }
+  return false;
 };
 
 export const syncTacticsWithSquad = (tactics: TacticsConfig, players: Player[]): TacticsConfig => {
   const validIds = new Set(players.map((player) => player.id));
   const { lineup: _lineup, startingXI: _startingXI, starting_xi: _starting_xi, ...cleanTactics } = tactics as any;
+  
+  // Ensure captain and set piece takers are valid
+  const captainId = cleanTactics.captainId && validIds.has(cleanTactics.captainId) ? cleanTactics.captainId : players[0]?.id;
+  
   return {
     ...cleanTactics,
     playerInstructions: (cleanTactics.playerInstructions ?? []).filter((instruction: any) => validIds.has(instruction.playerId)),
-    captainId: cleanTactics.captainId && validIds.has(cleanTactics.captainId) ? cleanTactics.captainId : players[0]?.id,
-    freeKickTakerId: cleanTactics.freeKickTakerId && validIds.has(cleanTactics.freeKickTakerId) ? cleanTactics.freeKickTakerId : players.find(p => p.position === 'MEI')?.id ?? players[0]?.id,
-    penaltyTakerId: cleanTactics.penaltyTakerId && validIds.has(cleanTactics.penaltyTakerId) ? cleanTactics.penaltyTakerId : players.find(p => p.position === 'ATA')?.id ?? players[0]?.id,
-    cornerTakerId: cleanTactics.cornerTakerId && validIds.has(cleanTactics.cornerTakerId) ? cleanTactics.cornerTakerId : players.find(p => p.position === 'MEI')?.id ?? players[0]?.id,
+    captainId,
+    freeKickTakerId: cleanTactics.freeKickTakerId && validIds.has(cleanTactics.freeKickTakerId) ? cleanTactics.freeKickTakerId : players.find(p => p.position === 'MEI')?.id ?? captainId,
+    penaltyTakerId: cleanTactics.penaltyTakerId && validIds.has(cleanTactics.penaltyTakerId) ? cleanTactics.penaltyTakerId : players.find(p => p.position === 'ATA')?.id ?? captainId,
+    cornerTakerId: cleanTactics.cornerTakerId && validIds.has(cleanTactics.cornerTakerId) ? cleanTactics.cornerTakerId : players.find(p => p.position === 'MEI')?.id ?? captainId,
   };
 };
