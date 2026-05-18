@@ -38,9 +38,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onAction?: (action: PlayerPanelAction, player: Player) => void;
   isYouth?: boolean;
+  clubReputation?: number;
 }
 
-export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenChange, onAction, isYouth }: Props) {
+
+export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenChange, onAction, isYouth, clubReputation = 50 }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -56,7 +58,9 @@ export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenC
             onClose={() => onOpenChange(false)}
             onAction={onAction}
             isYouth={!!isYouth}
+            clubReputation={clubReputation}
           />
+
         ) : null}
       </SheetContent>
     </Sheet>
@@ -64,7 +68,7 @@ export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenC
 }
 
 function PlayerDetailContent({
-  player, status, onSwap, delta, onClose, onAction, isYouth,
+  player, status, onSwap, delta, onClose, onAction, isYouth, clubReputation,
 }: {
   player: Player;
   status: PlayerStatus;
@@ -73,10 +77,12 @@ function PlayerDetailContent({
   onClose: () => void;
   onAction?: Props['onAction'];
   isYouth: boolean;
+  clubReputation: number;
 }) {
+
   const tier = ovrTier(player.overall);
   const sm = statusMeta[status] || statusMeta.reserva;
-  const value = getPlayerValue(player);
+  const value = getPlayerValue(player, clubReputation);
   const overallDelta = delta.overall ?? 0;
 
   const avgRating = useMemo(() => {

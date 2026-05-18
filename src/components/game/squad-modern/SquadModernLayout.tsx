@@ -192,8 +192,10 @@ export function SquadModernLayout({
     [players, selectedId],
   );
   
+  const clubReputation = club.reputation || 50;
   const selectedStatus = selectedPlayer ? getPlayerStatus(selectedPlayer, starterIds.has(selectedPlayer.id)) : null;
   const selectedDelta = selectedPlayer ? (deltas[selectedPlayer.id] ?? {}) : {};
+
 
   // Escalação Dinâmica e Inteligente
   const actualFormation = useMemo(() => {
