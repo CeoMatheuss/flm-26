@@ -2337,6 +2337,19 @@ Deno.serve(async (req) => {
           });
         }
       }
+      // 3.5. PERSIST INJURIES (New in V4)
+      for (const p of result.allPlayers) {
+        if (p.injured && p.injuryData && p.team === 'home') {
+          console.info('[Sync] Persisting injury for player', p.name);
+          await adminClient.from('world_players').update({
+            injury_type: p.injuryData.type,
+            injury_severity: p.injuryData.severity,
+            injury_weeks_remaining: p.injuryData.weeks,
+            injury_body_part: p.injuryData.bodyPart,
+            injury_is_relapse: false
+          }).eq('id', p.id);
+        }
+      }
     } catch (err) {
       console.error('[Sync] Error updating statistics:', err);
     }
