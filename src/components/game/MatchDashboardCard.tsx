@@ -36,8 +36,11 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     stadium?: string;
   } | null>(null);
 
+  const DISMISS_KEY = `flm:dismissed-finished-match:${userId || 'anon'}`;
   const [recentFinished, setRecentFinished] = useState<typeof nextMatch>(null);
-  const [dismissedFinishedId, setDismissedFinishedId] = useState<string | null>(null);
+  const [dismissedFinishedId, setDismissedFinishedId] = useState<string | null>(() => {
+    try { return localStorage.getItem(DISMISS_KEY); } catch { return null; }
+  });
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
@@ -51,6 +54,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     if (showFinished && recentFinished) {
       const timer = setTimeout(() => {
         console.log('[MatchDashboardCard] Auto-advance: avançando para próxima rodada...');
+        try { localStorage.setItem(DISMISS_KEY, recentFinished.matchId); } catch {}
         setDismissedFinishedId(recentFinished.matchId);
         // Force refresh of next match data
         window.dispatchEvent(new CustomEvent('flm:match-finalized'));
