@@ -38,18 +38,23 @@ const features = [
 
 type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email' | 'beta-request';
 
-export default function AuthPage() {
+interface AuthPageProps {
+  initialStep?: AuthStep;
+  initialEmail?: string;
+}
+
+export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }: AuthPageProps) {
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
-  const [pendingEmail, setPendingEmail] = useState('');
+  const [pendingEmail, setPendingEmail] = useState(initialEmail);
   const [verificationCode, setVerificationCode] = useState('');
 
   const [resendTimer, setResendTimer] = useState(0);
-  const [step, setStep] = useState<AuthStep>('welcome');
+  const [step, setStep] = useState<AuthStep>(initialStep);
   const [slideIndex, setSlideIndex] = useState(0);
 
   // Auto-rotate carousel
