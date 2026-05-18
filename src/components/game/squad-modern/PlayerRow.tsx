@@ -1,7 +1,7 @@
 import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { Heart, Activity, Shield, TrendingUp, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
+import { Heart, Activity, Shield, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
