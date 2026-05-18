@@ -176,7 +176,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
                 </SheetTitle>
               </SheetHeader>
               <div className="flex-1 overflow-y-auto p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {bench.length === 0 && (
+                {bench.slice(0, 11).length === 0 && (
                   <p className="text-white/40 text-sm text-center py-10 col-span-full">Sem reservas disponíveis</p>
                 )}
                 {bench.map(p => (
