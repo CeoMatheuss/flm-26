@@ -84,27 +84,48 @@ function pickPlayerByRole(players: any[], role: 'finishing' | 'creation'): any {
     }
     return players[0];
 }
-// Logic to process injuries and cards
-function processPlayerDiscipline(players: any[]) {
-  const availabilityUpdates: any[] = [];
+// Logic to process injuries, cards and STAMINA drain
+function processPlayerMatchFatigue(players: any[]) {
+  const updates: any[] = [];
   players.forEach(p => {
-    // 10% chance of yellow card
-    if (Math.random() < 0.10) {
-      // Logic for yellow/red can be added here or via trigger
-    }
-    // 2% chance of injury
-    if (Math.random() < 0.02) {
-      availabilityUpdates.push({
+    // Stamina Drain Logic
+    // Base drain: 15-25%
+    // Resistance (Physical attribute) reduces drain: higher physical = less drain
+    const physical = p.attributes?.physical || 60;
+    const resistanceBonus = (physical - 50) * 0.15; // +50 physical = -7.5% drain
+    const drain = Math.max(8, Math.floor(Math.random() * 10 + 15 - resistanceBonus));
+    
+    const newStamina = Math.max(0, (p.stamina || 100) - drain);
+    
+    // Performance impact (simplified for sim results calculation if needed, 
+    // but here we just store the new state)
+    
+    // Injury Risk Logic
+    // If stamina < 50%, risk increases significantly
+    let injuryChance = 0.01; // Base 1%
+    if (newStamina < 50) injuryChance += 0.03;
+    if (newStamina < 30) injuryChance += 0.06;
+    
+    let injuryData = null;
+    if (Math.random() < injuryChance) {
+      injuryData = {
         player_id: p.id,
         team_id: p.team_id,
         type: 'injury',
         rounds_remaining: Math.floor(Math.random() * 3) + 1,
-        reason: 'Contusão em jogo'
-      });
+        reason: 'Lesão por fadiga excessiva'
+      };
     }
+
+    updates.push({
+      id: p.id,
+      stamina: newStamina,
+      injury: injuryData
+    });
   });
-  return availabilityUpdates;
+  return updates;
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -213,14 +234,18 @@ Deno.serve(async (req) => {
         });
 
 
-        // Process discipline for these specific players
+        // Process fatigue and injuries for these specific players
         const matchPlayers = (allPlayers || []).filter(p => p.team_id === m.home_team_id || p.team_id === m.away_team_id);
         if (matchPlayers.length > 0) {
-          const availability = processPlayerDiscipline(matchPlayers);
-          if (availability.length > 0) {
-            await sb.from('world_player_availability').upsert(availability, { onConflict: 'player_id,type' });
+          const fatigueUpdates = processPlayerMatchFatigue(matchPlayers);
+          for (const up of fatigueUpdates) {
+            await sb.from('world_players').update({ stamina: up.stamina }).eq('id', up.id);
+            if (up.injury) {
+              await sb.from('world_player_availability').upsert(up.injury, { onConflict: 'player_id,type' });
+            }
           }
         }
+
 
 
         // Generate News for synchronization feedback

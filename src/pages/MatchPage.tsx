@@ -910,11 +910,10 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
     const [lastAlertTime, setLastAlertTime] = useState(0);
 
     const activeAlerts = useMemo(() => {
-      const alerts: { id: string, type: 'fatigue' | 'injury', player: Player, stamina: number }[] = [];
+      const alerts: { id: string, type: 'fatigue' | 'injury' | 'extreme_fatigue', player: Player, stamina: number }[] = [];
       const now = Date.now();
       
-      // Intelligent cooldown: only one new alert every 15 seconds
-      if (now - lastAlertTime < 15000) return [];
+      if (now - lastAlertTime < 10000) return [];
 
       starters.forEach(p => {
         if (dismissedAlerts.has(p.id)) return;
@@ -925,47 +924,66 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
         if (isInjured) {
           alerts.push({ id: p.id, type: 'injury', player: p, stamina });
         } else if (stamina < 30) {
+          alerts.push({ id: p.id, type: 'extreme_fatigue', player: p, stamina });
+        } else if (stamina < 50) {
           alerts.push({ id: p.id, type: 'fatigue', player: p, stamina });
         }
       });
 
-      return alerts.slice(0, 1); // Only show one alert at a time
-    }, [starters, dismissedAlerts, matchState.visibleEvents, lastAlertTime]);
+      // Sort: injury > extreme fatigue > fatigue
+      return alerts.sort((a, b) => {
+        if (a.type === 'injury') return -1;
+        if (b.type === 'injury') return 1;
+        return a.stamina - b.stamina;
+      }).slice(0, 1);
+    }, [starters, dismissedAlerts, matchState.visibleEvents, lastAlertTime, liveStaminaMap]);
 
     if (activeAlerts.length === 0) return null;
 
     const alert = activeAlerts[0];
+    const isRed = alert.type === 'injury' || alert.type === 'extreme_fatigue';
     
     return (
-      <Card className={`border-l-4 ${alert.type === 'injury' ? 'border-l-red-500 bg-red-500/5' : 'border-l-orange-500 bg-orange-500/5'} animate-in slide-in-from-right-4 duration-500`}>
-        <CardContent className="p-3 flex items-center justify-between gap-3">
+      <Card className={`border-l-4 ${isRed ? 'border-l-red-500 bg-red-500/5' : 'border-l-yellow-500 bg-yellow-500/5'} animate-in slide-in-from-right-4 duration-500 shadow-lg relative overflow-hidden`}>
+        <div className={`absolute top-0 right-0 p-1 opacity-10 ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
+          {isRed ? <Activity className="w-12 h-12" /> : <Zap className="w-12 h-12" />}
+        </div>
+        <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-3 relative z-10">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${alert.type === 'injury' ? 'bg-red-500/20 text-red-500' : 'bg-orange-500/20 text-orange-500'}`}>
-              {alert.type === 'injury' ? <Activity className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+            <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${isRed ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
+              {alert.type === 'injury' ? <Activity className="h-5 w-5" /> : <Zap className="h-5 w-5 animate-pulse" />}
             </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-tight">
-                {alert.type === 'injury' ? '🚑 Atleta lesionado' : '⚠️ Atleta esgotado'}
+            <div className="min-w-0">
+              <p className={`text-[10px] font-black uppercase tracking-widest ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
+                {alert.type === 'injury' ? '🚑 LESÃO DETECTADA' : alert.type === 'extreme_fatigue' ? '🚨 ESGOTAMENTO CRÍTICO' : '⚠️ ALERTA DE CANSAÇO'}
               </p>
-              <p className="text-sm font-bold">{alert.player.name} ({alert.stamina}%)</p>
-              <p className="text-[10px] text-muted-foreground">Substitua para manter o desempenho do time.</p>
+              <h4 className="text-sm font-black truncate">{alert.player.name} — {alert.stamina}% Energia</h4>
+              <div className="space-y-0.5 mt-0.5">
+                <p className="text-[10px] font-bold text-foreground/80 leading-tight">
+                  {alert.type === 'injury' ? 'Atleta sofreu uma lesão e não tem condições de jogo.' : 'Jogador muito cansado. Recomenda-se substituição imediata.'}
+                </p>
+                <p className="text-[9px] text-muted-foreground italic">
+                   Impacto: Queda drástica de rendimento e alto risco de lesão.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Button size="sm" className="h-7 text-[10px] font-bold" onClick={onOpenSubs}>
+          <div className="flex flex-col gap-1.5 shrink-0">
+            <Button size="sm" className={`h-8 px-4 text-[10px] font-black uppercase tracking-wider shadow-lg ${isRed ? 'bg-red-500 hover:bg-red-600' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}`} onClick={onOpenSubs}>
               Substituir
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => {
+            <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-muted-foreground" onClick={() => {
               setDismissedAlerts(prev => new Set(prev).add(alert.id));
               setLastAlertTime(Date.now());
             }}>
-              Fechar
+              Ignorar
             </Button>
           </div>
         </CardContent>
       </Card>
     );
   };
+
 
   // Local version counter — bumps on every substitution to force re-render of all consumers
   const [subStateVersion, setSubStateVersion] = useState(0);

@@ -5395,8 +5395,10 @@ export type Database = {
           injury_severity: string | null
           injury_type: string | null
           injury_weeks_remaining: number | null
+          last_stamina_recovery: string | null
           market_value: number | null
           market_value_history: Json | null
+          morale: number | null
           name: string
           overall: number | null
           position: string
@@ -5404,6 +5406,7 @@ export type Database = {
           reputation: number | null
           salary: number | null
           squad_status: Database["public"]["Enums"]["squad_status_type"] | null
+          stamina: number | null
           team_id: string
         }
         Insert: {
@@ -5417,8 +5420,10 @@ export type Database = {
           injury_severity?: string | null
           injury_type?: string | null
           injury_weeks_remaining?: number | null
+          last_stamina_recovery?: string | null
           market_value?: number | null
           market_value_history?: Json | null
+          morale?: number | null
           name: string
           overall?: number | null
           position: string
@@ -5426,6 +5431,7 @@ export type Database = {
           reputation?: number | null
           salary?: number | null
           squad_status?: Database["public"]["Enums"]["squad_status_type"] | null
+          stamina?: number | null
           team_id: string
         }
         Update: {
@@ -5439,8 +5445,10 @@ export type Database = {
           injury_severity?: string | null
           injury_type?: string | null
           injury_weeks_remaining?: number | null
+          last_stamina_recovery?: string | null
           market_value?: number | null
           market_value_history?: Json | null
+          morale?: number | null
           name?: string
           overall?: number | null
           position?: string
@@ -5448,6 +5456,7 @@ export type Database = {
           reputation?: number | null
           salary?: number | null
           squad_status?: Database["public"]["Enums"]["squad_status_type"] | null
+          stamina?: number | null
           team_id?: string
         }
         Relationships: [
@@ -6085,6 +6094,7 @@ export type Database = {
       process_club_shop_daily: { Args: { p_club_id: string }; Returns: Json }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
       process_daily_shop_bonuses: { Args: { p_user_id: string }; Returns: Json }
+      process_daily_stamina_recovery: { Args: never; Returns: undefined }
       process_daily_store_updates: { Args: never; Returns: undefined }
       process_expired_auctions: { Args: never; Returns: undefined }
       process_league_waiting_list: {
