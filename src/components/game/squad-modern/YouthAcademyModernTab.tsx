@@ -267,7 +267,10 @@ export function YouthAcademyModernTab({
                 player={p as any} 
                 isStarter={false}
                 selected={selectedProspect?.id === p.id}
-                onClick={() => setSelectedProspect(p)} 
+                onClick={() => {
+                  setSelectedProspect(p);
+                  if (onSelect) onSelect(p);
+                }} 
               />
             ))}
             {filteredProspects.length === 0 && (
