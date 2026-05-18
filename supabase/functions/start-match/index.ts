@@ -2324,11 +2324,16 @@ Deno.serve(async (req) => {
 
       // 3.3. Custom Tournament Logic
       if (tournamentMatchId) {
+        const { data: tMatch } = await adminClient.from('custom_tournament_matches')
+          .select('tournament_id, round')
+          .eq('id', tournamentMatchId)
+          .maybeSingle();
+
         await adminClient.from('custom_tournament_matches')
           .update({
             home_goals: result.homeGoals,
             away_goals: result.awayGoals,
-            status: 'played',
+            status: 'finished',
             played_at: new Date().toISOString(),
             match_data: {
               events: result.events,
@@ -2339,6 +2344,14 @@ Deno.serve(async (req) => {
             } as any,
           })
           .eq('id', tournamentMatchId);
+
+        if (tMatch) {
+          await adminClient.rpc('simulate_bot_matches_for_round', {
+            p_competition_id: tMatch.tournament_id,
+            p_round: tMatch.round,
+            p_type: 'tournament'
+          });
+        }
       }
 
       // 3.3.5 World Matches (Brasileirão / Premier League / etc — sistema global)
