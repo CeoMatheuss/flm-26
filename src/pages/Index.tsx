@@ -31,6 +31,7 @@ import { usePendingMatchFlush } from '@/hooks/usePendingMatchFlush';
 import { useAutoSimulator } from '@/hooks/useAutoSimulator';
 import { useDismissibleWidget } from '@/hooks/useDismissibleWidget';
 import { useLeagueFixer } from '@/hooks/useLeagueFixer';
+import { syncEngine } from '@/hooks/useWorldSync';
 import { toast } from 'sonner';
 import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
