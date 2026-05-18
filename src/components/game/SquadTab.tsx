@@ -331,8 +331,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
     const pA = players[idxA];
     const pB = players[idxB];
-    const groupA = getPlayerGroup(idxA);
-    const groupB = getPlayerGroup(idxB);
+    const groupA = getPlayerGroup(pA);
+    const groupB = getPlayerGroup(pB);
     if (groupA === 'starters' && groupB !== 'starters') {
       toast.success(`${pB.name} entrou no time titular no lugar de ${pA.name}`);
     } else if (groupB === 'starters' && groupA !== 'starters') {
