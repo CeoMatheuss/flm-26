@@ -981,7 +981,7 @@ export function useClubState(initialState: any, userId?: string) {
         contract: 2,
         squad_status: 'reserve' as const,
         squadRole: 'reserva' as const,
-        contractStatus: 'profissional' as const
+        ...({ contractStatus: 'profissional' } as any)
       }));
       
       playersWithId = playersToAdd;
