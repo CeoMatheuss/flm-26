@@ -2295,7 +2295,7 @@ Deno.serve(async (req) => {
           away_score: result.awayGoals,
           home_penalties: result.penaltyHomeGoals,
           away_penalties: result.penaltyAwayGoals,
-          status: 'played',
+          status: 'finished',
           winner_team_id: winnerId,
           updated_at: new Date().toISOString(),
           match_data: {
