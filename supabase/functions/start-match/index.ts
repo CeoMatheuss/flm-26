@@ -2014,6 +2014,9 @@ Deno.serve(async (req) => {
     let effAwayTeam: string = awayTeam;
     let effHomePlayers: any[] = Array.isArray(homePlayers) ? homePlayers : [];
     let effAwayPlayers: any[] | undefined = Array.isArray(awayPlayers) ? awayPlayers : undefined;
+    let effHomeTeamId: string | null = null;
+    let effAwayTeamId: string | null = null;
+    let effLeagueId: string | null = null;
 
     // Helper to fetch players from world_players if missing or incomplete
     const fetchTeamPlayers = async (teamId: string) => {
@@ -2163,6 +2166,7 @@ Deno.serve(async (req) => {
         if (wm) {
           hTeamId = wm.home_team_id;
           aTeamId = wm.away_team_id;
+          effHomeTeamId = hTeamId; effAwayTeamId = aTeamId; effLeagueId = wm.league_id;
         } else {
           // Check cup matches
           const { data: cm } = await adminClient.from('national_cup_matches').select('home_team_id, away_team_id').eq('id', mId).maybeSingle();
