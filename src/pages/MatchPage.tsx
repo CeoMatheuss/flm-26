@@ -904,6 +904,68 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
       </div>
     );
   };
+  // Fatigue/Injury Alert System
+  const MatchAlerts = ({ matchState, starters, onOpenSubs }: { matchState: MatchState, starters: Player[], onOpenSubs: () => void }) => {
+    const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+    const [lastAlertTime, setLastAlertTime] = useState(0);
+
+    const activeAlerts = useMemo(() => {
+      const alerts: { id: string, type: 'fatigue' | 'injury', player: Player, stamina: number }[] = [];
+      const now = Date.now();
+      
+      // Intelligent cooldown: only one new alert every 15 seconds
+      if (now - lastAlertTime < 15000) return [];
+
+      starters.forEach(p => {
+        if (dismissedAlerts.has(p.id)) return;
+        
+        const stamina = liveStaminaMap[p.id] ?? 100;
+        const isInjured = matchState.visibleEvents.some(ev => ev.type === 'injury' && ev.playerName === p.name);
+
+        if (isInjured) {
+          alerts.push({ id: p.id, type: 'injury', player: p, stamina });
+        } else if (stamina < 30) {
+          alerts.push({ id: p.id, type: 'fatigue', player: p, stamina });
+        }
+      });
+
+      return alerts.slice(0, 1); // Only show one alert at a time
+    }, [starters, dismissedAlerts, matchState.visibleEvents, lastAlertTime]);
+
+    if (activeAlerts.length === 0) return null;
+
+    const alert = activeAlerts[0];
+    
+    return (
+      <Card className={`border-l-4 ${alert.type === 'injury' ? 'border-l-red-500 bg-red-500/5' : 'border-l-orange-500 bg-orange-500/5'} animate-in slide-in-from-right-4 duration-500`}>
+        <CardContent className="p-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${alert.type === 'injury' ? 'bg-red-500/20 text-red-500' : 'bg-orange-500/20 text-orange-500'}`}>
+              {alert.type === 'injury' ? <Activity className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-tight">
+                {alert.type === 'injury' ? '🚑 Atleta lesionado' : '⚠️ Atleta esgotado'}
+              </p>
+              <p className="text-sm font-bold">{alert.player.name} ({alert.stamina}%)</p>
+              <p className="text-[10px] text-muted-foreground">Substitua para manter o desempenho do time.</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Button size="sm" className="h-7 text-[10px] font-bold" onClick={onOpenSubs}>
+              Substituir
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => {
+              setDismissedAlerts(prev => new Set(prev).add(alert.id));
+              setLastAlertTime(Date.now());
+            }}>
+              Fechar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   // Local version counter — bumps on every substitution to force re-render of all consumers
   const [subStateVersion, setSubStateVersion] = useState(0);
