@@ -205,6 +205,28 @@ export function validateLineup(players: Player[] | null | undefined): { valid: b
   const starters = safePlayers.slice(0, 11);
   const goalkeepers = starters.filter(p => p.position === 'GOL');
   
+  // Rule: Suspended players cannot be in starters (first 11) or reserves (next 7)
+  // Requirement: "não pode aparecer no banco - não pode ser substituído"
+  const roster = safePlayers.slice(0, 18); // 11 starters + 7 reserves
+  const suspendedInRoster = roster.filter(p => p.disciplinary?.isSuspended);
+
+  if (suspendedInRoster.length > 0) {
+    let newOrder = [...safePlayers];
+    suspendedInRoster.forEach(s => {
+      const idx = newOrder.findIndex(p => p.id === s.id);
+      if (idx !== -1 && idx < 18) {
+        const [removed] = newOrder.splice(idx, 1);
+        newOrder.push(removed); // Move to the end of the array
+      }
+    });
+
+    return {
+      valid: false,
+      message: `O jogador ${suspendedInRoster[0].name} está SUSPENSO e não pode ser escalado.`,
+      autoFix: newOrder
+    };
+  }
+
   if (goalkeepers.length > 1) {
     const keepers = [...goalkeepers].sort((a, b) => (b.overall || 0) - (a.overall || 0));
     const others = keepers.slice(1);
