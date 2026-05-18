@@ -1771,6 +1771,7 @@ function simulateFullMatch(
     rankingChange: reportResult.rankingChange,
     attendance: estimatedCrowd,
     ticketRevenue,
+    allPlayers, // Exporting processed players (ratings, cards, goals)
   };
 }
 
