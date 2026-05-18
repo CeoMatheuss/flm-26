@@ -681,7 +681,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         if (t < 0.4) {
           // Approach
           const approachT = t / 0.4;
-          drawAllPlayers(drift, true, focusX, focusY, approachT * 10);
+          drawAllPlayers(drift, true, focusX, focusY, 0, null, 0.1 * approachT, 0.1 * approachT);
           drawPlayer(focusX - 30 + 30 * approachT, focusY, teamColor, teamLight, '!', 9, true, playerName);
           
           // Referee approaching
@@ -693,7 +693,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else {
           // Card show
           const cardT = (t - 0.4) / 0.6;
-          drawAllPlayers(drift * 0.5);
+          drawAllPlayers(drift * 0.5, false, 0, 0, 0, null, 0.05, 0.05);
           drawPlayer(focusX, focusY, teamColor, teamLight, '!', 10, true, playerName);
           
           const refX = focusX + 25;
