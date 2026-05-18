@@ -1543,7 +1543,10 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                 <div className="flex items-start gap-2">
                   <Badge variant="outline" className="text-[10px] sm:text-xs font-mono shrink-0 mt-0.5">{latestEvent.minute}'</Badge>
                   <p className={`text-xs sm:text-sm font-bold leading-snug ${getEventColor(latestEvent.type)}`}>
-                    {getEventIcon(latestEvent.type)} {latestEvent.description}
+                    {!latestEvent.description.includes(getEventIcon(latestEvent.type)) && (
+                      <span className="mr-1">{getEventIcon(latestEvent.type)}</span>
+                    )}
+                    {latestEvent.description}
                   </p>
                 </div>
               </Card>
@@ -2383,7 +2386,9 @@ function ChatEventRow({ ev, homeTeam, awayTeam, homeShield, awayShield }: { ev: 
           {isGoal && <span className="text-[12px] font-black text-emerald-400 uppercase tracking-wider animate-pulse">⚽ GOL</span>}
         </div>
         <p className={`leading-relaxed font-medium ${isGoal ? 'text-base sm:text-lg font-bold' : 'text-sm sm:text-base'} ${getEventColor(ev.type)}`}>
-          {teamName && <span className="mr-1">{getEventIcon(ev.type)}</span>}
+          {teamName && !ev.description.includes(getEventIcon(ev.type)) && (
+            <span className="mr-1">{getEventIcon(ev.type)}</span>
+          )}
           {ev.description}
         </p>
       </div>
