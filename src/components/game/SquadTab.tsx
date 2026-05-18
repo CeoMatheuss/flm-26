@@ -1109,7 +1109,25 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                     ))
                   )}
                 </TabsContent>
+                <TabsContent value="injured" className="mt-2 space-y-1.5">
+                  {injuredList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => setViewingPlayer(player)}
+                    />
+                  ))}
+                </TabsContent>
 
+                <TabsContent value="suspended" className="mt-2 space-y-1.5">
+                  {suspendedList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => setViewingPlayer(player)}
+                    />
+                  ))}
+                </TabsContent>
                 <TabsContent value="out" className="mt-2 space-y-1.5">
                   {outList.length === 0 ? (
                     <div className="text-center py-4 text-[10px] text-muted-foreground italic">Vazio</div>
