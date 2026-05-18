@@ -613,53 +613,115 @@ export function useClubState(initialState: any, userId?: string) {
 
   const buyPlayer = useCallback((player: Player) => {
     const value = getPlayerValue(player);
+    let boughtPlayerObj: Player | null = null;
+
     setClub(prev => {
       if (prev.budget < value) return prev;
-      // 🛡️ Anti-Duplicação: Verifica se o jogador já está no elenco
       if (prev.players.find(p => p.id === player.id)) {
         toast.error('Este jogador já faz parte do seu elenco!');
         return prev;
       }
       
-      // Marcar explicitamente como reserva para garantir que apareça nas abas corretas (especialmente "Fora")
-      const boughtPlayer = { 
+      boughtPlayerObj = { 
         ...player, 
         squad_status: 'reserve' as const,
         squadRole: 'reserva' as const,
-        contract: 2 // Garantir contrato inicial
+        contract: 2,
+        contractStatus: 'profissional' as const
       };
       
-      return { ...prev, budget: prev.budget - value, players: [...prev.players, boughtPlayer] };
+      return { ...prev, budget: prev.budget - value, players: [...prev.players, boughtPlayerObj] };
     });
+
+    if (userId && boughtPlayerObj) {
+      const pObj = boughtPlayerObj as Player;
+      const persist = async () => {
+        try {
+          const { data: saveData } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
+          if (saveData?.club_data) {
+            const state = saveData.club_data as any;
+            state.club.budget = (state.club.budget || 0) - value;
+            state.club.players = [...(state.club.players || []), pObj];
+            await supabase.from('game_saves').update({ club_data: state }).eq('user_id', userId);
+            await supabase.from('clubs').update({ budget: state.club.budget }).eq('user_id', userId);
+            
+            const { data: clubRef } = await supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle();
+            if (clubRef) {
+              await supabase.from('world_players').update({ 
+                team_id: clubId, 
+                squad_status: 'reserve' 
+              }).eq('name', pObj.name).eq('overall', pObj.overall);
+            }
+          }
+        } catch (err) {
+          console.error('[buyPlayer] Erro na persistência:', err);
+        }
+      };
+      persist();
+    }
+
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
-    
-    // Dispara evento global para forçar atualização de componentes que ouvem save
     window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
-    
     return { value };
-  }, []);
+  }, [userId]);
 
   const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
     const salary = offeredSalary || Math.floor(player.overall * 200 + player.age * 100);
+    const cost = salary * 3;
+    let signedPlayerObj: Player | null = null;
+
     setClub(prev => {
-      // 🛡️ Anti-Duplicação
       if (prev.players.find(p => p.id === player.id)) return prev;
-      const signed = { 
+      signedPlayerObj = { 
         ...player, 
         salary, 
         contract: Math.floor(Math.random() * 3 + 2),
         squad_status: 'reserve' as const,
-        squadRole: 'reserva' as const
+        squadRole: 'reserva' as const,
+        contractStatus: 'profissional' as const
       };
-      return { ...prev, budget: prev.budget - salary * 3, players: [...prev.players, signed] };
+      return { ...prev, budget: prev.budget - cost, players: [...prev.players, signedPlayerObj] };
     });
+
+    if (userId && signedPlayerObj) {
+      const pObj = signedPlayerObj as Player;
+      const persist = async () => {
+        try {
+          const { data: saveData } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
+          if (saveData?.club_data) {
+            const state = saveData.club_data as any;
+            state.club.budget = (state.club.budget || 0) - cost;
+            state.club.players = [...(state.club.players || []), pObj];
+            await supabase.from('game_saves').update({ club_data: state }).eq('user_id', userId);
+            
+            const { data: clubRef } = await supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle();
+            if (clubRef) {
+              await supabase.from('world_players').insert([{
+                team_id: clubRef.id,
+                name: pObj.name,
+                position: pObj.position,
+                overall: pObj.overall,
+                age: pObj.age,
+                market_value: pObj.marketValue || 0,
+                salary: pObj.salary || 500,
+                attributes: pObj.attributes as any,
+                nationality: pObj.nationality || 'Brasil',
+                squad_status: 'reserve'
+              }]);
+            }
+          }
+        } catch (err) {
+          console.error('[signFreeAgent] Erro na persistência:', err);
+        }
+      };
+      persist();
+    }
+
     setFreeAgents(prev => prev.filter(p => p.id !== player.id));
-    
     window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
-    
     toast.success(`${player.name} assinou! Salário: R$${(salary / 1000).toFixed(0)}k/mês`);
     return { salary };
-  }, []);
+  }, [userId]);
 
   const renewContract = useCallback(async (playerId: string, newSalary: number, newDuration?: number) => {
     const duration = newDuration || 2;
