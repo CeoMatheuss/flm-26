@@ -236,13 +236,19 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const starters: { player: Player; idx: number }[] = [];
     const reserves: { player: Player; idx: number }[] = [];
     const out: { player: Player; idx: number }[] = [];
+    const injured: { player: Player; idx: number }[] = [];
+    const suspended: { player: Player; idx: number }[] = [];
+
     playersWithDiscipline.forEach((p, idx) => {
       const entry = { player: p, idx };
-      if (idx < STARTERS_END) starters.push(entry);
-      else if (idx < RESERVES_END) reserves.push(entry);
+      const group = getPlayerGroup(p);
+      if (group === 'starters') starters.push(entry);
+      else if (group === 'reserves') reserves.push(entry);
+      else if (group === 'injured') injured.push(entry);
+      else if (group === 'suspended') suspended.push(entry);
       else out.push(entry);
     });
-    return { starters, reserves, out };
+    return { starters, reserves, out, injured, suspended };
   }, [playersWithDiscipline]);
 
   // Apply filter/sort to a group
