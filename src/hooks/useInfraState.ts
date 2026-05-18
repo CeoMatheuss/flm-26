@@ -496,7 +496,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         age: prospect.age, salary: prospect.salary,
         stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
         contract: 3, gamesPlayed: 0, trainingProgress: 0, personality: prospect.personality,
-        isYouth: true, squadRole: 'promessa', contractStatus: 'profissional',
+        isYouth: true, squadRole: 'reserva', squad_status: 'reserve', contractStatus: 'profissional',
         marketValue: prospect.marketValue, potential: prospect.potential,
       };
       
@@ -541,7 +541,8 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
           trainingProgress: 0, 
           personality: prospect.personality,
           isYouth: true,
-          squadRole: contractDetails?.squadRole ?? 'promessa',
+          squadRole: 'reserva', // Default to reserve on promotion
+          squad_status: 'reserve',
           contractStatus: 'profissional',
           marketValue: prospect.marketValue,
           potential: prospect.potential,

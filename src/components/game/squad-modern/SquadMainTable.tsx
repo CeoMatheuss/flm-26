@@ -86,7 +86,8 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
           return isBench && !unavailable;
         case 'fora':
           // Qualquer um que não seja titular nem reserva oficial, OU que esteja indisponível
-          return (!isStarter && !isBench && !isBaseYouth) || unavailable;
+          // Corrigido: remover filtro que escondia jogadores sem contractStatus 'profissional'
+          return (!isStarter && !isBench) || unavailable;
         case 'suspensos':
           return status === 'suspenso';
         case 'emprestados':

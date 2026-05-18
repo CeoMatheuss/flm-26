@@ -447,6 +447,37 @@ Deno.serve(async (req) => {
             transfer_type: 'sale',
           });
 
+          // 🔄 Sincronização definitiva: Adicionar jogador ao elenco do comprador no game_saves
+          const { data: save } = await adminClient.from('game_saves').select('club_data').eq('user_id', offer.buyer_id).maybeSingle();
+          if (save?.club_data) {
+            const clubData = save.club_data as any;
+            const newPlayer = {
+              ...playerData,
+              salary: offer.offered_salary,
+              contract: offer.offered_contract_years,
+              squad_status: 'reserve',
+              squadRole: 'reserva',
+              onTransferList: false,
+              isLoaned: false
+            };
+            
+            // Anti-duplicação no save
+            if (!clubData.club.players.some((p: any) => p.id === newPlayer.id)) {
+              clubData.club.players.push(newPlayer);
+              clubData.club.budget = (clubData.club.budget || 0) - offer.offered_price;
+              await adminClient.from('game_saves').update({ club_data: clubData }).eq('user_id', offer.buyer_id);
+            }
+          }
+
+          // 🔄 Remover jogador do elenco do vendedor no game_saves
+          const { data: sellerSave } = await adminClient.from('game_saves').select('club_data').eq('user_id', listing.seller_id).maybeSingle();
+          if (sellerSave?.club_data) {
+            const sellerData = sellerSave.club_data as any;
+            sellerData.club.players = sellerData.club.players.filter((p: any) => p.id !== playerData.id);
+            sellerData.club.budget = (sellerData.club.budget || 0) + offer.offered_price;
+            await adminClient.from('game_saves').update({ club_data: sellerData }).eq('user_id', listing.seller_id);
+          }
+
           // Notify both
           await adminClient.from('user_notifications').insert({
             user_id: offer.buyer_id,
