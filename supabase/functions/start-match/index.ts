@@ -2391,8 +2391,9 @@ Deno.serve(async (req) => {
         // Simular o restante da rodada para os times BOT
         console.info('[Sync] Simulating bot matches for round', { league_id: worldMatch.league_id, round: worldMatch.round });
         await adminClient.rpc('simulate_bot_matches_for_round', {
-          p_league_id: worldMatch.league_id,
-          p_round: worldMatch.round
+          p_competition_id: worldMatch.league_id,
+          p_round: worldMatch.round,
+          p_type: 'world'
         });
       }
 
