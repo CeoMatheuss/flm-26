@@ -371,9 +371,6 @@ export function SquadModernLayout({
                   >
                     {activeTab === 'base' ? (
                       <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
-                        <div className="px-4 py-1 text-[10px] text-amber-400 bg-amber-500/10 mb-2">
-                          DBG juniores merged={mergedYouthProspects.length} prospectsDB={youthProspects?.length || 0} playersBaseYouth={players.filter((p:any)=>p.isYouth && p.contractStatus!=='profissional').length}
-                        </div>
                          <YouthAcademyModernTab
                            prospects={mergedYouthProspects}
                            onPromote={onPromoteYouth}

@@ -36,7 +36,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
 
-  console.log('[SquadMainTable]', { activeTab, totalPlayers: players.length, starterIdsSize: starterIds.size, sample: players.slice(0,3).map(p => ({ id: p.id, name: p.name, ss: (p as any).squad_status, isYouth: (p as any).isYouth })) });
+  
 
   useEffect(() => {
     const fetchNegotiations = async () => {
@@ -82,7 +82,9 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
         // Reservas: TODOS os não-titulares profissionais disponíveis (banco + reservas).
         // Atletas da base (isYouth) ficam exclusivamente na aba Juniores.
         case 'reservas':
-          return !isStarter && !isBaseYouth && !unavailable;
+          // Se não for titular e for profissional, ou se for base mas estiver explicitamente no banco/elenco principal
+          const isExplicitReserve = ss === 'bench' || ss === 'reserve';
+          return !isStarter && !unavailable && (isExplicitReserve || !isBaseYouth);
         case 'fora':
           return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
         case 'suspensos':
@@ -110,9 +112,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
   }, [players, starterIds, activeTab, search, sortBy, negotiations]);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden min-w-[700px]">
-      {/* DEBUG */}
-      <div className="px-4 py-1 text-[10px] text-emerald-400 bg-emerald-500/10">DBG tab={activeTab} total={players.length} starters={starterIds.size} filtered={filtered.length}</div>
+    <div className="flex flex-col h-full overflow-hidden min-w-[700px] bg-zinc-950/20 rounded-[2rem]">
       {/* Search & Filters */}
       <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
         <div className="relative w-full sm:w-64">

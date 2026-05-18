@@ -36,7 +36,7 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full">
+    <header className="sticky top-0 z-[100] w-full">
       <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-2xl border-b border-white/5" />
       
       <div className="relative px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
