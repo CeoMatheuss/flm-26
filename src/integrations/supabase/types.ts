@@ -5509,6 +5509,10 @@ export type Database = {
         Args: { p_base_amount: number; p_club_id: string }
         Returns: number
       }
+      check_and_advance_league_round: {
+        Args: { p_league_id: string }
+        Returns: undefined
+      }
       check_and_advance_round: {
         Args: { p_league_id: string }
         Returns: undefined
