@@ -104,7 +104,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   for (let i = 0; i < starters.length; i++) {
     if (!starters[i]) {
       const fallback = allPlayers
-        .filter(p => !used.has(p.id) && canPlayMatch(p))
+        .filter(p => !used.has(p.id) && canPlayMatch(p) && (i === 0 ? p.position === 'GOL' : p.position !== 'GOL'))
         .sort((a, b) => b.overall - a.overall)[0];
       if (fallback) {
         starters[i] = fallback;
