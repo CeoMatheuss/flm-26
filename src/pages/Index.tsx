@@ -237,7 +237,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       market_value: p.marketValue || 0,
       potential: p.potential || p.overall + 5,
       salary: p.salary || 500,
-      attributes: p.attributes,
+      attributes: p.attributes as any,
       stamina: p.stamina || 100,
       stamina_max: p.stamina_max || 100,
       morale: p.morale || 70,
