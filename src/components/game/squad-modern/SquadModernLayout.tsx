@@ -303,7 +303,7 @@ export function SquadModernLayout({
 
   const openMarketConfirm = (p: Player) => {
     setPanelOpen(false); // Fechar o painel lateral ao abrir a confirmação
-    const value = getPlayerValue(p);
+    const value = getPlayerValue(p, clubReputation);
     const listingFeeRate = 0.01;
     const agentFeeRate = 0.01;
     const adminFeeRate = 0.01;
@@ -318,9 +318,10 @@ export function SquadModernLayout({
     });
   };
 
+
   const openLoanConfirm = (p: Player) => {
     setPanelOpen(false); // Fechar o painel lateral ao abrir a confirmação
-    const value = getPlayerValue(p);
+    const value = getPlayerValue(p, clubReputation);
     const listingFeeRate = 0.01;
     const agentFeeRate = 0.01;
     const adminFeeRate = 0.01;
@@ -333,6 +334,7 @@ export function SquadModernLayout({
       listingFee, agentFee, adminFee,
       total: listingFee + agentFee + adminFee,
     });
+
   };
 
   const confirmListing = async () => {
