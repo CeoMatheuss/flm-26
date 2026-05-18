@@ -2227,6 +2227,35 @@ Deno.serve(async (req) => {
     const callerIsHomeOnInsert = resolvedHomeUserId
       ? resolvedHomeUserId === userId
       : (isHome !== false);
+    
+    // ── AUTOMATIC STATS SYNC ──────────────────────────────────
+    try {
+      const statsPayload = result.allPlayers.map(p => ({
+        player_id: p.id,
+        team_id: (p.team === 'home' ? (effHomeTeamId || p.team_id) : (effAwayTeamId || p.team_id)),
+        goals: p.goals || 0,
+        assists: p.assists || 0,
+        rating: p.rating || 6.0,
+        yellow_card: (p.yellowCards || 0) > 0,
+        red_card: p.redCards || 0,
+        is_gk: p.position === 'GOL',
+        clean_sheet: (p.team === 'home' ? result.awayGoals === 0 : result.homeGoals === 0)
+      })).filter(p => !p.player_id.includes('-')); // filter out temp bot IDs like 'away-1'
+
+      if (statsPayload.length > 0) {
+        const { error: syncErr } = await adminClient.rpc('sync_player_match_stats', {
+          _match_id: String(matchId),
+          _competition_id: competition || 'Amistoso',
+          _season: 1, // TODO: resolve current season
+          _player_stats: statsPayload
+        });
+        if (syncErr) console.error('[StatsSync] RPC Error:', syncErr);
+        else console.info('[StatsSync] Success for match', matchId);
+      }
+    } catch (e) {
+      console.error('[StatsSync] Unexpected Error:', e);
+    }
+    
     const insertPayload = {
       user_id: userId,
       match_id: matchId,
