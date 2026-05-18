@@ -33,7 +33,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const canPlayMatch = (player: Player) => {
     const raw = player as any;
     const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
-    return !isBaseYouth && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended && !raw.isLoaned && !raw.loanedOut && !raw.inactive && !raw.removed;
+    return !isBaseYouth && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended && !raw.isLoaned && !raw.loanedOut && !raw.inactive && !raw.removed && !player.disciplinary?.isSuspended;
   };
 
   const allPlayers = [...players].sort((a, b) => {
