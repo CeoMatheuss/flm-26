@@ -363,6 +363,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const avgRating = player.seasonRatings && player.seasonRatings.length > 0
       ? (player.seasonRatings.reduce((a, b) => a + b, 0) / player.seasonRatings.length) : null;
     const auctionEligible = player.overall >= 65 && player.age <= 35;
+    const isSuspended = player.disciplinary?.isSuspended;
     const ovr = getOvrColor(player.overall);
 
     return (
