@@ -178,6 +178,7 @@ export function SquadModernLayout({
   const [submitting, setSubmitting] = useState(false);
 
   const openMarketConfirm = (p: Player) => {
+    setPanelOpen(false); // Fechar o painel lateral ao abrir a confirmação
     const value = getPlayerValue(p);
     const listingFeeRate = 0.01;
     const agentFeeRate = 0.01;
