@@ -190,18 +190,18 @@ export function SquadModernLayout({
     });
   }, [players, onUpdatePlayers]);
 
-  // Confirmation modal state for market/loan listing
+  // Modal States
   const [confirmAction, setConfirmAction] = useState<null | {
-    type: 'transfer' | 'loan-out';
+    type: 'transfer' | 'loan-out' | 'auction' | 'renew' | 'shirt-number' | 'train';
     player: Player;
-    value: number;
-    listingFeeRate: number;
-    agentFeeRate: number;
-    adminFeeRate: number;
-    listingFee: number;
-    agentFee: number;
-    adminFee: number;
-    total: number;
+    value?: number;
+    listingFeeRate?: number;
+    agentFeeRate?: number;
+    adminFeeRate?: number;
+    listingFee?: number;
+    agentFee?: number;
+    adminFee?: number;
+    total?: number;
   }>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -312,7 +312,7 @@ export function SquadModernLayout({
     if (!submitting) void confirmListing();
   };
 
-  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player) => {
+  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player, extra?: string) => {
     // Ao iniciar qualquer ação, fechamos o painel lateral para não atrapalhar
     setPanelOpen(false);
     
@@ -324,18 +324,32 @@ export function SquadModernLayout({
         openLoanConfirm(p);
         break;
       case 'auction':
-        toast.info(`${p.name} enviado para leilão.`);
+        if (!extra) {
+          setConfirmAction({ type: 'auction', player: p });
+        } else {
+          toast.info(`${p.name} enviado para leilão.`);
+        }
         break;
       case 'shirt-number':
-        toast.info(`Escolha a camisa de ${p.name} no menu de equipamentos.`);
+        setConfirmAction({ type: 'shirt-number', player: p });
         break;
       case 'renew':
-        toast.success(`Negociação de renovação iniciada com ${p.name}.`);
+        if (!extra) {
+          setConfirmAction({ type: 'renew', player: p });
+        } else {
+          toast.success(`Negociação de renovação concluída com ${p.name}.`);
+        }
         break;
       case 'train':
-        toast.info(`${p.name} foi adicionado ao foco de treino.`);
+        if (!extra) {
+          setConfirmAction({ type: 'train', player: p });
+        } else {
+          // Aqui integraria com o sistema de treino real se disponível
+          console.log(`Foco de treino ${extra} para ${p.name}`);
+        }
         break;
       case 'promote-youth':
+        onPromoteYouth(p.id);
         toast.info(`${p.name} promovido da base.`);
         break;
     }
@@ -557,44 +571,125 @@ export function SquadModernLayout({
               </div>
 
               <div className="p-5 space-y-4">
-                <p className="text-sm text-white/80 leading-relaxed">
-                  {confirmAction.type === 'transfer'
-                    ? '📢 Tem certeza que deseja anunciar este jogador no mercado?'
-                    : '🤝 Tem certeza que deseja colocar este jogador para empréstimo?'}
-                </p>
+                {confirmAction.type === 'transfer' || confirmAction.type === 'loan-out' ? (
+                  <>
+                    <p className="text-sm text-white/80 leading-relaxed">
+                      {confirmAction.type === 'transfer'
+                        ? '📢 Tem certeza que deseja anunciar este jogador no mercado?'
+                        : '🤝 Tem certeza que deseja colocar este jogador para empréstimo?'}
+                    </p>
 
-                <div className="bg-white/[0.03] rounded-2xl border border-white/5 p-4 space-y-2.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/50">Valor sugerido</span>
-                    <span className="font-bold text-white">{formatMoney(confirmAction.value)}</span>
-                  </div>
-                  <div className="h-px bg-white/5 my-2" />
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">💰 Taxa de anúncio ({(confirmAction.listingFeeRate * 100).toFixed(2)}%)</span>
-                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.listingFee)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">💼 Taxa de empresário ({(confirmAction.agentFeeRate * 100).toFixed(2)}%)</span>
-                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.agentFee)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60">📋 Custos administrativos ({(confirmAction.adminFeeRate * 100).toFixed(2)}%)</span>
-                    <span className="font-bold text-amber-300">{formatMoney(confirmAction.adminFee)}</span>
-                  </div>
-                  <div className="h-px bg-white/5 my-2" />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-black text-white uppercase tracking-wider text-[11px]">Total a debitar</span>
-                    <span className="font-black text-rose-300">{formatMoney(confirmAction.total)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-white/40 pt-1">
-                    <span>Saldo atual</span>
-                    <span>{formatMoney(club.budget ?? 0)}</span>
-                  </div>
-                </div>
+                    <div className="bg-white/[0.03] rounded-2xl border border-white/5 p-4 space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/50">Valor sugerido</span>
+                        <span className="font-bold text-white">{formatMoney(confirmAction.value || 0)}</span>
+                      </div>
+                      <div className="h-px bg-white/5 my-2" />
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/60">💰 Taxa de anúncio</span>
+                        <span className="font-bold text-amber-300">{formatMoney(confirmAction.listingFee || 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/60">💼 Taxa de empresário</span>
+                        <span className="font-bold text-amber-300">{formatMoney(confirmAction.agentFee || 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/60">📋 Custos administrativos</span>
+                        <span className="font-bold text-amber-300">{formatMoney(confirmAction.adminFee || 0)}</span>
+                      </div>
+                      <div className="h-px bg-white/5 my-2" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-black text-white uppercase tracking-wider text-[11px]">Total a debitar</span>
+                        <span className="font-black text-rose-300">{formatMoney(confirmAction.total || 0)}</span>
+                      </div>
+                    </div>
 
-                {(club.budget ?? 0) < confirmAction.total && (
-                  <p className="text-[11px] text-rose-400 font-bold">⚠️ Saldo insuficiente para arcar com as taxas.</p>
-                )}
+                    {(club.budget ?? 0) < (confirmAction.total || 0) && (
+                      <p className="text-[11px] text-rose-400 font-bold">⚠️ Saldo insuficiente para arcar com as taxas.</p>
+                    )}
+                  </>
+                ) : confirmAction.type === 'auction' ? (
+                  <p className="text-sm text-white/80 leading-relaxed">
+                    🔨 Deseja enviar <strong>{confirmAction.player.name}</strong> para o leilão do final da temporada? O valor arrecadado dependerá dos lances recebidos.
+                  </p>
+                ) : confirmAction.type === 'renew' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Proposta de Renovação</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Novo Salário</p>
+                        <p className="text-sm font-black text-emerald-400">{formatMoney((confirmAction.player.salary || 0) * 1.15)}/s</p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Luvas (Bônus)</p>
+                        <p className="text-sm font-black text-amber-400">{formatMoney(getPlayerValue(confirmAction.player) * 0.05)}</p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 col-span-2">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Duração do Contrato</p>
+                        <p className="text-sm font-black text-sky-400">3 Temporadas Adicionais</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : confirmAction.type === 'shirt-number' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Escolher Número da Camisa</p>
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar pr-2 grid grid-cols-4 gap-2">
+                      {Array.from({ length: 99 }, (_, i) => i + 1).map(num => {
+                        const occupiedBy = players.find(pl => pl.shirtNumber === num && pl.id !== confirmAction.player.id);
+                        return (
+                          <button
+                            key={num}
+                            disabled={!!occupiedBy}
+                            onClick={() => {
+                              const updated = players.map(pl => 
+                                pl.id === confirmAction.player.id ? { ...pl, shirtNumber: num } : pl
+                              );
+                              onUpdatePlayers(updated);
+                              toast.success(`Camisa #${num} atribuída a ${confirmAction.player.name}`);
+                              setConfirmAction(null);
+                            }}
+                            className={cn(
+                              "h-10 rounded-lg flex flex-col items-center justify-center border transition-all relative overflow-hidden",
+                              occupiedBy 
+                                ? "bg-red-500/10 border-red-500/20 opacity-50 cursor-not-allowed" 
+                                : "bg-white/5 border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10"
+                            )}
+                          >
+                            <span className="text-xs font-black">{num}</span>
+                            {occupiedBy && (
+                              <span className="text-[6px] uppercase font-bold text-red-400 absolute bottom-1 truncate px-1 w-full text-center">
+                                {occupiedBy.name.split(' ')[0]}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : confirmAction.type === 'train' ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-white/80 leading-relaxed italic">
+                      Selecione o foco de treinamento individual para <strong>{confirmAction.player.name}</strong>:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['speed', 'shooting', 'passing', 'defending', 'physical', 'dribbling'].map(key => (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            const labels: Record<string, string> = { speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Marcação', physical: 'Físico', dribbling: 'Drible' };
+                            const focusLabel = labels[key];
+                            handleAction('train', confirmAction.player, key);
+                            toast.success(`Foco em ${focusLabel} definido para ${confirmAction.player.name}`);
+                            setConfirmAction(null);
+                          }}
+                          className="p-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-wider hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all"
+                        >
+                          {{ speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Marcação', physical: 'Físico', dribbling: 'Drible' }[key as 'speed' | 'shooting' | 'passing' | 'defending' | 'physical' | 'dribbling']}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="p-4 border-t border-white/5 bg-zinc-950/50 flex items-center gap-3">
@@ -602,28 +697,37 @@ export function SquadModernLayout({
                   type="button"
                   variant="ghost"
                   disabled={submitting}
-                  onMouseDown={(event) => event.stopPropagation()}
-                  onPointerDown={(event) => event.stopPropagation()}
                   onClick={closeConfirmAction}
                   className="flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/5"
                 >
-                  Cancelar
+                  {confirmAction.type === 'shirt-number' || confirmAction.type === 'train' ? 'Voltar' : 'Cancelar'}
                 </Button>
-                <Button
-                  type="button"
-                  disabled={submitting || (club.budget ?? 0) < confirmAction.total}
-                  onMouseDown={(event) => event.stopPropagation()}
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onClick={submitConfirmAction}
-                  className={cn(
-                    "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950",
-                    confirmAction.type === 'transfer'
-                      ? "bg-emerald-500 hover:bg-emerald-400"
-                      : "bg-sky-500 hover:bg-sky-400"
-                  )}
-                >
-                  {submitting ? 'Processando…' : 'Confirmar'}
-                </Button>
+                {confirmAction.type !== 'shirt-number' && confirmAction.type !== 'train' && (
+                  <Button
+                    type="button"
+                    disabled={submitting || (confirmAction.total && (club.budget ?? 0) < confirmAction.total)}
+                    onClick={(e) => {
+                      if (confirmAction.type === 'renew') {
+                        handleAction('renew', confirmAction.player, 'confirm');
+                        setConfirmAction(null);
+                      } else if (confirmAction.type === 'auction') {
+                        handleAction('auction', confirmAction.player, 'confirm');
+                        setConfirmAction(null);
+                      } else {
+                        submitConfirmAction(e);
+                      }
+                    }}
+                    className={cn(
+                      "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950 shadow-lg transition-all active:scale-95",
+                      confirmAction.type === 'renew' ? "bg-amber-400 hover:bg-amber-300" :
+                      confirmAction.type === 'auction' ? "bg-sky-500 hover:bg-sky-400" :
+                      confirmAction.type === 'transfer' ? "bg-emerald-500 hover:bg-emerald-400" :
+                      "bg-sky-500 hover:bg-sky-400"
+                    )}
+                  >
+                    {submitting ? 'Processando…' : confirmAction.type === 'renew' ? 'Assinar Contrato' : confirmAction.type === 'auction' ? 'Enviar' : 'Confirmar'}
+                  </Button>
+                )}
               </div>
             </motion.div>
           </motion.div>
