@@ -1084,6 +1084,7 @@ export function SquadModernLayout({
                       "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950 shadow-lg transition-all active:scale-95",
                       confirmAction.type === 'renew' ? "bg-amber-400 hover:bg-amber-300" :
                       confirmAction.type === 'auction' ? "bg-sky-500 hover:bg-sky-400" :
+                      confirmAction.type === 'change-position' ? "bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/20" :
                       confirmAction.type === 'transfer' ? "bg-emerald-500 hover:bg-emerald-400" :
                       "bg-sky-500 hover:bg-sky-400"
                     )}
