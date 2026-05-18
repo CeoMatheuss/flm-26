@@ -157,6 +157,59 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
+  const [disciplinaryData, setDisciplinaryData] = useState<{
+    records: any[];
+    suspensions: any[];
+  }>({ records: [], suspensions: [] });
+
+  // Load disciplinary data
+  useEffect(() => {
+    if (!userId) return;
+    const loadDiscipline = async () => {
+      const pIds = players.map(p => p.id);
+      if (pIds.length === 0) return;
+
+      const [recs, susps] = await Promise.all([
+        supabase.from('disciplinary_records').select('*').in('player_id', pIds),
+        supabase.from('suspensions').select('*').in('player_id', pIds)
+      ]);
+
+      setDisciplinaryData({
+        records: recs.data || [],
+        suspensions: susps.data || []
+      });
+    };
+    loadDiscipline();
+    
+    // Realtime sub
+    const channel = supabase.channel('disciplinary-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'disciplinary_records' }, loadDiscipline)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'suspensions' }, loadDiscipline)
+      .subscribe();
+      
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, players.length]);
+
+  // Merge disciplinary data into players
+  const playersWithDiscipline = useMemo(() => {
+    return players.map(p => {
+      const yellowCards = disciplinaryData.records.filter(r => r.player_id === p.id && r.card_type === 'yellow').length;
+      const redCards = disciplinaryData.records.filter(r => r.player_id === p.id && r.card_type === 'red').length;
+      const susp = disciplinaryData.suspensions.find(s => s.player_id === p.id);
+      
+      return {
+        ...p,
+        disciplinary: {
+          yellowCards,
+          redCards,
+          isSuspended: !!susp,
+          suspensionRemaining: susp?.remaining_games || 0,
+          suspensionReason: susp?.reason,
+          competitionType: susp?.competition_type
+        }
+      };
+    });
+  }, [players, disciplinaryData]);
 
   // Cancel pending swap with Esc
   useEffect(() => {
