@@ -681,28 +681,27 @@ export function SquadModernLayout({
                   type="button"
                   variant="ghost"
                   disabled={submitting}
-                  onMouseDown={(event) => event.stopPropagation()}
-                  onPointerDown={(event) => event.stopPropagation()}
                   onClick={closeConfirmAction}
                   className="flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/5"
                 >
-                  Cancelar
+                  {confirmAction.type === 'shirt-number' || confirmAction.type === 'train' ? 'Voltar' : 'Cancelar'}
                 </Button>
-                <Button
-                  type="button"
-                  disabled={submitting || (club.budget ?? 0) < confirmAction.total}
-                  onMouseDown={(event) => event.stopPropagation()}
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onClick={submitConfirmAction}
-                  className={cn(
-                    "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950",
-                    confirmAction.type === 'transfer'
-                      ? "bg-emerald-500 hover:bg-emerald-400"
-                      : "bg-sky-500 hover:bg-sky-400"
-                  )}
-                >
-                  {submitting ? 'Processando…' : 'Confirmar'}
-                </Button>
+                {confirmAction.type !== 'shirt-number' && confirmAction.type !== 'train' && (
+                  <Button
+                    type="button"
+                    disabled={submitting || (confirmAction.total && (club.budget ?? 0) < confirmAction.total)}
+                    onClick={submitConfirmAction}
+                    className={cn(
+                      "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950 shadow-lg transition-all active:scale-95",
+                      confirmAction.type === 'renew' ? "bg-amber-400 hover:bg-amber-300" :
+                      confirmAction.type === 'auction' ? "bg-sky-500 hover:bg-sky-400" :
+                      confirmAction.type === 'transfer' ? "bg-emerald-500 hover:bg-emerald-400" :
+                      "bg-sky-500 hover:bg-sky-400"
+                    )}
+                  >
+                    {submitting ? 'Processando…' : confirmAction.type === 'renew' ? 'Assinar Contrato' : confirmAction.type === 'auction' ? 'Enviar' : 'Confirmar'}
+                  </Button>
+                )}
               </div>
             </motion.div>
           </motion.div>
