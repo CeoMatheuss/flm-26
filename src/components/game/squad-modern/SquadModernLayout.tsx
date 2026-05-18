@@ -448,7 +448,7 @@ export function SquadModernLayout({
     if (!submitting) void confirmListing();
   };
 
-  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player, extra?: string) => {
+  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth' | 'change-position', p: Player, extra?: string) => {
     // Ao iniciar qualquer ação, fechamos o painel lateral para não atrapalhar
     setPanelOpen(false);
     
