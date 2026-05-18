@@ -830,6 +830,54 @@ export function SquadModernLayout({
                       </div>
                     </div>
                   </div>
+                ) : confirmAction.type === 'renew' && confirmAction.renewalProposal ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Proposta de Renovação</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 group">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Novo Salário</p>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="number"
+                            value={confirmAction.renewalProposal.salary}
+                            onChange={(e) => setConfirmAction({
+                              ...confirmAction,
+                              renewalProposal: { ...confirmAction.renewalProposal!, salary: Number(e.target.value) }
+                            })}
+                            className="bg-transparent text-sm font-black text-emerald-400 outline-none w-full"
+                          />
+                          <span className="text-[10px] text-white/20">/s</span>
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Luvas (Bônus)</p>
+                        <input 
+                          type="number"
+                          value={confirmAction.renewalProposal.bonus}
+                          onChange={(e) => setConfirmAction({
+                            ...confirmAction,
+                            renewalProposal: { ...confirmAction.renewalProposal!, bonus: Number(e.target.value) }
+                          })}
+                          className="bg-transparent text-sm font-black text-amber-400 outline-none w-full"
+                        />
+                      </div>
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 col-span-2">
+                        <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Duração do Contrato (Anos)</p>
+                        <select 
+                          value={confirmAction.renewalProposal.duration}
+                          onChange={(e) => setConfirmAction({
+                            ...confirmAction,
+                            renewalProposal: { ...confirmAction.renewalProposal!, duration: Number(e.target.value) }
+                          })}
+                          className="bg-transparent text-sm font-black text-sky-400 outline-none w-full"
+                        >
+                          {[1, 2, 3, 4, 5].map(y => (
+                            <option key={y} value={y} className="bg-zinc-900">{y} Temporadas Adicionais</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 ) : confirmAction.type === 'shirt-number' ? (
                   <div className="space-y-4">
                     <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Escolher Número da Camisa</p>
@@ -931,7 +979,6 @@ export function SquadModernLayout({
                     onClick={(e) => {
                       if (confirmAction.type === 'renew') {
                         handleAction('renew', confirmAction.player, 'confirm');
-                        setConfirmAction(null);
                       } else if (confirmAction.type === 'auction') {
                         handleAction('auction', confirmAction.player, 'confirm');
                         setConfirmAction(null);
