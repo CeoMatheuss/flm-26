@@ -83,8 +83,21 @@ function getMoraleMultiplier(morale: number): number {
 }
 
 function effectiveAttr(player: SimPlayer, attr: keyof SimPlayer): number {
-  const val = Number(player[attr]) || 50;
-  return val * getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
+  let val = Number(player[attr]) || 50;
+  
+  const mult = getStaminaMultiplier(player.stamina) * getMoraleMultiplier(player.morale);
+  
+  // Apply individual attribute penalties for low stamina (<50%)
+  if (player.stamina < 50) {
+    const penalty = 1 - (50 - player.stamina) / 100; // 50% stamina = 1.0, 0% = 0.5
+    if (['speed', 'shooting', 'passing', 'defending', 'dribbling', 'marking', 'positioning'].includes(attr as string)) {
+      val *= penalty;
+    }
+  }
+
+  if (player.injured) val *= 0.6; // Severe penalty for playing injured
+
+  return val * mult;
 }
 
 // Individual "form" multiplier (morale × stamina) used to scale action probabilities.
