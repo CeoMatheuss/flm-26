@@ -7,13 +7,15 @@ const NORMALIZED_POSITIONS: Player['position'][] = ['GOL', 'ZAG', 'LAT', 'VOL', 
 
 const isAvailableForSquad = (player: Player) => {
   const raw = player as any;
-  const status = String(raw.status ?? raw.contractStatus ?? '').toLowerCase();
+  const status = String(raw.status ?? raw.contractStatus ?? player.squad_status ?? '').toLowerCase();
   return !raw.isLoaned && !raw.loanedOut && !raw.removed && !raw.inactive && !raw.sold && status !== 'sold' && status !== 'removed';
 };
 
 const isAvailableForMatch = (player: Player) => {
   const raw = player as any;
-  return isAvailableForSquad(player) && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended;
+  const isSuspended = player.squad_status === 'suspended' || !!player.disciplinary?.isSuspended || !!raw.isSuspended || !!raw.suspended;
+  const isInjured = player.squad_status === 'injured' || !!player.injury || !!raw.isInjured;
+  return isAvailableForSquad(player) && !isInjured && !isSuspended;
 };
 
 const safePosition = (position: unknown): Player['position'] => (
