@@ -43,10 +43,19 @@ export interface LoanedPlayer {
 export function useClubState(initialState: any, userId?: string) {
   const [club, setClub] = useState<Club>(() => {
     const loadedClub = initialState?.club ?? initialClub;
-    if (!Array.isArray(loadedClub.players) || loadedClub.players.length === 0) {
-      return { ...loadedClub, players: generateInitialSquad(loadedClub.name || 'FLM 26', 'medium') };
+    let players = loadedClub.players;
+    if (!Array.isArray(players) || players.length === 0) {
+      players = generateInitialSquad(loadedClub.name || 'FLM 26', 'medium');
     }
-    return loadedClub;
+    
+    // Autocorreção de Goleiros Titulares no carregamento
+    const starters = players.slice(0, 11);
+    const gksInStarters = starters.filter((p: any) => p.position === 'GOL');
+    if (gksInStarters.length > 1) {
+      players = autoLineup(players, (loadedClub as any).tactics?.formation || '4-4-2');
+    }
+
+    return { ...loadedClub, players };
   });
   const [marketPlayers, setMarketPlayers] = useState<Player[]>(initialState?.marketPlayers ?? generateMarketPlayers(8));
   const [freeAgents, setFreeAgents] = useState<Player[]>(initialState?.freeAgents ?? generateFreeAgents(12));

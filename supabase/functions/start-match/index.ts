@@ -1969,6 +1969,17 @@ Deno.serve(async (req) => {
     if (!Array.isArray(homePlayers) || homePlayers.length === 0) {
       return new Response(JSON.stringify({ error: 'No home players provided. Selecione ao menos 1 jogador titular.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+    
+    // VALIDAÇÃO DE ESCALAÇÃO: Proibir 0 ou >1 goleiro titular
+    const startersCount = homePlayers.filter(p => p.squad_status === 'starter' || p.isOnPitch).length;
+    const gksCount = homePlayers.filter(p => (p.squad_status === 'starter' || p.isOnPitch) && p.position === 'GOL').length;
+    
+    if (startersCount < 11) {
+      return new Response(JSON.stringify({ error: `Escalação incompleta (${startersCount}/11). Preencha o time titular.` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (gksCount !== 1) {
+      return new Response(JSON.stringify({ error: `Escalação inválida: o time precisa de EXATAMENTE 1 goleiro titular (atualmente ${gksCount}).` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const validatedHomeStrength = clamp(Number(homeStrength) || 60, 20, 99);
     const validatedAwayStrength = clamp(Number(awayStrength) || 60, 20, 99);

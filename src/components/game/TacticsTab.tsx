@@ -73,6 +73,31 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
 
   const swapInLineup = (idA: string, idB: string) => {
     if (!onUpdatePlayers) return;
+    const playerA = safePlayers.find(p => p.id === idA);
+    const playerB = safePlayers.find(p => p.id === idB);
+    if (!playerA || !playerB) return;
+
+    // BLOQUEIO: Impedir 2 goleiros titulares
+    const starters = safePlayers.filter(p => p.squad_status === 'starter');
+    const isAServingInLineup = starters.some(p => p.id === idA);
+    const isBServingInLineup = starters.some(p => p.id === idB);
+
+    // Se um está entrando nos titulares e é GOL, e já existe um GOL que NÃO é o que está saindo
+    if (!isAServingInLineup && playerA.position === 'GOL') {
+       const otherGK = starters.find(p => p.position === 'GOL' && p.id !== idB);
+       if (otherGK) {
+         toast.error("Escalação inválida: apenas 1 goleiro pode iniciar.");
+         return;
+       }
+    }
+    if (!isBServingInLineup && playerB.position === 'GOL') {
+       const otherGK = starters.find(p => p.position === 'GOL' && p.id !== idA);
+       if (otherGK) {
+         toast.error("Escalação inválida: apenas 1 goleiro pode iniciar.");
+         return;
+       }
+    }
+
     const idxA = safePlayers.findIndex(p => p.id === idA);
     const idxB = safePlayers.findIndex(p => p.id === idB);
     if (idxA < 0 || idxB < 0) return;

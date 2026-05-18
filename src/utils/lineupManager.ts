@@ -30,6 +30,12 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const requirements = formationRequirements[formation];
   if (!requirements) return players;
 
+  // Garantir que a formação sempre comece com GOL
+  const safeRequirements = [...requirements];
+  if (safeRequirements[0] !== 'GOL') {
+    safeRequirements[0] = 'GOL';
+  }
+
   const canPlayMatch = (player: Player) => {
     const raw = player as any;
     const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
@@ -82,10 +88,10 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   }
 
   // 2. Assign other starters based on formation requirements
-  for (let i = 1; i < requirements.length; i++) {
-    const reqPos = requirements[i] as Player['position'];
+  for (let i = 1; i < safeRequirements.length; i++) {
+    const reqPos = safeRequirements[i] as Player['position'];
     const bestPlayer = allPlayers
-      .filter(p => !used.has(p.id) && canPlayMatch(p))
+      .filter(p => !used.has(p.id) && canPlayMatch(p) && p.position !== 'GOL') // Proibir GOL nas outras posições de linha
       .sort((a, b) => getPlayerScoreForPos(b, reqPos) - getPlayerScoreForPos(a, reqPos))[0];
     
     if (bestPlayer) {
@@ -98,7 +104,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   for (let i = 0; i < starters.length; i++) {
     if (!starters[i]) {
       const fallback = allPlayers
-        .filter(p => !used.has(p.id) && canPlayMatch(p))
+        .filter(p => !used.has(p.id) && canPlayMatch(p) && (i === 0 ? p.position === 'GOL' : p.position !== 'GOL'))
         .sort((a, b) => b.overall - a.overall)[0];
       if (fallback) {
         starters[i] = fallback;
@@ -212,7 +218,22 @@ export function validateLineup(players: Player[] | null | undefined): { valid: b
   if (!Array.isArray(players) || players.length === 0) return { valid: true };
   
   const safePlayers = players.filter((p): p is Player => !!p && typeof p === 'object' && !!p.position);
-  const starters = safePlayers.filter(p => p.squad_status === 'starter');
+  
+  // Lógica de Autocorreção: Se houver mais de 1 goleiro titular, o segundo vai para o banco
+  const starters = safePlayers.slice(0, 11);
+  const goalkeepersInStarters = starters.filter(p => p.position === 'GOL');
+  
+  if (goalkeepersInStarters.length > 1) {
+     // Trigger auto-lineup to fix it
+     const formation = detectActualFormation(players as Player[]);
+     const fixed = autoLineup(players as Player[], formation);
+     return {
+       valid: false,
+       message: "Escalação inválida: apenas 1 goleiro pode iniciar. Corrigindo automaticamente...",
+       autoFix: fixed
+     };
+  }
+
   const bench = safePlayers.filter(p => p.squad_status === 'bench');
   const goalkeepers = starters.filter(p => p.position === 'GOL');
   
