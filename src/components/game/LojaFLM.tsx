@@ -43,7 +43,7 @@ const CATEGORIES = [
   { id: 'painel', name: 'Painel', icon: LayoutDashboard, db: 'painel' },
 ];
 
-export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
+export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: LojaProps) {
   const [activeCategory, setActiveCategory] = useState('uniform');
   const storeManager = useStoreManager(club, userId);
   useMarketingDelivery(club?.id, userId);
