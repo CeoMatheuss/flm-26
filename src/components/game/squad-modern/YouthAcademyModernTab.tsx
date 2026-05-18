@@ -283,7 +283,7 @@ export function YouthAcademyModernTab({
         </div>
 
         {/* Selected Prospect Details */}
-        <div className="xl:col-span-1">
+        <div className="xl:col-span-1 min-w-0">
           <AnimatePresence mode="wait">
             {selectedProspect ? (
               <motion.div
@@ -291,7 +291,7 @@ export function YouthAcademyModernTab({
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="sticky top-28 p-8 rounded-[2.5rem] bg-zinc-900/60 border border-emerald-500/20 backdrop-blur-2xl flex flex-col gap-8 shadow-2xl"
+                className="xl:sticky xl:top-28 p-5 sm:p-6 rounded-[2rem] bg-zinc-900/60 border border-emerald-500/20 backdrop-blur-2xl flex flex-col gap-6 shadow-2xl"
               >
                 <div className="text-center">
                   <div className="relative inline-block mx-auto mb-6">
