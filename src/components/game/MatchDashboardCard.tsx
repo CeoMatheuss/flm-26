@@ -36,11 +36,17 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     stadium?: string;
   } | null>(null);
 
+  const [recentFinished, setRecentFinished] = useState<typeof nextMatch>(null);
+  const [dismissedFinishedId, setDismissedFinishedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
-  
-  const { homeShield, awayShield } = useMatchShields(nextMatch?.home, nextMatch?.away);
+
+  // Display priority: recently-finished (if not dismissed) > next pending
+  const showFinished = !!recentFinished && recentFinished.matchId !== dismissedFinishedId;
+  const displayed = showFinished ? recentFinished : nextMatch;
+
+  const { homeShield, awayShield } = useMatchShields(displayed?.home, displayed?.away);
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
