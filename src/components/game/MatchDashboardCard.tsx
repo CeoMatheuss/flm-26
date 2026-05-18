@@ -253,7 +253,26 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       window.removeEventListener('flm:match-finalized', handleSync);
       window.removeEventListener('league_match_updated', handleSync);
     };
-  }, [userId]);
+  }, [userId, club.matches]);
+
+  const [suspendedPlayers, setSuspendedPlayers] = useState<string[]>([]);
+  useEffect(() => {
+    if (!userId) return;
+    const loadSuspensions = async () => {
+      const { data } = await supabase.from('suspensions').select('player_id, competition_type');
+      if (data) {
+        // Filter by competition type if next match is defined
+        const compType = nextMatch?.tournament?.toLowerCase().includes('copa') ? 'Copa' : 'Liga';
+        setSuspendedPlayers(data.filter(s => s.competition_type === compType).map(s => s.player_id));
+      }
+    };
+    loadSuspensions();
+  }, [userId, nextMatch?.matchId]);
+
+  const suspendedInLineup = useMemo(() => {
+    const starters = club.players.slice(0, 18); // 11 + 7
+    return starters.filter(p => suspendedPlayers.includes(p.id));
+  }, [club.players, suspendedPlayers]);
 
 
   // Live countdown timer — sistema antigo: contagem regressiva até a hora do jogo + 1h
