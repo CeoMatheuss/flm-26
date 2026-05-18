@@ -647,7 +647,8 @@ function simulateFullMatch(
   staffData?: any, awayFans: number = 500,
   tieBreakerMode: 'none' | 'extra_time' | 'penalties' | 'both' = 'none',
   awayPlayersInput?: any[],
-  awayTacticsInput?: any
+  awayTacticsInput?: any,
+  ticketPriceInput?: number
 ) {
   homeStrength = clamp(Math.round(homeStrength), 20, 99);
   awayStrength = clamp(Math.round(awayStrength), 20, 99);
