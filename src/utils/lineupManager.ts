@@ -115,18 +115,18 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   const finalStarters = starters.filter((p): p is Player => !!p);
 
-  // 3. Intelligent Balanced Reserves (11 slots)
+  // 3. Intelligent Balanced Reserves (Exact 11 slots)
   const reserves: Player[] = [];
-  const remainingPlayers = allPlayers.filter(p => !used.has(p.id) && canPlayMatch(p));
+  const poolForReserves = allPlayers.filter(p => !used.has(p.id) && canPlayMatch(p));
 
   // Reserve GK (Mandatory if available)
-  const resGK = remainingPlayers.find(p => p.position === 'GOL');
+  const resGK = poolForReserves.find(p => p.position === 'GOL');
   if (resGK) {
     reserves.push(resGK);
     used.add(resGK.id);
   }
 
-  // Balanced logic: 2 Def, 2 Mid, 2 Atk or similar based on availability
+  // Balanced logic: 3 Def, 4 Mid, 3 Atk or similar based on availability
   const slots = [
     { pos: ['ZAG', 'LAT'], count: 3 },
     { pos: ['VOL', 'MEI'], count: 4 },
@@ -134,8 +134,8 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   ];
 
   slots.forEach(slot => {
-    const candidates = allPlayers
-      .filter(p => !used.has(p.id) && canPlayMatch(p) && slot.pos.includes(p.position as any))
+    const candidates = poolForReserves
+      .filter(p => !used.has(p.id) && slot.pos.includes(p.position as any))
       .sort((a, b) => b.overall - a.overall);
     
     for (let i = 0; i < slot.count && candidates.length > 0; i++) {
@@ -145,7 +145,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     }
   });
 
-  // Fill remaining reserve slots (up to 11) with best remaining
+  // Fill remaining reserve slots (up to 11) with best remaining available
   const leftForReserves = allPlayers
     .filter(p => !used.has(p.id) && canPlayMatch(p))
     .sort((a, b) => b.overall - a.overall);
@@ -156,6 +156,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     used.add(p.id);
   }
 
+  // All other players go to "reserve" status (which will be filtered into "Fora" tab)
   const otherPlayers = allPlayers.filter(p => !used.has(p.id));
   
   return [
