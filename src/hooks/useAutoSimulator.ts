@@ -5,9 +5,8 @@ export function useAutoSimulator(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    // Trigger initial simulation
     const runSim = async () => {
-      console.log('[AutoSim] Executando simulação inicial...');
+      console.log('[AutoSim] Executando simulação de segurança...');
       try {
         await Promise.all([
           supabase.functions.invoke('world-match-simulator'),
@@ -16,25 +15,17 @@ export function useAutoSimulator(userId: string | undefined) {
           supabase.functions.invoke('legacy-auto-sim'),
         ]);
       } catch (err) {
-        console.error('[AutoSim] Erro na simulação inicial:', err);
+        console.error('[AutoSim] Erro na simulação:', err);
       }
     };
     runSim();
 
-    // Trigger simulation every 2 minutes if the tab is open
-    const interval = setInterval(async () => {
-      console.log('[AutoSim] Verificando partidas pendentes...');
-      try {
-        await Promise.all([
-          supabase.functions.invoke('world-match-simulator'),
-          supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' } }),
-          supabase.functions.invoke('process-transfer', { body: { action: 'resolve-decisions' } }),
-          supabase.functions.invoke('legacy-auto-sim'),
-        ]);
-      } catch (err) {
-        console.error('[AutoSim] Erro ao invocar simuladores:', err);
-      }
-    }, 120000); // 2 minutes
+    // Verificação agressiva a cada 30 segundos para o sistema antigo de 5min
+    const interval = setInterval(runSim, 30000);
+
+    return () => clearInterval(interval);
+  }, [userId]);
+}
 
     return () => clearInterval(interval);
   }, [userId]);

@@ -321,31 +321,38 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   }, [club.players, suspendedPlayers]);
 
 
-  // Live countdown timer — sistema antigo: contagem regressiva até a hora do jogo + 1h
+  // Live countdown timer — sistema antigo: contagem regressiva de 5 minutos exatos
   useEffect(() => {
     if (!nextMatch?.date || nextMatch.status === 'finished') return;
     const update = () => {
-      // Hora oficial do jogo + 1 hora (ajuste solicitado)
-      const scheduledTime = new Date(nextMatch.date).getTime() + 60 * 60 * 1000;
+      const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
+      
+      // Janela clássica de 5 minutos
+      const LOBBY_WINDOW_MS = 5 * 60 * 1000;
       const diff = scheduledTime - now;
 
       if (diff <= 0) {
-        setTimeLeft('🔴 AO VIVO');
-        setIsReady(true);
+        if (Math.abs(diff) < LOBBY_WINDOW_MS) {
+          setTimeLeft('🔴 AO VIVO');
+          setIsReady(true);
+        } else {
+          setTimeLeft('⌛ SIMULANDO');
+          setIsReady(false);
+        }
         return;
       }
 
       setIsReady(false);
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
+      const totalSeconds = Math.floor(diff / 1000);
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      
       if (h >= 1) {
-        setTimeLeft(`Faltam ${h}h ${String(m).padStart(2, '0')}min ${String(s).padStart(2, '0')}s`);
-      } else if (m >= 1) {
-        setTimeLeft(`Faltam ${m}min ${String(s).padStart(2, '0')}s`);
+        setTimeLeft(`Inicia em ${h}h ${String(m).padStart(2, '0')}m`);
       } else {
-        setTimeLeft(`Faltam ${s}s`);
+        setTimeLeft(`Inicia em ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
       }
     };
     update();
