@@ -174,6 +174,16 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
                 {!auctionEligible && <span className="text-[8px] text-muted-foreground">(OVR 65+ / ≤35a)</span>}
               </Button>
             )}
+            {(listingId || loanListingId) && (
+              <Button 
+                size="sm" 
+                variant="destructive" 
+                className="h-7 text-[10px] gap-1" 
+                onClick={handleCancelListing}
+              >
+                <XCircle className="h-3 w-3" /> Remover Anúncio
+              </Button>
+            )}
             {onChangeNumber && (
               <div className="flex items-center gap-1">
                 {editingNumber ? (
