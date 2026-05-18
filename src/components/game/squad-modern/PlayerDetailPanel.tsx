@@ -170,7 +170,71 @@ function PlayerDetailContent({
               </div>
             </div>
           </div>
+          
+          {/* Status Highlight Banner (Requested: VISUAL IMPACT) */}
+          {(player.onTransferList || player.onLoanList || player.isLoaned || player.isReceivedLoan) && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={cn(
+                "mt-6 p-4 rounded-2xl flex items-center justify-between border-2 shadow-2xl relative overflow-hidden group",
+                player.onTransferList ? "bg-emerald-500/20 border-emerald-500/40" :
+                player.onLoanList ? "bg-cyan-500/20 border-cyan-500/40" :
+                player.isReceivedLoan ? "bg-indigo-500/20 border-indigo-500/40" :
+                "bg-zinc-500/20 border-zinc-500/40"
+              )}
+            >
+              {/* Animated Background Light */}
+              <div className={cn(
+                "absolute inset-0 opacity-10 animate-pulse pointer-events-none",
+                player.onTransferList ? "bg-emerald-500" :
+                player.onLoanList ? "bg-cyan-500" :
+                player.isReceivedLoan ? "bg-indigo-500" : "bg-zinc-500"
+              )} />
+              
+              <div className="flex items-center gap-3 relative z-10">
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center border border-white/10 shadow-lg",
+                  player.onTransferList ? "bg-emerald-500 text-zinc-950" :
+                  player.onLoanList ? "bg-cyan-500 text-zinc-950" :
+                  player.isReceivedLoan ? "bg-indigo-500 text-white" :
+                  "bg-zinc-500 text-white"
+                )}>
+                  {player.onTransferList ? <ShoppingCart className="h-5 w-5" /> :
+                   player.onLoanList ? <ArrowLeftRight className="h-5 w-5" /> :
+                   player.isReceivedLoan ? <Handshake className="h-5 w-5" /> :
+                   <ArrowLeftRight className="h-5 w-5" />}
+                </div>
+                <div className="flex flex-col">
+                  <span className={cn(
+                    "text-[10px] font-black uppercase tracking-[0.2em]",
+                    player.onTransferList ? "text-emerald-400" :
+                    player.onLoanList ? "text-cyan-400" :
+                    player.isReceivedLoan ? "text-indigo-400" : "text-zinc-400"
+                  )}>
+                    Status de Mercado
+                  </span>
+                  <span className="text-sm font-black text-white italic uppercase tracking-tighter">
+                    {player.onTransferList ? "Listado à Venda" :
+                     player.onLoanList ? "Disponível p/ Empréstimo" :
+                     player.isReceivedLoan ? `Emp. Recebido (${player.loanedFrom})` :
+                     `Emprestado (${player.loanedTo})`}
+                  </span>
+                </div>
+              </div>
+
+              {(player.isLoaned || player.isReceivedLoan) && player.loanWeeksRemaining && (
+                <div className="flex flex-col items-end relative z-10">
+                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Tempo Restante</span>
+                  <span className="text-sm font-black text-amber-400 flex items-center gap-1">
+                    <Clock className="h-4 w-4" /> {player.loanWeeksRemaining} SEMANAS
+                  </span>
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
+
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 custom-scrollbar">
