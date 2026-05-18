@@ -927,6 +927,29 @@ export function SquadModernLayout({
                       </div>
                     </div>
                   </div>
+                ) : confirmAction.type === 'change-position' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Escolher Nova Posição</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'] as Player['position'][]).map(pos => (
+                        <button
+                          key={pos}
+                          onClick={() => setConfirmAction({ ...confirmAction, newPosition: pos })}
+                          className={cn(
+                            "py-3 rounded-xl border font-black text-xs transition-all uppercase tracking-widest",
+                            confirmAction.newPosition === pos
+                              ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20"
+                              : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                          )}
+                        >
+                          {pos}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-white/30 text-center uppercase tracking-widest mt-2 italic">
+                      A mudança de posição pode afetar o desempenho dinâmico do jogador no campo.
+                    </p>
+                  </div>
                 ) : confirmAction.type === 'shirt-number' ? (
                   <div className="space-y-4">
                     <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Escolher Número da Camisa</p>
