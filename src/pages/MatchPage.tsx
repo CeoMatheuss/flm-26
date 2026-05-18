@@ -198,11 +198,12 @@ export default function MatchPage() {
     // Timeout de segurança: se nada terminar em 25s, volta ao Dashboard com aviso
     const safetyTimer = window.setTimeout(() => {
       if (cancelled) return;
-      if (!initDone) {
+      if (!initDoneRef.current) {
+        console.warn('[MatchPage] Initialization timeout hit. initDone:', initDoneRef.current);
         toast.error('Demorou demais para entrar na partida. Tente novamente.');
         navigate('/', { replace: true });
       }
-    }, 25000);
+    }, 45000); // Aumentado para 45s para evitar falsos positivos em conexões lentas
 
     const init = async () => {
       if (locState?.liveMatchSnapshot) {
