@@ -316,11 +316,21 @@ function generateAssistantTips(
     }
     
     // Yellow card warning
-    if (p.yellowCards > 0 && assistantSkill >= 5) {
+    if (p.yellowCards > 0 && assistantSkill >= 4) {
+      const riskLevel = p.fairPlay < 40 || p.aggression > 70 ? 'CRÍTICO' : 'Médio';
+      tips.push({
+        minute, type: 'assistant_tip', team: 'neutral',
+        playerName: p.name, priority: riskLevel === 'CRÍTICO' ? 'high' : 'medium',
+        description: `🟨 ${p.name} já tem cartão amarelo. Com ${p.fairPlay} de Fair Play e ${p.aggression} de Agressividade, o risco de expulsão é ${riskLevel}. Cuidado com as divididas!`,
+      });
+    }
+
+    // Fatigue warning for discipline
+    if (p.stamina < 45 && p.defending > 60 && assistantSkill >= 5) {
       tips.push({
         minute, type: 'assistant_tip', team: 'neutral',
         playerName: p.name, priority: 'medium',
-        description: `🟨 ${p.name} já tem cartão amarelo. Peça para ele evitar divididas duras. Uma expulsão agora seria devastadora para nosso esquema tático.`,
+        description: `⚠️ ${p.name} está cansado (${Math.round(p.stamina)}%). Isso aumenta a chance de chegar atrasado nos botes e cometer faltas desnecessárias.`,
       });
     }
   }
