@@ -38,7 +38,7 @@ const EMPTY_STATS: MatchStats = {
 };
 
 export interface MatchState {
-  phase: 'idle' | 'loading' | 'live' | 'halftime' | 'finished' | 'error';
+  phase: 'idle' | 'loading' | 'live' | 'halftime' | 'finished' | 'error' | 'break';
   currentMinute: number;
   progress: number;
   homeTeam: string;
