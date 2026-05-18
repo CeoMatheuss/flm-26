@@ -275,34 +275,85 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       }
     };
 
-    const drawAllPlayers = (drift: number, reactToAction = false, actionX = 0, actionY = 0, shiftAmount = 0) => {
+    const drawAllPlayers = (
+      drift: number, 
+      reactToAction = false, 
+      actionX = 0, 
+      actionY = 0, 
+      shiftAmount = 0,
+      attackingTeam: 'home' | 'away' | null = null,
+      pressure = 0,
+      compactness = 0
+    ) => {
       const driftAmt = reactToAction ? 4 : 2;
+      const homeIsAttacking = attackingTeam === 'home';
+      const awayIsAttacking = attackingTeam === 'away';
+
       HOME_POSITIONS.forEach((p, i) => {
         let px = p.x * W;
         let py = p.y * H;
+        
+        // Base shift from original code
         if (isHome && shiftAmount > 0 && i > 4) px += shiftAmount;
+
+        // Dynamic Positioning Logic
+        if (homeIsAttacking) {
+          // Attacking: Push forward
+          const forwardPush = (i === 0 ? 0.02 : i <= 4 ? 0.15 : 0.25) * W * pressure;
+          px += forwardPush;
+          // Spread out slightly
+          if (i > 4) py = 0.5 * H + (py - 0.5 * H) * (1 + pressure * 0.2);
+        } else if (awayIsAttacking) {
+          // Defending: Retract and stay compact
+          const retract = (i === 0 ? 0 : i <= 4 ? -0.10 : -0.20) * W * compactness;
+          px += retract;
+          // Compact lines
+          if (i > 0) py = 0.5 * H + (py - 0.5 * H) * (1 - compactness * 0.4);
+        }
+
         let dx = Math.sin(drift + i * 1.3) * driftAmt;
         let dy = Math.cos(drift + i * 0.9) * driftAmt;
         if (reactToAction) {
           const dist = Math.hypot(px - actionX, py - actionY);
-          if (dist < 140) {
-            dx += (actionX - px) * 0.025;
-            dy += (actionY - py) * 0.015;
+          if (dist < 160) {
+            const attraction = 0.035 * pressure;
+            dx += (actionX - px) * attraction;
+            dy += (actionY - py) * attraction;
           }
         }
         drawPlayer(px + dx, py + dy, COLORS.home, COLORS.homeLight, p.label);
       });
+
       AWAY_POSITIONS.forEach((p, i) => {
         let px = p.x * W;
         let py = p.y * H;
+        
+        // Base shift from original code
         if (!isHome && shiftAmount > 0 && i > 4) px -= shiftAmount;
+
+        // Dynamic Positioning Logic
+        if (awayIsAttacking) {
+          // Attacking: Push forward
+          const forwardPush = (i === 0 ? -0.02 : i <= 4 ? -0.15 : -0.25) * W * pressure;
+          px += forwardPush;
+          // Spread out slightly
+          if (i > 4) py = 0.5 * H + (py - 0.5 * H) * (1 + pressure * 0.2);
+        } else if (homeIsAttacking) {
+          // Defending: Retract and stay compact
+          const retract = (i === 0 ? 0 : i <= 4 ? 0.10 : 0.20) * W * compactness;
+          px += retract;
+          // Compact lines
+          if (i > 0) py = 0.5 * H + (py - 0.5 * H) * (1 - compactness * 0.4);
+        }
+
         let dx = Math.sin(drift + i * 1.1 + 3) * driftAmt;
         let dy = Math.cos(drift + i * 0.7 + 2) * driftAmt;
         if (reactToAction) {
           const dist = Math.hypot(px - actionX, py - actionY);
-          if (dist < 140) {
-            dx += (actionX - px) * 0.025;
-            dy += (actionY - py) * 0.015;
+          if (dist < 160) {
+            const attraction = 0.035 * pressure;
+            dx += (actionX - px) * attraction;
+            dy += (actionY - py) * attraction;
           }
         }
         drawPlayer(px + dx, py + dy, COLORS.away, COLORS.awayLight, p.label);
