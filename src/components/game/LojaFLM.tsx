@@ -30,6 +30,7 @@ interface LojaProps {
   isPremium?: boolean;
   onUpgradeFacility?: (facility: string) => void;
   onAcceptSponsor?: (offer: any) => void;
+  onBuyPack?: (players: any[], cost: number) => void;
 }
 
 const CATEGORIES = [
