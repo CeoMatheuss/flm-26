@@ -190,18 +190,18 @@ export function SquadModernLayout({
     });
   }, [players, onUpdatePlayers]);
 
-  // Confirmation modal state for market/loan listing
+  // Modal States
   const [confirmAction, setConfirmAction] = useState<null | {
-    type: 'transfer' | 'loan-out';
+    type: 'transfer' | 'loan-out' | 'auction' | 'renew' | 'shirt-number' | 'train';
     player: Player;
-    value: number;
-    listingFeeRate: number;
-    agentFeeRate: number;
-    adminFeeRate: number;
-    listingFee: number;
-    agentFee: number;
-    adminFee: number;
-    total: number;
+    value?: number;
+    listingFeeRate?: number;
+    agentFeeRate?: number;
+    adminFeeRate?: number;
+    listingFee?: number;
+    agentFee?: number;
+    adminFee?: number;
+    total?: number;
   }>(null);
   const [submitting, setSubmitting] = useState(false);
 
