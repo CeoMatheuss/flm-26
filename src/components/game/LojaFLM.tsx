@@ -30,6 +30,7 @@ interface LojaProps {
   isPremium?: boolean;
   onUpgradeFacility?: (facility: string) => void;
   onAcceptSponsor?: (offer: any) => void;
+  onBuyPack?: (players: any[], cost: number) => void;
 }
 
 const CATEGORIES = [
@@ -42,7 +43,7 @@ const CATEGORIES = [
   { id: 'painel', name: 'Painel', icon: LayoutDashboard, db: 'painel' },
 ];
 
-export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) {
+export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: LojaProps) {
   const [activeCategory, setActiveCategory] = useState('uniform');
   const storeManager = useStoreManager(club, userId);
   useMarketingDelivery(club?.id, userId);
@@ -406,10 +407,12 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               budget={club.budget} 
               userId={userId}
               onBuyPack={(players, cost) => {
+                if (onBuyPack) onBuyPack(players, cost);
                 // Ensure immediate refresh of club state after pack purchase
                 (window as any).dispatchEvent(new CustomEvent('flm:refresh-club-data'));
                 toast.success(`${players.length} jogadores adicionados ao elenco!`);
               }} 
+
             />
           </TabsContent>
 
