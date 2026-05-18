@@ -83,8 +83,8 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
                   <ArrowLeftRight className="w-4 h-4" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/70">Trocando {pendingSwap.name}</span>
-                  <span className="text-xs font-black text-white uppercase italic">Selecione o substituto...</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/70">Substituindo {pendingSwap.name}</span>
+                  <span className="text-xs font-black text-white uppercase italic">Escolha quem entra...</span>
                 </div>
                 <button 
                   onClick={onCancelSwap}
