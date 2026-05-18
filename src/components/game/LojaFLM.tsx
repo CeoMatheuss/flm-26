@@ -407,10 +407,12 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
               budget={club.budget} 
               userId={userId}
               onBuyPack={(players, cost) => {
+                if (onBuyPack) onBuyPack(players, cost);
                 // Ensure immediate refresh of club state after pack purchase
                 (window as any).dispatchEvent(new CustomEvent('flm:refresh-club-data'));
                 toast.success(`${players.length} jogadores adicionados ao elenco!`);
               }} 
+
             />
           </TabsContent>
 
