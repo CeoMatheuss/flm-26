@@ -121,7 +121,9 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
   const [loanListings, setLoanListings] = useState<any[]>([]);
   const [myRenewals, setMyRenewals] = useState<any[]>([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const [offerDialogId, setOfferDialogId] = useState<string | null>(null);
   const [viewingSellerId, setViewingSellerId] = useState<{ id: string; name: string; shield?: any } | null>(null);
   const [posFilter, setPosFilter] = useState('all');
@@ -155,13 +157,24 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [showBonusHelp, setShowBonusHelp] = useState(false);
 
   const loadListings = useCallback(async () => {
-    const { data } = await supabase
-      .from('transfer_listings')
-      .select('*')
-      .eq('status', 'active')
-      .order('listed_at', { ascending: false });
-    if (data) setListings(data as unknown as TransferListing[]);
+    setIsLoadingListings(true);
+    try {
+      const { data, error } = await supabase
+        .from('transfer_listings')
+        .select('*')
+        .eq('status', 'active')
+        .order('listed_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error loading listings:', error);
+      } else if (data) {
+        setListings(data as unknown as TransferListing[]);
+      }
+    } finally {
+      setIsLoadingListings(false);
+    }
   }, []);
+
 
   const loadMyOffers = useCallback(async () => {
     const { data } = await supabase
@@ -363,6 +376,9 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
   const myListings = listings.filter(l => l.seller_id === userId);
   const otherListings = listings.filter(l => l.seller_id !== userId);
+  // No mercado global, mostramos TUDO, mas com badges e travas diferentes
+  const allMarketListings = listings;
+
   const listablePlayers = players.filter(p => !myListings.some(l => l.player_data?.id === p.id));
 
   const filterListings = (list: TransferListing[]) => {
@@ -639,7 +655,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-sm flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" /> Mercado Online
-              <Badge variant="outline" className="text-[9px]">{otherListings.length}</Badge>
+              <Badge variant="outline" className="text-[9px]">{listings.length}</Badge>
+
             </h3>
             <Button variant="outline" size="sm" onClick={loadListings} className="text-xs gap-1.5 h-8 rounded-lg">
               <RefreshCw className="h-3 w-3" /> Atualizar
@@ -688,7 +705,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           </div>
 
           {(() => {
-            const filtered = filterListings(otherListings);
+            const filtered = filterListings(allMarketListings);
+
             const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
             const safePage = Math.min(currentPage, totalPages || 1);
             const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
@@ -723,18 +741,29 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                             <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{listing.player_position}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-xs truncate">{listing.player_name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-bold text-xs truncate">{listing.player_name}</p>
+                              {listing.seller_id === userId && (
+                                <Badge variant="secondary" className="text-[7px] h-3 px-1 bg-primary text-black border-0">SEU</Badge>
+                              )}
+                            </div>
                             <button className="text-[10px] text-primary hover:underline cursor-pointer truncate block" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
                               {listing.seller_club_name}
                             </button>
-                            <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5">
+                            <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5 flex-wrap">
                               <span>{listing.player_age}a</span>
+                              <span>•</span>
+                              <span className="flex items-center gap-0.5"><Zap className="h-2 w-2 text-emerald-400" /> {pd?.stamina ?? 100}%</span>
                               <span>•</span>
                               <span>{pd?.gamesPlayed ?? 0}j</span>
                               <span>⚽{pd?.goals ?? 0}</span>
                               <span>🅰️{pd?.assists ?? 0}</span>
+                              {listing.status !== 'active' && (
+                                <Badge variant="outline" className="text-[7px] h-3 border-orange-500/30 text-orange-400 uppercase">{listing.status}</Badge>
+                              )}
                             </div>
                           </div>
+
                           {listing.transfer_count > 2 && (
                             <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 shrink-0 gap-0.5">
                               <ArrowLeftRight className="h-2.5 w-2.5" /> {listing.transfer_count}x
@@ -743,9 +772,10 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                           <div className="shrink-0 text-right">
                             <p className="text-sm font-black text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
                             <div className="flex gap-1 mt-1.5">
-                              <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => openOfferDialog(listing)} disabled={loading || budget < listing.asking_price * 0.5}>
+                              <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1" onClick={() => openOfferDialog(listing)} disabled={loading || budget < listing.asking_price * 0.5 || listing.seller_id === userId}>
                                 <Send className="h-3 w-3" /> Proposta
                               </Button>
+
                               <Button size="sm" variant="outline" className="h-7 px-2 text-[9px] rounded-lg" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
                                 <Eye className="h-3 w-3" />
                               </Button>
