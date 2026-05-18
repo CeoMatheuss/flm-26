@@ -2279,6 +2279,13 @@ Deno.serve(async (req) => {
 
         // Update Standings via RPC for consistency
         await adminClient.rpc('update_league_standings', { _league_id: leagueMatch.league_id });
+
+        // Decrement suspensions for the participating players in this league match
+        const allMatchPlayerIds = result.allPlayers.map(p => p.id).filter(id => id && !id.startsWith('bot-'));
+        await adminClient.rpc('process_match_suspensions', { 
+          _player_ids: allMatchPlayerIds, 
+          _competition_type: 'Liga' 
+        });
       }
 
       // 3.2. National Cup Match Logic
