@@ -101,7 +101,7 @@ export default function MatchPage() {
   const [preMatchDone, setPreMatchDone] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
 
-  const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, destroy } = useMatchSimulation();
+  const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, resumeFromBreak, destroy } = useMatchSimulation();
 
   const doStartMatch = useCallback(async (players: Player[], updatedTactics?: TacticsConfig) => {
     if (!locState) return;
