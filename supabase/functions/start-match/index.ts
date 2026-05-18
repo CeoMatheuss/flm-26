@@ -2258,7 +2258,7 @@ Deno.serve(async (req) => {
         // Find or create global league entry if needed, but usually we just want to update world_player_stats
         // We can use a default league_id if not a league match
         const worldLeagueId = leagueMatch?.league_id || '00000000-0000-0000-0000-000000000000';
-        for (const p of allPlayers) {
+        for (const p of result.allPlayers) {
           if (!p.isOnPitch && p.goals === 0) continue;
           await adminClient.rpc('upsert_world_player_stats', {
             _player_id: p.id,
