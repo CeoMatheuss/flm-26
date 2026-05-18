@@ -362,8 +362,8 @@ export function SquadModernLayout({
 
             <div className="flex-1 overflow-x-auto custom-scrollbar relative">
               <AnimatePresence mode="wait">
-                <TabsContent key={activeTab} value={activeTab} className="h-full m-0 outline-none">
                   <motion.div
+                    key={activeTab}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
@@ -402,7 +402,6 @@ export function SquadModernLayout({
                       />
                     )}
                   </motion.div>
-                </TabsContent>
               </AnimatePresence>
             </div>
           </Tabs>
