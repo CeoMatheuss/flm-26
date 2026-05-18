@@ -119,6 +119,9 @@ export interface Player {
   potential?: number;
   isYouth?: boolean;
   marketValue?: number;
+  nationality?: string;
+  resistance?: number;
+  stamina_max?: number;
   squadRole?: 'promessa' | 'reserva' | 'rotacao' | 'titular-futuro' | 'titular' | 'estrela';
   squad_status?: 'starter' | 'bench' | 'reserve' | 'injured' | 'suspended';
   lastPerformanceHistory?: number[]; // rating of last games
