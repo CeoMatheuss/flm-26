@@ -604,6 +604,7 @@ export function SquadModernLayout({
 
       <PlayerDetailPanel
         player={selectedPlayer}
+        onSwap={(p) => setPendingSwap(p)}
         status={selectedStatus}
         delta={selectedDelta}
         open={panelOpen}
