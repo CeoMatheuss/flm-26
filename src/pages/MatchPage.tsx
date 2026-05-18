@@ -92,6 +92,11 @@ export default function MatchPage() {
   const location = useLocation();
   const locState = location.state as MatchPageState | null;
   const [initDone, setInitDone] = useState(false);
+  const initDoneRef = useRef(false);
+
+  useEffect(() => {
+    initDoneRef.current = initDone;
+  }, [initDone]);
   const [loadingMsg, setLoadingMsg] = useState('Preparando partida');
   const [preMatchDone, setPreMatchDone] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
@@ -190,14 +195,17 @@ export default function MatchPage() {
   // Auto-start or reconnect
   useEffect(() => {
     let cancelled = false;
-    // Timeout de segurança: se nada terminar em 25s, volta ao Dashboard com aviso
+    // Timeout de segurança: se nada terminar em 60s, volta ao Dashboard com aviso
     const safetyTimer = window.setTimeout(() => {
       if (cancelled) return;
-      if (!initDone) {
+      if (!initDoneRef.current) {
+        console.warn('[MatchPage] Initialization timeout hit after 60s. initDone:', initDoneRef.current);
         toast.error('Demorou demais para entrar na partida. Tente novamente.');
         navigate('/', { replace: true });
+      } else {
+        console.log('[MatchPage] Safety timer fired, but initDone is true. Ignoring timeout.');
       }
-    }, 25000);
+    }, 60000); // Aumentado para 60s para evitar falsos positivos e garantir robustez
 
     const init = async () => {
       if (locState?.liveMatchSnapshot) {
