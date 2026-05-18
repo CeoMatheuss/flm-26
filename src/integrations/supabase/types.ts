@@ -5798,6 +5798,10 @@ export type Database = {
     }
     Functions: {
       accept_open_friendly_slot: { Args: { _slot_id: string }; Returns: Json }
+      add_club_cash: {
+        Args: { _amount: number; _club_id: string }
+        Returns: undefined
+      }
       admin_add_money_to_club:
         | {
             Args: { p_amount: number; p_target_user_id: string }
@@ -6306,6 +6310,10 @@ export type Database = {
           _player_stats: Json
           _season: number
         }
+        Returns: undefined
+      }
+      sync_world_league_standings: {
+        Args: { _league_id: string }
         Returns: undefined
       }
       update_club_budget: {
