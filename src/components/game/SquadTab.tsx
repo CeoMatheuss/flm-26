@@ -833,6 +833,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const startersList = processList(groupedPlayers.starters);
   const reservesList = processList(groupedPlayers.reserves);
   const outList = processList(groupedPlayers.out);
+  const injuredList = processList(groupedPlayers.injured);
+  const suspendedList = processList(groupedPlayers.suspended);
 
   // ─── Main Squad View ───
   return (
