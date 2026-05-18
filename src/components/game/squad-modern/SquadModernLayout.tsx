@@ -516,6 +516,7 @@ export function SquadModernLayout({
         open={panelOpen}
         onOpenChange={setPanelOpen}
         onAction={handleAction}
+        isYouth={activeTab === 'base'}
       />
 
       <AnimatePresence>
