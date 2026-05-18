@@ -62,12 +62,17 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
         {/* Left Side: Photo & OVR */}
         <div className="flex items-center gap-4 shrink-0" onClick={onClick}>
           <div className="relative">
-            <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-2 shadow-lg backdrop-blur-xl relative overflow-hidden ${posColors[player.position]}`}>
+            <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-2 shadow-lg backdrop-blur-xl relative overflow-hidden ${isSuspended ? 'border-red-500/50 grayscale' : posColors[player.position]}`}>
               {/* Photo placeholder */}
               <div className="absolute inset-0 opacity-10 bg-gradient-to-t from-black to-transparent" />
-              <span className="text-3xl font-black leading-none drop-shadow-lg">{player.overall}</span>
-              <span className="text-[8px] font-black opacity-70 uppercase tracking-widest mt-0.5">OVR</span>
+              <span className={`text-3xl font-black leading-none drop-shadow-lg ${isSuspended ? 'text-red-400' : ''}`}>{player.overall}</span>
+              <span className="text-[8px] font-black opacity-70 uppercase tracking-widest mt-0.5">{isSuspended ? 'SUSP' : 'OVR'}</span>
             </div>
+            {isSuspended && (
+               <div className="absolute -top-1 -right-1 bg-red-600 rounded-full p-1 shadow-lg ring-2 ring-slate-900 z-30 animate-pulse">
+                <Gavel className="w-3.5 h-3.5 text-white" />
+              </div>
+            )}
             {player.injury && (
               <div className="absolute -top-1 -left-1 bg-red-500 rounded-full p-1 shadow-lg ring-2 ring-slate-900 z-20">
                 <Activity className="w-3.5 h-3.5 text-white" />
