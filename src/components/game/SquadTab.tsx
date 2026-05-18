@@ -24,6 +24,7 @@ import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
 import { SquadCard } from './squad/SquadCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuickSwapPanel } from './squad/QuickSwapPanel';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   players: Player[];
