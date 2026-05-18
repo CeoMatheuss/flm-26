@@ -162,18 +162,28 @@ Deno.serve(async (req) => {
     // PUBLIC: SEED POOL (cron-safe; idempotent)
     // ═══════════════════════════════════════════
     if (action === 'seed-pool') {
-      // Expire old agents
-      await adminClient.from('free_agents_market').delete().lt('available_until', new Date().toISOString());
+      // First, process expired auctions into free agents
+      await adminClient.rpc('handle_expired_auction_to_free_agent');
+
+      // Expire old agents (older than 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      await adminClient.from('free_agents_market').delete().lt('created_at', thirtyDaysAgo.toISOString());
 
       const { count } = await adminClient
         .from('free_agents_market')
         .select('id', { count: 'exact', head: true });
 
+      // If we have fewer than 100 players, add more (up to 10 at a time)
       const target = 100;
-      const toAdd = Math.max(0, target - (count ?? 0));
-      if (toAdd === 0) return json({ success: true, added: 0, total: count ?? 0 });
+      const currentCount = count ?? 0;
+      const toAdd = Math.min(10, Math.max(0, target - currentCount));
+      
+      if (toAdd === 0) return json({ success: true, added: 0, total: currentCount });
 
       const rows: any[] = [];
+      const newspaperEntries: any[] = [];
+
       for (let i = 0; i < toAdd; i++) {
         const p = generateFreeAgentPlayer();
         rows.push({
@@ -182,16 +192,32 @@ Deno.serve(async (req) => {
           player_position: p.position,
           player_age: p.age,
           player_overall: p.overall,
+          player_potential: p.potential,
           visible_stats: buildVisibleStats(p),
           origin: 'generated',
         });
+
+        if (p.rarity === 'Raro') {
+          newspaperEntries.push({
+            category: 'MERCADO',
+            text: `⭐ DESTAQUE: O promissor ${p.name} (${p.position}, OVR ${p.overall}) acaba de ficar livre no mercado!`,
+            is_event: true,
+          });
+        }
       }
+
       const { error } = await adminClient.from('free_agents_market').insert(rows);
       if (error) {
         console.error('seed error:', error.message);
         return json({ error: 'Erro ao popular pool' }, 500);
       }
-      return json({ success: true, added: toAdd });
+
+      // Add newspaper entries if any
+      if (newspaperEntries.length > 0) {
+        await adminClient.from('newspaper_entries').insert(newspaperEntries);
+      }
+
+      return json({ success: true, added: toAdd, total: currentCount + toAdd });
     }
 
     // ─── auth required for other actions ───
