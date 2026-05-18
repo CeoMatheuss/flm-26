@@ -38,7 +38,7 @@ interface Props {
   isYouth?: boolean;
 }
 
-export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, onAction, isYouth }: Props) {
+export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenChange, onAction, isYouth }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
