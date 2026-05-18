@@ -401,8 +401,8 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
     </motion.button>
   );
 }
-  );
-}
+
+
 
 function MiniStat({ value, icon, color, label, onRest }: { value: number; icon: React.ReactNode; color: string; label?: string; onRest?: () => void }) {
   const v = Math.round(value || 0);
