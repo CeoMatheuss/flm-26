@@ -5138,6 +5138,7 @@ export type Database = {
       }
       world_matches: {
         Row: {
+          auto_sim_at: string | null
           away_goals: number | null
           away_team_id: string | null
           created_at: string | null
@@ -5158,6 +5159,7 @@ export type Database = {
           synced: boolean | null
         }
         Insert: {
+          auto_sim_at?: string | null
           away_goals?: number | null
           away_team_id?: string | null
           created_at?: string | null
@@ -5178,6 +5180,7 @@ export type Database = {
           synced?: boolean | null
         }
         Update: {
+          auto_sim_at?: string | null
           away_goals?: number | null
           away_team_id?: string | null
           created_at?: string | null

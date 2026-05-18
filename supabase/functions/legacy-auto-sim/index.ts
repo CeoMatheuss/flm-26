@@ -12,6 +12,8 @@ const corsHeaders = {
 };
 
 const MAX_BATCH = 30;
+const STUCK_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+
 
 function poisson(lambda: number): number {
   if (lambda <= 0) return 0;
@@ -122,21 +124,35 @@ async function processFriendlies(supabase: any): Promise<number> {
 async function processLeagueMatches(supabase: any): Promise<number> {
   const nowIso = new Date().toISOString();
   const tolerance = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  // Só auto-simula se ninguém entrou no lobby após 5min do horário marcado.
+  const stuckThreshold = new Date(Date.now() - STUCK_TIMEOUT_MS).toISOString();
+  // Só auto-simula se ninguém entrou no lobby após 5min do horário marcado,
+  // ou se a partida estiver travada em 'simulating' por muito tempo.
+
   const { data: list } = await supabase
     .from('league_matches')
     .select('id, league_id, home_user_id, away_user_id, match_data, home_joined, away_joined, scheduled_at, auto_sim_at')
     .eq('status', 'scheduled')
-    .or(`auto_sim_at.lte.${nowIso},scheduled_at.lte.${tolerance}`)
+    .or(`auto_sim_at.lte.${nowIso},scheduled_at.lte.${tolerance},and(status.eq.simulating,scheduled_at.lte.${stuckThreshold})`)
     .not('home_joined', 'is', true)
     .not('away_joined', 'is', true)
+
     .order('scheduled_at', { ascending: true, nullsFirst: false })
     .limit(MAX_BATCH);
   if (!list || list.length === 0) return 0;
 
   let processed = 0;
   for (const m of list) {
+    // Atomic Lock: Mark as simulating to prevent race conditions
+    const { data: locked } = await supabase.from('league_matches')
+      .update({ status: 'simulating' })
+      .eq('id', m.id)
+      .or('status.eq.scheduled,status.eq.simulating')
+      .select('id');
+    
+    if (!locked || locked.length === 0) continue;
+
     const homeStr = await getStrength(supabase, m.home_user_id);
+
     const awayStr = await getStrength(supabase, m.away_user_id);
     const { home: hg, away: ag } = simulate(homeStr, awayStr);
 
