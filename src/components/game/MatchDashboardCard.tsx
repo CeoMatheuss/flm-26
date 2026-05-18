@@ -46,9 +46,11 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
 
-  // Display priority: recently-finished (if not dismissed) > next pending
-  const showFinished = !!recentFinished && recentFinished.matchId !== dismissedFinishedId;
-  const displayed = showFinished ? recentFinished : nextMatch;
+  // Após a partida terminar, exibir imediatamente os dados do próximo jogo.
+  // Mantemos `recentFinished` apenas para sinalizar avanço/refresh em background,
+  // mas o card sempre mostra `nextMatch` (sem tela intermediária de "Partida Encerrada").
+  const showFinished = false;
+  const displayed = nextMatch;
 
   // Auto-advance to next round automatically after 3 seconds (no manual click needed)
   useEffect(() => {
