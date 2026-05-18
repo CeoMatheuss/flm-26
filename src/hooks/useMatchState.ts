@@ -180,7 +180,12 @@ export function useMatchState(initialState: any, userId?: string) {
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
         players: prev.players.map(p => {
           if (deps.isFriendly) return p;
-          const drain = Math.floor(Math.random() * 15 + 10); 
+          
+          // Definitivo: Desgaste baseado em resistência (físico)
+          const physical = p.attributes?.physical || 60;
+          const resistanceBonus = (physical - 50) * 0.15;
+          const drain = Math.max(10, Math.floor(Math.random() * 10 + 18 - resistanceBonus));
+          
           const newStamina = Math.max(0, p.stamina - drain);
           return {
             ...p,
@@ -191,6 +196,7 @@ export function useMatchState(initialState: any, userId?: string) {
             gamesPlayed: p.gamesPlayed + 1,
           };
         }),
+
         budget: prev.budget + totalMatchRevenue,
         fans: Math.max(1000, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
