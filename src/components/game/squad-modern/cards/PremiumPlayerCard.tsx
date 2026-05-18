@@ -28,7 +28,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        'relative w-full min-h-[340px] rounded-[2rem] overflow-hidden group transition-all duration-300',
+        'relative w-full min-h-[280px] rounded-[1.5rem] overflow-hidden group transition-all duration-300',
         'border-2 shadow-2xl',
         (player as any).rarity && (player as any).rarity !== 'Comum'
           ? (player as any).rarity === 'Craque geracional' ? 'border-amber-400 shadow-amber-400/20' :
@@ -90,16 +90,18 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
                  <Sparkles className="w-3 h-3" />
                </div>
              )}
-             <button
-               onClick={(e) => {
-                 e.stopPropagation();
-                 onOpenQuickSwap?.();
-               }}
-               className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30 hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
-               title="Troca Rápida"
-             >
-               <span className="text-[10px] block">🔄</span>
-             </button>
+             {onOpenQuickSwap && (
+               <button
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   onOpenQuickSwap?.();
+                 }}
+                 className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30 hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
+                 title="Troca Rápida"
+               >
+                 <span className="text-[10px] block">🔄</span>
+               </button>
+             )}
              {isStarter && (
                <div className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30">
                  <Shield className="w-3 h-3 text-emerald-400" />
