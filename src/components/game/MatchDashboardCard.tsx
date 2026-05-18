@@ -54,6 +54,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     if (showFinished && recentFinished) {
       const timer = setTimeout(() => {
         console.log('[MatchDashboardCard] Auto-advance: avançando para próxima rodada...');
+        try { localStorage.setItem(DISMISS_KEY, recentFinished.matchId); } catch {}
         setDismissedFinishedId(recentFinished.matchId);
         // Force refresh of next match data
         window.dispatchEvent(new CustomEvent('flm:match-finalized'));
