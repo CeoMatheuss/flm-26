@@ -2667,6 +2667,45 @@ export type Database = {
         }
         Relationships: []
       }
+      match_worker_logs: {
+        Row: {
+          details: Json | null
+          duration_ms: number | null
+          end_time: string | null
+          error_message: string | null
+          id: string
+          match_id: string | null
+          match_type: string | null
+          result_text: string | null
+          start_time: string | null
+          status: string | null
+        }
+        Insert: {
+          details?: Json | null
+          duration_ms?: number | null
+          end_time?: string | null
+          error_message?: string | null
+          id?: string
+          match_id?: string | null
+          match_type?: string | null
+          result_text?: string | null
+          start_time?: string | null
+          status?: string | null
+        }
+        Update: {
+          details?: Json | null
+          duration_ms?: number | null
+          end_time?: string | null
+          error_message?: string | null
+          id?: string
+          match_id?: string | null
+          match_type?: string | null
+          result_text?: string | null
+          start_time?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       migration_logs: {
         Row: {
           changes: Json
