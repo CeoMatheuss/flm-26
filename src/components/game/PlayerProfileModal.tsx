@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoutReport } from '@/types/game';
-import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash } from 'lucide-react';
+import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getPlayerValue } from '@/utils/playerGenerator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const posLabels: Record<string, string> = {
   GOL: 'Goleiro', ZAG: 'Zagueiro', LAT: 'Lateral', VOL: 'Volante', MEI: 'Meia', ATA: 'Atacante',
