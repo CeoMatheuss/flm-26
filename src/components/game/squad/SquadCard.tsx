@@ -45,6 +45,10 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
   const chemistry = Math.round(70 + (player.morale / 10) + (player.stamina / 20));
   const form = player.matchRating || 6.5;
 
+  const isSuspended = player.disciplinary?.isSuspended;
+  const yellowCount = player.disciplinary?.yellowCards || 0;
+  const redCount = player.disciplinary?.redCards || 0;
+
   return (
     <motion.div
       whileHover={{ scale: 1.01, y: -1 }}
