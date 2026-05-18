@@ -5403,13 +5403,16 @@ export type Database = {
           market_value_history: Json | null
           morale: number | null
           name: string
+          nationality: string | null
           overall: number | null
           position: string
           potential: number | null
           reputation: number | null
+          resistance: number | null
           salary: number | null
           squad_status: Database["public"]["Enums"]["squad_status_type"] | null
           stamina: number | null
+          stamina_max: number | null
           team_id: string
         }
         Insert: {
@@ -5428,13 +5431,16 @@ export type Database = {
           market_value_history?: Json | null
           morale?: number | null
           name: string
+          nationality?: string | null
           overall?: number | null
           position: string
           potential?: number | null
           reputation?: number | null
+          resistance?: number | null
           salary?: number | null
           squad_status?: Database["public"]["Enums"]["squad_status_type"] | null
           stamina?: number | null
+          stamina_max?: number | null
           team_id: string
         }
         Update: {
@@ -5453,13 +5459,16 @@ export type Database = {
           market_value_history?: Json | null
           morale?: number | null
           name?: string
+          nationality?: string | null
           overall?: number | null
           position?: string
           potential?: number | null
           reputation?: number | null
+          resistance?: number | null
           salary?: number | null
           squad_status?: Database["public"]["Enums"]["squad_status_type"] | null
           stamina?: number | null
+          stamina_max?: number | null
           team_id?: string
         }
         Relationships: [
