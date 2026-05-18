@@ -48,8 +48,6 @@ Deno.serve(async (req) => {
   const now = new Date();
   
   try {
-    const { data: { user }, error: authError } = await sb.auth.getUser(req.headers.get('Authorization')?.split(' ')[1] || '');
-    
     // 1. Fetch Scheduled Matches
     const { data: matches } = await sb.from("world_matches")
       .select(`*, 
@@ -58,24 +56,26 @@ Deno.serve(async (req) => {
       `)
       .eq("status", "scheduled")
       .lte("scheduled_at", now.toISOString())
-      .limit(20);
+      .limit(50);
 
     if (matches && matches.length > 0) {
       for (const m of matches) {
-        // Simple Simulation Logic
+        // Simple Simulation Logic (League Match Engine)
         const hs = (m.home_team?.strength || 65) * 1.1;
         const as = (m.away_team?.strength || 65);
         const hg = Math.floor(Math.random() * 4 + (hs > as ? 1 : 0));
         const ag = Math.floor(Math.random() * 4 + (as > hs ? 1 : 0));
 
-        // Update Match with synced=true (Trigger will handle standings)
-        await sb.from("world_matches").update({ 
+        // Update Match with synced=false (Trigger trigger_update_standings will handle the sync)
+        const { error: updateErr } = await sb.from("world_matches").update({ 
           home_goals: hg, 
           away_goals: ag, 
           status: "finished", 
           played_at: now.toISOString(),
-          synced: false // Trigger will set to true after processing
+          synced: false 
         }).eq("id", m.id);
+
+        if (updateErr) console.error(`Error updating match ${m.id}:`, updateErr);
 
         // Fetch players for discipline/stats
         const { data: players } = await sb.from('world_players').select('id, team_id, name, position, overall').in('team_id', [m.home_team_id, m.away_team_id]);
@@ -87,15 +87,37 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Generate News
+        // Generate News for synchronization feedback
         const newsTitle = getHeadline(hg === ag ? 'draw' : (hg > ag ? 'win' : 'loss'), hg > ag ? m.home_team.name : m.away_team.name, hg > ag ? m.away_team.name : m.home_team.name);
         await sb.from('world_league_news').insert({ 
-          league_id: m.league_id, match_id: m.id, title: newsTitle, content: "Partida finalizada e sincronizada com sucesso.", template_key: 'league_result'
+          league_id: m.league_id, match_id: m.id, title: newsTitle, content: "Partida sincronizada automaticamente com a tabela da liga.", template_key: 'league_result'
         });
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, processed: matches?.length || 0 }), { 
+    // 2. National Cup Matches (Simplified sync)
+    const { data: cMatches } = await sb.from("national_cup_matches")
+      .select("*")
+      .eq("status", "scheduled")
+      .lte("scheduled_at", now.toISOString())
+      .limit(20);
+    
+    if (cMatches) {
+      for (const m of cMatches) {
+        const hg = Math.floor(Math.random() * 4);
+        const ag = Math.floor(Math.random() * 4);
+        let winnerId = hg > ag ? m.home_team_id : (ag > hg ? m.away_team_id : (Math.random() > 0.5 ? m.home_team_id : m.away_team_id));
+        
+        await sb.from("national_cup_matches").update({ 
+          home_score: hg, away_score: ag, status: "finished", winner_team_id: winnerId, played_at: now.toISOString() 
+        }).eq("id", m.id);
+        
+        const loserId = winnerId === m.home_team_id ? m.away_team_id : m.home_team_id;
+        await sb.from('national_cup_teams').update({ eliminated: true }).eq('id', loserId);
+      }
+    }
+
+    return new Response(JSON.stringify({ ok: true, processed: (matches?.length || 0) + (cMatches?.length || 0) }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
   } catch (e: any) { 
