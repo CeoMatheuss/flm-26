@@ -304,7 +304,7 @@ export default function MatchPage() {
     }
   };
 
-  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} awayStrength={locState?.awayStrength} />;
+  return <MatchViewer matchState={state} onExit={handleExit} homePlayers={locState?.homePlayers} tactics={locState?.tactics} awayStrength={locState?.awayStrength} resumeFromBreak={resumeFromBreak} />;
 }
 
 /* ── PRE-MATCH SCREEN ─────────────────────────────────────── */
