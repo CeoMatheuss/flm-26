@@ -151,7 +151,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [editingNumber, setEditingNumber] = useState(false);
   const [filterPos, setFilterPos] = useState<string | null>(null);
   const [filterOvr, setFilterOvr] = useState<'all' | '90+' | '80-89' | '70-79' | '60-69' | '<60'>('all');
-  const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary' | 'value'>('position');
+  const [sortBy, setSortBy] = useState<'position' | 'overall' | 'age' | 'salary' | 'value'>('overall');
   const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
   const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
   const [loanSubmitting, setLoanSubmitting] = useState(false);

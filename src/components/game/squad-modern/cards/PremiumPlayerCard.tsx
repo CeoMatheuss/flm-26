@@ -123,7 +123,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-2 mb-1">
-          <StatMini icon={<Zap className="w-2.5 h-2.5" />} label="STAM" value={player.stamina} color="text-emerald-400" />
+          <StatMini icon={<Zap className="w-2.5 h-2.5" />} label="COND" value={player.stamina} color="text-emerald-400" />
           <StatMini icon={<Heart className="w-2.5 h-2.5" />} label="MOR" value={player.morale} color="text-pink-400" />
         </div>
 
@@ -169,10 +169,11 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
 }
 
 function StatMini({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+  const displayLabel = label === 'STAM' ? 'COND' : label === 'MOR' ? 'MOR' : label;
   return (
     <div className="flex flex-col gap-0.5">
       <div className="flex items-center gap-1 text-[8px] font-black text-white/30 uppercase tracking-tighter">
-        {icon} {label}
+        {icon} {displayLabel}
       </div>
       <div className="h-1 bg-white/5 rounded-full overflow-hidden">
         <motion.div 
