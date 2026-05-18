@@ -120,6 +120,7 @@ export interface Player {
   isYouth?: boolean;
   marketValue?: number;
   squadRole?: 'promessa' | 'reserva' | 'rotacao' | 'titular-futuro' | 'titular' | 'estrela';
+  squad_status?: 'starter' | 'bench' | 'reserve' | 'injured' | 'suspended';
   lastPerformanceHistory?: number[]; // rating of last games
   recentHighlights?: string[];
   evolutionTrend?: 'up' | 'stable' | 'down';

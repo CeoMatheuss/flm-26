@@ -5171,6 +5171,7 @@ export type Database = {
           name: string
           overall: number | null
           position: string
+          squad_status: Database["public"]["Enums"]["squad_status_type"] | null
           team_id: string
         }
         Insert: {
@@ -5185,6 +5186,7 @@ export type Database = {
           name: string
           overall?: number | null
           position: string
+          squad_status?: Database["public"]["Enums"]["squad_status_type"] | null
           team_id: string
         }
         Update: {
@@ -5199,6 +5201,7 @@ export type Database = {
           name?: string
           overall?: number | null
           position?: string
+          squad_status?: Database["public"]["Enums"]["squad_status_type"] | null
           team_id?: string
         }
         Relationships: [
@@ -5542,6 +5545,7 @@ export type Database = {
         Returns: undefined
       }
       ensure_16_teams: { Args: { _league_id: string }; Returns: undefined }
+      ensure_full_rosters: { Args: never; Returns: undefined }
       ensure_league_full: {
         Args: { target_league_id: string }
         Returns: undefined
@@ -6009,6 +6013,12 @@ export type Database = {
       mission_type: "local" | "global" | "posição" | "promessas"
       scout_level: "baixo" | "médio" | "alto" | "elite"
       scout_specialization: "ataque" | "defesa" | "meio" | "jovens" | "geral"
+      squad_status_type:
+        | "starter"
+        | "bench"
+        | "reserve"
+        | "injured"
+        | "suspended"
       world_competition_status:
         | "locked"
         | "pending"
@@ -6149,6 +6159,13 @@ export const Constants = {
       mission_type: ["local", "global", "posição", "promessas"],
       scout_level: ["baixo", "médio", "alto", "elite"],
       scout_specialization: ["ataque", "defesa", "meio", "jovens", "geral"],
+      squad_status_type: [
+        "starter",
+        "bench",
+        "reserve",
+        "injured",
+        "suspended",
+      ],
       world_competition_status: [
         "locked",
         "pending",

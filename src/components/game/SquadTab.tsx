@@ -124,11 +124,13 @@ function getMoraleEmoji(morale: number): string {
   return '😡';
 }
 
-type Group = 'starters' | 'reserves' | 'out';
+type Group = 'starters' | 'reserves' | 'out' | 'injured' | 'suspended';
 
-function getPlayerGroup(idx: number): Group {
-  if (idx < STARTERS_END) return 'starters';
-  if (idx < RESERVES_END) return 'reserves';
+function getPlayerGroup(player: Player): Group {
+  if (player.squad_status === 'injured' || !!player.injury) return 'injured';
+  if (player.squad_status === 'suspended' || player.disciplinary?.isSuspended) return 'suspended';
+  if (player.squad_status === 'starter') return 'starters';
+  if (player.squad_status === 'bench') return 'reserves';
   return 'out';
 }
 
@@ -153,7 +155,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [rescindCandidate, setRescindCandidate] = useState<Player | null>(null);
   const [loanCandidate, setLoanCandidate] = useState<Player | null>(null);
   const [loanSubmitting, setLoanSubmitting] = useState(false);
-  const [squadSubTab, setSquadSubTab] = useState<'starters' | 'reserves' | 'out'>('starters');
+  const [squadSubTab, setSquadSubTab] = useState<Group>('starters');
   // activeTacticalView state removed to show both pitch and list as requested
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
@@ -234,13 +236,19 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const starters: { player: Player; idx: number }[] = [];
     const reserves: { player: Player; idx: number }[] = [];
     const out: { player: Player; idx: number }[] = [];
+    const injured: { player: Player; idx: number }[] = [];
+    const suspended: { player: Player; idx: number }[] = [];
+
     playersWithDiscipline.forEach((p, idx) => {
       const entry = { player: p, idx };
-      if (idx < STARTERS_END) starters.push(entry);
-      else if (idx < RESERVES_END) reserves.push(entry);
+      const group = getPlayerGroup(p);
+      if (group === 'starters') starters.push(entry);
+      else if (group === 'reserves') reserves.push(entry);
+      else if (group === 'injured') injured.push(entry);
+      else if (group === 'suspended') suspended.push(entry);
       else out.push(entry);
     });
-    return { starters, reserves, out };
+    return { starters, reserves, out, injured, suspended };
   }, [playersWithDiscipline]);
 
   // Apply filter/sort to a group
@@ -323,8 +331,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
     const pA = players[idxA];
     const pB = players[idxB];
-    const groupA = getPlayerGroup(idxA);
-    const groupB = getPlayerGroup(idxB);
+    const groupA = getPlayerGroup(pA);
+    const groupB = getPlayerGroup(pB);
     if (groupA === 'starters' && groupB !== 'starters') {
       toast.success(`${pB.name} entrou no time titular no lugar de ${pA.name}`);
     } else if (groupB === 'starters' && groupA !== 'starters') {
@@ -825,6 +833,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const startersList = processList(groupedPlayers.starters);
   const reservesList = processList(groupedPlayers.reserves);
   const outList = processList(groupedPlayers.out);
+  const injuredList = processList(groupedPlayers.injured);
+  const suspendedList = processList(groupedPlayers.suspended);
 
   // ─── Main Squad View ───
   return (
@@ -931,17 +941,27 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             <div className="space-y-3 xl:col-span-4 w-full">
               <div className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-xl border border-white/5">
                 <div className="flex items-center gap-1">
-                  {(['starters', 'reserves', 'out'] as const).map((tab) => (
-                    <Button
-                      key={tab}
-                      variant={squadSubTab === tab ? 'default' : 'ghost'}
-                      size="sm"
-                      className="rounded-lg px-2 h-7 text-[8px] font-black uppercase tracking-widest whitespace-nowrap"
-                      onClick={() => setSquadSubTab(tab)}
-                    >
-                      {tab === 'starters' ? '11' : tab === 'reserves' ? 'BANCO' : 'OUT'}
-                    </Button>
-                  ))}
+                  {(['starters', 'reserves', 'out', 'injured', 'suspended'] as const).map((tab) => {
+                    const count = tab === 'starters' ? startersList.length : 
+                                 tab === 'reserves' ? reservesList.length : 
+                                 tab === 'injured' ? injuredList.length :
+                                 tab === 'suspended' ? suspendedList.length :
+                                 outList.length;
+                    
+                    if (count === 0 && (tab === 'injured' || tab === 'suspended')) return null;
+
+                    return (
+                      <Button
+                        key={tab}
+                        variant={squadSubTab === tab ? 'default' : 'ghost'}
+                        size="sm"
+                        className="rounded-lg px-2 h-7 text-[8px] font-black uppercase tracking-widest whitespace-nowrap"
+                        onClick={() => setSquadSubTab(tab)}
+                      >
+                        {tab === 'starters' ? '11' : tab === 'reserves' ? 'BANCO' : tab === 'injured' ? 'DM' : tab === 'suspended' ? 'SUSP' : 'OUT'}
+                      </Button>
+                    );
+                  })}
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -1023,17 +1043,27 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 </div>
               )}
 
-              <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as 'starters' | 'reserves' | 'out')} className="w-full">
-                <TabsList className="grid grid-cols-3 w-full rounded-xl h-9 p-1 bg-black/20">
+              <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as Group)} className="w-full">
+                <TabsList className={`grid ${injuredList.length > 0 || suspendedList.length > 0 ? 'grid-cols-5' : 'grid-cols-3'} w-full rounded-xl h-9 p-1 bg-black/20`}>
                   <TabsTrigger value="starters" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
-                    TITULARES
+                    TIT
                   </TabsTrigger>
                   <TabsTrigger value="reserves" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400">
-                    BANCO
+                    BAN
                   </TabsTrigger>
                   <TabsTrigger value="out" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-muted data-[state=active]:text-foreground">
                     FORA
                   </TabsTrigger>
+                  {injuredList.length > 0 && (
+                    <TabsTrigger value="injured" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
+                      DM
+                    </TabsTrigger>
+                  )}
+                  {suspendedList.length > 0 && (
+                    <TabsTrigger value="suspended" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400">
+                      SUS
+                    </TabsTrigger>
+                  )}
                 </TabsList>
 
                 <TabsContent value="starters" className="mt-2 space-y-1.5">
@@ -1079,7 +1109,25 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                     ))
                   )}
                 </TabsContent>
+                <TabsContent value="injured" className="mt-2 space-y-1.5">
+                  {injuredList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => setViewingPlayer(player)}
+                    />
+                  ))}
+                </TabsContent>
 
+                <TabsContent value="suspended" className="mt-2 space-y-1.5">
+                  {suspendedList.map(({ player }) => (
+                    <SquadCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => setViewingPlayer(player)}
+                    />
+                  ))}
+                </TabsContent>
                 <TabsContent value="out" className="mt-2 space-y-1.5">
                   {outList.length === 0 ? (
                     <div className="text-center py-4 text-[10px] text-muted-foreground italic">Vazio</div>
