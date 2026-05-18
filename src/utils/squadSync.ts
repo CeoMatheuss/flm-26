@@ -52,7 +52,6 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
       position: safePosition(player.position),
       stamina: Number(player.stamina ?? 100),
       morale: Number(player.morale ?? 100),
-      // Preserve squad_status if it exists, otherwise it will be assigned later
     } as Player);
   });
 
@@ -61,7 +60,7 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
     youthProspects.forEach(prospect => {
       if (byId.has(prospect.id)) return;
       const player = youthProspectToPlayer(prospect);
-      byId.set(player.id, player);
+      byId.set(prospect.id, player);
     });
   }
 
@@ -69,26 +68,32 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
   if (all.length === 0) return [];
 
   // 3. Assign statuses if missing or inconsistent
-  const startersCount = all.filter(p => p.squad_status === 'starter').length;
+  const starters = all.filter(p => p.squad_status === 'starter');
   
-  // If we have less than 11 starters, or no explicit statuses, trigger a full re-lineup
-  if (startersCount < 11) {
+  // If we have no starters assigned, use autoLineup logic
+  if (starters.length < 11) {
      return autoLineup(all, formation);
   }
 
-  // 4. Final ordering: Starters (0-10), then Bench, then Reserves
-  const starters = all.filter(p => p.squad_status === 'starter').sort((a,b) => b.overall - a.overall).slice(0, 11);
-  const others = all.filter(p => !starters.some(s => s.id === p.id));
-  const bench = others.filter(p => p.squad_status === 'bench').sort((a,b) => b.overall - a.overall);
-  const reserves = others.filter(p => p.squad_status !== 'bench').sort((a,b) => b.overall - a.overall);
+  // 4. Balanced separation: Ensure clear division
+  const finalStarters = all.filter(p => p.squad_status === 'starter').sort((a,b) => b.overall - a.overall).slice(0, 11);
+  const remaining = all.filter(p => !finalStarters.find(s => s.id === p.id));
+  
+  // Players explicitly in bench (squad_status === 'bench')
+  const bench = remaining.filter(p => p.squad_status === 'bench').sort((a,b) => b.overall - a.overall);
+  const others = remaining.filter(p => p.squad_status !== 'bench').sort((a,b) => b.overall - a.overall);
 
-  return [...starters, ...bench, ...reserves];
+  // Re-assign squad_status to ensure consistency
+  finalStarters.forEach(p => p.squad_status = 'starter');
+  bench.forEach(p => p.squad_status = 'bench');
+  others.forEach(p => p.squad_status = 'reserve');
+
+  return [...finalStarters, ...bench, ...others];
 };
 
 export const squadsDiffer = (a: Player[], b: Player[]) => {
   if (!a || !b) return true;
   if (a.length !== b.length) return true;
-  // Deep check for identity and critical roles
   for (let i = 0; i < a.length; i++) {
     if (a[i].id !== b[i].id) return true;
     if (a[i].squad_status !== b[i].squad_status) return true;
@@ -100,7 +105,6 @@ export const syncTacticsWithSquad = (tactics: TacticsConfig, players: Player[]):
   const validIds = new Set(players.map((player) => player.id));
   const { lineup: _lineup, startingXI: _startingXI, starting_xi: _starting_xi, ...cleanTactics } = tactics as any;
   
-  // Ensure captain and set piece takers are valid
   const captainId = cleanTactics.captainId && validIds.has(cleanTactics.captainId) ? cleanTactics.captainId : players[0]?.id;
   
   return {
