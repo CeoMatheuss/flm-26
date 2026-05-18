@@ -676,7 +676,8 @@ export function SquadModernLayout({
                         <button
                           key={key}
                           onClick={() => {
-                            const focusLabel = { speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Marcação', physical: 'Físico', dribbling: 'Drible' }[key as keyof typeof focusLabelMap];
+                            const labels: Record<string, string> = { speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Marcação', physical: 'Físico', dribbling: 'Drible' };
+                            const focusLabel = labels[key];
                             handleAction('train', confirmAction.player, key);
                             toast.success(`Foco em ${focusLabel} definido para ${confirmAction.player.name}`);
                             setConfirmAction(null);
