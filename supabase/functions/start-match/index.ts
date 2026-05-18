@@ -2320,6 +2320,14 @@ Deno.serve(async (req) => {
           _player_ids: allMatchPlayerIds, 
           _competition_type: 'Copa' 
         });
+
+        // Simular o restante da rodada da copa para os times BOT
+        console.info('[Sync] Simulating bot matches for cup round', { cup_id: cupMatch.cup_id });
+        await adminClient.rpc('simulate_bot_matches_for_round', {
+          p_competition_id: cupMatch.cup_id,
+          p_round: cupMatch.round,
+          p_type: 'cup'
+        });
       }
 
       // 3.3. Custom Tournament Logic
