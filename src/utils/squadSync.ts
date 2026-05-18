@@ -48,7 +48,8 @@ export const youthProspectToPlayer = (prospect: YouthProspect): Player => ({
 
 export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspect[], formation: TacticsConfig['formation']) => {
   const byId = new Map<string, Player>();
-  const activeYouthIds = new Set(youthProspects.map((prospect) => prospect.id));
+  
+  // Merge players and youth prospects
   [...players, ...youthProspects.map(youthProspectToPlayer)].forEach((player) => {
     if (!player?.id || !isAvailableForSquad(player)) return;
     const previous = byId.get(player.id);
@@ -59,24 +60,36 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
       stamina: Number(player.stamina ?? 100),
       morale: Number(player.morale ?? 100),
       attributes: player.attributes ?? previous?.attributes,
+      squad_status: player.squad_status || previous?.squad_status || 'reserve'
     } as Player);
   });
 
   const rebuilt = Array.from(byId.values());
   if (rebuilt.length === 0) return rebuilt;
 
-  const starters = rebuilt.slice(0, 11);
-  const bench = rebuilt.slice(11, 18);
-  const starterIssue = starters.length < Math.min(11, rebuilt.length) || starters.some((player) => !isAvailableForMatch(player));
-  const benchNeedsBalance = rebuilt.length > 11 && (
-    bench.length === 0 ||
-    !bench.some((player) => isAvailableForMatch(player) && player.position === 'GOL') ||
-    !bench.some((player) => isAvailableForMatch(player) && ['ZAG', 'LAT'].includes(player.position)) ||
-    !bench.some((player) => isAvailableForMatch(player) && ['VOL', 'MEI'].includes(player.position)) ||
-    !bench.some((player) => isAvailableForMatch(player) && player.position === 'ATA')
-  );
+  // If no explicit squad_status, we need to assign them based on current order or best overall
+  const hasExplicitStatuses = rebuilt.some(p => p.squad_status === 'starter' || p.squad_status === 'bench');
+  
+  if (!hasExplicitStatuses) {
+    // Sort by overall to pick best ones
+    const sorted = [...rebuilt].sort((a, b) => b.overall - a.overall);
+    sorted.forEach((p, idx) => {
+      if (idx < 11) p.squad_status = 'starter';
+      else if (idx < 18) p.squad_status = 'bench';
+      else p.squad_status = 'reserve';
+    });
+  }
 
-  const ordered = (starterIssue || benchNeedsBalance) ? autoLineup(rebuilt, formation) : rebuilt;
+  // Ensure minimum squad size for BOTs or during reload
+  // (In practice, ensure_full_rosters in DB handles this, but here we protect the local state)
+  
+  // Re-order rebuilt array to have starters first, then bench, then others
+  const starters = rebuilt.filter(p => p.squad_status === 'starter');
+  const bench = rebuilt.filter(p => p.squad_status === 'bench');
+  const others = rebuilt.filter(p => p.squad_status !== 'starter' && p.squad_status !== 'bench');
+
+  const ordered = [...starters, ...bench, ...others];
+
   return ordered.map((player, index) => {
     const raw = player as any;
     const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
