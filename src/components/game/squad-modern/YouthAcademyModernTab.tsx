@@ -136,28 +136,7 @@ export function YouthAcademyModernTab({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {youthInvestmentTiers.filter(t => t.tier !== 'none').map(t => (
-              <button
-                key={t.tier}
-                onClick={() => {
-                  onSetInvestment(t.monthlyCost);
-                  toast.success(`Investimento na base: ${t.label}`);
-                }}
-                className={cn(
-                  "flex flex-col items-start px-5 py-3 rounded-2xl border transition-all duration-300 active:scale-95",
-                  currentTier.tier === t.tier
-                    ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                    : "bg-white/5 border-white/5 text-white/60 hover:bg-white/10 hover:border-white/20"
-                )}
-              >
-                <span className={cn("text-[9px] font-black uppercase tracking-widest mb-1 opacity-60")}>
-                  Plano {t.label}
-                </span>
-                <span className="text-sm font-black italic">{formatMoney(t.monthlyCost)}/mês</span>
-              </button>
-            ))}
-          </div>
+          {/* Investment plans removed as requested */}
         </div>
       </section>
 
@@ -258,12 +237,7 @@ export function YouthAcademyModernTab({
              label="Plantel" 
              icon={<GraduationCap className="w-3.5 h-3.5" />} 
            />
-           <TabButton 
-             active={activeSubTab === 'investimento'} 
-             onClick={() => setActiveSubTab('investimento')} 
-             label="Investimento" 
-             icon={<Coins className="w-3.5 h-3.5" />} 
-           />
+           {/* Investimento tab button removed */}
            <TabButton 
              active={activeSubTab === 'copinha'} 
              onClick={() => setActiveSubTab('copinha')} 
@@ -345,60 +319,7 @@ export function YouthAcademyModernTab({
               </motion.div>
             )}
 
-            {activeSubTab === 'investimento' && (
-              <motion.div 
-                key="investimento"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {youthInvestmentTiers.filter(t => t.tier !== 'none').map(t => {
-                    const isActive = currentTier.tier === t.tier;
-                    return (
-                      <button
-                        key={t.tier}
-                        onClick={() => {
-                          onSetInvestment(t.monthlyCost);
-                          toast.success(`Plano ${t.label} ativado!`);
-                        }}
-                        className={cn(
-                          "flex flex-col text-left p-6 rounded-[2rem] border transition-all duration-300 relative overflow-hidden group active:scale-95",
-                          isActive
-                            ? "bg-emerald-500/10 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
-                            : "bg-zinc-900/40 border-white/5 hover:border-white/20 hover:bg-zinc-900/60"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-2xl transition-colors",
-                          isActive ? "bg-emerald-500 text-zinc-950" : "bg-white/5 text-white/40 group-hover:bg-white/10"
-                        )}>
-                          {t.emoji}
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1">{t.label}</span>
-                        <span className="text-xl font-black italic mb-2 text-white">
-                          {formatMoney(t.monthlyCost)}
-                          <span className="text-[10px] font-normal text-white/40 ml-1 italic">/mês</span>
-                        </span>
-                        <p className="text-xs font-bold text-white/60 leading-relaxed mb-4">{t.description}</p>
-                        
-                        <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                           <span className="text-[10px] font-black text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
-                              <TrendingUp className="h-3 w-3" /> +{t.qualityBonus}% Qualidade
-                           </span>
-                           {isActive && (
-                             <span className="text-[8px] font-black bg-emerald-500 text-zinc-950 px-2.5 py-1 rounded-lg uppercase tracking-widest">
-                               Ativo
-                             </span>
-                           )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
+            {/* Investimento tab content removed */}
 
             {activeSubTab === 'copinha' && (
               <motion.div 
