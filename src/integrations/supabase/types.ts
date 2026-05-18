@@ -5877,6 +5877,10 @@ export type Database = {
       }
       simulate_overdue_cup_matches: { Args: never; Returns: undefined }
       simulate_overdue_matches: { Args: never; Returns: undefined }
+      simulate_realistic_bot_cup_match: {
+        Args: { p_match_id: string }
+        Returns: undefined
+      }
       simulate_realistic_bot_match: {
         Args: { p_match_id: string }
         Returns: undefined
