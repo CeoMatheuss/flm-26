@@ -312,7 +312,7 @@ export function SquadModernLayout({
     if (!submitting) void confirmListing();
   };
 
-  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player) => {
+  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player, extra?: string) => {
     // Ao iniciar qualquer ação, fechamos o painel lateral para não atrapalhar
     setPanelOpen(false);
     
@@ -324,16 +324,29 @@ export function SquadModernLayout({
         openLoanConfirm(p);
         break;
       case 'auction':
-        setConfirmAction({ type: 'auction', player: p });
+        if (!extra) {
+          setConfirmAction({ type: 'auction', player: p });
+        } else {
+          toast.info(`${p.name} enviado para leilão.`);
+        }
         break;
       case 'shirt-number':
         setConfirmAction({ type: 'shirt-number', player: p });
         break;
       case 'renew':
-        setConfirmAction({ type: 'renew', player: p });
+        if (!extra) {
+          setConfirmAction({ type: 'renew', player: p });
+        } else {
+          toast.success(`Negociação de renovação concluída com ${p.name}.`);
+        }
         break;
       case 'train':
-        setConfirmAction({ type: 'train', player: p });
+        if (!extra) {
+          setConfirmAction({ type: 'train', player: p });
+        } else {
+          // Aqui integraria com o sistema de treino real se disponível
+          console.log(`Foco de treino ${extra} para ${p.name}`);
+        }
         break;
       case 'promote-youth':
         onPromoteYouth(p.id);
