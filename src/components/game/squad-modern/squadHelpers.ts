@@ -1,4 +1,4 @@
-export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'indisponivel' | 'emprestado' | 'afastado' | 'fora' | 'negociando';
+export type PlayerStatus = 'titular' | 'reserva' | 'promessa' | 'lesionado' | 'suspenso' | 'lista-transferencia' | 'lista-emprestimo' | 'indisponivel' | 'emprestado' | 'recebido-emprestimo' | 'afastado' | 'fora' | 'negociando';
 
 export const statusMeta: Record<PlayerStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {
   titular: { 
