@@ -415,6 +415,22 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
             <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><Gavel className="w-3 h-3" /> Disciplinar</p>
+              <div className="flex flex-col items-center">
+                <div className="flex gap-1 mb-1">
+                  {Array.from({ length: player.disciplinary?.yellowCards || 0 }).map((_, i) => (
+                    <span key={i} title="Cartão Amarelo">🟨</span>
+                  ))}
+                  {(player.disciplinary?.redCards || 0) > 0 && <span title="Cartão Vermelho">🟥</span>}
+                </div>
+                {isSuspended ? (
+                  <Badge variant="destructive" className="text-[10px] animate-pulse">SUSPENSO ({player.disciplinary?.suspensionRemaining} j)</Badge>
+                ) : (
+                  <p className="text-xs font-bold text-emerald-400">Regularizado</p>
+                )}
+              </div>
+            </div>
+            <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
               <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><FileText className="w-3 h-3" /> Contrato</p>
               <p className={`text-xl font-black ${player.contract <= 1 ? 'text-red-400 animate-pulse' : 'text-white'}`}>{player.contract}a</p>
             </div>
