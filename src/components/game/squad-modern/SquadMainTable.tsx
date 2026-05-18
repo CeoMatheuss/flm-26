@@ -80,7 +80,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
         // Reservas: TODOS os não-titulares profissionais disponíveis (banco + reservas).
         // Atletas da base (isYouth) ficam exclusivamente na aba Juniores.
         case 'reservas':
-          return !isStarter && !isBaseYouth && !unavailable && status !== 'emprestado';
+          return !isStarter && !isBaseYouth && !unavailable;
         case 'fora':
           return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
         case 'suspensos':
