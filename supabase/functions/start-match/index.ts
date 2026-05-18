@@ -2374,6 +2374,13 @@ Deno.serve(async (req) => {
           p_match_id: String(matchId), 
           p_competition_type: 'world' 
         });
+
+        // Simular o restante da rodada para os times BOT
+        console.info('[Sync] Simulating bot matches for round', { league_id: worldMatch.league_id, round: worldMatch.round });
+        await adminClient.rpc('simulate_bot_matches_for_round', {
+          p_league_id: worldMatch.league_id,
+          p_round: worldMatch.round
+        });
       }
 
       // 3.5. PERSIST INJURIES (New in V4)
