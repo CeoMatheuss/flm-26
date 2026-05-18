@@ -26,7 +26,8 @@ export type PlayerPanelAction =
   | 'auction'
   | 'shirt-number'
   | 'train'
-  | 'promote-youth';
+  | 'promote-youth'
+  | 'change-position';
 
 interface Props {
   player: Player | null;
@@ -294,17 +295,18 @@ function PlayerDetailContent({
           {/* Quick Actions Grid */}
           <section className="pb-10">
             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] mb-6">Operações do Clube</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {!isYouth && <ActionBtn icon={<ArrowRightLeft className="w-5 h-5" />} label="🔄 Substituir" onClick={() => { onClose(); onSwap?.(player); }} className="col-span-2 py-6 text-base bg-emerald-500 border-emerald-400 text-zinc-950 shadow-xl shadow-emerald-500/20 hover:scale-[1.02] hover:bg-emerald-400" />}
+            <div className="grid grid-cols-2 gap-2.5">
+              {!isYouth && <ActionBtn icon={<ArrowRightLeft className="w-4 h-4" />} label="🔄 Substituir" onClick={() => { onClose(); onSwap?.(player); }} className="col-span-2 py-4 text-sm bg-emerald-500 border-emerald-400 text-zinc-950 shadow-xl shadow-emerald-500/20 hover:scale-[1.01] hover:bg-emerald-400" />}
               {isYouth && (
-                <ActionBtn icon={<ChevronsUp className="w-4 h-4" />} label="⬆️ Promover da Base" onClick={() => onAction?.('promote-youth', player)} className="col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400" />
+                <ActionBtn icon={<ChevronsUp className="w-4 h-4" />} label="⬆️ Promover" onClick={() => onAction?.('promote-youth', player)} className="col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400" />
               )}
-              <ActionBtn icon={<FileText className="w-4 h-4" />} label="📄 Renovar Contrato" onClick={() => onAction?.('renew', player)} />
-              <ActionBtn icon={<ShoppingCart className="w-4 h-4" />} label="📢 Anunciar Mercado" onClick={() => onAction?.('transfer', player)} />
-              <ActionBtn icon={<ArrowLeftRight className="w-4 h-4" />} label="🤝 Anunciar Empréstimo" onClick={() => onAction?.('loan-out', player)} />
-              <ActionBtn icon={<Gavel className="w-4 h-4" />} label="🏷️ Mandar p/ Leilão" onClick={() => onAction?.('auction', player)} />
-              <ActionBtn icon={<Hash className="w-4 h-4" />} label="👕 Escolher Camisa" onClick={() => onAction?.('shirt-number', player)} />
-              <ActionBtn icon={<Dumbbell className="w-4 h-4" />} label="🏋️ Definir Treino" onClick={() => onAction?.('train', player)} />
+              <ActionBtn icon={<Target className="w-4 h-4" />} label="📍 Mudar Posição" onClick={() => onAction?.('change-position', player)} />
+              <ActionBtn icon={<FileText className="w-4 h-4" />} label="📄 Renovar" onClick={() => onAction?.('renew', player)} />
+              <ActionBtn icon={<ShoppingCart className="w-4 h-4" />} label="📢 Venda" onClick={() => onAction?.('transfer', player)} />
+              <ActionBtn icon={<ArrowLeftRight className="w-4 h-4" />} label="🤝 Empréstimo" onClick={() => onAction?.('loan-out', player)} />
+              <ActionBtn icon={<Gavel className="w-4 h-4" />} label="🏷️ Leilão" onClick={() => onAction?.('auction', player)} />
+              <ActionBtn icon={<Hash className="w-4 h-4" />} label="👕 Camisa" onClick={() => onAction?.('shirt-number', player)} />
+              <ActionBtn icon={<Dumbbell className="w-4 h-4" />} label="🏋️ Treino" onClick={() => onAction?.('train', player)} />
             </div>
           </section>
         </div>
@@ -370,15 +372,15 @@ function ActionBtn({ icon, label, onClick, className }: { icon: React.ReactNode;
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center justify-center gap-2.5 px-4 py-4 rounded-3xl',
+        'flex items-center justify-center gap-2 px-3 py-3 rounded-2xl',
         'bg-white/[0.03] border border-white/5 text-white/80',
-        'hover:bg-emerald-500 hover:text-zinc-950 hover:border-emerald-400 hover:shadow-[0_10px_20px_rgba(16,185,129,0.2)]',
-        'transition-all duration-300 text-xs font-black uppercase tracking-widest active:scale-95',
+        'hover:bg-emerald-500 hover:text-zinc-950 hover:border-emerald-400 hover:shadow-[0_8px_16px_rgba(16,185,129,0.15)]',
+        'transition-all duration-300 text-[10px] font-black uppercase tracking-widest active:scale-95',
         className,
       )}
     >
       {icon}
-      {label}
+      <span className="truncate">{label}</span>
     </button>
   );
 }

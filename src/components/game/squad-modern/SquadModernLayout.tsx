@@ -283,7 +283,7 @@ export function SquadModernLayout({
 
   // Modal States
   const [confirmAction, setConfirmAction] = useState<null | {
-    type: 'transfer' | 'loan-out' | 'auction' | 'renew' | 'shirt-number' | 'train' | 'promote-youth';
+    type: 'transfer' | 'loan-out' | 'auction' | 'renew' | 'shirt-number' | 'train' | 'promote-youth' | 'change-position';
     player: Player;
     value?: number;
     listingFeeRate?: number;
@@ -295,6 +295,7 @@ export function SquadModernLayout({
     total?: number;
     renewalProposal?: { salary: number; bonus: number; duration: number };
     promotionProposal?: { salary: number; bonus: number; duration: number };
+    newPosition?: Player['position'];
   }>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -335,6 +336,27 @@ export function SquadModernLayout({
   const confirmListing = async () => {
     if (!confirmAction) return;
     const { type, player, value, total } = confirmAction;
+
+    if (type === 'change-position') {
+      if (!confirmAction.newPosition) return;
+      const newPos = confirmAction.newPosition;
+      
+      setSubmitting(true);
+      try {
+        const updated = players.map(pl => 
+          pl.id === player.id ? { ...pl, position: newPos } : pl
+        );
+        onUpdatePlayers(updated);
+        
+        toast.success(`Posição de ${player.name} alterada para ${newPos}!`);
+        setConfirmAction(null);
+      } catch (err: any) {
+        toast.error("Erro ao alterar posição.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     if (type === 'promote-youth') {
       if (!confirmAction.promotionProposal) return;
@@ -447,7 +469,7 @@ export function SquadModernLayout({
     if (!submitting) void confirmListing();
   };
 
-  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player, extra?: string) => {
+  const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth' | 'change-position', p: Player, extra?: string) => {
     // Ao iniciar qualquer ação, fechamos o painel lateral para não atrapalhar
     setPanelOpen(false);
     
@@ -533,6 +555,13 @@ export function SquadModernLayout({
             bonus: 0,
             duration: 3
           }
+        });
+        break;
+      case 'change-position':
+        setConfirmAction({
+          type: 'change-position',
+          player: p,
+          newPosition: p.position
         });
         break;
     }
@@ -898,6 +927,29 @@ export function SquadModernLayout({
                       </div>
                     </div>
                   </div>
+                ) : confirmAction.type === 'change-position' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Escolher Nova Posição</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'] as Player['position'][]).map(pos => (
+                        <button
+                          key={pos}
+                          onClick={() => setConfirmAction({ ...confirmAction, newPosition: pos })}
+                          className={cn(
+                            "py-3 rounded-xl border font-black text-xs transition-all uppercase tracking-widest",
+                            confirmAction.newPosition === pos
+                              ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20"
+                              : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                          )}
+                        >
+                          {pos}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-white/30 text-center uppercase tracking-widest mt-2 italic">
+                      A mudança de posição pode afetar o desempenho dinâmico do jogador no campo.
+                    </p>
+                  </div>
                 ) : confirmAction.type === 'shirt-number' ? (
                   <div className="space-y-4">
                     <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Escolher Número da Camisa</p>
@@ -1032,6 +1084,7 @@ export function SquadModernLayout({
                       "flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-950 shadow-lg transition-all active:scale-95",
                       confirmAction.type === 'renew' ? "bg-amber-400 hover:bg-amber-300" :
                       confirmAction.type === 'auction' ? "bg-sky-500 hover:bg-sky-400" :
+                      confirmAction.type === 'change-position' ? "bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/20" :
                       confirmAction.type === 'transfer' ? "bg-emerald-500 hover:bg-emerald-400" :
                       "bg-sky-500 hover:bg-sky-400"
                     )}
