@@ -372,15 +372,15 @@ function ActionBtn({ icon, label, onClick, className }: { icon: React.ReactNode;
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center justify-center gap-2.5 px-4 py-4 rounded-3xl',
+        'flex items-center justify-center gap-2 px-3 py-3 rounded-2xl',
         'bg-white/[0.03] border border-white/5 text-white/80',
-        'hover:bg-emerald-500 hover:text-zinc-950 hover:border-emerald-400 hover:shadow-[0_10px_20px_rgba(16,185,129,0.2)]',
-        'transition-all duration-300 text-xs font-black uppercase tracking-widest active:scale-95',
+        'hover:bg-emerald-500 hover:text-zinc-950 hover:border-emerald-400 hover:shadow-[0_8px_16px_rgba(16,185,129,0.15)]',
+        'transition-all duration-300 text-[10px] font-black uppercase tracking-widest active:scale-95',
         className,
       )}
     >
       {icon}
-      {label}
+      <span className="truncate">{label}</span>
     </button>
   );
 }
