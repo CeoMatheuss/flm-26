@@ -1307,12 +1307,47 @@ function simulateFullMatch(
 
     // Injury check for exhausted players — moral baixa aumenta o risco
     const checkInjury = (squad: SimPlayer[], teamKey: 'home' | 'away') => {
+      const teamName = teamKey === 'home' ? homeTeam : awayTeam;
       for (const p of squad) {
-        if (!p.isOnPitch || p.injured || p.stamina >= 40) continue;
+        if (!p.isOnPitch || p.injured) continue;
+        
+        // Critical risk below 25%, High below 40%
+        const isCritical = p.stamina < 25;
+        const isHighRisk = p.stamina < 40;
+        
+        if (!isHighRisk) continue;
+
         const moraleRisk = p.morale < 40 ? 1.6 : p.morale < 60 ? 1.2 : 1.0;
-        const baseRisk = 0.04 + (40 - p.stamina) / 800; // 0..0.09
-        if (rng() < baseRisk * moraleRisk) {
+        const baseRisk = isCritical ? 0.08 : 0.03; // Increased base risk
+        const finalRisk = baseRisk * moraleRisk * (1.1 - p.physical/100);
+
+        if (rng() < finalRisk) {
           p.injured = true;
+          const severity = rng() < 0.1 ? 'grave' : rng() < 0.4 ? 'moderada' : 'leve';
+          const bodyPart = pick(['muscular', 'tornozelo', 'joelho', 'ligamento']);
+          const weeks = severity === 'grave' ? 4 + Math.floor(rng() * 8) : severity === 'moderada' ? 2 + Math.floor(rng() * 3) : 1;
+          
+          p.injuryData = { type: 'Lesão ' + bodyPart, severity, weeks, bodyPart };
+          
+          allPlanned.push({
+            minute: m,
+            type: 'injury',
+            team: teamKey,
+            playerName: p.name,
+            priority: 'high',
+            description: `🚑 LESÃO! ${p.name} do ${teamName} sentiu o ${bodyPart} e precisa de atendimento médico! ${severity === 'grave' ? 'Parece sério!' : 'Ele tenta continuar mas está visivelmente limitado.'}`,
+          });
+
+          // Also send a system message (simulated here as a priority neutral event for the UI to catch)
+          allPlanned.push({
+            minute: m,
+            type: 'system_notification',
+            team: 'neutral',
+            description: `🏥 DM: ${p.name} sofreu uma ${p.injuryData.type}. Tempo estimado: ${weeks} semanas.`,
+          });
+        }
+      }
+    }
           p.isOnPitch = false;
           allPlanned.push({
             minute: m, type: 'injury', team: teamKey,
