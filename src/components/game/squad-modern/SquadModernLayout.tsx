@@ -60,9 +60,43 @@ export function SquadModernLayout({
   const [pendingSwap, setPendingSwap] = useState<Player | null>(null);
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
   const [isTacticsOpen, setIsTacticsOpen] = useState(false);
-
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const tabsListRef = useRef<HTMLDivElement>(null);
 
   const deltas = useAttributeEvolution(players);
+
+  // Lógica de navegação inteligente para substituição
+  useEffect(() => {
+    if (pendingSwap && mainContentRef.current) {
+      const p = pendingSwap;
+      const isStarter = starterIds.has(p.id);
+      const isFora = players.findIndex(pl => pl.id === p.id) >= 22; // Fora da convocação (após 11 titulares + 11 reservas)
+      
+      let targetTab = '';
+      if (isStarter) {
+        targetTab = 'reservas';
+      } else if (isFora) {
+        targetTab = 'reservas';
+      } else {
+        // Se for reserva
+        targetTab = 'titulares';
+      }
+
+      if (targetTab && activeTab !== targetTab) {
+        setActiveTab(targetTab);
+        
+        // Scroll suave para o topo da lista
+        setTimeout(() => {
+          mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+          // Scroll horizontal das abas se necessário
+          const tabElement = tabsListRef.current?.querySelector(`[data-value="${targetTab}"]`);
+          if (tabElement) {
+            tabElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        }, 100);
+      }
+    }
+  }, [pendingSwap]);
 
   // Sync event for automatic lineup
   useEffect(() => {
