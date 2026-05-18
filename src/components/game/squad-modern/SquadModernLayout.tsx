@@ -19,7 +19,7 @@ import { useAttributeEvolution } from './useAttributeEvolution';
 import { getPlayerStatus, avgStamina } from './squadHelpers';
 import { detectActualFormation, autoLineup } from '@/utils/lineupManager';
 import { toast } from 'sonner';
-import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard, ArrowRightLeft, X } from 'lucide-react';
+import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
