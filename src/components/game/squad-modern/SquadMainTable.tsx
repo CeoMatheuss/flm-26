@@ -106,7 +106,7 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
       if (sortBy === 'overall') return b.overall - a.overall;
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'age') return b.age - a.age;
-      if (sortBy === 'value') return getPlayerValue(b) - getPlayerValue(a);
+      if (sortBy === 'value') return getPlayerValue(b, (player as any).clubReputation || 50) - getPlayerValue(a, (player as any).clubReputation || 50);
       return 0;
     });
   }, [players, starterIds, activeTab, search, sortBy, negotiations]);
@@ -213,6 +213,7 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
 function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, onSwapAction, isPendingSwap, canBeSwapped, onRest, activeTab, onOpenQuickSwap }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; onSwapAction?: (e: any) => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string; onOpenQuickSwap?: () => void }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
+
   const status = getPlayerStatus(player, isStarter, isNegotiating);
   const sm = statusMeta[status] || statusMeta.reserva;
 
@@ -359,7 +360,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
         </div>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="flex flex-col items-end min-w-[80px] sm:min-w-[100px]">
-            <span className="text-xs sm:text-sm font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(value)}</span>
+            <span className="text-xs sm:text-sm font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(getPlayerValue(player))}</span>
             <span className="text-[8px] sm:text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
           </div>
           <ChevronRight className={cn("w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1", isPendingSwap && "text-primary animate-bounce")} />
