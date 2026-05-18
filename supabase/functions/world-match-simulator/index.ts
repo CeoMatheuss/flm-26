@@ -143,6 +143,38 @@ Deno.serve(async (req) => {
 
         // Generate News for synchronization feedback
         const newsTitle = getHeadline(hg === ag ? 'draw' : (hg > ag ? 'win' : 'loss'), hg > ag ? m.home_team.name : m.away_team.name, hg > ag ? m.away_team.name : m.home_team.name);
+        
+        // ── SYNC PLAYER STATS TO RANKINGS ────────────────────────
+        try {
+          const statsPayload = players.map(p => {
+            const isHome = p.team_id === m.home_team_id;
+            const pScorers = isHome ? match_data_stats.homeScorers : match_data_stats.awayScorers;
+            const goals = pScorers.filter(s => s.id === p.id).length;
+            const assists = pScorers.filter(s => s.assistId === p.id).length; // match_data_stats needs assistId
+            
+            return {
+              player_id: p.id,
+              team_id: p.team_id,
+              goals: goals,
+              assists: assists,
+              rating: 6.0 + (goals * 1.2) + (assists * 0.7), // simplified rating for quick sim
+              yellow_card: Math.random() < 0.1,
+              red_card: Math.random() < 0.01 ? 1 : 0,
+              is_gk: p.position === 'GOL',
+              clean_sheet: (isHome ? ag === 0 : hg === 0)
+            };
+          });
+
+          await sb.rpc('sync_player_match_stats', {
+            _match_id: String(m.id),
+            _competition_id: m.league_id || 'world_league',
+            _season: 1,
+            _player_stats: statsPayload
+          });
+        } catch (e) {
+          console.error('[WorldStatsSync] Error:', e);
+        }
+    
         await sb.from('world_league_news').insert({ 
           league_id: m.league_id, match_id: m.id, title: newsTitle, content: "Partida sincronizada automaticamente com a tabela da liga.", template_key: 'league_result'
         });
