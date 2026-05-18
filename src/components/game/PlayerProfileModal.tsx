@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoutReport } from '@/types/game';
-import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash, XCircle } from 'lucide-react';
+import { EyeOff, Tag, ArrowLeftRight, Gavel, Hash, XCircle, Handshake, Clock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useState, useEffect } from 'react';
 import { getPlayerValue } from '@/utils/playerGenerator';
