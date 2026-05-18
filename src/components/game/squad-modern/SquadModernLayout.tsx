@@ -324,18 +324,19 @@ export function SquadModernLayout({
         openLoanConfirm(p);
         break;
       case 'auction':
-        toast.info(`${p.name} enviado para leilão.`);
+        setConfirmAction({ type: 'auction', player: p });
         break;
       case 'shirt-number':
-        toast.info(`Escolha a camisa de ${p.name} no menu de equipamentos.`);
+        setConfirmAction({ type: 'shirt-number', player: p });
         break;
       case 'renew':
-        toast.success(`Negociação de renovação iniciada com ${p.name}.`);
+        setConfirmAction({ type: 'renew', player: p });
         break;
       case 'train':
-        toast.info(`${p.name} foi adicionado ao foco de treino.`);
+        setConfirmAction({ type: 'train', player: p });
         break;
       case 'promote-youth':
+        onPromoteYouth(p.id);
         toast.info(`${p.name} promovido da base.`);
         break;
     }
