@@ -7,8 +7,10 @@ import {
   X, ArrowUp, ArrowDown, Star, Target, Zap, Trophy, Activity,
   Heart, FileText, TrendingUp, Award, Flag,
   ArrowUpRight, ShoppingCart, ArrowLeftRight, Gavel, Hash, Dumbbell, ChevronsUp,
-  ArrowRightLeft,
+  ArrowRightLeft, LineChart as ChartIcon
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
