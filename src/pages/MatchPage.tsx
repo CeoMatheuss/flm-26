@@ -219,6 +219,12 @@ export default function MatchPage() {
           navigate('/', { replace: true });
           return;
         }
+        // Proteção extra: se a partida carregada já está finalizada, sai
+        if (state.phase === 'finished') {
+          toast.info('Esta partida já foi encerrada.');
+          navigate('/', { replace: true });
+          return;
+        }
         setInitDone(true);
       } else if (locState && !locState.liveMatchDbId && locState.homePlayers?.length > 0) {
         doStartMatch(locState.homePlayers, locState.tactics);
@@ -264,6 +270,14 @@ export default function MatchPage() {
   }
 
   const handleExit = () => {
+    // Ao sair, notificamos o sistema que a partida acabou para limpar caches
+    window.dispatchEvent(new CustomEvent('flm:match-finalized', { 
+      detail: { 
+        matchId: state.matchDbId,
+        finished: true 
+      } 
+    }));
+
     if (state.phase === 'finished' && state.matchDbId) {
       navigate('/', {
         replace: true,
@@ -273,11 +287,12 @@ export default function MatchPage() {
             homeGoals: state.homeGoals,
             awayGoals: state.awayGoals,
             competition: locState?.competition || 'Amistoso',
+            finished: true
           },
         },
       });
     } else {
-      navigate('/', { replace: true });
+      navigate('/', { replace: true, state: { matchFinished: true } });
     }
   };
 

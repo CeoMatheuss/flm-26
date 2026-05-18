@@ -83,7 +83,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
             away:national_cup_teams!away_team_id (club_name, strength, user_id)
           `)
           .or(`home_team_id.in.(${idsCsv}),away_team_id.in.(${idsCsv})`)
-          .in('status', ['scheduled', 'live'])
+          .neq('status', 'finished')
           .order('scheduled_at', { ascending: true })
           .limit(1);
 
@@ -119,7 +119,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           away_team:world_teams!world_matches_away_team_id_fkey (name, strength)
         `)
         .or(`home_team_id.eq.${teamData.id},away_team_id.eq.${teamData.id}`)
-        .in('status', ['scheduled', 'live'])
+        .neq('status', 'finished')
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
@@ -143,7 +143,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           id, round, status, scheduled_at, home_team_id, away_team_id, home_user_id, away_user_id
         `)
         .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
-        .in('status', ['scheduled', 'live'])
+        .neq('status', 'finished')
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
@@ -162,8 +162,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         if (candidates.length === 0) {
           setNextMatch(null);
         } else {
-          candidates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-          setNextMatch(candidates[0]);
+          const filtered = candidates.filter(c => {
+            const localM = club.matches?.find(m => m.id === c.matchId);
+            return !localM?.played && c.status !== 'finished';
+          });
+          filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          setNextMatch(filtered[0] || null);
         }
         setLoading(false);
       }
@@ -329,9 +333,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
             {nextMatch.tournament} {nextMatch.round ? `• Rodada ${nextMatch.round}` : ''}
           </p>
         </div>
-        <Badge variant={isShifted ? 'secondary' : isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}>
+        <Badge 
+          variant={isShifted ? 'secondary' : isReady ? 'destructive' : isToday ? 'secondary' : 'outline'} 
+          className={`text-[9px] ${isReady ? 'animate-pulse' : ''}`}
+        >
           {isShifted ? '🔄 LOCAL ALTERADO' :
-            isReady ? '🔴 AO VIVO' :
+            isReady ? (nextMatch.status === 'finished' ? 'Finalizada' : '🔴 AO VIVO') :
             isToday && fmt ? `⏰ HOJE às ${fmt.timeFormatted}` :
             fmt ? `📅 ${fmt.dateFormatted} às ${fmt.timeFormatted}` : 'Em breve'}
         </Badge>
@@ -387,9 +394,11 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
             variant={isReady ? 'default' : 'outline'}
             className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady ? 'animate-pulse' : ''}`}
             onClick={handleGoToMatch}
-            disabled={!isReady}
+            disabled={!isReady || nextMatch.status === 'finished'}
           >
-            {isReady ? (
+            {nextMatch.status === 'finished' ? (
+              <><X className="h-3.5 w-3.5" /> PARTIDA ENCERRADA</>
+            ) : isReady ? (
               <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
             ) : (
               <><Eye className="h-3.5 w-3.5" /> AGUARDANDO HORÁRIO</>
@@ -534,14 +543,15 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
           await supabase
             .from('live_matches')
             .update({ status: 'finished', current_minute: maxMin })
-            .eq('id', data.id)
-            .eq('status', 'live');
-          // Tenta sincronizar a tabela da liga (idempotente).
+            .eq('id', data.id);
+          
           try {
             await supabase.rpc('sync_match_persistence' as any, { _match_id: data.id });
           } catch (e) {
             console.warn('[MatchDashboardCard] sync_match_persistence falhou:', e);
           }
+          
+          // Emit event to notify other components (like MatchDashboardCard itself)
           window.dispatchEvent(new CustomEvent('flm:match-finalized', { detail: { matchId: data.id } }));
           setLiveMatch(null);
           return;
@@ -569,7 +579,15 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
 
     fetchLive();
     const interval = setInterval(fetchLive, 3000);
-    return () => clearInterval(interval);
+    const onFinalized = () => {
+      setLiveMatch(null);
+    };
+    window.addEventListener('flm:match-finalized', onFinalized);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('flm:match-finalized', onFinalized);
+    };
   }, []);
 
   // Determine match status and data
@@ -824,8 +842,8 @@ export function MatchDashboardCard({ club, userId, onGoToFriendly, onViewClub, s
                 <Clock className="h-3 w-3" />
                 {status === 'live' ?
               <span className="text-destructive font-bold animate-pulse">AO VIVO — {currentMinute}'</span> :
-              status === 'finished' ?
-              <span>Encerrada</span> :
+              status === 'finished' || liveMatch?.status === 'finished' ?
+              <span className="text-muted-foreground font-bold italic">Encerrada</span> :
 
               <span>Agendada</span>
               }
