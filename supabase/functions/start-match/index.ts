@@ -2230,8 +2230,8 @@ Deno.serve(async (req) => {
         }).eq('id', String(matchId));
 
         // Update cup player stats
-        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.home_team_id, allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
-        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.away_team_id, allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.home_team_id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
+        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.away_team_id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
       }
 
       // 3.3. Custom Tournament Logic
