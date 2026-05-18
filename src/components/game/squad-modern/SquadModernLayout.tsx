@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect, useCallback, type SyntheticEvent } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef, type SyntheticEvent } from 'react';
 import { QuickSwapPanel } from '../squad/QuickSwapPanel';
 import { Button } from '@/components/ui/button';
-import { Repeat, ShoppingCart, ArrowLeftRight } from 'lucide-react';
+import { Repeat, ShoppingCart, ArrowLeftRight, ArrowRightLeft } from 'lucide-react';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Player, Club } from '@/types/game';
@@ -19,7 +19,7 @@ import { useAttributeEvolution } from './useAttributeEvolution';
 import { getPlayerStatus, avgStamina } from './squadHelpers';
 import { detectActualFormation, autoLineup } from '@/utils/lineupManager';
 import { toast } from 'sonner';
-import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard, ArrowRightLeft, X } from 'lucide-react';
+import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -60,9 +60,46 @@ export function SquadModernLayout({
   const [pendingSwap, setPendingSwap] = useState<Player | null>(null);
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
   const [isTacticsOpen, setIsTacticsOpen] = useState(false);
-
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const tabsListRef = useRef<HTMLDivElement>(null);
 
   const deltas = useAttributeEvolution(players);
+
+  // Lógica de navegação inteligente para substituição
+  useEffect(() => {
+    if (pendingSwap && mainContentRef.current) {
+      const p = pendingSwap;
+      const isStarter = starterIds.has(p.id);
+      
+      // Encontrar o índice real no array players para determinar se está "fora"
+      const playerIndex = players.findIndex(pl => pl.id === p.id);
+      const isFora = playerIndex >= 22; // Fora da convocação (11 titulares + 11 reservas)
+      
+      let targetTab = '';
+      if (isStarter) {
+        targetTab = 'reservas';
+      } else if (isFora) {
+        targetTab = 'reservas';
+      } else {
+        // Se for reserva (está entre o índice 11 e 21)
+        targetTab = 'titulares';
+      }
+
+      if (targetTab && activeTab !== targetTab) {
+        setActiveTab(targetTab);
+        
+        // Scroll suave para o topo da lista
+        setTimeout(() => {
+          mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+          // Scroll horizontal das abas se necessário
+          const tabElement = tabsListRef.current?.querySelector(`[data-value="${targetTab}"]`);
+          if (tabElement) {
+            tabElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        }, 100);
+      }
+    }
+  }, [pendingSwap]);
 
   // Sync event for automatic lineup
   useEffect(() => {
@@ -74,6 +111,23 @@ export function SquadModernLayout({
     window.addEventListener('flm:auto-lineup', handler);
     return () => window.removeEventListener('flm:auto-lineup', handler);
   }, [players, tactics.formation, onUpdatePlayers]);
+
+  useEffect(() => {
+    const startSwapHandler = (e: any) => {
+      const p = e.detail.player;
+      if (pendingSwap && pendingSwap.id === p.id) {
+        setPendingSwap(null);
+      } else {
+        setPendingSwap(p);
+        toast.info(`Substituição iniciada: selecione o jogador para trocar com ${p.name}`, {
+          icon: '🔄',
+          duration: 3000
+        });
+      }
+    };
+    window.addEventListener('flm:start-swap', startSwapHandler);
+    return () => window.removeEventListener('flm:start-swap', startSwapHandler);
+  }, [pendingSwap]);
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -138,7 +192,11 @@ export function SquadModernLayout({
   }, [players]);
 
   const handleSelect = (id: string) => {
-    if (pendingSwap && id !== pendingSwap.id) {
+    if (pendingSwap) {
+      if (id === pendingSwap.id) {
+        setPendingSwap(null);
+        return;
+      }
       handleSwap(pendingSwap.id, id);
       return;
     }
@@ -209,7 +267,7 @@ export function SquadModernLayout({
     onUpdatePlayers(newPlayers);
     setPendingSwap(null);
     setPanelOpen(false);
-    toast.success('Troca realizada com sucesso!', {
+    toast.success('Substituição realizada!', {
       description: `${players[idxA].name} ↔ ${players[idxB].name}`
     });
   }, [players, onUpdatePlayers]);
@@ -420,7 +478,10 @@ export function SquadModernLayout({
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             {/* Horizontal Sub-tabs */}
-            <div className="px-3 sm:px-6 py-3 bg-zinc-950/50 border-b border-white/5 overflow-x-auto scrollbar-hide flex items-center justify-between gap-4">
+            <div 
+              ref={tabsListRef}
+              className="px-3 sm:px-6 py-3 bg-zinc-950/50 border-b border-white/5 overflow-x-auto scrollbar-hide flex items-center justify-between gap-4"
+            >
               <TabsList className="bg-white/5 border border-white/5 p-1 h-12 gap-1 rounded-2xl shrink-0">
                 <TabTrigger value="titulares" icon={<Shield className="w-3.5 h-3.5" />} label="Titulares" />
                 <TabTrigger value="reservas" icon={<Users className="w-3.5 h-3.5" />} label="Reservas" />
@@ -431,7 +492,7 @@ export function SquadModernLayout({
               </TabsList>
             </div>
 
-            <div className="flex-1 overflow-x-auto custom-scrollbar relative">
+            <div ref={mainContentRef} className="flex-1 overflow-x-auto custom-scrollbar relative">
               <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -549,6 +610,7 @@ export function SquadModernLayout({
 
       <PlayerDetailPanel
         player={selectedPlayer}
+        onSwap={(p) => setPendingSwap(p)}
         status={selectedStatus}
         delta={selectedDelta}
         open={panelOpen}

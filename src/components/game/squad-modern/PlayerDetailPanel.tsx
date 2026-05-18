@@ -7,6 +7,7 @@ import {
   X, ArrowUp, ArrowDown, Star, Target, Zap, Trophy, Activity,
   Heart, FileText, TrendingUp, Award, Flag,
   ArrowUpRight, ShoppingCart, ArrowLeftRight, Gavel, Hash, Dumbbell, ChevronsUp,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
@@ -29,6 +30,7 @@ export type PlayerPanelAction =
 
 interface Props {
   player: Player | null;
+  onSwap?: (player: Player) => void;
   status: PlayerStatus | null;
   delta: AttrDelta;
   open: boolean;
@@ -37,7 +39,7 @@ interface Props {
   isYouth?: boolean;
 }
 
-export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, onAction, isYouth }: Props) {
+export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenChange, onAction, isYouth }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -48,6 +50,7 @@ export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, o
           <PlayerDetailContent
             player={player}
             status={status ?? 'reserva'}
+            onSwap={onSwap}
             delta={delta}
             onClose={() => onOpenChange(false)}
             onAction={onAction}
@@ -60,10 +63,11 @@ export function PlayerDetailPanel({ player, status, delta, open, onOpenChange, o
 }
 
 function PlayerDetailContent({
-  player, status, delta, onClose, onAction, isYouth,
+  player, status, onSwap, delta, onClose, onAction, isYouth,
 }: {
   player: Player;
   status: PlayerStatus;
+  onSwap?: (p: Player) => void;
   delta: AttrDelta;
   onClose: () => void;
   onAction?: Props['onAction'];
@@ -291,6 +295,7 @@ function PlayerDetailContent({
           <section className="pb-10">
             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] mb-6">Operações do Clube</h3>
             <div className="grid grid-cols-2 gap-3">
+              <ActionBtn icon={<ArrowRightLeft className="w-4 h-4" />} label="🔄 Substituir" onClick={() => { onClose(); onSwap?.(player); }} className="col-span-2 bg-primary/10 border-primary/30 text-white" />
               {isYouth && (
                 <ActionBtn icon={<ChevronsUp className="w-4 h-4" />} label="⬆️ Promover da Base" onClick={() => onAction?.('promote-youth', player)} className="col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400" />
               )}

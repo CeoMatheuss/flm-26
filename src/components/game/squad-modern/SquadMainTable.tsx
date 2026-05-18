@@ -111,7 +111,10 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
   }, [players, starterIds, activeTab, search, sortBy, negotiations]);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden min-w-[700px] bg-zinc-950/20 rounded-[2rem]">
+    <div className={cn(
+      "flex flex-col h-full overflow-hidden min-w-[700px] bg-zinc-950/20 rounded-[2rem] transition-all duration-500",
+      pendingSwapId && "ring-4 ring-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.3)] bg-emerald-500/10"
+    )}>
       {/* Search & Filters */}
       <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
         <div className="relative w-full sm:w-64">
@@ -159,7 +162,22 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
               isPendingSwap={pendingSwapId === p.id}
               canBeSwapped={!!pendingSwapId && pendingSwapId !== p.id}
               onRest={() => onRest(p.id)}
-              onClick={() => onSelect(p.id)}
+              onClick={() => {
+                if (pendingSwapId) {
+                  // Se já houver uma troca pendente, realizar a troca
+                  // @ts-ignore - handleSwap exists in parent context but we invoke handleSelect here
+                  onSelect(p.id);
+                } else {
+                  // Caso contrário, abrir o painel ou iniciar troca rápida
+                  // @ts-ignore
+                  onSelect(p.id);
+                }
+              }}
+              onSwapAction={(e) => {
+                e.stopPropagation();
+                // Dispara o evento de início de troca para o pai capturar
+                window.dispatchEvent(new CustomEvent('flm:start-swap', { detail: { player: p } }));
+              }}
               onOpenQuickSwap={onOpenQuickSwap}
               activeTab={activeTab}
             />
@@ -191,7 +209,7 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
   );
 }
 
-function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, isPendingSwap, canBeSwapped, onRest, activeTab, onOpenQuickSwap }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string; onOpenQuickSwap?: () => void }) {
+function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, onSwapAction, isPendingSwap, canBeSwapped, onRest, activeTab, onOpenQuickSwap }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; onSwapAction?: (e: any) => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string; onOpenQuickSwap?: () => void }) {
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
   const status = getPlayerStatus(player, isStarter, isNegotiating);
@@ -269,13 +287,22 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
               {flagFor((player as any).country)}
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenQuickSwap?.();
+                  if (onSwapAction) {
+                    onSwapAction(e);
+                  } else {
+                    e.stopPropagation();
+                    onOpenQuickSwap?.();
+                  }
                 }}
-                className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-[10px] hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
-                title="Troca Rápida"
+                className={cn(
+                  "w-8 h-8 rounded-lg border flex items-center justify-center text-[10px] transition-all active:scale-90",
+                  isPendingSwap 
+                    ? "bg-red-500/20 border-red-500/40 text-white animate-pulse" 
+                    : "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500 hover:text-zinc-950"
+                )}
+                title={isPendingSwap ? "Cancelar Troca" : "Substituir Jogador"}
               >
-                🔄
+                {isPendingSwap ? "✖" : "🔄"}
               </button>
             </span>
           </div>
