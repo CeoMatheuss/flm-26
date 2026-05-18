@@ -1071,21 +1071,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   {startersList.length === 0 ? (
                     <div className="text-center py-4 text-[10px] text-muted-foreground italic">Nenhum titular encontrado</div>
                   ) : (
-                    startersList.map(({ player }) => (
-                      <SquadCard 
-                        key={player.id} 
-                        player={player} 
-                        onClick={() => {
-                          if (pendingSwap && pendingSwap.from !== 'starters') {
-                            completeSwap(player.id);
-                          } else {
-                            setViewingPlayer(player);
-                          }
-                        }}
-                        onSwap={(p) => startSwap(p, 'starters')}
-                        isPendingSwap={pendingSwap?.player.id === player.id}
-                      />
-                    ))
+                    startersList.map(({ player }) => renderPlayerRow(player, 'starters'))
                   )}
                 </TabsContent>
 
@@ -1093,11 +1079,25 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   {reservesList.length === 0 ? (
                     <div className="text-center py-4 text-[10px] text-muted-foreground italic">Banco vazio</div>
                   ) : (
-                    reservesList.map(({ player }) => (
-                      <SquadCard 
-                        key={player.id} 
-                        player={player} 
-                        onClick={() => {
+                    reservesList.map(({ player }) => renderPlayerRow(player, 'reserves'))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="out" className="mt-2 space-y-1.5">
+                  {outList.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Nenhum jogador fora da lista</div>
+                  ) : (
+                    outList.map(({ player }) => renderPlayerRow(player, 'out'))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="injured" className="mt-2 space-y-1.5">
+                  {injuredList.map(({ player }) => renderPlayerRow(player, 'injured'))}
+                </TabsContent>
+
+                <TabsContent value="suspended" className="mt-2 space-y-1.5">
+                  {suspendedList.map(({ player }) => renderPlayerRow(player, 'suspended'))}
+                </TabsContent>
                           if (pendingSwap && pendingSwap.from === 'starters') {
                             completeSwap(player.id);
                           } else {
