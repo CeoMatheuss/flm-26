@@ -108,6 +108,14 @@ Deno.serve(async (req) => {
         .in('team_id', teamIds);
 
       for (const m of matches) {
+        const simStart = Date.now();
+        await sb.from("match_simulation_logs").insert({
+          match_id: m.id,
+          match_type: 'world',
+          step: 'start',
+          details: { scheduled_at: m.scheduled_at, status: m.status }
+        });
+
         // Atomic Lock: Mark as simulating to prevent race conditions
         const { data: locked } = await sb.from("world_matches")
           .update({ status: 'simulating' })
@@ -151,8 +159,28 @@ Deno.serve(async (req) => {
 
         if (updateErr) {
           console.error(`Error updating match ${m.id}:`, updateErr);
+          await sb.from("match_simulation_logs").insert({
+            match_id: m.id,
+            match_type: 'world',
+            step: 'error',
+            details: { error: updateErr, phase: 'finalizing' }
+          });
           continue;
         }
+
+        const simDuration = Date.now() - simStart;
+        await sb.from("match_simulation_logs").insert({
+          match_id: m.id,
+          match_type: 'world',
+          step: 'finalizing',
+          details: { 
+            duration_ms: simDuration, 
+            score: `${hg}x${ag}`,
+            home: m.home_team.name,
+            away: m.away_team.name
+          }
+        });
+
 
         // Process discipline for these specific players
         const matchPlayers = (allPlayers || []).filter(p => p.team_id === m.home_team_id || p.team_id === m.away_team_id);
