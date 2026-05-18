@@ -17,6 +17,8 @@ interface FreeAgent {
   player_name: string;
   player_position: string;
   player_age: number;
+  player_overall: number;
+  player_potential: number;
   visible_stats: any;
   origin: string;
   origin_club_name: string | null;
