@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
 import { supabase } from '@/integrations/supabase/client';
+import swapIcon from '@/assets/swap-icon.png';
 import {
   PlayerStatus,
   statusMeta,
@@ -304,14 +305,16 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
                   }
                 }}
                 className={cn(
-                  "w-10 h-10 rounded-xl border flex items-center justify-center text-sm transition-all active:scale-90",
-                  isPendingSwap 
-                    ? "bg-red-500/20 border-red-500/40 text-white animate-pulse" 
-                    : "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500 hover:text-zinc-950 shadow-lg"
+                  "w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110",
+                  isPendingSwap && "animate-pulse ring-2 ring-red-500/60"
                 )}
                 title={isPendingSwap ? "Cancelar Troca" : "Substituir Jogador"}
               >
-                {isPendingSwap ? "✖" : "🔄"}
+                {isPendingSwap ? (
+                  <span className="text-white font-bold">✖</span>
+                ) : (
+                  <img src={swapIcon} alt="Trocar" className="w-9 h-9 object-contain drop-shadow-lg" />
+                )}
               </button>
             </span>
           </div>
