@@ -25,6 +25,11 @@ const lastNames = [
   'Miranda', 'Cavalcanti', 'Vasconcelos', 'Xavier', 'Coelho', 'Alencar', 'Farias', 'Guimarães', 'Braga', 'Medeiros',
 ];
 
+const nationalities = [
+  'Brasil', 'Argentina', 'Uruguai', 'Chile', 'Colômbia', 'Portugal', 'Espanha', 'França', 'Itália', 'Alemanha',
+  'Inglaterra', 'Bélgica', 'Holanda', 'Croácia', 'Sérvia', 'Nigéria', 'Senegal', 'Egito', 'Japão', 'Coreia do Sul',
+];
+
 const randomClubNames = [
   'Atlético Mineiro', 'Palmeiras', 'São Paulo', 'Corinthians', 'Grêmio', 'Internacional', 'Cruzeiro',
   'Santos', 'Vasco', 'Botafogo', 'Fluminense', 'Bahia', 'Sport', 'Fortaleza', 'Ceará', 'Coritiba', 'Athletico-PR',
