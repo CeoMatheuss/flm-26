@@ -46,13 +46,15 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   const showFinished = !!recentFinished && recentFinished.matchId !== dismissedFinishedId;
   const displayed = showFinished ? recentFinished : nextMatch;
 
-  // Auto-advance to next round automatically after 5 seconds
+  // Auto-advance to next round automatically after 3 seconds (no manual click needed)
   useEffect(() => {
     if (showFinished && recentFinished) {
       const timer = setTimeout(() => {
-        console.log('[MatchDashboardCard] Auto-advancing to next round...');
+        console.log('[MatchDashboardCard] Auto-advance: avançando para próxima rodada...');
         setDismissedFinishedId(recentFinished.matchId);
-      }, 5000); // 5s e avança automático
+        // Force refresh of next match data
+        window.dispatchEvent(new CustomEvent('flm:match-finalized'));
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [showFinished, recentFinished?.matchId]);
