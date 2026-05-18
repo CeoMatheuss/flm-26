@@ -28,7 +28,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        'relative w-full aspect-[2/3] rounded-[2rem] overflow-hidden group transition-all duration-300',
+        'relative w-full min-h-[340px] rounded-[2rem] overflow-hidden group transition-all duration-300',
         'border-2 shadow-2xl',
         (player as any).rarity && (player as any).rarity !== 'Comum'
           ? (player as any).rarity === 'Craque geracional' ? 'border-amber-400 shadow-amber-400/20' :
@@ -109,7 +109,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         </div>
 
         {/* Name - Big and Bold */}
-        <div className="mt-auto mb-4">
+        <div className="mt-3 mb-2">
           <h3 className="text-lg font-black italic text-white uppercase tracking-tighter leading-none truncate group-hover:text-emerald-300 transition-colors">
             {player.name.split(' ').pop()}
           </h3>
@@ -119,7 +119,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-2 mb-3">
           <StatMini icon={<Zap className="w-2.5 h-2.5" />} label="STAM" value={player.stamina} color="text-emerald-400" />
           <StatMini icon={<Heart className="w-2.5 h-2.5" />} label="MOR" value={player.morale} color="text-pink-400" />
         </div>
