@@ -533,6 +533,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
       if (type === 'penalty' || type === 'penalty_shootout') {
         const penSpotX = isHome ? W - 38 : 38;
         const penSpotY = H / 2;
+        const attTeam = team;
         // Players lined up at edge of penalty area
         const boxEdgeX = isHome ? W - 58 : 58;
         const penLineupPositions = [
@@ -557,7 +558,8 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
 
         if (t < 0.30) {
           const walkT = t / 0.30;
-          drawAllPlayers(drift * 0.3, false, 0, 0, 15 * easeOut(walkT));
+          // Very low movement for penalty setup
+          drawAllPlayers(drift * 0.3, false, 0, 0, 0, attTeam, 0.1 * walkT, 0.1 * walkT);
           drawPenaltyLineup(easeOut(walkT));
           const startX = isHome ? W * 0.55 : W * 0.45;
           const sx = startX + (penSpotX - startX - (isHome ? 35 : -35)) * easeOut(walkT);
@@ -568,7 +570,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(walkT, type === 'penalty_shootout' ? '🎯 DISPUTA DE PÊNALTIS' : '🎯 PÊNALTI!', playerName);
         } else if (t < 0.55) {
           const runT = (t - 0.30) / 0.25;
-          drawAllPlayers(drift * 0.2, false, 0, 0, 20);
+          drawAllPlayers(drift * 0.2, false, 0, 0, 0, attTeam, 0.15, 0.15);
           drawPenaltyLineup(1);
           const runStartX = penSpotX + (isHome ? -35 : 35);
           const sx = runStartX + (penSpotX - runStartX) * easeIn(Math.min(runT * 1.3, 1));
@@ -580,16 +582,10 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(1, '🏃 Corrida para a bola...', playerName);
         } else if (t < 0.75) {
           const shotT = (t - 0.55) / 0.20;
-          drawAllPlayers(drift * 0.2, true, goalX, goalY, 20);
+          drawAllPlayers(drift * 0.2, true, goalX, goalY, 0, attTeam, 0.2, 0.2);
           drawPenaltyLineup(1);
           drawPlayer(penSpotX + (isHome ? 5 : -5), penSpotY, teamColor, teamLight, '10', 9, false, playerName);
           const gkX = goalX + (isHome ? -6 : 6);
-          const isSave = !type.includes('goal') && type !== 'penalty_shootout' && type !== 'penalty'; 
-          // Check if current event is actually a goal from the props or parent state would be better, 
-          // but HighlightMiniCanvas uses the 'type' prop. 
-          // If type is 'penalty', it assumes goal in the original code.
-          // Let's refine the logic: we need to know if it's a goal or save.
-          
           const diveDir = ballEndY > goalY ? 1 : -1;
           const gkDiveY = goalY + diveDir * 25 * easeOut(shotT);
           const gkDiveX = gkX + (isHome ? -12 : 12) * easeOut(shotT);
@@ -601,8 +597,8 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(shotT, '⚡ CHUTOU!');
         } else {
           const afterT = (t - 0.75) / 0.25;
-          const isGoal = ballEndX === goalX; // Simple heuristic: if ball is at goalX, it's a goal
-          drawAllPlayers(drift * 0.15);
+          const isGoal = outcome === 'goal';
+          drawAllPlayers(drift * 0.15, false, 0, 0, 0, attTeam, 0.1, 0.1);
           
           penLineupPositions.forEach((pos, i) => {
             const isAttacker = i % 2 === 0;
