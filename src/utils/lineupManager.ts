@@ -24,7 +24,7 @@ export const formationRequirements: Record<Formation, string[]> = {
 
 /**
  * Intelligent Lineup System
- * Automatically reorders players to find the best 11 starters and 7 balanced reserves.
+ * Automatically reorders players to find the best 11 starters and 11 balanced reserves.
  */
 export function autoLineup(players: Player[], formation: Formation): Player[] {
   const requirements = formationRequirements[formation];
