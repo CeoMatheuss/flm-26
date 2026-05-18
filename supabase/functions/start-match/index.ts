@@ -193,7 +193,7 @@ function dribblePower(p: SimPlayer): number { return rolePower(p, 'dribble'); }
 // ── HELPERS ──────────────────────────────────────────────────
 
 function genAwayAttrs(ovr: number, pos: string) {
-  const variance = () => clamp(Math.floor(ovr + (rng() * 16 - 8)), 30, 99);
+  const variance = (base: number = ovr) => clamp(Math.floor(base + (rng() * 16 - 8)), 30, 99);
   const isGK = pos === 'GOL'; const isDef = pos === 'ZAG' || pos === 'LAT'; const isAtt = pos === 'ATA';
   return {
     speed: variance(), shooting: isAtt ? variance() + 5 : variance() - 5,
@@ -203,6 +203,8 @@ function genAwayAttrs(ovr: number, pos: string) {
     vision: variance(), crossing: variance(), longShots: variance(),
     workRate: variance(), composure: variance(), aggression: variance(),
     goalkeeping: isGK ? variance() + 10 : 0, setPieces: variance(), positioning: variance(),
+    fairPlay: variance(), discipline: variance(), intelligence: variance(), emotionalControl: variance(),
+    age: 18 + Math.floor(rng() * 18),
   };
 }
 
