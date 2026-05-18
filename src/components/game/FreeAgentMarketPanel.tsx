@@ -81,7 +81,6 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
     const { data } = await supabase
       .from('free_agents_market')
       .select('*')
-      .gte('available_until', new Date().toISOString())
       .order('player_overall', { ascending: false })
       .limit(200);
     if (data) setAgents(data as any);
