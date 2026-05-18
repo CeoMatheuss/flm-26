@@ -2308,8 +2308,11 @@ Deno.serve(async (req) => {
         }).eq('id', String(matchId));
 
         // Update cup player stats
-        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.home_team_id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
-        await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.away_team_id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+        console.info('[Sync] Calling sync_match_stats for cup match');
+        await adminClient.rpc('sync_match_stats', { 
+          p_match_id: String(matchId), 
+          p_competition_type: 'cup' 
+        });
 
         // Decrement suspensions for cup
         const allMatchPlayerIds = result.allPlayers.map(p => p.id).filter(id => id && !id.startsWith('bot-'));
