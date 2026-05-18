@@ -226,7 +226,10 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     const clubId = clubData.id;
     console.log('[club-creation] Clube criado com ID:', clubId);
 
-    // 2. Salvar jogadores no banco de dados (world_players)
+    // 2. Limpar qualquer jogador existente para este clube (Proteção anti-duplicação)
+    await supabase.from('world_players').delete().eq('team_id', clubId);
+
+    // 3. Salvar jogadores no banco de dados (world_players)
     console.log('[club-creation] Vinculando jogadores ao clube no banco...');
     const worldPlayersPayload = initialPlayers.map(p => ({
       team_id: clubId,
