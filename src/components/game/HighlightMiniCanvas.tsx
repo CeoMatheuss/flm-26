@@ -1065,10 +1065,12 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         const fkY = H * 0.5;
         const wallX = isHome ? W * 0.78 : W * 0.22;
         const wallY = H * 0.5;
+        const attTeam = team;
 
         if (t < 0.25) {
           const setupT = t / 0.25;
-          drawAllPlayers(drift * 0.3, false, 0, 0, 10);
+          // Set piece positioning: Crowd the box
+          drawAllPlayers(drift * 0.3, false, 0, 0, 0, attTeam, 0.5 * setupT, 0.4 * setupT);
 
           // Wall forming
           const wallAlpha = easeOut(setupT);
@@ -1094,7 +1096,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
 
         } else if (t < 0.45) {
           const runT = (t - 0.25) / 0.20;
-          drawAllPlayers(drift * 0.2, false, 0, 0, 15);
+          drawAllPlayers(drift * 0.2, false, 0, 0, 0, attTeam, 0.6, 0.5);
 
           // Wall standing
           for (let i = 0; i < 4; i++) {
@@ -1120,7 +1122,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else if (t < 0.65) {
           // Ball curving over wall
           const curveT = (t - 0.45) / 0.20;
-          drawAllPlayers(drift * 0.2, true, goalX, goalY, 20);
+          drawAllPlayers(drift * 0.2, true, goalX, goalY, 0, attTeam, 0.7, 0.6);
 
           // Wall (some ducking)
           for (let i = 0; i < 4; i++) {
@@ -1156,7 +1158,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
         } else if (t < 0.78) {
           // Impact
           const impT = (t - 0.65) / 0.13;
-          drawAllPlayers(drift * 0.2, true, goalX, goalY, 20);
+          drawAllPlayers(drift * 0.2, true, goalX, goalY, 0, attTeam, 0.8, 0.7);
 
           // Wall scattering
           for (let i = 0; i < 4; i++) {
@@ -1184,9 +1186,9 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           drawEventLabel(impT, '💥 BATEU FORTE!', playerName);
 
         } else {
-          // Aftermath — respect real outcome (goal vs save vs miss vs corner)
+          // Aftermath
           const afterT = (t - 0.78) / 0.22;
-          drawAllPlayers(drift * 0.15);
+          drawAllPlayers(drift * 0.15, false, 0, 0, 0, attTeam, 0.3 * (1 - afterT), 0.2 * (1 - afterT));
           drawPlayer(fkX + dir * 10, fkY, teamColor, teamLight, '10', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -20 : 20);
           drawPlayer(gkBaseX, goalY + (outcome === 'goal' ? 20 : 0), gkColor, gkLight, 'GK', 9);
