@@ -458,9 +458,50 @@ export function SquadModernLayout({
         break;
       case 'renew':
         if (!extra) {
-          setConfirmAction({ type: 'renew', player: p });
-        } else {
-          toast.success(`Negociação de renovação concluída com ${p.name}.`);
+          // Inicializa proposta com valores padrão, mas permitindo edição
+          setConfirmAction({ 
+            type: 'renew', 
+            player: p,
+            renewalProposal: {
+              salary: Math.round((p.salary || 0) * 1.15),
+              bonus: Math.round(getPlayerValue(p) * 0.05),
+              duration: 3
+            }
+          });
+        } else if (extra === 'confirm') {
+          if (!confirmAction?.renewalProposal) return;
+          
+          const proposal = confirmAction.renewalProposal;
+          
+          // Lógica de aceitação/rejeição/contraproposta
+          // Fatores: Salário vs Expectativa (baseada em OVR e idade), Bônus
+          const baseExpectation = Math.round((p.salary || 0) * 1.25);
+          const minAcceptable = Math.round((p.salary || 0) * 1.10);
+          
+          if (proposal.salary >= baseExpectation) {
+            // Aceita imediatamente
+            const updated = players.map(pl => 
+              pl.id === p.id ? { ...pl, salary: proposal.salary, contract: (pl.contract || 0) + proposal.duration } : pl
+            );
+            onUpdatePlayers(updated);
+            onSpendBudget?.(proposal.bonus, 'Contratos', `Bônus de renovação — ${p.name}`);
+            toast.success(`${p.name} aceitou a proposta de renovação!`);
+            setConfirmAction(null);
+          } else if (proposal.salary < minAcceptable) {
+            // Rejeita categoricamente
+            toast.error(`${p.name} rejeitou a proposta e encerrou as negociações por hoje.`);
+            setConfirmAction(null);
+          } else {
+            // Contraproposta: Jogador pede o meio do caminho entre o que ele quer e o que foi oferecido
+            const counterSalary = Math.round((proposal.salary + baseExpectation) / 2);
+            toast.info(`${p.name} achou a oferta baixa. Contraproposta: ${formatMoney(counterSalary)}/s e ${proposal.duration} temporadas.`);
+            
+            // Atualiza o modal com a contraproposta para o usuário decidir
+            setConfirmAction({
+              ...confirmAction,
+              renewalProposal: { ...proposal, salary: counterSalary }
+            });
+          }
         }
         break;
       case 'train':
