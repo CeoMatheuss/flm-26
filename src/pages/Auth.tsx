@@ -69,13 +69,6 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  // Envia código automaticamente se cair direto na verificação (vindo do Index)
-  useEffect(() => {
-    if (step === 'verify-email' && pendingEmail && resendTimer === 0 && initialStep === 'verify-email') {
-      handleResendVerification();
-    }
-  }, []);
-
   const startResendTimer = useCallback(() => setResendTimer(RESEND_COOLDOWN), []);
 
   const handleGoogleLogin = async () => {
