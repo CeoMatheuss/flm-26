@@ -179,7 +179,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
                 {bench.slice(0, 11).length === 0 && (
                   <p className="text-white/40 text-sm text-center py-10 col-span-full">Sem reservas disponíveis</p>
                 )}
-                {bench.map(p => (
+                {bench.slice(0, 11).map(p => (
                   <button
                     key={p.id}
                     onClick={() => handleBenchPick(p.id)}
