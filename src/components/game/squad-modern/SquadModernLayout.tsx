@@ -283,7 +283,7 @@ export function SquadModernLayout({
 
   // Modal States
   const [confirmAction, setConfirmAction] = useState<null | {
-    type: 'transfer' | 'loan-out' | 'auction' | 'renew' | 'shirt-number' | 'train';
+    type: 'transfer' | 'loan-out' | 'auction' | 'renew' | 'shirt-number' | 'train' | 'promote-youth';
     player: Player;
     value?: number;
     listingFeeRate?: number;
@@ -334,7 +334,38 @@ export function SquadModernLayout({
     if (!confirmAction) return;
     const { type, player, value, total } = confirmAction;
 
-    if ((club.budget ?? 0) < total) {
+    if (type === 'promote-youth') {
+      setSubmitting(true);
+      try {
+        await onPromoteYouth(player.id);
+        
+        // Publicar no jornal
+        await supabase.from('newspaper_entries').insert({
+          user_id: userId,
+          text: `PROMESSA NO PROFISSIONAL: ${player.name} acaba de assinar seu primeiro contrato profissional com o ${clubName}!`,
+          category: 'CONTRATAÇÃO',
+          metadata: {
+            club_id: club.id,
+            club_name: clubName,
+            player_name: player.name,
+            player_overall: player.overall,
+            player_position: player.position
+          }
+        });
+
+        toast.success(`${player.name} assinou o contrato profissional!`, {
+          description: "Notícia publicada no Diário do Futebol."
+        });
+        setConfirmAction(null);
+      } catch (err: any) {
+        toast.error("Erro ao promover jogador.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    if ((club.budget ?? 0) < (total || 0)) {
       toast.error(`Saldo insuficiente. Necessário ${formatMoney(total)}.`);
       return;
     }
@@ -440,8 +471,7 @@ export function SquadModernLayout({
         }
         break;
       case 'promote-youth':
-        onPromoteYouth(p.id);
-        toast.info(`${p.name} promovido da base.`);
+        setConfirmAction({ type: 'promote-youth', player: p });
         break;
     }
   };
@@ -785,6 +815,28 @@ export function SquadModernLayout({
                           {{ speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Marcação', physical: 'Físico', dribbling: 'Drible' }[key as 'speed' | 'shooting' | 'passing' | 'defending' | 'physical' | 'dribbling']}
                         </button>
                       ))}
+                    </div>
+                  </div>
+                ) : confirmAction.type === 'promote-youth' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/60 uppercase tracking-widest font-black italic">Contrato Profissional</p>
+                    <div className="p-5 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 space-y-4">
+                      <p className="text-sm text-white/80 leading-relaxed">
+                        Deseja assinar o primeiro contrato profissional de <strong>{confirmAction.player.name}</strong>?
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded-xl bg-zinc-950/50 border border-white/5">
+                          <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Salário Profissional</p>
+                          <p className="text-sm font-black text-emerald-400">{formatMoney(500)}/s</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-zinc-950/50 border border-white/5">
+                          <p className="text-[9px] text-white/40 uppercase font-bold mb-1">Duração</p>
+                          <p className="text-sm font-black text-sky-400">3 Temporadas</p>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-white/40 italic">
+                        * Ao assinar, o jogador passará a integrar o elenco principal e a notícia será publicada no jornal.
+                      </p>
                     </div>
                   </div>
                 ) : null}
