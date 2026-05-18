@@ -127,8 +127,8 @@ function getMoraleEmoji(morale: number): string {
 type Group = 'starters' | 'reserves' | 'out' | 'injured' | 'suspended';
 
 function getPlayerGroup(player: Player): Group {
-  if (player.squad_status === 'injured' || !!player.injury) return 'injured';
   if (player.squad_status === 'suspended' || player.disciplinary?.isSuspended) return 'suspended';
+  if (player.squad_status === 'injured' || !!player.injury) return 'injured';
   if (player.squad_status === 'starter') return 'starters';
   if (player.squad_status === 'bench') return 'reserves';
   return 'out';
