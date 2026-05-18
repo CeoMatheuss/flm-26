@@ -46,13 +46,15 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   const showFinished = !!recentFinished && recentFinished.matchId !== dismissedFinishedId;
   const displayed = showFinished ? recentFinished : nextMatch;
 
-  // Auto-advance to next round automatically after 5 seconds
+  // Auto-advance to next round automatically after 3 seconds (no manual click needed)
   useEffect(() => {
     if (showFinished && recentFinished) {
       const timer = setTimeout(() => {
-        console.log('[MatchDashboardCard] Auto-advancing to next round...');
+        console.log('[MatchDashboardCard] Auto-advance: avançando para próxima rodada...');
         setDismissedFinishedId(recentFinished.matchId);
-      }, 5000); // 5s e avança automático
+        // Force refresh of next match data
+        window.dispatchEvent(new CustomEvent('flm:match-finalized'));
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [showFinished, recentFinished?.matchId]);
@@ -405,16 +407,9 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           >
             <FileText className="h-3.5 w-3.5" /> VER RELATÓRIO
           </Button>
-          {nextMatch && (
-            <Button
-              size="sm"
-              variant="default"
-              className="gap-2 text-[10px] h-8 w-full font-bold"
-              onClick={() => setDismissedFinishedId(fm.matchId)}
-            >
-              <Play className="h-3.5 w-3.5" /> AVANÇAR P/ PRÓXIMA RODADA
-            </Button>
-          )}
+          <div className="text-[9px] text-muted-foreground text-center pt-1 animate-pulse">
+            ⏱️ Avançando automaticamente para próxima rodada...
+          </div>
         </div>
       </div>
     );
