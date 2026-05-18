@@ -79,9 +79,18 @@ const m_1_0_to_1_5: Migration = {
   },
 };
 
+/** Migration 1.5.0 → 2.4.1 (Atualização do sistema de versão) */
+const m_1_5_to_2_4_1: Migration = {
+  from: '1.5.0',
+  to: '2.4.1',
+  description: 'Atualização do sistema de versão e sincronização.',
+  apply: (state) => ({ state, changes: [] }),
+};
+
 /** Lista ordenada de migrations disponíveis. Adicionar novas no fim. */
 export const MIGRATIONS: Migration[] = [
   m_1_0_to_1_5,
+  m_1_5_to_2_4_1,
 ];
 
 /** Compara duas versões semver simples. -1 se a < b, 0 se igual, 1 se a > b. */
