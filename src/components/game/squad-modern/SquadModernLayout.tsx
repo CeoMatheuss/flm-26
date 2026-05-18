@@ -454,27 +454,29 @@ export function SquadModernLayout({
 
   return (
     <div className="h-full min-h-[calc(100vh-180px)] flex flex-col bg-zinc-950 text-white selection:bg-emerald-500/30 overflow-hidden">
-      <SquadHeader 
-        club={club} 
-        season={season} 
-        viewMode={viewMode} 
-        onViewModeChange={(mode) => setViewMode(mode as any)} 
-        pendingSwap={pendingSwap ? { id: pendingSwap.id, name: pendingSwap.name } : null}
-        onCancelSwap={() => setPendingSwap(null)}
-        isTacticsOpen={isTacticsOpen}
-        onToggleTactics={() => setIsTacticsOpen(!isTacticsOpen)}
-        onBack={() => {
-          if (viewMode === 'pitch') {
-            setViewMode('list');
-            return;
-          }
-          if (isTacticsOpen) {
-            setIsTacticsOpen(false);
-            return;
-          }
-          window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'dashboard' } }));
-        }}
-      />
+      {!panelOpen && (
+        <SquadHeader 
+          club={club} 
+          season={season} 
+          viewMode={viewMode} 
+          onViewModeChange={(mode) => setViewMode(mode as any)} 
+          pendingSwap={pendingSwap ? { id: pendingSwap.id, name: pendingSwap.name } : null}
+          onCancelSwap={() => setPendingSwap(null)}
+          isTacticsOpen={isTacticsOpen}
+          onToggleTactics={() => setIsTacticsOpen(!isTacticsOpen)}
+          onBack={() => {
+            if (viewMode === 'pitch') {
+              setViewMode('list');
+              return;
+            }
+            if (isTacticsOpen) {
+              setIsTacticsOpen(false);
+              return;
+            }
+            window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'dashboard' } }));
+          }}
+        />
+      )}
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative gap-3 sm:gap-6 p-2 sm:p-6">
         {/* Main Content Area: Tabs & Tables */}
