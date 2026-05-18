@@ -578,5 +578,5 @@ export function useMatchSimulation() {
   const destroy = useCallback(() => { stopTick(); dataRef.current = null; }, [stopTick]);
 
   const onAnimationComplete = useCallback(() => { isAnimatingRef.current = false; }, []);
-  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, destroy, onAnimationComplete };
+  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, resumeFromBreak, destroy, onAnimationComplete };
 }
