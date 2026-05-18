@@ -138,6 +138,10 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
     ? [{ club: clubName, seasonStart: 1, games: 0, goals: 0, assists: 0, avgRating: 0 }]
     : generateRandomHistory(age);
 
+  const nationality = nationalities[Math.floor(Math.random() * nationalities.length)];
+  const resistance = Math.floor(Math.random() * 30 + 40 + (overall / 2)); // Baseado no overall
+  const stamina_max = 100;
+
   return {
     id: generateId(),
     name: randomName(),
@@ -145,8 +149,11 @@ export function generatePlayer(overallRange: [number, number], ageRange: [number
     overall,
     attributes,
     age,
-    salary: 500,
-    stamina: 100, // Inicia sempre com 100
+    salary: overall * 10 + (age < 23 ? 200 : 0), // Salário proporcional
+    stamina: 100,
+    stamina_max,
+    resistance,
+    nationality,
     morale: Math.floor(Math.random() * 30 + 60),
     goals: 0,
     assists: 0,
