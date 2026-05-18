@@ -498,7 +498,28 @@ export function useMatchSimulation() {
     return true;
   }, [computeStatsFromEvents, recalculateScoreFromEvents, startTick]);
 
-  const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
+  const resumeFromBreak = useCallback(() => {
+    const data = dataRef.current;
+    if (!data || state.phase !== 'break') return;
+
+    const nextEvent = data.allEvents[nextVisibleEventIdxRef.current];
+    if (nextEvent && nextEvent.type === 'halftime_end') {
+      nextVisibleEventIdxRef.current++;
+      
+      // Update startTime so elapsed time doesn't count the break
+      const currentElapsedForMin45 = (45 / data.maxMinute) * data.durationMs;
+      data.startTime = Date.now() - currentElapsedForMin45;
+
+      setState(prev => ({
+        ...prev,
+        phase: 'live',
+        visibleEvents: [...prev.visibleEvents, nextEvent],
+        latestEvent: nextEvent
+      }));
+    }
+  }, [state.phase]);
+
+  const loadMatchSnapshot = useCallback((snapshot: any) => {
     setState(s => ({ ...s, phase: 'loading' }));
     const { data, error } = await supabase.from('live_matches').select('*').eq('id', matchDbId).maybeSingle();
     
