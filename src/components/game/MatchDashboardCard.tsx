@@ -191,7 +191,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         .from('league_matches')
         .select(`id, round, status, scheduled_at, home_team_id, away_team_id, home_user_id, away_user_id, home_score, away_score, played_at`)
         .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
-        .neq('status', 'finished')
+        .not('status', 'in', '("finished","played")')
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
