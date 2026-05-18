@@ -2321,6 +2321,13 @@ Deno.serve(async (req) => {
         // Update cup player stats
         await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.home_team_id, result.allPlayers.filter(p => p.team === 'home'), result.awayGoals, result.homeGoals > result.awayGoals);
         await updateStatsForCompetition('cup', cupMatch.cup_id, cupMatch.away_team_id, result.allPlayers.filter(p => p.team === 'away'), result.homeGoals, result.awayGoals > result.homeGoals);
+
+        // Decrement suspensions for cup
+        const allMatchPlayerIds = result.allPlayers.map(p => p.id).filter(id => id && !id.startsWith('bot-'));
+        await adminClient.rpc('process_match_suspensions', { 
+          _player_ids: allMatchPlayerIds, 
+          _competition_type: 'Copa' 
+        });
       }
 
       // 3.3. Custom Tournament Logic
