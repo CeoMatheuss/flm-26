@@ -360,7 +360,7 @@ export function useMatchSimulation() {
           stadiumName: data.stadiumName,
           stadiumCapacity: data.stadiumCapacity,
           attendance: data.attendance,
-          currentMoment: moment,
+          // currentMoment already handled above
           playerStamina: stamina,
           assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
           onAnimationComplete: () => { isAnimatingRef.current = false; },
