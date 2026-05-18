@@ -62,10 +62,11 @@ export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenC
 }
 
 function PlayerDetailContent({
-  player, status, delta, onClose, onAction, isYouth,
+  player, status, onSwap, delta, onClose, onAction, isYouth,
 }: {
   player: Player;
   status: PlayerStatus;
+  onSwap?: (p: Player) => void;
   delta: AttrDelta;
   onClose: () => void;
   onAction?: Props['onAction'];
