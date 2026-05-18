@@ -2622,6 +2622,21 @@ export type Database = {
           },
         ]
       }
+      match_sync_log: {
+        Row: {
+          match_id: string
+          synced_at: string | null
+        }
+        Insert: {
+          match_id: string
+          synced_at?: string | null
+        }
+        Update: {
+          match_id?: string
+          synced_at?: string | null
+        }
+        Relationships: []
+      }
       migration_logs: {
         Row: {
           changes: Json
@@ -3335,6 +3350,60 @@ export type Database = {
           seller_club_name?: string
           seller_id?: string
           status?: string
+        }
+        Relationships: []
+      }
+      player_competition_stats: {
+        Row: {
+          assists: number
+          avg_rating: number | null
+          clean_sheets: number
+          competition_id: string
+          created_at: string | null
+          games_played: number
+          goals: number
+          id: string
+          player_id: string
+          red_cards: number
+          season: number
+          sum_ratings: number
+          team_id: string | null
+          updated_at: string | null
+          yellow_cards: number
+        }
+        Insert: {
+          assists?: number
+          avg_rating?: number | null
+          clean_sheets?: number
+          competition_id: string
+          created_at?: string | null
+          games_played?: number
+          goals?: number
+          id?: string
+          player_id: string
+          red_cards?: number
+          season?: number
+          sum_ratings?: number
+          team_id?: string | null
+          updated_at?: string | null
+          yellow_cards?: number
+        }
+        Update: {
+          assists?: number
+          avg_rating?: number | null
+          clean_sheets?: number
+          competition_id?: string
+          created_at?: string | null
+          games_played?: number
+          goals?: number
+          id?: string
+          player_id?: string
+          red_cards?: number
+          season?: number
+          sum_ratings?: number
+          team_id?: string | null
+          updated_at?: string | null
+          yellow_cards?: number
         }
         Relationships: []
       }
@@ -6106,6 +6175,15 @@ export type Database = {
       sync_match_stats: {
         Args: { p_competition_type: string; p_match_id: string }
         Returns: Json
+      }
+      sync_player_match_stats: {
+        Args: {
+          _competition_id: string
+          _match_id: string
+          _player_stats: Json
+          _season: number
+        }
+        Returns: undefined
       }
       update_club_budget: {
         Args: { p_amount: number; p_description: string; p_user_id: string }
