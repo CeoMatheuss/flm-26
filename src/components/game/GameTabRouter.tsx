@@ -511,6 +511,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             infrastructure={game.infrastructure} 
             userId={userId}
             isPremium={isPremium}
+            onBuyPack={game.addPackPlayers}
           />
         )}
       </TabsContent>
