@@ -283,7 +283,58 @@ function PlayerDetailContent({
             </div>
           </section>
 
+          {/* Market Evolution Chart */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] flex items-center gap-3">
+              <ChartIcon className="w-4 h-4" /> Evolução de Mercado
+            </h3>
+            <div className="h-[200px] w-full p-4 rounded-3xl bg-zinc-900/50 border border-white/5">
+              {(player as any).marketValueHistory && (player as any).marketValueHistory.length > 1 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={(player as any).marketValueHistory}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      hide 
+                    />
+                    <YAxis 
+                      hide 
+                      domain={['auto', 'auto']}
+                    />
+                    <RechartsTooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-zinc-900 border border-white/10 p-2 rounded-lg shadow-xl">
+                              <p className="text-[10px] font-black text-emerald-400">{formatMoney(payload[0].value as number)}</p>
+                              <p className="text-[8px] text-white/40 uppercase">{new Date(payload[0].payload.date).toLocaleDateString()}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#10b981" 
+                      strokeWidth={3} 
+                      dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#09090b' }}
+                      activeDot={{ r: 6, fill: '#10b981', strokeWidth: 0 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-20">
+                   <ChartIcon className="w-8 h-8 mb-2" />
+                   <p className="text-[10px] font-black uppercase tracking-widest italic">Histórico insuficiente para gráfico</p>
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* Potential Card */}
+
           <section className="p-6 rounded-[2rem] bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
               <Star className="w-20 h-20 text-amber-400" />
