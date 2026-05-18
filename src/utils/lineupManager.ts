@@ -33,6 +33,8 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   const canPlayMatch = (player: Player) => {
     const raw = player as any;
     const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
+    // Use the explicit squad_status if available
+    if (raw.squad_status === 'injured' || raw.squad_status === 'suspended') return false;
     return !isBaseYouth && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended && !raw.isLoaned && !raw.loanedOut && !raw.inactive && !raw.removed && !player.disciplinary?.isSuspended;
   };
 
