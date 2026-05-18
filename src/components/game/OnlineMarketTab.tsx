@@ -11,7 +11,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { cn } from '@/lib/utils';
 
 
-import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye, Search, TrendingUp, Sparkles, Globe, FileText, Timer, EyeOff, Zap } from 'lucide-react';
+import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye, Search, TrendingUp, Sparkles, Globe, FileText, Timer, EyeOff, Zap, Crown, Handshake } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import { SellerTeamView } from './SellerTeamView';
 import { FreeAgentMarketPanel } from './FreeAgentMarketPanel';
