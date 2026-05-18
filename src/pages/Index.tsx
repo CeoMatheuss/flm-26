@@ -142,12 +142,16 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   }, [userId]);
 
   const handleClubCreated = useCallback(async (config: ClubConfig) => {
+    console.log('[club-creation] Iniciando geração automática de elenco para:', config.name);
+    const initialPlayers = generateInitialSquad(config.name, 'starter');
+    console.log(`[club-creation] ${initialPlayers.length} jogadores gerados com sucesso.`);
+
     const customClub = {
       ...initialClub,
       name: config.name,
       stadiumName: config.stadiumName || 'Arena ' + config.name,
       fans: 1000,
-      players: generateInitialSquad(config.name),
+      players: initialPlayers,
       matches: [],
       primaryColor: config.primaryColor,
       secondaryColor: config.secondaryColor,
@@ -159,6 +163,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       logoUrl: config.logoUrl,
       country: config.country,
     };
+
     // Auto-populate clubProfile with foundation data
     const today = new Date();
     const foundedDate = today.toLocaleDateString('pt-BR'); // DD/MM/AAAA
@@ -171,6 +176,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       motto: '',
       trophies: [],
     };
+
     const newState: GameState = {
       club: customClub,
       tactics: defaultTactics,
@@ -187,24 +193,9 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       events: [],
       clubProfile: initialClubProfile,
     };
-    const jsonState = JSON.parse(JSON.stringify(newState));
-    console.log('[club-save] Saving table: game_saves');
-    const gameSavePayload = { user_id: userId, club_data: jsonState };
-    console.log('[club-save] Payload:', gameSavePayload);
-    
-    // Save to game_saves (full state)
-    const { error: insertErr } = await supabase
-      .from('game_saves')
-      .upsert(gameSavePayload, { onConflict: 'user_id' });
-    
-    if (insertErr) {
-      console.error('[club-save] FAILED to persist club in game_saves:', insertErr);
-      console.log('[club-save] Error details:', insertErr.message, insertErr.details, insertErr.hint);
-      toast.error(`Erro ao salvar save do jogo: ${insertErr.message}`);
-      return;
-    }
 
-    console.log('[club-save] Saving table: clubs');
+    // 1. Salvar metadados do clube primeiro para obter o ID
+    console.log('[club-creation] Salvando metadados do clube...');
     const clubsPayload = {
       user_id: userId,
       name: config.name,
@@ -217,35 +208,80 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       fans: 1000,
       reputation: 65,
       budget: 1000000,
+      cash: 1000000,
     };
-    console.log('[club-save] Payload:', clubsPayload);
 
-    // Save to clubs table (metadata/searchable)
-    const { error: clubErr } = await supabase
+    const { data: clubData, error: clubErr } = await supabase
       .from('clubs')
-      .upsert(clubsPayload, { onConflict: 'user_id' });
+      .upsert(clubsPayload, { onConflict: 'user_id' })
+      .select()
+      .single();
 
     if (clubErr) {
-      console.error('[club-save] FAILED to persist club in clubs table:', clubErr);
-      console.log('[club-save] Error details:', clubErr.message, clubErr.details, clubErr.hint);
-      toast.error(`Erro ao registrar metadados do clube: ${clubErr.message}`);
+      console.error('[club-creation] ERRO ao criar clube:', clubErr);
+      toast.error(`Erro ao registrar clube: ${clubErr.message}`);
+      return;
     }
 
-    console.log('[club-save] club persisted successfully');
-    
-    // Welcome notification
+    const clubId = clubData.id;
+    console.log('[club-creation] Clube criado com ID:', clubId);
+
+    // 2. Salvar jogadores no banco de dados (world_players)
+    console.log('[club-creation] Vinculando jogadores ao clube no banco...');
+    const worldPlayersPayload = initialPlayers.map(p => ({
+      team_id: clubId,
+      name: p.name,
+      position: p.position,
+      overall: p.overall,
+      age: p.age,
+      market_value: p.marketValue || 0,
+      potential: p.potential || p.overall + 5,
+      salary: p.salary || 500,
+      attributes: p.attributes,
+      stamina: p.stamina || 100,
+      stamina_max: p.stamina_max || 100,
+      morale: p.morale || 70,
+      nationality: p.nationality || 'Brasil',
+      resistance: p.resistance || 50,
+      squad_status: (p.squadRole === 'titular' ? 'starter' : (p.squadRole === 'reserva' ? 'bench' : 'reserve')) as any
+    }));
+
+    const { error: playersErr } = await supabase
+      .from('world_players')
+      .insert(worldPlayersPayload);
+
+    if (playersErr) {
+      console.error('[club-creation] ERRO ao salvar jogadores:', playersErr);
+      // Não bloqueia o fluxo, mas avisa
+    } else {
+      console.log('[club-creation] Jogadores salvos com sucesso no world_players.');
+    }
+
+    // 3. Salvar o estado completo no game_saves para retrocompatibilidade
+    console.log('[club-creation] Salvando estado completo no game_saves...');
+    const jsonState = JSON.parse(JSON.stringify(newState));
+    const { error: saveErr } = await supabase
+      .from('game_saves')
+      .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
+
+    if (saveErr) {
+      console.error('[club-creation] ERRO ao salvar game_save:', saveErr);
+      toast.error(`Erro ao salvar progresso: ${saveErr.message}`);
+    }
+
+    // 4. Notificação de boas-vindas
     await supabase.from('user_notifications').insert([{
       user_id: userId,
       icon: '👋',
       title: 'Bem-vindo ao FLM 26!',
-      message: `Parabéns pela criação do ${config.name}! Dicas: treine seus jogadores diariamente, melhore o CT e entre em ligas para competir online. Boa sorte, Manager!`,
+      message: `Parabéns pela criação do ${config.name}! Seu elenco de ${initialPlayers.length} jogadores foi gerado automaticamente. Boa sorte, Manager!`,
       type: 'success',
     }]);
 
     setLoadedState(newState);
     setHasSave(true);
     setIsNewClub(true);
-    toast.success(`${config.name} criado com sucesso! 🏆`);
+    toast.success(`${config.name} criado com sucesso! Elenco gerado. 🏆`);
   }, [userId, displayName]);
 
   if (!gameReady) return <GameLoadingScreen message="Carregando seu clube" subMessage="Preparando dados do jogo" />;
