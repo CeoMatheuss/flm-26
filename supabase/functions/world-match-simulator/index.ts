@@ -20,6 +20,44 @@ function getHeadline(type: 'win' | 'draw' | 'loss', winner: string, loser: strin
   return template.replace(/{winner}/g, winner).replace(/{loser}/g, loser).replace(/{team1}/g, winner).replace(/{team2}/g, loser);
 }
 
+
+// ── SYNCED STATS LOGIC ──────────────────────────────────────
+
+function getAttribute(p: any, key: string, fallback: number = 50): number {
+    return p.attributes?.[key] || p[key] || fallback;
+}
+
+function calculateRolePower(p: any, role: 'finishing' | 'creation'): number {
+    const ovr = p.overall || 60;
+    if (role === 'finishing') {
+        const shooting = getAttribute(p, 'shooting', ovr);
+        const positioning = getAttribute(p, 'positioning', ovr);
+        if (p.position === 'ATA') return shooting * 0.7 + positioning * 0.3;
+        if (p.position === 'MEI') return shooting * 0.5 + positioning * 0.3;
+        return shooting * 0.3;
+    } else {
+        const passing = getAttribute(p, 'passing', ovr);
+        const vision = getAttribute(p, 'vision', ovr);
+        if (p.position === 'MEI') return passing * 0.6 + vision * 0.4;
+        if (p.position === 'LAT' || p.position === 'ATA') return passing * 0.5 + vision * 0.3;
+        return passing * 0.4;
+    }
+}
+
+function pickPlayerByRole(players: any[], role: 'finishing' | 'creation'): any {
+    if (!players || players.length === 0) return null;
+    const weights = players.map(p => {
+        const power = calculateRolePower(p, role);
+        return Math.pow(power, 2.5); // Amplifies difference
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < players.length; i++) {
+        r -= weights[i];
+        if (r <= 0) return players[i];
+    }
+    return players[0];
+}
 // Logic to process injuries and cards
 function processPlayerDiscipline(players: any[]) {
   const availabilityUpdates: any[] = [];
@@ -66,13 +104,29 @@ Deno.serve(async (req) => {
         const hg = Math.floor(Math.random() * 4 + (hs > as ? 1 : 0));
         const ag = Math.floor(Math.random() * 4 + (as > hs ? 1 : 0));
 
+        // Calculate scorers and assisters based on attributes
+        const homePlayers = players.filter(p => p.team_id === m.home_team_id);
+        const awayPlayers = players.filter(p => p.team_id === m.away_team_id);
+        const match_data_stats: any = { homeScorers: [], awayScorers: [] };
+
+        for (let i = 0; i < hg; i++) {
+            const scorer = pickPlayerByRole(homePlayers, 'finishing');
+            const assister = Math.random() < 0.7 ? pickPlayerByRole(homePlayers.filter(p => p.id !== scorer?.id), 'creation') : null;
+            match_data_stats.homeScorers.push({ name: scorer?.name, id: scorer?.id, assist: assister?.name });
+        }
+        for (let i = 0; i < ag; i++) {
+            const scorer = pickPlayerByRole(awayPlayers, 'finishing');
+            const assister = Math.random() < 0.7 ? pickPlayerByRole(awayPlayers.filter(p => p.id !== scorer?.id), 'creation') : null;
+            match_data_stats.awayScorers.push({ name: scorer?.name, id: scorer?.id, assist: assister?.name });
+        }
+
         // Update Match with synced=false (Trigger trigger_update_standings will handle the sync)
         const { error: updateErr } = await sb.from("world_matches").update({ 
           home_goals: hg, 
           away_goals: ag, 
           status: "finished", 
           played_at: now.toISOString(),
-          synced: false 
+          synced: false, match_data: match_data_stats 
         }).eq("id", m.id);
 
         if (updateErr) console.error(`Error updating match ${m.id}:`, updateErr);

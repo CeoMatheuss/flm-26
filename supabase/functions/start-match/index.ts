@@ -56,6 +56,68 @@ interface SimPlayer {
   squadStatus?: string;
 }
 
+
+// ── PLAYER ARCHETYPES & ROLES ─────────────────────────────────
+
+type Archetype = 'Artilheiro' | 'Criador' | 'Motorzinho' | 'Maestro' | 'Finalizador' | 'Box-to-box' | 'Defensor Raiz' | 'Ala Ofensivo' | 'Ponta Veloz' | 'Goleiro Seguro' | 'Muralha';
+
+function getArchetype(p: SimPlayer): Archetype {
+  if (p.position === 'GOL') return p.ovr > 80 ? 'Muralha' : 'Goleiro Seguro';
+  
+  if (p.position === 'ATA') {
+    if (p.shooting > 80 && p.positioning > 80) return 'Artilheiro';
+    if (p.speed > 80 && p.dribbling > 75) return 'Ponta Veloz';
+    return 'Finalizador';
+  }
+  
+  if (p.position === 'MEI') {
+    if (p.vision > 80 && p.passing > 80) return 'Maestro';
+    if (p.dribbling > 80 && p.vision > 75) return 'Criador';
+    return 'Motorzinho';
+  }
+  
+  if (p.position === 'VOL') {
+    if (p.workRate > 80 && p.physical > 75) return 'Box-to-box';
+    return 'Motorzinho';
+  }
+  
+  if (p.position === 'LAT') {
+    if (p.crossing > 75 && p.speed > 80) return 'Ala Ofensivo';
+    return 'Defensor Raiz';
+  }
+  
+  if (p.position === 'ZAG') {
+    return 'Defensor Raiz';
+  }
+  
+  return 'Motorzinho';
+}
+
+function getArchetypeGoalWeight(p: SimPlayer): number {
+  const arch = getArchetype(p);
+  switch(arch) {
+    case 'Artilheiro': return 1.5;
+    case 'Finalizador': return 1.3;
+    case 'Ponta Veloz': return 1.1;
+    case 'Criador': return 0.9;
+    case 'Ala Ofensivo': return 0.6;
+    case 'Defensor Raiz': return 0.2;
+    default: return 1.0;
+  }
+}
+
+function getArchetypeAssistWeight(p: SimPlayer): number {
+  const arch = getArchetype(p);
+  switch(arch) {
+    case 'Maestro': return 1.6;
+    case 'Criador': return 1.5;
+    case 'Ala Ofensivo': return 1.3;
+    case 'Ponta Veloz': return 1.1;
+    case 'Box-to-box': return 0.9;
+    case 'Artilheiro': return 0.7;
+    default: return 1.0;
+  }
+}
 interface SimEvent {
   minute: number; type: string; description: string; team: 'home' | 'away' | 'neutral';
   playerName?: string; assistName?: string; goalType?: string; isGoal?: boolean;
@@ -242,7 +304,12 @@ function pickByRole(pool: SimPlayer[], role: Role, posFilter?: string): SimPlaye
   if (posFilter) { const f2 = filtered.filter(p => p.position === posFilter); if (f2.length > 0) filtered = f2; }
   if (filtered.length === 0) return null;
   // Cubic weighting amplifies attribute differences so top players dominate the role
-  const weights = filtered.map(p => Math.max(1, Math.pow(rolePower(p, role), 2.2)));
+  const weights = filtered.map(p => {
+    let base = Math.max(1, Math.pow(rolePower(p, role), 2.2));
+    if (role === 'finishing') base *= getArchetypeGoalWeight(p);
+    if (role === 'creation') base *= getArchetypeAssistWeight(p);
+    return base;
+  });
   const total = weights.reduce((a, b) => a + b, 0);
   let r = rng() * total;
   for (let i = 0; i < filtered.length; i++) { r -= weights[i]; if (r <= 0) return filtered[i]; }
@@ -1773,11 +1840,34 @@ function simulateFullMatch(
     const myTeamLost = (p.team === 'home' && homeFinal < awayFinal) || (p.team === 'away' && awayFinal < homeFinal);
     // Per-position role fit bonus, based on stamina/morale-adjusted attributes
     let roleBonus = 0;
-    if (p.position === 'GOL') roleBonus = (rolePower(p, 'gk_save') - 60) / 100;
-    else if (p.position === 'ZAG' || p.position === 'LAT') roleBonus = (rolePower(p, 'tackle') - 60) / 120;
-    else if (p.position === 'VOL' || p.position === 'MEI') roleBonus = (rolePower(p, 'creation') - 60) / 130;
-    else if (p.position === 'ATA') roleBonus = (rolePower(p, 'finishing') - 60) / 110;
-    roleBonus = Math.max(-0.4, Math.min(0.6, roleBonus));
+    const arch = getArchetype(p);
+    // Base participation: high intelligence and workRate players get consistent "silent" rating
+    const participation = (p.intelligence * 0.4 + p.workRate * 0.4 + p.composure * 0.2) / 100;
+    
+    if (p.position === 'GOL') {
+       roleBonus = (rolePower(p, 'gk_save') - 60) / 80;
+       // GKs get penalized for goals conceded, but Muralha archetypes lose less
+       const concessionPenalty = (arch === 'Muralha' ? 0.15 : 0.25) * c.concededGoals;
+       roleBonus -= concessionPenalty;
+    }
+    else if (p.position === 'ZAG') {
+       roleBonus = (rolePower(p, 'tackle') - 55) / 100 + (p.heading - 60) / 200;
+       roleBonus += c.tackles * 0.15; // Clean sheets are already in report but GKs/ZAGs love them
+    }
+    else if (p.position === 'LAT') {
+       roleBonus = (rolePower(p, 'tackle') * 0.5 + rolePower(p, 'creation') * 0.5 - 60) / 110;
+       if (arch === 'Ala Ofensivo') roleBonus += c.assists * 0.1;
+    }
+    else if (p.position === 'VOL' || p.position === 'MEI') {
+       const creationW = arch === 'Maestro' ? 0.7 : 0.4;
+       roleBonus = (rolePower(p, 'creation') * creationW + rolePower(p, 'tackle') * (1-creationW) - 60) / 120;
+       roleBonus += participation * 0.5;
+    }
+    else if (p.position === 'ATA') {
+       roleBonus = (rolePower(p, 'finishing') - 60) / 90;
+       if (arch === 'Artilheiro' && c.goals === 0) roleBonus -= 0.3; // Strikers judged by goals
+    }
+    roleBonus = Math.max(-0.8, Math.min(1.2, roleBonus));
 
     let r = 6.0
       + c.goals * 1.2
