@@ -46,6 +46,17 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   const showFinished = !!recentFinished && recentFinished.matchId !== dismissedFinishedId;
   const displayed = showFinished ? recentFinished : nextMatch;
 
+  // Auto-dismiss finished match after 15 seconds to advance UI automatically
+  useEffect(() => {
+    if (showFinished && recentFinished) {
+      const timer = setTimeout(() => {
+        console.log('[MatchDashboardCard] Auto-dismissing finished match to advance...');
+        setDismissedFinishedId(recentFinished.matchId);
+      }, 15000); // 15 segundos de glória antes de sumir
+      return () => clearTimeout(timer);
+    }
+  }, [showFinished, recentFinished?.matchId]);
+
   const { homeShield, awayShield } = useMatchShields(displayed?.home, displayed?.away);
 
   useEffect(() => {

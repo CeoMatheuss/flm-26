@@ -2280,7 +2280,7 @@ Deno.serve(async (req) => {
       // 3.2. National Cup Match Logic
       const { data: cupMatch } = await adminClient
         .from('national_cup_matches')
-        .select('cup_id, home_team_id, away_team_id')
+        .select('cup_id, home_team_id, away_team_id, round')
         .eq('id', String(matchId))
         .maybeSingle();
 
@@ -2295,7 +2295,7 @@ Deno.serve(async (req) => {
           away_score: result.awayGoals,
           home_penalties: result.penaltyHomeGoals,
           away_penalties: result.penaltyAwayGoals,
-          status: 'played',
+          status: 'finished',
           winner_team_id: winnerId,
           updated_at: new Date().toISOString(),
           match_data: {
@@ -2320,15 +2320,28 @@ Deno.serve(async (req) => {
           _player_ids: allMatchPlayerIds, 
           _competition_type: 'Copa' 
         });
+
+        // Simular o restante da rodada da copa para os times BOT
+        console.info('[Sync] Simulating bot matches for cup round', { cup_id: cupMatch.cup_id });
+        await adminClient.rpc('simulate_bot_matches_for_round', {
+          p_competition_id: cupMatch.cup_id,
+          p_round: cupMatch.round,
+          p_type: 'cup'
+        });
       }
 
       // 3.3. Custom Tournament Logic
       if (tournamentMatchId) {
+        const { data: tMatch } = await adminClient.from('custom_tournament_matches')
+          .select('tournament_id, round')
+          .eq('id', tournamentMatchId)
+          .maybeSingle();
+
         await adminClient.from('custom_tournament_matches')
           .update({
             home_goals: result.homeGoals,
             away_goals: result.awayGoals,
-            status: 'played',
+            status: 'finished',
             played_at: new Date().toISOString(),
             match_data: {
               events: result.events,
@@ -2339,6 +2352,14 @@ Deno.serve(async (req) => {
             } as any,
           })
           .eq('id', tournamentMatchId);
+
+        if (tMatch) {
+          await adminClient.rpc('simulate_bot_matches_for_round', {
+            p_competition_id: tMatch.tournament_id,
+            p_round: tMatch.round,
+            p_type: 'tournament'
+          });
+        }
       }
 
       // 3.3.5 World Matches (Brasileirão / Premier League / etc — sistema global)
@@ -2373,6 +2394,14 @@ Deno.serve(async (req) => {
         await adminClient.rpc('sync_match_stats', { 
           p_match_id: String(matchId), 
           p_competition_type: 'world' 
+        });
+
+        // Simular o restante da rodada para os times BOT
+        console.info('[Sync] Simulating bot matches for round', { league_id: worldMatch.league_id, round: worldMatch.round });
+        await adminClient.rpc('simulate_bot_matches_for_round', {
+          p_competition_id: worldMatch.league_id,
+          p_round: worldMatch.round,
+          p_type: 'world'
         });
       }
 
