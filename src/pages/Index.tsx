@@ -896,7 +896,15 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {activeTab !== 'shop' && (
             <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-              <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} tutorialCompleted={tutorialCompleted} />
+              <GameMenu 
+                showAdmin={showAdmin} 
+                onTabChange={setActiveTab} 
+                onShowTutorial={() => setShowTutorial(true)} 
+                onMarketSubTabChange={setMarketSubTab} 
+                tutorialCompleted={tutorialCompleted}
+                updateAvailable={updateAvailable}
+                onUpdateNow={updateNow}
+              />
               <GameNavBar />
             </div>
           )}
