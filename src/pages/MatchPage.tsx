@@ -100,8 +100,46 @@ export default function MatchPage() {
   const [loadingMsg, setLoadingMsg] = useState('Preparando partida');
   const [preMatchDone, setPreMatchDone] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
+  const [resolvedHomePlayers, setResolvedHomePlayers] = useState<Player[] | null>(null);
 
   const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, resumeFromBreak, destroy } = useMatchSimulation();
+
+  // Fallback: se reconectou em uma partida sem locState.homePlayers, busca o elenco real do clube salvo.
+  useEffect(() => {
+    if (locState?.homePlayers && locState.homePlayers.length > 0) {
+      setResolvedHomePlayers(locState.homePlayers);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from('game_saves')
+          .select('club_data')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const players = (data?.club_data as any)?.club?.players as Player[] | undefined;
+        if (!cancelled && players && players.length > 0) {
+          console.log('[MatchPage] Elenco carregado via fallback:', players.length, 'jogadores');
+          // Ordena para garantir 11 titulares primeiro
+          const starters = players.filter((p: any) => p.squadRole === 'titular');
+          const others = players.filter((p: any) => p.squadRole !== 'titular');
+          const ordered = [...starters, ...others];
+          setResolvedHomePlayers(ordered.length >= 11 ? ordered : players);
+        } else if (!cancelled) {
+          console.warn('[MatchPage] Nenhum elenco encontrado no game_saves.');
+        }
+      } catch (e) {
+        console.error('[MatchPage] Falha ao buscar elenco fallback:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [locState?.homePlayers]);
+
 
   const doStartMatch = useCallback(async (players: Player[], updatedTactics?: TacticsConfig) => {
     if (!locState) return;
