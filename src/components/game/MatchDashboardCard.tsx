@@ -36,11 +36,17 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     stadium?: string;
   } | null>(null);
 
+  const [recentFinished, setRecentFinished] = useState<typeof nextMatch>(null);
+  const [dismissedFinishedId, setDismissedFinishedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
-  
-  const { homeShield, awayShield } = useMatchShields(nextMatch?.home, nextMatch?.away);
+
+  // Display priority: recently-finished (if not dismissed) > next pending
+  const showFinished = !!recentFinished && recentFinished.matchId !== dismissedFinishedId;
+  const displayed = showFinished ? recentFinished : nextMatch;
+
+  const { homeShield, awayShield } = useMatchShields(displayed?.home, displayed?.away);
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
@@ -62,8 +68,11 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       }
 
       const candidates: any[] = [];
+      const finishedCandidates: any[] = [];
+      const RECENT_FINISHED_WINDOW_MS = 10 * 60 * 1000; // 10 minutos
+      const finishedSince = new Date(Date.now() - RECENT_FINISHED_WINDOW_MS).toISOString();
 
-      // 1. Próxima partida da Copa Nacional (busca via national_cup_teams do usuário)
+      // 1. Copa Nacional
       const { data: cupTeamRows } = await supabase
         .from('national_cup_teams')
         .select('id, cup_id')
@@ -74,14 +83,15 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
       if (cupTeamIds.length > 0) {
         const idsCsv = cupTeamIds.join(',');
+        const baseSelect = `
+          id, round, status, scheduled_at, home_team_id, away_team_id, home_goals, away_goals, played_at,
+          cup:national_cups (name),
+          home:national_cup_teams!home_team_id (club_name, strength, user_id),
+          away:national_cup_teams!away_team_id (club_name, strength, user_id)
+        `;
         const { data: cupMatches } = await supabase
           .from('national_cup_matches')
-          .select(`
-            id, round, status, scheduled_at, home_team_id, away_team_id,
-            cup:national_cups (name),
-            home:national_cup_teams!home_team_id (club_name, strength, user_id),
-            away:national_cup_teams!away_team_id (club_name, strength, user_id)
-          `)
+          .select(baseSelect)
           .or(`home_team_id.in.(${idsCsv}),away_team_id.in.(${idsCsv})`)
           .neq('status', 'finished')
           .order('scheduled_at', { ascending: true })
@@ -91,33 +101,50 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           const m: any = cupMatches[0];
           const isHome = m.home?.user_id === userId;
           candidates.push({
-            home: m.home.club_name,
-            away: m.away.club_name,
-            date: m.scheduled_at,
+            home: m.home.club_name, away: m.away.club_name, date: m.scheduled_at,
             tournament: m.cup?.name || 'Copa Nacional',
-            matchId: m.id,
-            homeTeamId: m.home_team_id,
-            awayTeamId: m.away_team_id,
+            matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
             opponentStrength: isHome ? m.away.strength : m.home.strength,
-            isHome,
-            tournamentName: m.cup?.name || 'Copa Nacional',
-            status: m.status,
-            round: m.round,
-            kind: 'tournament',
-            stage: `Fase ${m.round}`,
+            isHome, tournamentName: m.cup?.name || 'Copa Nacional',
+            status: m.status, round: m.round, kind: 'tournament', stage: `Fase ${m.round}`,
+          });
+        }
+
+        // Recente finalizada
+        const { data: finishedCup } = await supabase
+          .from('national_cup_matches')
+          .select(baseSelect)
+          .or(`home_team_id.in.(${idsCsv}),away_team_id.in.(${idsCsv})`)
+          .eq('status', 'finished')
+          .gte('played_at', finishedSince)
+          .order('played_at', { ascending: false })
+          .limit(1);
+
+        if (finishedCup && finishedCup.length > 0) {
+          const m: any = finishedCup[0];
+          const isHome = m.home?.user_id === userId;
+          finishedCandidates.push({
+            home: m.home.club_name, away: m.away.club_name, date: m.scheduled_at,
+            tournament: m.cup?.name || 'Copa Nacional',
+            matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
+            opponentStrength: isHome ? m.away.strength : m.home.strength,
+            isHome, tournamentName: m.cup?.name || 'Copa Nacional',
+            status: 'finished', homeGoals: m.home_goals, awayGoals: m.away_goals,
+            playedAt: m.played_at, round: m.round, kind: 'tournament', stage: `Fase ${m.round}`,
           });
         }
       }
 
-      // 2. Próxima partida da Liga Mundial
-      const { data: matches, error } = await supabase
+      // 2. Liga Mundial
+      const worldSelect = `
+        id, round, status, scheduled_at, home_team_id, away_team_id, home_goals, away_goals, played_at,
+        world_leagues (name),
+        home_team:world_teams!world_matches_home_team_id_fkey (name, strength),
+        away_team:world_teams!world_matches_away_team_id_fkey (name, strength)
+      `;
+      const { data: matches } = await supabase
         .from('world_matches')
-        .select(`
-          id, round, status, scheduled_at, home_team_id, away_team_id,
-          world_leagues (name),
-          home_team:world_teams!world_matches_home_team_id_fkey (name, strength),
-          away_team:world_teams!world_matches_away_team_id_fkey (name, strength)
-        `)
+        .select(worldSelect)
         .or(`home_team_id.eq.${teamData.id},away_team_id.eq.${teamData.id}`)
         .neq('status', 'finished')
         .order('scheduled_at', { ascending: true })
@@ -136,12 +163,33 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         });
       }
 
-      // 3. Próxima partida da Liga Regional/Multiplayer
+      const { data: finishedWorld } = await supabase
+        .from('world_matches')
+        .select(worldSelect)
+        .or(`home_team_id.eq.${teamData.id},away_team_id.eq.${teamData.id}`)
+        .eq('status', 'finished')
+        .gte('played_at', finishedSince)
+        .order('played_at', { ascending: false })
+        .limit(1);
+
+      if (finishedWorld && finishedWorld.length > 0) {
+        const m: any = finishedWorld[0];
+        const isHome = m.home_team_id === teamData.id;
+        finishedCandidates.push({
+          home: m.home_team.name, away: m.away_team.name, date: m.scheduled_at,
+          tournament: m.world_leagues?.name || 'Liga Mundial',
+          matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
+          opponentStrength: isHome ? m.away_team.strength : m.home_team.strength,
+          isHome, tournamentName: m.world_leagues?.name || 'Liga Mundial',
+          status: 'finished', homeGoals: m.home_goals, awayGoals: m.away_goals,
+          playedAt: m.played_at, round: m.round, kind: 'league', stage: 'Liga',
+        });
+      }
+
+      // 3. Liga Regional/Multiplayer
       const { data: leagueMatches } = await supabase
         .from('league_matches')
-        .select(`
-          id, round, status, scheduled_at, home_team_id, away_team_id, home_user_id, away_user_id
-        `)
+        .select(`id, round, status, scheduled_at, home_team_id, away_team_id, home_user_id, away_user_id, home_score, away_score, played_at`)
         .or(`home_user_id.eq.${userId},away_user_id.eq.${userId}`)
         .neq('status', 'finished')
         .order('scheduled_at', { ascending: true })
@@ -151,7 +199,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         const m: any = leagueMatches[0];
         const isHome = m.home_user_id === userId;
         candidates.push({
-          home: 'Seu Time', away: 'Oponente', date: m.scheduled_at, 
+          home: 'Seu Time', away: 'Oponente', date: m.scheduled_at,
           tournament: 'Liga Regional', matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
           opponentStrength: 75, isHome, tournamentName: 'Liga Regional',
           status: m.status, round: m.round, kind: 'league', stage: 'Liga',
@@ -168,6 +216,13 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           });
           filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
           setNextMatch(filtered[0] || null);
+        }
+
+        if (finishedCandidates.length > 0) {
+          finishedCandidates.sort((a, b) => new Date(b.playedAt || b.date).getTime() - new Date(a.playedAt || a.date).getTime());
+          setRecentFinished(finishedCandidates[0]);
+        } else {
+          setRecentFinished(null);
         }
         setLoading(false);
       }
@@ -279,6 +334,58 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     return (
       <div className="text-center py-4">
         <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // ─── Recently finished match takes priority over next pending ──
+  if (showFinished && recentFinished) {
+    const fm = recentFinished;
+    return (
+      <div className="text-center py-3 space-y-2 relative">
+        <div className="flex items-center justify-center gap-1.5">
+          <Trophy className="h-4 w-4 text-primary" />
+          <p className="text-[10px] font-bold text-primary uppercase">
+            {fm.tournament} {fm.round ? `• Rodada ${fm.round}` : ''}
+          </p>
+        </div>
+        <Badge variant="secondary" className="text-[9px]">✅ PARTIDA ENCERRADA</Badge>
+        <div className="flex items-center justify-center gap-4 my-1">
+          <div className="flex flex-col items-center gap-1">
+            <ClubShield club={{ shieldConfig: homeShield } as any} size={40} />
+            <button onClick={() => handleOpenProfile(fm.home)} className="text-[10px] font-bold truncate max-w-[80px] hover:text-primary hover:underline transition-colors cursor-pointer">{fm.home}</button>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-2xl font-black tabular-nums">
+              {fm.homeGoals ?? 0} <span className="text-muted-foreground">-</span> {fm.awayGoals ?? 0}
+            </span>
+            <span className="text-[8px] text-muted-foreground mt-0.5">Final</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <ClubShield club={{ shieldConfig: awayShield } as any} size={40} />
+            <button onClick={() => handleOpenProfile(fm.away)} className="text-[10px] font-bold truncate max-w-[80px] hover:text-primary hover:underline transition-colors cursor-pointer">{fm.away}</button>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5 pt-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 text-[10px] h-8 w-full font-bold"
+            onClick={() => navigate(`/replay/${fm.matchId}`)}
+          >
+            <FileText className="h-3.5 w-3.5" /> VER RELATÓRIO
+          </Button>
+          {nextMatch && (
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-2 text-[10px] h-8 w-full font-bold"
+              onClick={() => setDismissedFinishedId(fm.matchId)}
+            >
+              <Play className="h-3.5 w-3.5" /> AVANÇAR P/ PRÓXIMA RODADA
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
