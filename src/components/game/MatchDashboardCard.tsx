@@ -338,6 +338,58 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     );
   }
 
+  // ─── Recently finished match takes priority over next pending ──
+  if (showFinished && recentFinished) {
+    const fm = recentFinished;
+    return (
+      <div className="text-center py-3 space-y-2 relative">
+        <div className="flex items-center justify-center gap-1.5">
+          <Trophy className="h-4 w-4 text-primary" />
+          <p className="text-[10px] font-bold text-primary uppercase">
+            {fm.tournament} {fm.round ? `• Rodada ${fm.round}` : ''}
+          </p>
+        </div>
+        <Badge variant="secondary" className="text-[9px]">✅ PARTIDA ENCERRADA</Badge>
+        <div className="flex items-center justify-center gap-4 my-1">
+          <div className="flex flex-col items-center gap-1">
+            <ClubShield club={{ shieldConfig: homeShield } as any} size={40} />
+            <button onClick={() => handleOpenProfile(fm.home)} className="text-[10px] font-bold truncate max-w-[80px] hover:text-primary hover:underline transition-colors cursor-pointer">{fm.home}</button>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-2xl font-black tabular-nums">
+              {fm.homeGoals ?? 0} <span className="text-muted-foreground">-</span> {fm.awayGoals ?? 0}
+            </span>
+            <span className="text-[8px] text-muted-foreground mt-0.5">Final</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <ClubShield club={{ shieldConfig: awayShield } as any} size={40} />
+            <button onClick={() => handleOpenProfile(fm.away)} className="text-[10px] font-bold truncate max-w-[80px] hover:text-primary hover:underline transition-colors cursor-pointer">{fm.away}</button>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5 pt-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 text-[10px] h-8 w-full font-bold"
+            onClick={() => navigate(`/replay/${fm.matchId}`)}
+          >
+            <FileText className="h-3.5 w-3.5" /> VER RELATÓRIO
+          </Button>
+          {nextMatch && (
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-2 text-[10px] h-8 w-full font-bold"
+              onClick={() => setDismissedFinishedId(fm.matchId)}
+            >
+              <Play className="h-3.5 w-3.5" /> AVANÇAR P/ PRÓXIMA RODADA
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (nextMatch) {
     const matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
     const isToday = matchDate ? matchDate.toDateString() === new Date().toDateString() : false;
