@@ -295,7 +295,7 @@ function PlayerDetailContent({
           <section className="pb-10">
             <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] mb-6">Operações do Clube</h3>
             <div className="grid grid-cols-2 gap-3">
-              <ActionBtn icon={<ArrowRightLeft className="w-4 h-4" />} label="🔄 Substituir" onClick={() => { onClose(); onSwap?.(player); }} className="col-span-2 bg-primary/10 border-primary/30 text-white" />
+              <ActionBtn icon={<ArrowRightLeft className="w-5 h-5" />} label="🔄 Substituir" onClick={() => { onClose(); onSwap?.(player); }} className="col-span-2 py-6 text-sm bg-primary border-primary/50 text-white shadow-[0_10px_30px_rgba(var(--primary-rgb),0.3)] hover:scale-[1.02]" />
               {isYouth && (
                 <ActionBtn icon={<ChevronsUp className="w-4 h-4" />} label="⬆️ Promover da Base" onClick={() => onAction?.('promote-youth', player)} className="col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400" />
               )}
