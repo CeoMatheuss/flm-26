@@ -686,10 +686,11 @@ function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () 
 
 /* ── MATCH VIEWER ─────────────────────────────────────────── */
 
-export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStrength = 60 }: {
+export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFromBreak, awayStrength = 60 }: {
   matchState: MatchState; onExit: () => void;
   homePlayers?: Player[]; tactics?: TacticsConfig;
   resumeFromBreak?: () => void;
+  awayStrength?: number;
 }) {
   const {
     phase, currentMinute, progress, homeTeam, awayTeam,
