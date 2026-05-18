@@ -79,21 +79,18 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
 
   // 🔄 Reconstrói elenco completo: profissionais + juniores + banco + tática.
   useEffect(() => {
-    // Se o elenco estiver vazio, o initialClub carregará o padrão, mas forçamos reconstrução se necessário
     if (clubState.club.players.length === 0 && infraState.youthProspects.length === 0) return;
-
 
     const rebuiltPlayers = rebuildClubSquad(clubState.club.players, infraState.youthProspects, tactics.formation);
     const rebuiltTactics = syncTacticsWithSquad(tactics, rebuiltPlayers);
     
-    const currentIds = clubState.club.players.map((p: any) => p.id).join(',');
-    const nextIds = rebuiltPlayers.map((p: any) => p.id).join(',');
-    const currentStatuses = clubState.club.players.map((p: any) => p.squad_status).join(',');
-    const nextStatuses = rebuiltPlayers.map((p: any) => p.squad_status).join(',');
+    // Check if anything actually changed to prevent infinite loops
+    const currentIds = (clubState.club.players || []).map((p: any) => `${p.id}:${p.squad_status}`).join('|');
+    const nextIds = rebuiltPlayers.map((p: any) => `${p.id}:${p.squad_status}`).join('|');
 
-    if (currentIds !== nextIds || currentStatuses !== nextStatuses) {
+    if (currentIds !== nextIds) {
       console.log('[useGame] Sincronizando categorias de elenco (Titulares/Reservas/Juniores)');
-      clubState.setClub(prev => ({ ...prev, players: rebuiltPlayers }));
+      clubState.setClub((prev: any) => ({ ...prev, players: rebuiltPlayers }));
     }
 
     if (JSON.stringify(rebuiltTactics) !== JSON.stringify(tactics)) {
