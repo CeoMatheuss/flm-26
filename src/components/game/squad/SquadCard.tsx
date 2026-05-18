@@ -1,10 +1,11 @@
 import { Player, personalityLabels } from '@/types/game';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Zap, Heart, Target, Activity, Star, Repeat, Gavel } from 'lucide-react';
+import { Zap, Heart, Target, Activity, Star, Repeat, Gavel, Tag, ArrowLeftRight, Handshake, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
+import { cn } from '@/lib/utils';
 
 interface SquadCardProps {
   player: Player;
@@ -49,23 +50,68 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
   const yellowCount = player.disciplinary?.yellowCards || 0;
   const redCount = player.disciplinary?.redCards || 0;
 
+  const isForSale = player.onTransferList;
+  const isForLoan = player.onLoanList;
+  const isLoanedOut = player.isLoaned;
+  const isLoanedIn = player.isReceivedLoan;
+
   return (
     <motion.div
       whileHover={{ scale: 1.01, y: -1 }}
-      className={`relative group cursor-pointer overflow-hidden rounded-2xl border bg-slate-900/60 backdrop-blur-md p-4 transition-all duration-300 w-full
-        ${isPendingSwap ? 'border-primary ring-2 ring-primary/50 animate-pulse shadow-[0_0_20px_rgba(var(--primary),0.3)]' : 'border-white/5 hover:border-white/20 hover:shadow-2xl hover:shadow-primary/10'}`}
+      className={cn(
+        "relative group cursor-pointer overflow-hidden rounded-2xl border bg-slate-900/60 backdrop-blur-md p-4 transition-all duration-300 w-full",
+        isPendingSwap ? 'border-primary ring-2 ring-primary/50 animate-pulse shadow-[0_0_20px_rgba(var(--primary),0.3)]' : 'border-white/5 hover:border-white/20 hover:shadow-2xl hover:shadow-primary/10',
+        isForSale && "border-emerald-500/40 ring-1 ring-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.1)]",
+        isForLoan && "border-cyan-500/40 ring-1 ring-cyan-500/20",
+        isLoanedIn && "border-indigo-500/40 ring-1 ring-indigo-500/20",
+        isLoanedOut && "opacity-70 grayscale-[0.3]"
+      )}
     >
-      {/* Background Glow */}
-      <div className="absolute -right-20 -top-20 w-40 h-40 bg-primary/5 blur-3xl rounded-full group-hover:bg-primary/10 transition-colors" />
+      {/* Background Glows */}
+      <div className={cn(
+        "absolute -right-20 -top-20 w-40 h-40 blur-3xl rounded-full group-hover:opacity-30 transition-opacity",
+        isForSale ? "bg-emerald-500/20" : isForLoan ? "bg-cyan-500/20" : "bg-primary/5"
+      )} />
+
+      {/* Special Status Ribbons/Badges */}
+      <div className="absolute top-0 right-0 z-20 flex flex-col gap-1 p-2">
+        {isForSale && (
+          <Badge className="bg-emerald-500 text-zinc-950 font-black text-[9px] px-2 py-0.5 animate-pulse shadow-lg">
+            <Tag className="w-3 h-3 mr-1" /> À VENDA
+          </Badge>
+        )}
+        {isForLoan && (
+          <Badge className="bg-cyan-500 text-zinc-950 font-black text-[9px] px-2 py-0.5 animate-pulse shadow-lg">
+            <ArrowLeftRight className="w-3 h-3 mr-1" /> EMPRÉSTIMO
+          </Badge>
+        )}
+        {isLoanedIn && (
+          <Badge className="bg-indigo-500 text-white font-black text-[9px] px-2 py-0.5 shadow-lg">
+            <Handshake className="w-3 h-3 mr-1" /> EMP. RECEBIDO
+          </Badge>
+        )}
+        {isLoanedOut && (
+          <Badge className="bg-zinc-500 text-white font-black text-[9px] px-2 py-0.5 shadow-lg">
+            <ArrowLeftRight className="w-3 h-3 mr-1" /> EMPRESTADO
+          </Badge>
+        )}
+      </div>
       
       <div className="flex flex-col md:flex-row items-center gap-4 relative z-10">
         {/* Left Side: Photo & OVR */}
         <div className="flex items-center gap-4 shrink-0" onClick={onClick}>
           <div className="relative">
-            <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-2 shadow-lg backdrop-blur-xl relative overflow-hidden ${isSuspended ? 'border-red-500/50 grayscale' : posColors[player.position]}`}>
-              {/* Photo placeholder */}
+            <div className={cn(
+              "w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-2 shadow-lg backdrop-blur-xl relative overflow-hidden",
+              isSuspended ? 'border-red-500/50 grayscale' : posColors[player.position],
+              isForSale && "border-emerald-500 ring-2 ring-emerald-500/20 shadow-emerald-500/20",
+              isForLoan && "border-cyan-500 ring-2 ring-cyan-500/20 shadow-cyan-500/20"
+            )}>
               <div className="absolute inset-0 opacity-10 bg-gradient-to-t from-black to-transparent" />
-              <span className={`text-3xl font-black leading-none drop-shadow-lg ${isSuspended ? 'text-red-400' : ''}`}>{player.overall}</span>
+              <span className={cn(
+                "text-3xl font-black leading-none drop-shadow-lg",
+                isSuspended && "text-red-400"
+              )}>{player.overall}</span>
               <span className="text-[8px] font-black opacity-70 uppercase tracking-widest mt-0.5">{isSuspended ? 'SUSP' : 'OVR'}</span>
             </div>
             {isSuspended && (
@@ -78,23 +124,24 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
                 <Activity className="w-3.5 h-3.5 text-white" />
               </div>
             )}
-            <div className="absolute -bottom-1 -right-1 z-20">
-            </div>
           </div>
 
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className={`text-[10px] font-black tracking-tighter uppercase px-2 py-0 border-2 ${posColors[player.position]}`}>
+              <Badge variant="outline" className={cn(
+                "text-[10px] font-black tracking-tighter uppercase px-2 py-0 border-2",
+                posColors[player.position]
+              )}>
                 {player.position}
               </Badge>
               {player.shirtNumber && (
                 <span className="text-xs font-mono font-black text-white/40">#{player.shirtNumber}</span>
               )}
-              {player.position !== 'GOL' && player.attributes.goalkeeping && player.attributes.goalkeeping > 40 && (
-                 <Badge variant="outline" className="text-[8px] bg-red-500/20 text-red-400 border-red-500/30 font-black uppercase">Fora de Posição</Badge>
+              {isLoanedIn && (
+                 <span className="text-[8px] font-black text-indigo-400 uppercase tracking-tighter">De: {player.loanedFrom || 'Desconhecido'}</span>
               )}
-              {player.age < 21 && player.potential && player.potential >= 88 && (
-                 <Badge variant="outline" className="text-[8px] bg-amber-500/20 text-amber-400 border-amber-500/30 font-black uppercase">💎 Joia</Badge>
+              {isLoanedOut && (
+                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-tighter">Para: {player.loanedTo || 'Desconhecido'}</span>
               )}
             </div>
             <h3 className="text-base font-black text-white uppercase italic tracking-tighter truncate max-w-[160px] sm:max-w-[200px]">{player.name}</h3>
@@ -109,9 +156,6 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
                  ))}
                  {redCount > 0 && (
                    <span className="text-[10px] drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]">🟥</span>
-                 )}
-                 {isSuspended && (
-                   <Badge variant="destructive" className="text-[8px] h-4 px-1 font-black uppercase tracking-tighter">SUSPENSO</Badge>
                  )}
                </div>
             </div>
@@ -130,7 +174,10 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${player.stamina}%` }}
-                className={`h-full ${getBarColor(player.stamina)} shadow-[0_0_8px_rgba(var(--primary),0.5)]`}
+                className={cn(
+                  "h-full shadow-[0_0_8px_rgba(var(--primary),0.5)]",
+                  getBarColor(player.stamina)
+                )}
               />
             </div>
           </div>
@@ -145,7 +192,10 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${player.morale}%` }}
-                className={`h-full ${getBarColor(player.morale)} shadow-[0_0_8px_rgba(var(--primary),0.5)]`}
+                className={cn(
+                  "h-full shadow-[0_0_8px_rgba(var(--primary),0.5)]",
+                  getBarColor(player.morale)
+                )}
               />
             </div>
           </div>
@@ -156,23 +206,32 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
               <Star className="w-3 h-3 text-primary" /> Forma
             </span>
             <div className="flex items-center gap-1.5">
-              <span className={`text-sm font-black ${form >= 7.5 ? 'text-emerald-400' : form >= 6.5 ? 'text-primary' : 'text-red-400'}`}>
+              <span className={cn(
+                "text-sm font-black",
+                form >= 7.5 ? 'text-emerald-400' : form >= 6.5 ? 'text-primary' : 'text-red-400'
+              )}>
                 {form.toFixed(1)}
               </span>
-              <div className="flex gap-0.5">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className={`w-1.5 h-1.5 rounded-full ${i <= (form - 5) ? 'bg-primary' : 'bg-white/10'}`} />
-                ))}
-              </div>
             </div>
           </div>
 
-          {/* Chemistry */}
+          {/* Loan Time / Chemistry */}
           <div className="flex flex-col justify-center">
-            <span className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center gap-1">
-              <Target className="w-3 h-3 text-cyan-400" /> Entros.
-            </span>
-            <span className="text-sm font-black text-white/90">{chemistry}%</span>
+            {isLoanedIn || isLoanedOut ? (
+              <>
+                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-amber-400" /> Tempo
+                </span>
+                <span className="text-sm font-black text-white/90">{player.loanWeeksRemaining || 0} SEM</span>
+              </>
+            ) : (
+              <>
+                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <Target className="w-3 h-3 text-cyan-400" /> Entros.
+                </span>
+                <span className="text-sm font-black text-white/90">{chemistry}%</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -193,7 +252,7 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
             className="h-10 px-6 text-xs font-black uppercase tracking-tighter gap-2 rounded-xl border-emerald-500/30 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:scale-105 active:scale-95 transition-all group/btn shadow-lg"
           >
             <Repeat className="w-3.5 h-3.5 group-hover/btn:rotate-180 transition-transform duration-500" />
-            <span>Trocar Jogador</span>
+            <span>Trocar</span>
           </Button>
         </div>
       </div>
