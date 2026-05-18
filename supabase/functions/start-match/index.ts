@@ -1501,6 +1501,23 @@ function simulateFullMatch(
   for (const ev of allPlanned.filter(e => e.minute <= 44)) finalEvents.push(ev);
 
   finalEvents.push({
+    minute: 45, type: 'halftime_start', team: 'neutral',
+    description: `🏁 Fim do primeiro tempo! Intervalo de descanso e ajustes táticos.`,
+  });
+
+  // Stamina recovery during halftime
+  for (const p of [...home, ...away]) {
+    if (p.isOnPitch && !p.injured) {
+      p.stamina = Math.min(100, p.stamina + 8 + (p.physical / 20));
+    }
+  }
+
+  finalEvents.push({
+    minute: 45, type: 'halftime_end', team: 'neutral',
+    description: `⚽ Jogadores de volta! O segundo tempo vai começar.`,
+  });
+
+  finalEvents.push({
     minute: 45, type: 'added_time', team: 'neutral', animType: 'halftime',
     description: `⏱️ +${addedTime1} minutos de acréscimo no 1º tempo!`,
   });
