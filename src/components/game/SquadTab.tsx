@@ -80,8 +80,8 @@ const attrLabels: Record<string, { label: string; icon: string }> = {
   aggression: { label: 'Agressividade', icon: '⚔️' },
 };
 
-const STARTERS_END = 11; // 0-10 = titulares (11 jogadores)
-const RESERVES_END = 18; // 11-17 = reservas (7 jogadores no banco)
+const STARTERS_COUNT = 11;
+const BENCH_COUNT = 7;
 
 function getOvrColor(val: number) {
   if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', glow: 'shadow-[0_0_20px_-5px_rgba(16,185,129,0.5)]' };
@@ -127,8 +127,8 @@ function getMoraleEmoji(morale: number): string {
 type Group = 'starters' | 'reserves' | 'out' | 'injured' | 'suspended';
 
 function getPlayerGroup(player: Player): Group {
-  if (player.squad_status === 'injured' || !!player.injury) return 'injured';
   if (player.squad_status === 'suspended' || player.disciplinary?.isSuspended) return 'suspended';
+  if (player.squad_status === 'injured' || !!player.injury) return 'injured';
   if (player.squad_status === 'starter') return 'starters';
   if (player.squad_status === 'bench') return 'reserves';
   return 'out';
@@ -288,9 +288,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     // Se alguém pediu 'out' mas o banco ainda tem vaga, redireciona para 'reserves'.
     let effectiveTarget: Group = target;
     if (effectiveTarget === 'out') {
-      const benchSize = without.slice(STARTERS_END, RESERVES_END).length;
-      const benchCapacity = RESERVES_END - STARTERS_END; // 7 lugares
-      if (benchSize < benchCapacity) {
+      const benchSize = without.filter(p => p.squad_status === 'bench').length;
+      if (benchSize < BENCH_COUNT) {
         effectiveTarget = 'reserves';
       }
     }
@@ -299,11 +298,13 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     if (effectiveTarget === 'starters') {
       insertAt = 0; // promove ao topo dos titulares
     } else if (effectiveTarget === 'reserves') {
-      // Coloca logo após o 11º titular (cai no banco)
-      insertAt = Math.min(without.length, STARTERS_END);
+      // Coloca logo após os titulares
+      const starterCount = without.filter(p => p.squad_status === 'starter').length;
+      insertAt = Math.min(without.length, starterCount);
     } else {
       // 'out' — só usado quando banco realmente está lotado
-      insertAt = Math.min(without.length, RESERVES_END);
+      const starterAndBenchCount = without.filter(p => ['starter', 'bench'].includes(p.squad_status as any)).length;
+      insertAt = Math.min(without.length, starterAndBenchCount);
     }
     const newOrder = [...without.slice(0, insertAt), player, ...without.slice(insertAt)];
     onReorderPlayers(newOrder);
@@ -1070,21 +1071,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   {startersList.length === 0 ? (
                     <div className="text-center py-4 text-[10px] text-muted-foreground italic">Nenhum titular encontrado</div>
                   ) : (
-                    startersList.map(({ player }) => (
-                      <SquadCard 
-                        key={player.id} 
-                        player={player} 
-                        onClick={() => {
-                          if (pendingSwap && pendingSwap.from !== 'starters') {
-                            completeSwap(player.id);
-                          } else {
-                            setViewingPlayer(player);
-                          }
-                        }}
-                        onSwap={(p) => startSwap(p, 'starters')}
-                        isPendingSwap={pendingSwap?.player.id === player.id}
-                      />
-                    ))
+                    startersList.map(({ player }) => renderPlayerRow(player, 'starters'))
                   )}
                 </TabsContent>
 
@@ -1092,62 +1079,24 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   {reservesList.length === 0 ? (
                     <div className="text-center py-4 text-[10px] text-muted-foreground italic">Banco vazio</div>
                   ) : (
-                    reservesList.map(({ player }) => (
-                      <SquadCard 
-                        key={player.id} 
-                        player={player} 
-                        onClick={() => {
-                          if (pendingSwap && pendingSwap.from === 'starters') {
-                            completeSwap(player.id);
-                          } else {
-                            setViewingPlayer(player);
-                          }
-                        }}
-                        onSwap={(p) => startSwap(p, 'reserves')}
-                        isPendingSwap={pendingSwap?.player.id === player.id}
-                      />
-                    ))
+                    reservesList.map(({ player }) => renderPlayerRow(player, 'reserves'))
                   )}
                 </TabsContent>
+
+                <TabsContent value="out" className="mt-2 space-y-1.5">
+                  {outList.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Nenhum jogador fora da lista</div>
+                  ) : (
+                    outList.map(({ player }) => renderPlayerRow(player, 'out'))
+                  )}
+                </TabsContent>
+
                 <TabsContent value="injured" className="mt-2 space-y-1.5">
-                  {injuredList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => setViewingPlayer(player)}
-                    />
-                  ))}
+                  {injuredList.map(({ player }) => renderPlayerRow(player, 'injured'))}
                 </TabsContent>
 
                 <TabsContent value="suspended" className="mt-2 space-y-1.5">
-                  {suspendedList.map(({ player }) => (
-                    <SquadCard 
-                      key={player.id} 
-                      player={player} 
-                      onClick={() => setViewingPlayer(player)}
-                    />
-                  ))}
-                </TabsContent>
-                <TabsContent value="out" className="mt-2 space-y-1.5">
-                  {outList.length === 0 ? (
-                    <div className="text-center py-4 text-[10px] text-muted-foreground italic">Vazio</div>
-                  ) : (
-                    outList.map(({ player }) => (
-                      <SquadCard 
-                        key={player.id} 
-                        player={player} 
-                        onClick={() => {
-                          if (pendingSwap && pendingSwap.from === 'starters') {
-                            completeSwap(player.id);
-                          } else {
-                            setViewingPlayer(player);
-                          }
-                        }}
-                        onSwap={(p) => startSwap(p, 'out')}
-                        isPendingSwap={pendingSwap?.player.id === player.id}
-                      />
-                    ))
-                  )}
+                  {suspendedList.map(({ player }) => renderPlayerRow(player, 'suspended'))}
                 </TabsContent>
               </Tabs>
             </div>

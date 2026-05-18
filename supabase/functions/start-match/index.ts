@@ -2082,14 +2082,14 @@ Deno.serve(async (req) => {
           }
         }
 
-        if (hTeamId && effHomePlayers.length < 18) {
+        if (hTeamId) {
           const players = await fetchTeamPlayers(hTeamId);
           if (players.length > 0) {
             effHomePlayers = players;
             console.info(`[start-match] Loaded ${players.length} players for Home team BOT`);
           }
         }
-        if (aTeamId && (!effAwayPlayers || effAwayPlayers.length < 18)) {
+        if (aTeamId) {
           const players = await fetchTeamPlayers(aTeamId);
           if (players.length > 0) {
             effAwayPlayers = players;
