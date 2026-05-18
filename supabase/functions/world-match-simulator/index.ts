@@ -137,16 +137,7 @@ Deno.serve(async (req) => {
     `).eq("status", "scheduled").lte("scheduled_at", tolerance.toISOString()).limit(20);
 
     if (cMatches) {
-      const HUMAN_GRACE_MS = 60 * 60 * 1000;
       for (const m of cMatches) {
-        const involvesHuman = !!(m.home_team?.user_id || m.away_team?.user_id);
-        if (involvesHuman) {
-          const kickoff = new Date(m.scheduled_at).getTime();
-          if (Date.now() - kickoff < HUMAN_GRACE_MS) {
-            console.log(`[world-sim] Skip human cup match ${m.id} (within grace window)`);
-            continue;
-          }
-        }
         const { data: cs } = await sb.from('national_cups').select('status, name').eq('id', m.cup_id).single();
         if (cs?.status !== 'in_progress') continue;
 
