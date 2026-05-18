@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ShoppingBag, MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight, Globe, EyeOff, Scale, Inbox, ArrowLeftRight, HeartPulse, LifeBuoy, FileText, Crown, Target, Instagram } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { ShoppingBag, MoreHorizontal, Calendar, CalendarDays, Dumbbell, GraduationCap, Search, Shirt, User, Users, Landmark, Building2, Home, DollarSign, Handshake, ShoppingCart, Heart, MessageCircle, Swords, Gift, Medal, Trophy, BarChart3, Settings, Sparkles, BookOpen, Shield, ChevronRight, Globe, EyeOff, Scale, Inbox, ArrowLeftRight, HeartPulse, LifeBuoy, FileText, Crown, Target, Instagram, RefreshCw, Info } from 'lucide-react';
+import { getLocalVersion } from '@/utils/versionManager';
 
 interface GameMenuProps {
   showAdmin: boolean;
@@ -9,9 +10,13 @@ interface GameMenuProps {
   onShowTutorial: () => void;
   onMarketSubTabChange?: (subTab: string) => void;
   tutorialCompleted?: boolean;
+  updateAvailable?: boolean;
+  onUpdateNow?: () => void;
 }
 
-export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTabChange, tutorialCompleted }: GameMenuProps) {
+export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTabChange, tutorialCompleted, updateAvailable, onUpdateNow }: GameMenuProps) {
+  const localVersion = getLocalVersion() || '2.4.1';
+
   const goToMarket = (sub: string) => {
     onMarketSubTabChange?.(sub);
     onTabChange('market');
@@ -19,10 +24,12 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-10 w-10 p-0 shrink-0 border-border/30 bg-card/60 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all">
+        <Button variant="outline" size="sm" className={`h-10 w-10 p-0 shrink-0 border-border/30 bg-card/60 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all relative ${updateAvailable ? 'border-amber-500/50 bg-amber-500/5' : ''}`}>
           <MoreHorizontal className="h-4 w-4" />
+          {updateAvailable && <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-background animate-pulse" />}
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border/30 z-50 max-h-[75vh] overflow-y-auto smooth-scroll p-2 rounded-xl shadow-xl shadow-black/20">
         <p className="menu-category">🌎 Competições</p>
         <DropdownMenuItem onClick={() => onTabChange('world')} className="menu-item"><Globe className="h-3.5 w-3.5 text-purple-400" /> Mundo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
@@ -85,7 +92,23 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <DropdownMenuItem onClick={() => onTabChange('support')} className="menu-item"><LifeBuoy className="h-3.5 w-3.5 text-primary/70" /> Suporte <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('terms')} className="menu-item"><FileText className="h-3.5 w-3.5 text-primary/70" /> Termos de Uso <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         {!tutorialCompleted && <DropdownMenuItem onClick={onShowTutorial} className="menu-item"><BookOpen className="h-3.5 w-3.5 text-primary/70" /> Tutorial Interativo <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
-        {showAdmin && <DropdownMenuItem onClick={() => onTabChange('admin')} className="menu-item"><Shield className="h-3.5 w-3.5 text-destructive/70" /> Painel Admin <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>}
+        {showAdmin && <DropdownMenuItem onClick={() => onTabChange('admin')} className="menu-item text-destructive focus:text-destructive"><Shield className="h-3.5 w-3.5" /> Painel Admin <ChevronRight className="h-3 w-3 ml-auto opacity-30" /></DropdownMenuItem>}
+
+        <DropdownMenuSeparator className="bg-border/20" />
+        
+        {updateAvailable && (
+          <DropdownMenuItem onClick={onUpdateNow} className="menu-item bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-bold">
+            <RefreshCw className="h-3.5 w-3.5 animate-spin-slow" /> Atualizar Jogo! <Badge className="ml-auto bg-amber-500 text-[9px]">NOVO</Badge>
+          </DropdownMenuItem>
+        )}
+
+        <div className="px-2 py-1.5 flex items-center justify-between opacity-40 select-none">
+          <div className="flex items-center gap-1.5">
+            <Info className="h-3 w-3" />
+            <span className="text-[9px] font-medium tracking-wider">FLM 26 MOBILE v{localVersion}</span>
+          </div>
+          <span className="text-[9px]">© 2026 FCM</span>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

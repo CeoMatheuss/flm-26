@@ -15,6 +15,7 @@ import { SeasonAwardsModal } from '@/components/game/SeasonAwardsModal';
 import { VersionUpdateOverlay } from '@/components/game/VersionUpdateOverlay';
 import { PromotionManager } from '@/components/game/promotion/PromotionManager';
 import { useVersionGuard } from '@/hooks/useVersionGuard';
+import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { initialClub } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
 import { getLeagueTeams } from '@/types/league';
@@ -295,6 +296,9 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   // Version guard: bloqueia o jogo durante atualizações de dados
   const versionGuard = useVersionGuard(userId, initialState ?? null);
+  
+  // Auto update: verifica novas versões do app (frontend) no servidor
+  const { updateAvailable, updateNow } = useAutoUpdate();
 
   const { isPremium } = usePremiumStatus(userId);
   const game = useGame(initialState, userId, isPremium);
@@ -892,7 +896,15 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {activeTab !== 'shop' && (
             <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-              <GameMenu showAdmin={showAdmin} onTabChange={setActiveTab} onShowTutorial={() => setShowTutorial(true)} onMarketSubTabChange={setMarketSubTab} tutorialCompleted={tutorialCompleted} />
+              <GameMenu 
+                showAdmin={showAdmin} 
+                onTabChange={setActiveTab} 
+                onShowTutorial={() => setShowTutorial(true)} 
+                onMarketSubTabChange={setMarketSubTab} 
+                tutorialCompleted={tutorialCompleted}
+                updateAvailable={updateAvailable}
+                onUpdateNow={updateNow}
+              />
               <GameNavBar />
             </div>
           )}

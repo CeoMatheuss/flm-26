@@ -6,19 +6,19 @@ import { Sparkles, CheckCircle, Rocket } from 'lucide-react';
 // =============================================
 // 🔄 CHANGELOG — Atualize aqui a cada versão!
 // =============================================
-export const GAME_VERSION = '1.5.0';
+export const GAME_VERSION = '2.4.1';
 
 export const CHANGELOG = {
   version: GAME_VERSION,
-  title: 'Atualização v1.5.0',
-  type: 'feature' as const,
+  title: 'Atualização v2.4.1',
+  type: 'improvement' as const,
   description:
-    'Novo sistema de atualizações! Agora a cada nova versão do jogo, você verá automaticamente o que mudou e por quê. Também removemos o antigo sistema de aprovação de atualizações pelo ADM — tudo fica mais direto e transparente.',
+    'Implementamos um novo sistema de sincronização e atualização automática. Agora, sempre que publicarmos uma melhoria, seu jogo identificará a mudança e oferecerá a atualização instantânea, garantindo que você sempre jogue na versão mais estável e com todos os recursos novos.',
   benefits: [
-    'Tela de changelog automática a cada nova versão',
-    'Reações com emojis nas notícias do Jornal',
-    'Remoção do fluxo de aprovação de atualizações',
-    'Jornal mais limpo e focado nas notícias do seu clube',
+    'Sistema de atualização automática (fim dos problemas de cache)',
+    'Notificação visual de novas versões disponível',
+    'Versão do jogo visível no menu principal',
+    'Melhorias de estabilidade e sincronização com o servidor',
   ],
 };
 
