@@ -678,7 +678,6 @@ export function SquadModernLayout({
                           onClick={() => {
                             // @ts-ignore
                             const focusLabel = { speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe', defending: 'Marcação', physical: 'Físico', dribbling: 'Drible' }[key];
-                            // @ts-ignore
                             handleAction('train', confirmAction.player, key);
                             toast.success(`Foco em ${focusLabel} definido para ${confirmAction.player.name}`);
                             setConfirmAction(null);
