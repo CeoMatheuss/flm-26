@@ -175,6 +175,30 @@ export function SquadModernLayout({
   };
 
   const handleSwap = useCallback((idA: string, idB: string) => {
+    const playerA = players.find(p => p.id === idA);
+    const playerB = players.find(p => p.id === idB);
+    if (!playerA || !playerB) return;
+
+    // BLOQUEIO: Impedir 2 goleiros titulares
+    const starters = players.filter(p => (p as any).squad_status === 'starter');
+    const isAServingInLineup = starters.some(p => p.id === idA);
+    const isBServingInLineup = starters.some(p => p.id === idB);
+
+    if (!isAServingInLineup && playerA.position === 'GOL') {
+       const otherGK = starters.find(p => p.position === 'GOL' && p.id !== idB);
+       if (otherGK) {
+         toast.error("Escalação inválida: apenas 1 goleiro pode iniciar.");
+         return;
+       }
+    }
+    if (!isBServingInLineup && playerB.position === 'GOL') {
+       const otherGK = starters.find(p => p.position === 'GOL' && p.id !== idA);
+       if (otherGK) {
+         toast.error("Escalação inválida: apenas 1 goleiro pode iniciar.");
+         return;
+       }
+    }
+
     const idxA = players.findIndex(p => p.id === idA);
     const idxB = players.findIndex(p => p.id === idB);
     if (idxA < 0 || idxB < 0) return;
