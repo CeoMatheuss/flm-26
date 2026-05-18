@@ -32,8 +32,8 @@ interface YouthAcademyModernTabProps {
 export function YouthAcademyModernTab({ 
   prospects, onPromote, monthlyInvestment, onSetInvestment,
   academyLevel, academyUpgradeCompletesAt, budget, hasScouts, currentSeason, onSell, onEnrollCopinha, onUpgradeAcademy,
-  lastYouthGenAt, isPremium
-}: YouthAcademyModernTabProps) {
+  lastYouthGenAt, isPremium, onSelect
+}: YouthAcademyModernTabProps & { onSelect?: (p: YouthProspect) => void }) {
   const [selectedProspect, setSelectedProspect] = useState<YouthProspect | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPos, setFilterPos] = useState('ALL');
@@ -267,7 +267,10 @@ export function YouthAcademyModernTab({
                 player={p as any} 
                 isStarter={false}
                 selected={selectedProspect?.id === p.id}
-                onClick={() => setSelectedProspect(p)} 
+                onClick={() => {
+                  setSelectedProspect(p);
+                  if (onSelect) onSelect(p);
+                }} 
               />
             ))}
             {filteredProspects.length === 0 && (

@@ -146,6 +146,34 @@ export function SquadModernLayout({
     setPanelOpen(true);
   };
 
+  const handleYouthSelect = (prospect: YouthProspect) => {
+    // Transformar YouthProspect em Player para o painel
+    const transformed: Player = {
+      id: prospect.id,
+      name: prospect.name,
+      overall: prospect.overall,
+      position: prospect.position as Player['position'],
+      age: prospect.age,
+      country: prospect.nationality || 'Brasil',
+      salary: prospect.salary || 0,
+      contract: (prospect as any).contract || 1,
+      stamina: 100,
+      morale: 100,
+      value: getPlayerValue(prospect as any),
+      // Adicionar outros campos necessários
+      seasonRatings: [],
+      goals: 0,
+      assists: 0,
+      gamesPlayed: 0,
+      personality: 'Competitive',
+      contractStatus: (prospect as any).contractStatus || 'base',
+      squad_status: 'reserve',
+    } as any;
+
+    setSelectedId(prospect.id);
+    setPanelOpen(true);
+  };
+
   const handleSwap = useCallback((idA: string, idB: string) => {
     const idxA = players.findIndex(p => p.id === idA);
     const idxB = players.findIndex(p => p.id === idB);
@@ -391,6 +419,7 @@ export function SquadModernLayout({
                            onUpgradeAcademy={onUpgradeAcademy || (() => {})}
                            lastYouthGenAt={lastYouthGenAt}
                            isPremium={isPremium}
+                           onSelect={handleYouthSelect}
                          />
                       </div>
                     ) : (
@@ -487,6 +516,7 @@ export function SquadModernLayout({
         open={panelOpen}
         onOpenChange={setPanelOpen}
         onAction={handleAction}
+        isYouth={activeTab === 'base'}
       />
 
       <AnimatePresence>
