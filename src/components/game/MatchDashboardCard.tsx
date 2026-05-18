@@ -201,10 +201,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         const isHome = m.home_team_id === teamData.id;
         candidates.push({
           home: m.home_team.name, away: m.away_team.name, date: m.scheduled_at,
-          tournament: m.world_leagues?.name || 'Liga Mundial',
+          tournament: m.world_leagues?.name || 'Liga',
+
           matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
           opponentStrength: isHome ? m.away_team.strength : m.home_team.strength,
-          isHome, tournamentName: m.world_leagues?.name || 'Liga Mundial',
+          isHome, tournamentName: m.world_leagues?.name || 'Liga',
+
           status: m.status, round: m.round, kind: 'league', stage: 'Liga',
         });
       }
@@ -223,10 +225,10 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         const isHome = m.home_team_id === teamData.id;
         finishedCandidates.push({
           home: m.home_team.name, away: m.away_team.name, date: m.scheduled_at,
-          tournament: m.world_leagues?.name || 'Liga Mundial',
+          tournament: m.world_leagues?.name || 'Liga',
           matchId: m.id, homeTeamId: m.home_team_id, awayTeamId: m.away_team_id,
           opponentStrength: isHome ? m.away_team.strength : m.home_team.strength,
-          isHome, tournamentName: m.world_leagues?.name || 'Liga Mundial',
+          isHome, tournamentName: m.world_leagues?.name || 'Liga',
           status: 'finished', homeGoals: m.home_goals, awayGoals: m.away_goals,
           playedAt: m.played_at, round: m.round, kind: 'league', stage: 'Liga',
         });
