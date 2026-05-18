@@ -124,6 +124,15 @@ export interface Player {
   recentHighlights?: string[];
   evolutionTrend?: 'up' | 'stable' | 'down';
   promotionReady?: boolean;
+  /** Disciplinary V6 */
+  disciplinary?: {
+    yellowCards: number;
+    redCards: number;
+    isSuspended: boolean;
+    suspensionRemaining: number;
+    suspensionReason?: string;
+    competitionType?: string;
+  };
 }
 
 export interface Scout {

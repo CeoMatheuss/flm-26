@@ -1,7 +1,7 @@
 import { Player, personalityLabels } from '@/types/game';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Zap, Heart, TrendingUp, TrendingDown, Target, Activity, Star, Repeat } from 'lucide-react';
+import { Zap, Heart, TrendingUp, TrendingDown, Target, Activity, Star, Repeat, Gavel } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
@@ -45,6 +45,10 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
   const chemistry = Math.round(70 + (player.morale / 10) + (player.stamina / 20));
   const form = player.matchRating || 6.5;
 
+  const isSuspended = player.disciplinary?.isSuspended;
+  const yellowCount = player.disciplinary?.yellowCards || 0;
+  const redCount = player.disciplinary?.redCards || 0;
+
   return (
     <motion.div
       whileHover={{ scale: 1.01, y: -1 }}
@@ -58,12 +62,17 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
         {/* Left Side: Photo & OVR */}
         <div className="flex items-center gap-4 shrink-0" onClick={onClick}>
           <div className="relative">
-            <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-2 shadow-lg backdrop-blur-xl relative overflow-hidden ${posColors[player.position]}`}>
+            <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-2 shadow-lg backdrop-blur-xl relative overflow-hidden ${isSuspended ? 'border-red-500/50 grayscale' : posColors[player.position]}`}>
               {/* Photo placeholder */}
               <div className="absolute inset-0 opacity-10 bg-gradient-to-t from-black to-transparent" />
-              <span className="text-3xl font-black leading-none drop-shadow-lg">{player.overall}</span>
-              <span className="text-[8px] font-black opacity-70 uppercase tracking-widest mt-0.5">OVR</span>
+              <span className={`text-3xl font-black leading-none drop-shadow-lg ${isSuspended ? 'text-red-400' : ''}`}>{player.overall}</span>
+              <span className="text-[8px] font-black opacity-70 uppercase tracking-widest mt-0.5">{isSuspended ? 'SUSP' : 'OVR'}</span>
             </div>
+            {isSuspended && (
+               <div className="absolute -top-1 -right-1 bg-red-600 rounded-full p-1 shadow-lg ring-2 ring-slate-900 z-30 animate-pulse">
+                <Gavel className="w-3.5 h-3.5 text-white" />
+              </div>
+            )}
             {player.injury && (
               <div className="absolute -top-1 -left-1 bg-red-500 rounded-full p-1 shadow-lg ring-2 ring-slate-900 z-20">
                 <Activity className="w-3.5 h-3.5 text-white" />
@@ -101,6 +110,19 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
             <div className="flex items-center gap-2">
                <span className="text-[10px] font-bold text-white/40 uppercase">{player.age} anos</span>
                {player.personality && <span className="text-xs" title={personalityLabels[player.personality].label}>{personalityLabels[player.personality].emoji}</span>}
+               
+               {/* Disciplinary Status */}
+               <div className="flex items-center gap-1 ml-1">
+                 {Array.from({ length: yellowCount }).map((_, i) => (
+                   <span key={i} className="text-[10px] drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]">🟨</span>
+                 ))}
+                 {redCount > 0 && (
+                   <span className="text-[10px] drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]">🟥</span>
+                 )}
+                 {isSuspended && (
+                   <Badge variant="destructive" className="text-[8px] h-4 px-1 font-black uppercase tracking-tighter">SUSPENSO</Badge>
+                 )}
+               </div>
             </div>
           </div>
         </div>

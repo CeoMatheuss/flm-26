@@ -1224,6 +1224,44 @@ export type Database = {
         }
         Relationships: []
       }
+      disciplinary_records: {
+        Row: {
+          card_type: Database["public"]["Enums"]["card_type"]
+          competition_type: string
+          created_at: string | null
+          id: string
+          match_id: string
+          player_id: string
+          round: number | null
+        }
+        Insert: {
+          card_type: Database["public"]["Enums"]["card_type"]
+          competition_type: string
+          created_at?: string | null
+          id?: string
+          match_id: string
+          player_id: string
+          round?: number | null
+        }
+        Update: {
+          card_type?: Database["public"]["Enums"]["card_type"]
+          competition_type?: string
+          created_at?: string | null
+          id?: string
+          match_id?: string
+          player_id?: string
+          round?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinary_records_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "world_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       free_agent_offers: {
         Row: {
           agent_id: string
@@ -4126,6 +4164,41 @@ export type Database = {
         }
         Relationships: []
       }
+      suspensions: {
+        Row: {
+          competition_type: string
+          created_at: string | null
+          id: string
+          player_id: string
+          reason: string | null
+          remaining_games: number | null
+        }
+        Insert: {
+          competition_type: string
+          created_at?: string | null
+          id?: string
+          player_id: string
+          reason?: string | null
+          remaining_games?: number | null
+        }
+        Update: {
+          competition_type?: string
+          created_at?: string | null
+          id?: string
+          player_id?: string
+          reason?: string | null
+          remaining_games?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suspensions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "world_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suspicious_activity: {
         Row: {
           activity_type: string
@@ -5695,6 +5768,10 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      process_match_suspensions: {
+        Args: { _competition_type: string; _player_ids: string[] }
+        Returns: undefined
+      }
       process_season_transition:
         | { Args: never; Returns: undefined }
         | { Args: { _country: string }; Returns: undefined }
@@ -5883,6 +5960,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      card_type: "yellow" | "red"
       mission_status: "em_andamento" | "concluída" | "cancelada"
       mission_type: "local" | "global" | "posição" | "promessas"
       scout_level: "baixo" | "médio" | "alto" | "elite"
@@ -6022,6 +6100,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      card_type: ["yellow", "red"],
       mission_status: ["em_andamento", "concluída", "cancelada"],
       mission_type: ["local", "global", "posição", "promessas"],
       scout_level: ["baixo", "médio", "alto", "elite"],

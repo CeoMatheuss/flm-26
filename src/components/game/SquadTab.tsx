@@ -24,6 +24,7 @@ import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
 import { SquadCard } from './squad/SquadCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuickSwapPanel } from './squad/QuickSwapPanel';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   players: Player[];
@@ -157,6 +158,59 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
   const [isQuickSwapOpen, setIsQuickSwapOpen] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<{ player: Player; from: Group } | null>(null);
   const effectiveTransferBudget = transferBudget ?? Math.floor(budget * 0.4);
+  const [disciplinaryData, setDisciplinaryData] = useState<{
+    records: any[];
+    suspensions: any[];
+  }>({ records: [], suspensions: [] });
+
+  // Load disciplinary data
+  useEffect(() => {
+    if (!userId) return;
+    const loadDiscipline = async () => {
+      const pIds = players.map(p => p.id);
+      if (pIds.length === 0) return;
+
+      const [recs, susps] = await Promise.all([
+        supabase.from('disciplinary_records').select('*').in('player_id', pIds),
+        supabase.from('suspensions').select('*').in('player_id', pIds)
+      ]);
+
+      setDisciplinaryData({
+        records: recs.data || [],
+        suspensions: susps.data || []
+      });
+    };
+    loadDiscipline();
+    
+    // Realtime sub
+    const channel = supabase.channel('disciplinary-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'disciplinary_records' }, loadDiscipline)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'suspensions' }, loadDiscipline)
+      .subscribe();
+      
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, players.length]);
+
+  // Merge disciplinary data into players
+  const playersWithDiscipline = useMemo(() => {
+    return players.map(p => {
+      const yellowCards = disciplinaryData.records.filter(r => r.player_id === p.id && r.card_type === 'yellow').length;
+      const redCards = disciplinaryData.records.filter(r => r.player_id === p.id && r.card_type === 'red').length;
+      const susp = disciplinaryData.suspensions.find(s => s.player_id === p.id);
+      
+      return {
+        ...p,
+        disciplinary: {
+          yellowCards,
+          redCards,
+          isSuspended: !!susp,
+          suspensionRemaining: susp?.remaining_games || 0,
+          suspensionReason: susp?.reason,
+          competitionType: susp?.competition_type
+        }
+      };
+    });
+  }, [players, disciplinaryData]);
 
   // Cancel pending swap with Esc
   useEffect(() => {
@@ -170,24 +224,24 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
 
-  const expiringPlayers = players.filter(p => p.contract <= 1);
-  const avgOvr = players.length > 0 ? Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length) : 0;
-  const totalSalary = players.reduce((s, p) => s + p.salary, 0);
-  const injuredCount = players.filter(p => p.injury).length;
+  const expiringPlayers = playersWithDiscipline.filter(p => p.contract <= 1);
+  const avgOvr = playersWithDiscipline.length > 0 ? Math.round(playersWithDiscipline.reduce((s, p) => s + p.overall, 0) / playersWithDiscipline.length) : 0;
+  const totalSalary = playersWithDiscipline.reduce((s, p) => s + p.salary, 0);
+  const injuredCount = playersWithDiscipline.filter(p => p.injury).length;
 
   // Separate players into 3 groups by their original index in the array
   const groupedPlayers = useMemo(() => {
     const starters: { player: Player; idx: number }[] = [];
     const reserves: { player: Player; idx: number }[] = [];
     const out: { player: Player; idx: number }[] = [];
-    players.forEach((p, idx) => {
+    playersWithDiscipline.forEach((p, idx) => {
       const entry = { player: p, idx };
       if (idx < STARTERS_END) starters.push(entry);
       else if (idx < RESERVES_END) reserves.push(entry);
       else out.push(entry);
     });
     return { starters, reserves, out };
-  }, [players]);
+  }, [playersWithDiscipline]);
 
   // Apply filter/sort to a group
   const matchesOvr = (ovr: number) => {
@@ -309,6 +363,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
     const avgRating = player.seasonRatings && player.seasonRatings.length > 0
       ? (player.seasonRatings.reduce((a, b) => a + b, 0) / player.seasonRatings.length) : null;
     const auctionEligible = player.overall >= 65 && player.age <= 35;
+    const isSuspended = player.disciplinary?.isSuspended;
     const ovr = getOvrColor(player.overall);
 
     return (
@@ -359,6 +414,22 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+            <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><Gavel className="w-3 h-3" /> Disciplinar</p>
+              <div className="flex flex-col items-center">
+                <div className="flex gap-1 mb-1">
+                  {Array.from({ length: player.disciplinary?.yellowCards || 0 }).map((_, i) => (
+                    <span key={i} title="Cartão Amarelo">🟨</span>
+                  ))}
+                  {(player.disciplinary?.redCards || 0) > 0 && <span title="Cartão Vermelho">🟥</span>}
+                </div>
+                {isSuspended ? (
+                  <Badge variant="destructive" className="text-[10px] animate-pulse">SUSPENSO ({player.disciplinary?.suspensionRemaining} j)</Badge>
+                ) : (
+                  <p className="text-xs font-bold text-emerald-400">Regularizado</p>
+                )}
+              </div>
+            </div>
             <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
               <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><FileText className="w-3 h-3" /> Contrato</p>
               <p className={`text-xl font-black ${player.contract <= 1 ? 'text-red-400 animate-pulse' : 'text-white'}`}>{player.contract}a</p>
