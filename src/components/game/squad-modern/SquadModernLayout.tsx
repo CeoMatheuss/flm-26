@@ -283,7 +283,7 @@ export function SquadModernLayout({
 
   // Modal States
   const [confirmAction, setConfirmAction] = useState<null | {
-    type: 'transfer' | 'loan-out' | 'auction' | 'renew' | 'shirt-number' | 'train' | 'promote-youth';
+    type: 'transfer' | 'loan-out' | 'auction' | 'renew' | 'shirt-number' | 'train' | 'promote-youth' | 'change-position';
     player: Player;
     value?: number;
     listingFeeRate?: number;
@@ -295,6 +295,7 @@ export function SquadModernLayout({
     total?: number;
     renewalProposal?: { salary: number; bonus: number; duration: number };
     promotionProposal?: { salary: number; bonus: number; duration: number };
+    newPosition?: Player['position'];
   }>(null);
   const [submitting, setSubmitting] = useState(false);
 
