@@ -5386,46 +5386,67 @@ export type Database = {
       world_players: {
         Row: {
           age: number | null
+          attributes: Json | null
           created_at: string | null
+          evolution_trend: string | null
           id: string
           injury_body_part: string | null
           injury_is_relapse: boolean | null
           injury_severity: string | null
           injury_type: string | null
           injury_weeks_remaining: number | null
+          market_value: number | null
+          market_value_history: Json | null
           name: string
           overall: number | null
           position: string
+          potential: number | null
+          reputation: number | null
+          salary: number | null
           squad_status: Database["public"]["Enums"]["squad_status_type"] | null
           team_id: string
         }
         Insert: {
           age?: number | null
+          attributes?: Json | null
           created_at?: string | null
+          evolution_trend?: string | null
           id?: string
           injury_body_part?: string | null
           injury_is_relapse?: boolean | null
           injury_severity?: string | null
           injury_type?: string | null
           injury_weeks_remaining?: number | null
+          market_value?: number | null
+          market_value_history?: Json | null
           name: string
           overall?: number | null
           position: string
+          potential?: number | null
+          reputation?: number | null
+          salary?: number | null
           squad_status?: Database["public"]["Enums"]["squad_status_type"] | null
           team_id: string
         }
         Update: {
           age?: number | null
+          attributes?: Json | null
           created_at?: string | null
+          evolution_trend?: string | null
           id?: string
           injury_body_part?: string | null
           injury_is_relapse?: boolean | null
           injury_severity?: string | null
           injury_type?: string | null
           injury_weeks_remaining?: number | null
+          market_value?: number | null
+          market_value_history?: Json | null
           name?: string
           overall?: number | null
           position?: string
+          potential?: number | null
+          reputation?: number | null
+          salary?: number | null
           squad_status?: Database["public"]["Enums"]["squad_status_type"] | null
           team_id?: string
         }
@@ -5772,6 +5793,16 @@ export type Database = {
       }
       calculate_merch_sales: {
         Args: { p_base_amount: number; p_club_id: string }
+        Returns: number
+      }
+      calculate_player_market_value: {
+        Args: {
+          p_age: number
+          p_club_reputation?: number
+          p_overall: number
+          p_potential: number
+          p_reputation: number
+        }
         Returns: number
       }
       check_and_advance_league_round: {

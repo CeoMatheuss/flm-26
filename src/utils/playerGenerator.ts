@@ -231,7 +231,7 @@ export function generateInitialSquad(clubName?: string, tier: 'strong' | 'medium
     }
     
     // Add market value
-    p.marketValue = getPlayerBaseValue(p);
+    p.marketValue = getPlayerValue(p);
     
     return p;
   });
@@ -289,36 +289,12 @@ export function generateFreeAgents(count: number): Player[] {
   });
 }
 
-/** Valor fixo baseado em atributos e idade — V3 (preços top reescalonados) */
 export function getPlayerBaseValue(player: Player): number {
-  if (player.isYouth && typeof player.marketValue === 'number' && player.marketValue > 0) {
-    return player.marketValue;
-  }
-
-  // Curva de OVR encarecendo a elite
-  let baseValue: number;
-  if (player.overall >= 90)      baseValue = player.overall * 250_000;
-  else if (player.overall >= 85) baseValue = player.overall * 150_000;
-  else if (player.overall >= 80) baseValue = player.overall * 80_000;
-  else if (player.overall >= 75) baseValue = player.overall * 50_000;
-  else if (player.overall >= 70) baseValue = player.overall * 30_000;
-  else if (player.overall >= 65) baseValue = player.overall * 20_000;
-  else if (player.overall >= 55) baseValue = player.overall * 10_000;
-  else                            baseValue = player.overall * 5_000;
-
-  // Curva de idade: pico 23-27, jovem premium, velho desconto
-  let ageFactor: number;
-  if (player.age <= 20) ageFactor = 1.5;
-  else if (player.age <= 22) ageFactor = 1.4;
-  else if (player.age <= 24) ageFactor = 1.3;
-  else if (player.age <= 27) ageFactor = 1.2;
-  else if (player.age <= 29) ageFactor = 1.0;
-  else if (player.age <= 31) ageFactor = 0.7;
-  else if (player.age <= 33) ageFactor = 0.4;
-  else ageFactor = 0.2;
-
-  return Math.floor(baseValue * ageFactor);
+  return getPlayerValue(player);
 }
+
+
+
 
 /** Calcula bônus variável: +10% por sequência de vitórias / boa colocação, -10% se perdendo */
 export function getPlayerVariableBonus(winStreak: number, leaguePosition?: number, totalTeams?: number): number {
@@ -393,22 +369,63 @@ export function getEliteOvrMultiplier(overall: number): number {
   return 1.0;
 }
 
-/** Valor total = fixo × (1 + soma de bônus%) × multiplicador de elite (OVR 80+) */
-export function getPlayerValue(player: Player, winStreak: number = 0, leaguePosition?: number, totalTeams?: number): number {
-  if (player.isYouth && typeof player.marketValue === 'number' && player.marketValue > 0) {
-    const rarityMult = player.potential && player.potential >= 90 ? 1.12 : player.potential && player.potential >= 82 ? 1.06 : 1;
-    return Math.floor(player.marketValue * rarityMult);
+/** 
+ * Sistema Realista de Valor de Mercado (Versão Universal)
+ * Baseado em Overall, Atributos, Idade, Desempenho e Reputação.
+ */
+export function getPlayerValue(player: Player, clubReputation: number = 50): number {
+  if (!player) return 0;
+  
+  // 1. Base por Overall (Exponencial para Elite)
+  let baseValue: number;
+  const ovr = player.overall;
+  if (ovr >= 90)      baseValue = 100_000_000 + (ovr - 90) * 15_000_000;
+  else if (ovr >= 85) baseValue = 40_000_000 + (ovr - 85) * 12_000_000;
+  else if (ovr >= 80) baseValue = 15_000_000 + (ovr - 80) * 5_000_000;
+  else if (ovr >= 75) baseValue = 5_000_000 + (ovr - 75) * 2_000_000;
+  else if (ovr >= 70) baseValue = 1_500_000 + (ovr - 70) * 700_000;
+  else if (ovr >= 60) baseValue = 300_000 + (ovr - 60) * 120_000;
+  else                baseValue = ovr * 5_000;
+
+  // 2. Multiplicador por Idade (Realista)
+  let ageMultiplier: number;
+  if (player.age < 22)      ageMultiplier = 1.5; // Jovem promessa
+  else if (player.age < 29) ageMultiplier = 1.2; // Auge
+  else if (player.age < 33) ageMultiplier = 0.9; // Estabilidade
+  else                      ageMultiplier = 0.6; // Desvalorização
+
+  // 3. Potencial (Impacto nos Jovens)
+  let potentialMultiplier = 1.0;
+  const potential = (player as any).potential || (ovr + 5);
+  if (player.age < 25) {
+    potentialMultiplier = 1.0 + (Math.max(0, potential - ovr) * 0.04);
   }
 
-  const baseValue = getPlayerBaseValue(player);
-  const variablePercent = getPlayerVariableBonus(winStreak, leaguePosition, totalTeams);
-  const potentialPercent = getPotentialBonusPercent(player);
-  const formPercent = getFormBonusPercent(player);
-  const personalityPercent = getPersonalityBonusPercent(player);
-  const totalPercent = variablePercent + potentialPercent + formPercent + personalityPercent;
-  const eliteMult = getEliteOvrMultiplier(player.overall);
-  return Math.floor(baseValue * (1 + totalPercent / 100) * eliteMult);
+  // 4. Desempenho e Minutagem
+  let performanceMultiplier = 1.0;
+  const games = player.gamesPlayed || 0;
+  const goals = player.goals || 0;
+  const assists = player.assists || 0;
+  const ratings = player.seasonRatings || [];
+  const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 6.0;
+
+  // Bônus por minutagem (ritmo de jogo)
+  if (games > 5) performanceMultiplier += 0.1;
+  if (games > 15) performanceMultiplier += 0.1;
+  
+  // Bônus por desempenho (gols/assists/notas)
+  performanceMultiplier += (goals * 0.02) + (assists * 0.01);
+  if (avgRating > 7.5) performanceMultiplier += 0.15;
+  if (avgRating < 6.0) performanceMultiplier -= 0.1;
+
+  // 5. Reputação (Clube e Jogador)
+  const playerRep = (player as any).reputation || 50;
+  const reputationMultiplier = 1.0 + (playerRep * 0.005) + (clubReputation * 0.002);
+
+  // Cálculo Final
+  return Math.floor(baseValue * ageMultiplier * potentialMultiplier * performanceMultiplier * reputationMultiplier);
 }
+
 
 /** Tendência do valor de mercado (↑/↓/→) */
 export function getValueTrend(player: Player, winStreak: number = 0): 'up' | 'down' | 'flat' {

@@ -2,6 +2,32 @@
 // Central Engine for World Leagues and Cups Synchronization
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
+// --- Mercado Dinâmico: Lógica de Valor de Mercado ---
+function calculatePlayerMarketValue(p: any, clubReputation: number = 50) {
+  const ovr = p.overall || 60;
+  const age = p.age || 25;
+  const potential = p.potential || (ovr + 5);
+  const playerRep = p.reputation || 50;
+
+  // 1. Base por Overall
+  let baseValue = 0;
+  if (ovr >= 90)      baseValue = 100000000 + (ovr - 90) * 15000000;
+  else if (ovr >= 85) baseValue = 40000000 + (ovr - 85) * 12000000;
+  else if (ovr >= 80) baseValue = 15000000 + (ovr - 80) * 5000000;
+  else if (ovr >= 75) baseValue = 5000000 + (ovr - 75) * 2000000;
+  else if (ovr >= 70) baseValue = 1500000 + (ovr - 70) * 700000;
+  else if (ovr >= 60) baseValue = 300000 + (ovr - 60) * 120000;
+  else                baseValue = ovr * 5000;
+
+  // 2. Multiplicadores
+  let ageMult = age < 22 ? 1.5 : age < 29 ? 1.2 : age < 33 ? 0.9 : 0.6;
+  let potMult = age < 25 ? 1.0 + (Math.max(0, potential - ovr) * 0.04) : 1.0;
+  let repMult = 1.0 + (playerRep * 0.005) + (clubReputation * 0.002);
+
+  return Math.floor(baseValue * ageMult * potMult * repMult);
+}
+
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -102,10 +128,15 @@ Deno.serve(async (req) => {
 
     if (matches && matches.length > 0) {
       // Pre-fetch all players for all teams in batch to avoid N+1 queries
-      const teamIds = [...new Set(matches.flatMap(m => [m.home_team_id, m.away_team_id]))];
+      const teamIds = [...new Set(matches.flatMap(m => [m.home_user_id, m.away_user_id]).filter(Boolean))];
       const { data: allPlayers } = await sb.from('world_players')
-        .select('id, team_id, name, position, overall')
+        .select('*')
         .in('team_id', teamIds);
+      
+      // Fetch club reputations
+      const { data: clubs } = await sb.from('clubs').select('id, reputation').in('id', teamIds);
+      const clubRepMap = Object.fromEntries((clubs || []).map(c => [c.id, c.reputation || 50]));
+
 
       for (const m of matches) {
         const simStart = Date.now();
@@ -226,6 +257,34 @@ Deno.serve(async (req) => {
         } catch (e) {
           console.error('[WorldStatsSync] Error:', e);
         }
+
+        // --- ATUALIZAÇÃO DE VALOR DE MERCADO PÓS-JOGO ---
+        try {
+          for (const p of matchPlayers) {
+             const isHome = p.team_id === m.home_team_id;
+             const goals = (isHome ? match_data_stats.homeScorers : match_data_stats.awayScorers).filter((s: any) => s.id === p.id).length;
+             const rating = 6.0 + (goals * 1.2); 
+             
+             // Update reputation based on performance
+             const repChange = rating > 7.5 ? 1 : rating < 5.5 ? -1 : 0;
+             const newRep = Math.max(0, Math.min(100, (p.reputation || 50) + repChange));
+             
+             const newValue = calculatePlayerMarketValue({ ...p, reputation: newRep }, clubRepMap[p.team_id] || 50);
+             const history = p.market_value_history || [];
+             const newHistory = [...history, { date: now.toISOString(), value: newValue }].slice(-10);
+             const trend = newValue > (p.market_value || 0) ? 'up' : newValue < (p.market_value || 0) ? 'down' : 'stable';
+
+             await sb.from('world_players').update({
+               reputation: newRep,
+               market_value: newValue,
+               market_value_history: newHistory,
+               evolution_trend: trend
+             }).eq('id', p.id);
+          }
+        } catch (e) {
+          console.error('[MarketValueUpdate] Error:', e);
+        }
+
     
         await sb.from('world_league_news').insert({ 
           league_id: m.league_id, match_id: m.id, title: newsTitle, content: "Partida sincronizada automaticamente com a tabela da liga.", template_key: 'league_result'

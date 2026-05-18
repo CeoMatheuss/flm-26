@@ -12,7 +12,7 @@ import {
   Armchair, Repeat, Zap, Target, Star, Trophy, Info, Layout, Activity, Heart
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
+import { getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { canChangePosition, validateLineup } from '@/utils/lineupManager';
 import { FormationView } from './FormationView';
 import { RescindModal } from './RescindModal';
@@ -625,16 +625,13 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
             <div>
               <p className="text-xs font-bold text-muted-foreground mb-2">💰 Valor de Mercado</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                  <p className="text-[9px] text-muted-foreground">Base</p>
-                  <p className="text-sm font-black text-emerald-400">{formatMoney(getPlayerBaseValue(player))}</p>
-                </div>
-                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
-                  <p className="text-[9px] text-muted-foreground">Total</p>
-                  <p className="text-sm font-black text-primary">{formatMoney(getPlayerValue(player))}</p>
+                  <p className="text-[9px] text-muted-foreground">Valor de Mercado</p>
+                  <p className="text-sm font-black text-emerald-400">{formatMoney(getPlayerValue(player))}</p>
                 </div>
               </div>
+
             </div>
           </TabsContent>
         </Tabs>

@@ -7,8 +7,10 @@ import {
   X, ArrowUp, ArrowDown, Star, Target, Zap, Trophy, Activity,
   Heart, FileText, TrendingUp, Award, Flag,
   ArrowUpRight, ShoppingCart, ArrowLeftRight, Gavel, Hash, Dumbbell, ChevronsUp,
-  ArrowRightLeft,
+  ArrowRightLeft, LineChart as ChartIcon
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
@@ -38,9 +40,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onAction?: (action: PlayerPanelAction, player: Player) => void;
   isYouth?: boolean;
+  clubReputation?: number;
 }
 
-export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenChange, onAction, isYouth }: Props) {
+
+export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenChange, onAction, isYouth, clubReputation = 50 }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -56,7 +60,9 @@ export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenC
             onClose={() => onOpenChange(false)}
             onAction={onAction}
             isYouth={!!isYouth}
+            clubReputation={clubReputation}
           />
+
         ) : null}
       </SheetContent>
     </Sheet>
@@ -64,7 +70,7 @@ export function PlayerDetailPanel({ player, onSwap, status, delta, open, onOpenC
 }
 
 function PlayerDetailContent({
-  player, status, onSwap, delta, onClose, onAction, isYouth,
+  player, status, onSwap, delta, onClose, onAction, isYouth, clubReputation,
 }: {
   player: Player;
   status: PlayerStatus;
@@ -73,10 +79,12 @@ function PlayerDetailContent({
   onClose: () => void;
   onAction?: Props['onAction'];
   isYouth: boolean;
+  clubReputation: number;
 }) {
+
   const tier = ovrTier(player.overall);
   const sm = statusMeta[status] || statusMeta.reserva;
-  const value = getPlayerValue(player);
+  const value = getPlayerValue(player, clubReputation);
   const overallDelta = delta.overall ?? 0;
 
   const avgRating = useMemo(() => {
@@ -168,10 +176,17 @@ function PlayerDetailContent({
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 custom-scrollbar">
           {/* Market & Contract Tiles */}
           <div className="grid grid-cols-3 gap-3">
-            <InfoTile icon={<TrendingUp className="h-4 w-4" />} label="Valor" value={formatMoney(value)} accent="text-emerald-400" />
+            <InfoTile 
+              icon={<TrendingUp className="h-4 w-4" />} 
+              label="Valor" 
+              value={formatMoney(value)} 
+              accent="text-emerald-400"
+              trend={player.evolutionTrend} 
+            />
             <InfoTile icon={<FileText className="h-4 w-4" />} label="Salário" value={`${formatMoney(player.salary)}/s`} accent="text-amber-300" />
             <InfoTile icon={<Award className="h-4 w-4" />} label="Contrato" value={`${player.contract}a`} accent="text-sky-300" />
           </div>
+
 
           {/* Vitals & Position Analysis */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -268,7 +283,58 @@ function PlayerDetailContent({
             </div>
           </section>
 
+          {/* Market Evolution Chart */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] flex items-center gap-3">
+              <ChartIcon className="w-4 h-4" /> Evolução de Mercado
+            </h3>
+            <div className="h-[200px] w-full p-4 rounded-3xl bg-zinc-900/50 border border-white/5">
+              {(player as any).marketValueHistory && (player as any).marketValueHistory.length > 1 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={(player as any).marketValueHistory}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      hide 
+                    />
+                    <YAxis 
+                      hide 
+                      domain={['auto', 'auto']}
+                    />
+                    <RechartsTooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-zinc-900 border border-white/10 p-2 rounded-lg shadow-xl">
+                              <p className="text-[10px] font-black text-emerald-400">{formatMoney(payload[0].value as number)}</p>
+                              <p className="text-[8px] text-white/40 uppercase">{new Date(payload[0].payload.date).toLocaleDateString()}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#10b981" 
+                      strokeWidth={3} 
+                      dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#09090b' }}
+                      activeDot={{ r: 6, fill: '#10b981', strokeWidth: 0 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-20">
+                   <ChartIcon className="w-8 h-8 mb-2" />
+                   <p className="text-[10px] font-black uppercase tracking-widest italic">Histórico insuficiente para gráfico</p>
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* Potential Card */}
+
           <section className="p-6 rounded-[2rem] bg-gradient-to-br from-white/[0.05] to-transparent border border-white/5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
               <Star className="w-20 h-20 text-amber-400" />
@@ -315,19 +381,30 @@ function PlayerDetailContent({
   );
 }
 
-function InfoTile({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: string }) {
+function InfoTile({ icon, label, value, accent, trend }: { icon: React.ReactNode; label: string; value: string; accent?: string; trend?: 'up' | 'stable' | 'down' }) {
   return (
-    <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all">
+    <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all relative overflow-hidden">
       <div className="flex items-center gap-2 text-white/30 mb-2">
         {icon}
         <span className="text-[9px] uppercase font-black tracking-widest">{label}</span>
       </div>
-      <span className={cn('text-xs font-black truncate block italic tracking-tight', accent || 'text-white')}>
-        {value}
-      </span>
+      <div className="flex items-center justify-between gap-1">
+        <span className={cn('text-xs font-black truncate block italic tracking-tight', accent || 'text-white')}>
+          {value}
+        </span>
+        {trend && trend !== 'stable' && (
+           <span className={cn(
+             "shrink-0",
+             trend === 'up' ? "text-emerald-400" : "text-red-400"
+           )}>
+             {trend === 'up' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+           </span>
+        )}
+      </div>
     </div>
   );
 }
+
 
 function BarBlock({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   const v = Math.max(0, Math.min(100, Math.round(value || 0)));
