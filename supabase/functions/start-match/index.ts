@@ -1089,22 +1089,35 @@ function simulateFullMatch(
     });
   }
 
-  // ── CARDS ──────────────────────────────────────────────────
-  // Times com moral/stamina baixos cometem mais faltas → favorece esses jogadores no sorteio.
+  // ── CARDS & FOULED ──────────────────────────────────────────
   for (const m of cardMins) {
-    // Times com marcação individual / pressing alto cometem mais faltas
-    const homeFoulW = 1 + homeExtras.foulBias + Math.max(0, pressingMod - 1) * 0.8;
-    const awayFoulW = 1 + awayExtras.foulBias + Math.max(0, awayPressingMod - 1) * 0.8;
+    const homeFoulW = 1 + homeExtras.foulBias + Math.max(0, pressingMod - 1) * 0.5;
+    const awayFoulW = 1 + awayExtras.foulBias + Math.max(0, awayPressingMod - 1) * 0.5;
+    
+    // Choose team based on tactical aggression
     const teamIdx: 0 | 1 = rng() < homeFoulW / (homeFoulW + awayFoulW) ? 0 : 1;
     const team: 'home' | 'away' = teamIdx === 0 ? 'home' : 'away';
     const tName = team === 'home' ? homeTeam : awayTeam;
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    // Weight: jogador cansado/desmotivado tem 3x mais chance de tomar amarelo
+    
+    if (pool.length === 0) continue;
+
+    // Weight: agressividade, cansaço e falta de disciplina aumentam chance de cartão
     const weights = pool.map(p => {
-      const fatigue = Math.max(0, 100 - p.stamina);   // 0..100
-      const lowMor = Math.max(0, 70 - p.morale);      // 0..70
-      return 1 + fatigue * 0.04 + lowMor * 0.05;
+      let w = 1.0;
+      w += (p.aggression / 100) * 2.0;
+      w += ((100 - p.stamina) / 100) * 1.5; // Cansaço gera erros
+      w += ((100 - p.discipline) / 100) * 1.0;
+      w += ((100 - p.emotionalControl) / 100) * 1.0;
+      
+      // Redutores
+      w *= (120 - p.fairPlay) / 100; // Fair play alto reduz chance drasticamente
+      if (p.age > 28) w *= 0.8;      // Experiência ajuda a controlar o tempo da jogada
+      if (p.intelligence > 70) w *= 0.85; 
+      
+      return Math.max(0.1, w);
     });
+
     const total = weights.reduce((a, b) => a + b, 0);
     let pickRoll = rng() * total;
     let player: SimPlayer | null = null;
@@ -1112,25 +1125,46 @@ function simulateFullMatch(
       pickRoll -= weights[i];
       if (pickRoll <= 0) { player = pool[i]; break; }
     }
-    if (!player && pool.length) player = pool[pool.length - 1];
+    if (!player) player = pool[pool.length - 1];
+
     if (player) {
-      const isRed = rng() < 0.15 || player.yellowCards >= 1; // 15% direto ou se já tiver amarelo
-      if (isRed) {
+      // A decisão do árbitro depende da rigidez e do lance
+      const intensity = rng() * 60 + (player.aggression * 0.4);
+      const threshold = 110 - refRigidity * 0.5; // Árbitro rígido baixa o limite para cartão
+      
+      if (intensity < threshold * 0.6) {
+        // Apenas uma falta leve, segue o jogo (reduz interrupções)
+        continue;
+      }
+
+      const isSecondYellow = player.yellowCards === 1;
+      const isDirectRed = !isSecondYellow && intensity > 92 && rng() < 0.04; // Vermelho direto é RARO (4% de lances violentos)
+      
+      if (isDirectRed || isSecondYellow) {
         player.redCards++;
-        stats.fouls[teamIdx]++; stats.redCards[teamIdx]++;
+        stats.redCards[teamIdx]++;
+        stats.fouls[teamIdx]++;
+        const desc = isDirectRed 
+          ? `🟥 EXPULSÃO DIRETA! ${player.name} do ${tName} faz uma entrada criminosa e recebe o CARTÃO VERMELHO!`
+          : `🟨🟥 SEGUNDO AMARELO! ${player.name} do ${tName} chega atrasado, comete falta e é EXPULSO!`;
+        
         allPlanned.push({
           minute: m, type: 'red_card', team, animType: 'card',
-          playerName: player.name,
-          description: `🟥 EXPULSÃO! ${player.name} do ${tName} recebe o CARTÃO VERMELHO e vai para o chuveiro mais cedo!`,
+          playerName: player.name, description: desc,
         });
-      } else {
+      } else if (intensity > threshold * 0.8) {
+        // Cartão Amarelo
         player.yellowCards++;
-        stats.fouls[teamIdx]++; stats.yellowCards[teamIdx]++;
+        stats.yellowCards[teamIdx]++;
+        stats.fouls[teamIdx]++;
         allPlanned.push({
           minute: m, type: 'yellow_card', team, animType: 'card',
           playerName: player.name,
-          description: `🟨 CARTÃO AMARELO para ${player.name} do ${tName}! Falta dura no meio-campo!`,
+          description: `🟨 CARTÃO AMARELO para ${player.name} do ${tName}! Falta tática para interromper o avanço.`,
         });
+      } else {
+        // Apenas falta, sem cartão
+        stats.fouls[teamIdx]++;
       }
     }
   }
