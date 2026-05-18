@@ -1256,8 +1256,9 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
           ballY = from.y + (to.y - from.y) * easeOut(localT);
           
           // Increasing pressure and compactness as play progresses
-          const pressure = 0.2 + passT * 0.4;
-          const compactness = 0.3 + passT * 0.3;
+          const isCorner = type === 'corner';
+          const pressure = isCorner ? 0.5 + passT * 0.4 : 0.2 + passT * 0.4;
+          const compactness = isCorner ? 0.6 + passT * 0.3 : 0.3 + passT * 0.3;
           drawAllPlayers(drift * 0.5, true, ballX, ballY, 0, attTeam, pressure, compactness);
           
           // Draw pass trails for all completed passes
