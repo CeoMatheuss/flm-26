@@ -192,7 +192,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     }
   };
 
-  const handleResendVerification = async () => {
+  const handleResendVerification = useCallback(async () => {
     if (resendTimer > 0) return;
     setLoading(true);
     const { error } = await supabase.functions.invoke('auth-service', {
@@ -204,7 +204,14 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       startResendTimer();
     }
     setLoading(false);
-  };
+  }, [pendingEmail, resendTimer, startResendTimer]);
+
+  // Envia código automaticamente se cair direto na verificação (vindo do Index)
+  useEffect(() => {
+    if (step === 'verify-email' && pendingEmail && resendTimer === 0 && initialStep === 'verify-email') {
+      handleResendVerification();
+    }
+  }, [step, pendingEmail, resendTimer, initialStep, handleResendVerification]);
 
   // ── Carousel component ──
   const CarouselPanel = ({ className = '' }: { className?: string }) => (
