@@ -8,7 +8,7 @@ import { FinanceType, FinanceCategory } from "@/types/finance";
 import { supabase } from '@/integrations/supabase/client';
 import { TrainingFocus } from '@/components/game/TrainingTab';
 import { ClubProfile, defaultClubProfile } from '@/types/clubProfile';
-import { getPlayerValue, generateMarketPlayers, generateFreeAgents, generateScoutReport } from '@/utils/playerGenerator';
+import { getPlayerValue, generateMarketPlayers, generateFreeAgents, generateScoutReport, generateInitialSquad } from '@/utils/playerGenerator';
 import { initialClub } from '@/data/initialData';
 import { autoLineup } from "@/utils/lineupManager";
 import { toast } from 'sonner';
@@ -41,7 +41,13 @@ export interface LoanedPlayer {
 }
 
 export function useClubState(initialState: any, userId?: string) {
-  const [club, setClub] = useState<Club>(initialState?.club ?? initialClub);
+  const [club, setClub] = useState<Club>(() => {
+    const loadedClub = initialState?.club ?? initialClub;
+    if (!Array.isArray(loadedClub.players) || loadedClub.players.length === 0) {
+      return { ...loadedClub, players: generateInitialSquad(loadedClub.name || 'FLM 26', 'medium') };
+    }
+    return loadedClub;
+  });
   const [marketPlayers, setMarketPlayers] = useState<Player[]>(initialState?.marketPlayers ?? generateMarketPlayers(8));
   const [freeAgents, setFreeAgents] = useState<Player[]>(initialState?.freeAgents ?? generateFreeAgents(12));
   const [loanedPlayers, setLoanedPlayers] = useState<LoanedPlayer[]>(initialState?.loanedPlayers ?? []);
