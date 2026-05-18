@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Player } from '@/types/game';
-import { getPlayerBaseValue } from '@/utils/playerGenerator';
+import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
 import { AlertTriangle, X } from 'lucide-react';
 
@@ -14,19 +14,20 @@ interface Props {
 }
 
 export function calcRescissionFee(player: Player): number {
-  const baseValue = getPlayerBaseValue(player);
+  const baseValue = getPlayerValue(player);
   const monthsLeft = Math.min((player.contract || 0) * 12, 24);
   const salaryWeight = (player.salary || 0) * monthsLeft * 0.5;
   const valueWeight = baseValue * 0.4;
   return Math.floor(valueWeight + salaryWeight);
 }
 
+
 export function RescindModal({ player, transferBudgetAvailable, onClose, onConfirm }: Props) {
   const [submitting, setSubmitting] = useState(false);
   if (!player) return null;
 
   const fee = calcRescissionFee(player);
-  const baseValue = getPlayerBaseValue(player);
+  const baseValue = getPlayerValue(player);
   const feePercent = baseValue > 0 ? Math.round((fee / baseValue) * 100) : 0;
   const canAfford = transferBudgetAvailable >= fee;
 
