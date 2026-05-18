@@ -481,8 +481,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               isHome: pendingMatch.isHome ?? true, 
               competition 
             });
-            // Advance league round if needed
-            supabase.rpc('check_and_advance_round', { _user_id: userId }).then(() => {
+            // Advance league round and sync standings if needed
+            supabase.rpc('sync_league_integrity', { _user_id: userId }).then(() => {
                window.dispatchEvent(new CustomEvent('flm:match-finalized'));
             });
           }
