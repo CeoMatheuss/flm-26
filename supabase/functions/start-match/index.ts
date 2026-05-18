@@ -2159,18 +2159,44 @@ Deno.serve(async (req) => {
       const statsTable = compType === 'league' ? 'league_player_stats' : 'cup_player_stats';
       const idField = compType === 'league' ? 'league_id' : 'cup_id';
       const teamField = compType === 'league' ? 'member_id' : 'team_id';
+      const competitionName = compType === 'league' ? 'Liga' : 'Copa';
 
       for (const p of players) {
-        if (!p.isOnPitch && p.goals === 0 && p.assists === 0 && p.yellowCards === 0) continue;
+        // Collect card data from events for this specific player
+        const playerYellows = result.events.filter(e => e.type === 'yellow_card' && e.playerName === p.name).length;
+        const playerReds = result.events.filter(e => e.type === 'red_card' && e.playerName === p.name).length;
+
+        // --- NEW: Disciplinary Persistence ---
+        // Se o jogador recebeu cartão e temos um ID de jogador válido (não BOT sem ID)
+        if ((playerYellows > 0 || playerReds > 0) && p.id && !p.id.startsWith('bot-')) {
+          console.info(`[Sync] Recording discipline for ${p.name}: ${playerYellows}Y, ${playerReds}R`);
+          
+          // Registrar amarelos um por um (para disparar gatilho de acúmulo)
+          for (let i = 0; i < playerYellows; i++) {
+            await adminClient.from('disciplinary_records').insert({
+              player_id: p.id,
+              match_id: matchId,
+              competition_type: competitionName,
+              card_type: 'yellow'
+            });
+          }
+          // Registrar vermelhos
+          for (let i = 0; i < playerReds; i++) {
+            await adminClient.from('disciplinary_records').insert({
+              player_id: p.id,
+              match_id: matchId,
+              competition_type: competitionName,
+              card_type: 'red'
+            });
+          }
+        }
+
+        if (!p.isOnPitch && p.goals === 0 && p.assists === 0 && playerYellows === 0 && playerReds === 0) continue;
 
         const isGK = p.position === 'GOL';
         const cleanSheet = isGK && teamGoalsAgainst === 0 ? 1 : 0;
         const conceded = isGK ? teamGoalsAgainst : 0;
         const isMOTM = result.manOfTheMatch === p.name ? 1 : 0;
-
-        // Collect card data from events for this specific player
-        const playerYellows = result.events.filter(e => e.type === 'yellow_card' && e.playerName === p.name).length;
-        const playerReds = result.events.filter(e => e.type === 'red_card' && e.playerName === p.name).length;
 
         // Prepare the upsert data
         const statData: any = {
@@ -2185,7 +2211,7 @@ Deno.serve(async (req) => {
           clean_sheets: cleanSheet,
           goals_conceded: conceded,
           motm_count: isMOTM,
-          minutes_played: p.isOnPitch ? 90 : 0, // Simplified, could be more precise
+          minutes_played: p.isOnPitch ? 90 : 0,
           team_name: p.team === 'home' ? effHomeTeam : effAwayTeam
         };
 
@@ -2196,7 +2222,6 @@ Deno.serve(async (req) => {
           statData.player_id = p.id;
         }
 
-        // RPC to handle atomic increment/update to avoid race conditions and duplicates
         await adminClient.rpc('upsert_player_stats', {
           _table_name: statsTable,
           _comp_id_field: idField,
