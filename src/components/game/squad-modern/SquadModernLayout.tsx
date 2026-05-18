@@ -419,6 +419,7 @@ export function SquadModernLayout({
                            onUpgradeAcademy={onUpgradeAcademy || (() => {})}
                            lastYouthGenAt={lastYouthGenAt}
                            isPremium={isPremium}
+                           onSelect={handleYouthSelect}
                          />
                       </div>
                     ) : (
