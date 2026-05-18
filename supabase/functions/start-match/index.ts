@@ -650,8 +650,9 @@ function simulateFullMatch(
   const home: SimPlayer[] = homePlayers.slice(0, 11).map((p: any, i: number) => ({
     id: p.id, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
     position: p.position || 'MEI', team: 'home' as const, ovr: p.overall || 60,
-    rating: 6.0, goals: 0, assists: 0, yellowCards: 0, isOnPitch: true, injured: false,
+    rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, isOnPitch: true, injured: false,
     stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
+    age: p.age || 25,
     speed: p.attributes?.speed || 50, shooting: p.attributes?.shooting || 50,
     passing: p.attributes?.passing || 50, defending: p.attributes?.defending || 50,
     physical: p.attributes?.physical || 50, dribbling: p.attributes?.dribbling || 50,
@@ -661,18 +662,22 @@ function simulateFullMatch(
     composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
     goalkeeping: p.attributes?.goalkeeping || 0, setPieces: p.attributes?.setPieces || 50,
     positioning: p.attributes?.positioning || 50,
+    fairPlay: p.attributes?.fairPlay || (100 - (p.attributes?.aggression || 50)), // Fallback derived
+    discipline: p.attributes?.discipline || 60,
+    intelligence: p.attributes?.intelligence || Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
+    emotionalControl: p.attributes?.emotionalControl || (p.attributes?.composure || 50),
     personality: p.personality || 'introvertido',
   }));
 
   const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro', 'Gomes'];
-  // Use REAL away players when provided (multiplayer/tournaments)
   const useRealAway = Array.isArray(awayPlayersInput) && awayPlayersInput.length >= 11;
   const away: SimPlayer[] = useRealAway
     ? awayPlayersInput!.slice(0, 11).map((p: any, i: number) => ({
         id: p.id || `a${i}`, name: (p.name || '').split(' ').pop() || p.name || `Jog${i}`,
         position: p.position || 'MEI', team: 'away' as const, ovr: p.overall || 60,
-        rating: 6.0, goals: 0, assists: 0, yellowCards: 0, isOnPitch: true, injured: false,
+        rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, isOnPitch: true, injured: false,
         stamina: p.stamina || 80, baseStamina: p.stamina || 80, morale: p.morale || 70,
+        age: p.age || 25,
         speed: p.attributes?.speed || 50, shooting: p.attributes?.shooting || 50,
         passing: p.attributes?.passing || 50, defending: p.attributes?.defending || 50,
         physical: p.attributes?.physical || 50, dribbling: p.attributes?.dribbling || 50,
@@ -682,6 +687,10 @@ function simulateFullMatch(
         composure: p.attributes?.composure || 50, aggression: p.attributes?.aggression || 50,
         goalkeeping: p.attributes?.goalkeeping || (p.position === 'GOL' ? 60 : 0),
         setPieces: p.attributes?.setPieces || 50, positioning: p.attributes?.positioning || 50,
+        fairPlay: p.attributes?.fairPlay || (100 - (p.attributes?.aggression || 50)),
+        discipline: p.attributes?.discipline || 60,
+        intelligence: p.attributes?.intelligence || Math.floor(((p.attributes?.vision || 50) + (p.attributes?.positioning || 50)) / 2),
+        emotionalControl: p.attributes?.emotionalControl || (p.attributes?.composure || 50),
         personality: p.personality || 'introvertido',
       }))
     : Array.from({ length: 11 }, (_, i) => {
@@ -690,7 +699,7 @@ function simulateFullMatch(
         const attrs = genAwayAttrs(ovr, pos);
         return {
           id: `a${i}`, name: awayNames[i] || `Jog.${i + 1}`, position: pos,
-          team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0,
+          team: 'away' as const, ovr, rating: 6.0, goals: 0, assists: 0, yellowCards: 0, redCards: 0,
           isOnPitch: true, injured: false, stamina: 70 + Math.floor(rng() * 20), baseStamina: 80, morale: 60 + Math.floor(rng() * 30),
           ...attrs,
         };
