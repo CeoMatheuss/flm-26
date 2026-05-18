@@ -154,9 +154,9 @@ export const getPlayerStatus = (p: any, isStarter: boolean, isNegotiating?: bool
   if (p.onTransferList) return 'lista-transferencia';
   if (p.isAfastado) return 'afastado';
   if (isStarter) return 'titular';
-  // Todo jogador disponível que não é titular vai pro banco de reservas.
-  // (antes a flag 'promessa' fazia jovens promissores sumirem da UI porque
-  // nenhuma aba filtrava por esse status.)
+  
+  // No SquadMainTable, o que define se é 'reserva' ou 'fora' é a aba.
+  // Aqui apenas retornamos 'reserva' como status base para quem não é titular/indisponível.
   return 'reserva';
 };
 

@@ -620,9 +620,22 @@ export function useClubState(initialState: any, userId?: string) {
         toast.error('Este jogador já faz parte do seu elenco!');
         return prev;
       }
-      return { ...prev, budget: prev.budget - value, players: [...prev.players, player] };
+      
+      // Marcar explicitamente como reserva para garantir que apareça nas abas corretas (especialmente "Fora")
+      const boughtPlayer = { 
+        ...player, 
+        squad_status: 'reserve' as const,
+        squadRole: 'reserva' as const,
+        contract: 2 // Garantir contrato inicial
+      };
+      
+      return { ...prev, budget: prev.budget - value, players: [...prev.players, boughtPlayer] };
     });
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
+    
+    // Dispara evento global para forçar atualização de componentes que ouvem save
+    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+    
     return { value };
   }, []);
 
@@ -631,10 +644,19 @@ export function useClubState(initialState: any, userId?: string) {
     setClub(prev => {
       // 🛡️ Anti-Duplicação
       if (prev.players.find(p => p.id === player.id)) return prev;
-      const signed = { ...player, salary, contract: Math.floor(Math.random() * 3 + 2) };
+      const signed = { 
+        ...player, 
+        salary, 
+        contract: Math.floor(Math.random() * 3 + 2),
+        squad_status: 'reserve' as const,
+        squadRole: 'reserva' as const
+      };
       return { ...prev, budget: prev.budget - salary * 3, players: [...prev.players, signed] };
     });
     setFreeAgents(prev => prev.filter(p => p.id !== player.id));
+    
+    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+    
     toast.success(`${player.name} assinou! Salário: R$${(salary / 1000).toFixed(0)}k/mês`);
     return { salary };
   }, []);
@@ -736,9 +758,20 @@ export function useClubState(initialState: any, userId?: string) {
 
   const loanInPlayer = useCallback((player: Player, currentSeason: number) => {
     if (loansIn.length >= 3) { toast.error('Limite de 3 empréstimos recebidos atingido!'); return; }
-    setLoanedPlayers(lp => [...lp, { player, fromClub: 'bot', direction: 'in', seasonStart: currentSeason }]);
-    setClub(prev => ({ ...prev, players: [...prev.players, player] }));
+    
+    const loanedInPlayer = { 
+      ...player, 
+      squad_status: 'reserve' as const,
+      squadRole: 'reserva' as const,
+      isLoaned: true 
+    };
+    
+    setLoanedPlayers(lp => [...lp, { player: loanedInPlayer, fromClub: 'bot', direction: 'in', seasonStart: currentSeason }]);
+    setClub(prev => ({ ...prev, players: [...prev.players, loanedInPlayer] }));
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
+    
+    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+    
     toast.success(`${player.name} emprestado ao seu clube! Você arca com o salário.`);
     return { salary: player.salary };
   }, [loansIn.length]);
@@ -878,8 +911,23 @@ export function useClubState(initialState: any, userId?: string) {
   const addPackPlayers = useCallback((newPlayers: Player[], cost: number) => {
     setClub(prev => {
       if (prev.budget < cost) return prev;
-      return { ...prev, budget: prev.budget - cost, players: [...prev.players, ...newPlayers.map(p => ({ ...p, contract: 2 }))] };
+      
+      const playersToAdd = newPlayers.map(p => ({ 
+        ...p, 
+        contract: 2,
+        squad_status: 'reserve' as const,
+        squadRole: 'reserva' as const
+      }));
+      
+      return { 
+        ...prev, 
+        budget: prev.budget - cost, 
+        players: [...prev.players, ...playersToAdd] 
+      };
     });
+    
+    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+    
     return { cost };
   }, []);
 

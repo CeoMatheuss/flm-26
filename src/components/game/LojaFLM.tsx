@@ -402,8 +402,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium }: LojaProps) 
               budget={club.budget} 
               userId={userId}
               onBuyPack={(players, cost) => {
-                // Already handles in PacotinhosTab, but we sync budget
-                window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+                // Ensure immediate refresh of club state after pack purchase
+                (window as any).dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+                toast.success(`${players.length} jogadores adicionados ao elenco!`);
               }} 
             />
           </TabsContent>
