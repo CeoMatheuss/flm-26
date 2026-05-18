@@ -111,7 +111,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         </div>
 
         {/* Name - Big and Bold */}
-        <div className="mt-3 mb-2">
+        <div className="mt-1 mb-1">
           <h3 className="text-lg font-black italic text-white uppercase tracking-tighter leading-none truncate group-hover:text-emerald-300 transition-colors">
             {player.name.split(' ').pop()}
           </h3>
@@ -121,7 +121,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="grid grid-cols-2 gap-2 mb-1">
           <StatMini icon={<Zap className="w-2.5 h-2.5" />} label="STAM" value={player.stamina} color="text-emerald-400" />
           <StatMini icon={<Heart className="w-2.5 h-2.5" />} label="MOR" value={player.morale} color="text-pink-400" />
         </div>
