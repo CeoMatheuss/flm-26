@@ -158,7 +158,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     ...otherPlayers.map(p => ({
       ...p,
       squad_status: 'reserve' as const,
-      squadRole: ((p as any).isYouth && (p as any).contractStatus !== 'profissional' ? 'promessa' : 'reserva') as const,
+      squadRole: ((p as any).isYouth && (p as any).contractStatus !== 'profissional' ? 'promessa' : 'reserva') as Player['squadRole'],
     })),
   ];
 }
