@@ -11,6 +11,17 @@ interface Update {
 
 const updates: Update[] = [
   {
+    version: '2.4.1',
+    date: '18/05/2026',
+    type: 'improvement',
+    items: [
+      '🔄 Sistema de atualização automática: Receba novidades instantaneamente sem cache antigo',
+      '📢 Notificações de nova versão direto na interface',
+      '🛡️ Invalidação de cache forçada para correções críticas',
+      '📊 Versão do jogo visível no menu principal',
+    ],
+  },
+  {
     version: '2.4.0',
     date: '22/04/2026',
     type: 'feature',
