@@ -1,6 +1,6 @@
 import { Player } from '@/types/game';
 import { motion } from 'framer-motion';
-import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown, Sparkles } from 'lucide-react';
+import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown, Sparkles, Tag, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ovrTier, getPositionColor, flagFor, getPlayerStatus, statusMeta } from '../squadHelpers';
 import { useAttributeEvolution } from '../useAttributeEvolution';
@@ -137,11 +137,29 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
             </div>
           )}
           <div className={cn(
-            'flex items-center justify-center gap-1.5 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest',
+            'flex flex-col items-center justify-center gap-1.5 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest',
             sm.bg, sm.border, sm.color
           )}>
-            <span className={cn('w-1.5 h-1.5 rounded-full', sm.dot)} />
-            {sm.label}
+            <div className="flex items-center gap-1.5">
+              <span className={cn('w-1.5 h-1.5 rounded-full', sm.dot)} />
+              {sm.label}
+            </div>
+            
+            {/* Venda / Empréstimo Badge inside Premium Card */}
+            {(player.onTransferList || player.onLoanList) && (
+              <div className="flex gap-1 mt-0.5">
+                {player.onTransferList && (
+                  <span className="flex items-center gap-0.5 text-[7px] text-emerald-400">
+                    <Tag className="w-2 h-2" /> VENDA
+                  </span>
+                )}
+                {player.onLoanList && (
+                  <span className="flex items-center gap-0.5 text-[7px] text-cyan-400">
+                    <Handshake className="w-2 h-2" /> EMPRÉSTIMO
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

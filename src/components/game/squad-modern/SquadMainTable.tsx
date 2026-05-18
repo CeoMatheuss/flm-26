@@ -3,7 +3,7 @@ import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
-import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle } from 'lucide-react';
+import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle, Tag, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
@@ -308,13 +308,26 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
               </button>
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex flex-wrap items-center gap-2 mt-1">
               <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", getPositionColor(player.position))}>
                {player.position}
              </span>
              {player.potential && player.potential >= 88 && (
                 <span className="text-[8px] font-black text-amber-400 uppercase tracking-tighter">💎 JOIA</span>
              )}
+             
+             {/* Venda / Empréstimo Badge */}
+             {player.onTransferList && (
+               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-emerald-400 uppercase tracking-widest">
+                 <Tag className="w-2.5 h-2.5" /> À VENDA
+               </span>
+             )}
+             {player.onLoanList && (
+               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[8px] font-black text-cyan-400 uppercase tracking-widest">
+                 <Handshake className="w-2.5 h-2.5" /> EMPRÉSTIMO
+               </span>
+             )}
+
              <span className={cn("text-[8px] font-black uppercase tracking-widest opacity-60", sm.color)}>
                {sm.label}
              </span>
