@@ -106,10 +106,23 @@ Deno.serve(async (req) => {
         const as = Math.max(30, m.away_team?.strength || 65);
         const { home: hg, away: ag } = { home: Math.min(7, Math.floor(Math.random() * 3 + (hs / (hs+as) * 2))), away: Math.min(7, Math.floor(Math.random() * 3 + (as / (hs+as) * 2))) };
 
-        const { data: hPlayers } = await sb.from('world_players').select('*').eq('team_id', m.home_team_id);
-        const { data: aPlayers } = await sb.from('world_players').select('*').eq('team_id', m.away_team_id);
-        const hRes = distributeStats(hPlayers || [], hg, ag, hg > ag);
-        const aRes = distributeStats(aPlayers || [], ag, hg, ag > hg);
+        const { data: hPlayers } = await sb.from('world_players').select('*').eq('team_id', m.home_team_id).in('squad_status', ['starter', 'bench']);
+        const { data: aPlayers } = await sb.from('world_players').select('*').eq('team_id', m.away_team_id).in('squad_status', ['starter', 'bench']);
+        
+        // Ensure squads are balanced: if no starters/bench set, fallback to all available
+        let finalHPlayers = hPlayers || [];
+        if (finalHPlayers.length < 11) {
+          const { data: allH } = await sb.from('world_players').select('*').eq('team_id', m.home_team_id).order('overall', { ascending: false }).limit(25);
+          finalHPlayers = allH || [];
+        }
+        let finalAPlayers = aPlayers || [];
+        if (finalAPlayers.length < 11) {
+          const { data: allA } = await sb.from('world_players').select('*').eq('team_id', m.away_team_id).order('overall', { ascending: false }).limit(25);
+          finalAPlayers = allA || [];
+        }
+
+        const hRes = distributeStats(finalHPlayers, hg, ag, hg > ag);
+        const aRes = distributeStats(finalAPlayers, ag, hg, ag > hg);
 
         for (const stats of [hRes.statsUpdates, aRes.statsUpdates]) {
           if (stats.length > 0) await sb.rpc('batch_upsert_player_stats', { _table_name: 'world_player_stats', _comp_id_field: 'league_id', _comp_id: m.league_id, _team_id_field: 'team_id', _updates: stats.map(s => ({ ...s, season_month: m.season_month, season_year: m.season_year })) });
