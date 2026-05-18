@@ -1043,17 +1043,27 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 </div>
               )}
 
-              <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as 'starters' | 'reserves' | 'out')} className="w-full">
-                <TabsList className="grid grid-cols-3 w-full rounded-xl h-9 p-1 bg-black/20">
+              <Tabs value={squadSubTab} onValueChange={(v) => setSquadSubTab(v as Group)} className="w-full">
+                <TabsList className={`grid ${injuredList.length > 0 || suspendedList.length > 0 ? 'grid-cols-5' : 'grid-cols-3'} w-full rounded-xl h-9 p-1 bg-black/20`}>
                   <TabsTrigger value="starters" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
-                    TITULARES
+                    TIT
                   </TabsTrigger>
                   <TabsTrigger value="reserves" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400">
-                    BANCO
+                    BAN
                   </TabsTrigger>
                   <TabsTrigger value="out" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-muted data-[state=active]:text-foreground">
                     FORA
                   </TabsTrigger>
+                  {injuredList.length > 0 && (
+                    <TabsTrigger value="injured" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
+                      DM
+                    </TabsTrigger>
+                  )}
+                  {suspendedList.length > 0 && (
+                    <TabsTrigger value="suspended" className="text-[10px] font-bold rounded-lg data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400">
+                      SUS
+                    </TabsTrigger>
+                  )}
                 </TabsList>
 
                 <TabsContent value="starters" className="mt-2 space-y-1.5">
