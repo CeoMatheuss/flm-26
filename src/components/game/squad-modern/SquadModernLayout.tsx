@@ -285,6 +285,9 @@ export function SquadModernLayout({
   };
 
   const handleAction = (action: 'renew' | 'transfer' | 'loan-out' | 'auction' | 'shirt-number' | 'train' | 'promote-youth', p: Player) => {
+    // Ao iniciar qualquer ação, fechamos o painel lateral para não atrapalhar
+    setPanelOpen(false);
+    
     switch (action) {
       case 'transfer':
         openMarketConfirm(p);
