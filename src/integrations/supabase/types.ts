@@ -5002,6 +5002,7 @@ export type Database = {
           scheduled_at: string
           season_month: number
           season_year: number
+          simulated: boolean | null
           stadium: string | null
           status: string | null
           synced: boolean | null
@@ -5021,6 +5022,7 @@ export type Database = {
           scheduled_at: string
           season_month: number
           season_year: number
+          simulated?: boolean | null
           stadium?: string | null
           status?: string | null
           synced?: boolean | null
@@ -5040,6 +5042,7 @@ export type Database = {
           scheduled_at?: string
           season_month?: number
           season_year?: number
+          simulated?: boolean | null
           stadium?: string | null
           status?: string | null
           synced?: boolean | null
@@ -5863,6 +5866,10 @@ export type Database = {
       }
       seed_initial_world_leagues: { Args: never; Returns: undefined }
       seed_league_data: { Args: { p_league_id: string }; Returns: undefined }
+      simulate_bot_matches_for_round: {
+        Args: { p_league_id: string; p_round: number }
+        Returns: undefined
+      }
       simulate_cup_match: { Args: { _match_id: string }; Returns: undefined }
       simulate_league_matchday: {
         Args: { p_league_id: string; p_matchday: number }
@@ -5870,6 +5877,10 @@ export type Database = {
       }
       simulate_overdue_cup_matches: { Args: never; Returns: undefined }
       simulate_overdue_matches: { Args: never; Returns: undefined }
+      simulate_realistic_bot_match: {
+        Args: { p_match_id: string }
+        Returns: undefined
+      }
       start_club_world_cup: { Args: { _season_year: number }; Returns: string }
       start_continental_tournament: {
         Args: {
