@@ -372,7 +372,7 @@ export function SquadModernLayout({
                     {activeTab === 'base' ? (
                       <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
                          <YouthAcademyModernTab
-                           prospects={youthProspects}
+                           prospects={mergedYouthProspects}
                            onPromote={onPromoteYouth}
                            monthlyInvestment={youthInvestment}
                            onSetInvestment={onSetYouthInvestment}
