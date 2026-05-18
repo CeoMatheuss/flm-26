@@ -770,17 +770,17 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
             {/* Preço destacado — substitui o ícone de "olho" e fica visível direto no card */}
             {!pendingSwap && (
               <div
-                className={`hidden sm:flex flex-col items-end justify-center px-2 py-1 rounded-lg border ${trendColor.replace('text-', 'border-')}/30 bg-card/60`}
-                title={`Valor de mercado: ${formatMoney(value)} ${trend === 'up' ? '(em alta)' : trend === 'down' ? '(em baixa)' : ''}`}
+                className="hidden sm:flex flex-col items-end justify-center px-2 py-1 rounded-lg border border-border/30 bg-card/60"
+                title={`Valor de mercado: ${formatMoney(value)}`}
               >
-                <span className={`text-sm font-black leading-none ${trendColor}`}>
+                <span className="text-sm font-black leading-none text-primary">
                   {value >= 1_000_000 ? `R$${(value / 1_000_000).toFixed(1)}M` : `R$${(value / 1000).toFixed(0)}K`}
                 </span>
-                <span className="text-[8px] text-muted-foreground uppercase tracking-wider mt-0.5">{trendIcon} valor</span>
+                <span className="text-[8px] text-muted-foreground uppercase tracking-wider mt-0.5">valor</span>
               </div>
             )}
             {!pendingSwap && (
-              <span className={`sm:hidden text-[11px] font-black ${trendColor} px-1.5 py-0.5 rounded bg-card/60 border border-border/30`}>
+              <span className="sm:hidden text-[11px] font-black text-primary px-1.5 py-0.5 rounded bg-card/60 border border-border/30">
                 {value >= 1_000_000 ? `${(value / 1_000_000).toFixed(1)}M` : `${(value / 1000).toFixed(0)}K`}
               </span>
             )}
