@@ -101,18 +101,7 @@ Deno.serve(async (req) => {
     `).eq("status", "scheduled").lte("kickoff_at", tolerance.toISOString()).limit(20);
 
     if (wMatches) {
-      // Grace window for HUMAN matches: only auto-simulate if 60+ min past kickoff
-      // (avoids advancing the round while the user is still about to/playing the match).
-      const HUMAN_GRACE_MS = 60 * 60 * 1000;
       for (const m of wMatches) {
-        const involvesHuman = !!(m.home_team?.user_id || m.away_team?.user_id);
-        if (involvesHuman) {
-          const kickoff = new Date(m.kickoff_at).getTime();
-          if (Date.now() - kickoff < HUMAN_GRACE_MS) {
-            console.log(`[world-sim] Skip human match ${m.id} (within grace window)`);
-            continue;
-          }
-        }
         const hs = Math.max(30, m.home_team?.strength || 65) * 1.15;
         const as = Math.max(30, m.away_team?.strength || 65);
         const { home: hg, away: ag } = { home: Math.min(7, Math.floor(Math.random() * 3 + (hs / (hs+as) * 2))), away: Math.min(7, Math.floor(Math.random() * 3 + (as / (hs+as) * 2))) };
@@ -147,16 +136,7 @@ Deno.serve(async (req) => {
     `).eq("status", "scheduled").lte("scheduled_at", tolerance.toISOString()).limit(20);
 
     if (cMatches) {
-      const HUMAN_GRACE_MS = 60 * 60 * 1000;
       for (const m of cMatches) {
-        const involvesHuman = !!(m.home_team?.user_id || m.away_team?.user_id);
-        if (involvesHuman) {
-          const kickoff = new Date(m.scheduled_at).getTime();
-          if (Date.now() - kickoff < HUMAN_GRACE_MS) {
-            console.log(`[world-sim] Skip human cup match ${m.id} (within grace window)`);
-            continue;
-          }
-        }
         const { data: cs } = await sb.from('national_cups').select('status, name').eq('id', m.cup_id).single();
         if (cs?.status !== 'in_progress') continue;
 
