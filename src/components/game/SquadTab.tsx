@@ -224,24 +224,24 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
 
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
 
-  const expiringPlayers = players.filter(p => p.contract <= 1);
-  const avgOvr = players.length > 0 ? Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length) : 0;
-  const totalSalary = players.reduce((s, p) => s + p.salary, 0);
-  const injuredCount = players.filter(p => p.injury).length;
+  const expiringPlayers = playersWithDiscipline.filter(p => p.contract <= 1);
+  const avgOvr = playersWithDiscipline.length > 0 ? Math.round(playersWithDiscipline.reduce((s, p) => s + p.overall, 0) / playersWithDiscipline.length) : 0;
+  const totalSalary = playersWithDiscipline.reduce((s, p) => s + p.salary, 0);
+  const injuredCount = playersWithDiscipline.filter(p => p.injury).length;
 
   // Separate players into 3 groups by their original index in the array
   const groupedPlayers = useMemo(() => {
     const starters: { player: Player; idx: number }[] = [];
     const reserves: { player: Player; idx: number }[] = [];
     const out: { player: Player; idx: number }[] = [];
-    players.forEach((p, idx) => {
+    playersWithDiscipline.forEach((p, idx) => {
       const entry = { player: p, idx };
       if (idx < STARTERS_END) starters.push(entry);
       else if (idx < RESERVES_END) reserves.push(entry);
       else out.push(entry);
     });
     return { starters, reserves, out };
-  }, [players]);
+  }, [playersWithDiscipline]);
 
   // Apply filter/sort to a group
   const matchesOvr = (ovr: number) => {
