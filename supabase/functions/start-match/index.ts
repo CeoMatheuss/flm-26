@@ -118,7 +118,7 @@ function getArchetypeAssistWeight(p: SimPlayer): number {
     default: return 1.0;
   }
 }
-\ninterface SimEvent {
+interface SimEvent {
   minute: number; type: string; description: string; team: 'home' | 'away' | 'neutral';
   playerName?: string; assistName?: string; goalType?: string; isGoal?: boolean;
   animType?: string; ballX?: number; ballY?: number;
