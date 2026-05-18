@@ -36,6 +36,8 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
 
+  console.log('[SquadMainTable]', { activeTab, totalPlayers: players.length, starterIdsSize: starterIds.size, sample: players.slice(0,3).map(p => ({ id: p.id, name: p.name, ss: (p as any).squad_status, isYouth: (p as any).isYouth })) });
+
   useEffect(() => {
     const fetchNegotiations = async () => {
       const { data } = await supabase
@@ -109,6 +111,8 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
 
   return (
     <div className="flex flex-col h-full overflow-hidden min-w-[700px]">
+      {/* DEBUG */}
+      <div className="px-4 py-1 text-[10px] text-emerald-400 bg-emerald-500/10">DBG tab={activeTab} total={players.length} starters={starterIds.size} filtered={filtered.length}</div>
       {/* Search & Filters */}
       <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
         <div className="relative w-full sm:w-64">
