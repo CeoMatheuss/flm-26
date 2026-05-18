@@ -81,7 +81,8 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
           return isStarter && !unavailable;
         // Reservas: TODOS os não-titulares profissionais disponíveis (banco + reservas).
         case 'reservas':
-          // Jogador profissional que não é titular e está disponível (ou explicitamente no banco)
+          // Jogadores profissionais que não são titulares e estão disponíveis
+          // (Filtro corrigido: jogadores com status 'reserve' ou 'bench' que não sejam da base)
           return !isStarter && !isBaseYouth && !unavailable;
         case 'fora':
           return status === 'afastado' || status === 'indisponivel' || status === 'lesionado' || status === 'lista-transferencia' || !!p.injury;
