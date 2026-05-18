@@ -165,9 +165,19 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
 
       if (error || data?.error) throw new Error(error?.message || data?.error);
 
-      toast.success('Conta verificada com sucesso! Você já pode entrar.');
-      setStep('login');
-      setEmail(pendingEmail);
+      toast.success('Conta verificada com sucesso!');
+      
+      // Tenta atualizar a sessão local para refletir a confirmação
+      await supabase.auth.refreshSession();
+      
+      // Se já houver uma sessão (caso de redirecionamento do Index), recarrega a página
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email_confirmed_at) {
+        window.location.reload();
+      } else {
+        setStep('login');
+        setEmail(pendingEmail);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Erro ao verificar código');
     } finally {
