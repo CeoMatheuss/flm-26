@@ -116,32 +116,11 @@ Deno.serve(async (req) => {
         
         const stats = generateMatchStats(hStr, aStr, hg, ag);
 
-        // Update Standings (via existing RPC if possible, or manual)
-        // Manual update for robustness
-        for (const res of [
-          { uid: m.home_user_id, lid: m.league_id, gf: hg, ga: ag, win: hg > ag, draw: hg === ag },
-          { uid: m.away_user_id, lid: m.league_id, gf: ag, ga: hg, win: ag > hg, draw: hg === ag }
-        ]) {
-          if (!res.uid) continue;
-          const { data: member } = await sb.from('league_members').select('*').eq('league_id', res.lid).eq('user_id', res.uid).single();
-          if (member) {
-            await sb.from('league_members').update({
-              points: member.points + (res.win ? 3 : res.draw ? 1 : 0),
-              played: member.played + 1,
-              wins: member.wins + (res.win ? 1 : 0),
-              draws: member.draws + (res.draw ? 1 : 0),
-              losses: member.losses + (res.win || res.draw ? 0 : 1),
-              goals_for: member.goals_for + res.gf,
-              goals_against: member.goals_against + res.ga,
-            }).eq('id', member.id);
-          }
-        }
-
-        // Update Match
+        // Update Match (Status change to finished triggers database side updates)
         await sb.from("league_matches").update({
           home_goals: hg,
           away_goals: ag,
-          status: 'finished',
+          status: 'finished', // This trigger after_league_match_finished
           played_at: now.toISOString(),
           match_data: { stats, auto_simulated: true }
         }).eq('id', m.id);
@@ -240,8 +219,8 @@ Deno.serve(async (req) => {
             match_data: { stats, homeScorers: hScorers, awayScorers: aScorers, auto_simulated: true }
           }).eq('id', m.id);
           
-          // Trigger Standing Update (if not via DB trigger)
-          await sb.rpc('sync_world_league_standings', { _league_id: m.league_id });
+          // Standing update handled by database trigger tr_after_world_match_finished
+
         }
 
         const duration = Date.now() - simStart;
