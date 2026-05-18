@@ -2368,31 +2368,14 @@ Deno.serve(async (req) => {
         }
         // O trigger update_standings_after_match já cuida da world_league_table,
         // mas chamamos a recalculação completa por segurança (garante last_5 e gols somados corretamente).
-        try {
-          await adminClient.rpc('recalculate_league_table_from_matches', { p_league_id: worldMatch.league_id });
-        } catch (e) {
-          console.warn('[Sync] recalculate_league_table failed:', e);
-        }
+        // Sincronizar estatísticas da world match
+        console.info('[Sync] Calling sync_match_stats for world match');
+        await adminClient.rpc('sync_match_stats', { 
+          p_match_id: String(matchId), 
+          p_competition_type: 'world' 
+        });
       }
 
-      // 3.4. Global/World Stats (Always update for any competitive match)
-      if (isLeagueMatch || isCupMatch) {
-        // Find or create global league entry if needed, but usually we just want to update world_player_stats
-        // We can use a default league_id if not a league match
-        const worldLeagueId = leagueMatch?.league_id || '00000000-0000-0000-0000-000000000000';
-        for (const p of result.allPlayers) {
-          if (!p.isOnPitch && p.goals === 0) continue;
-          await adminClient.rpc('upsert_world_player_stats', {
-            _player_id: p.id,
-            _team_name: p.team === 'home' ? effHomeTeam : effAwayTeam,
-            _league_id: worldLeagueId,
-            _goals: p.goals,
-            _assists: p.assists,
-            _rating: p.rating,
-            _is_mvp: result.manOfTheMatch === p.name
-          });
-        }
-      }
       // 3.5. PERSIST INJURIES (New in V4)
       for (const p of result.allPlayers) {
         if (p.injured && p.injuryData && p.team === 'home') {
