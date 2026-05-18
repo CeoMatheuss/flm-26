@@ -69,7 +69,7 @@ export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPla
 
       <div className="space-y-2 relative z-10">
         <div className="flex justify-between text-[10px] font-bold text-white/40 uppercase tracking-widest">
-          <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> Físico</span>
+          <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> Condição</span>
           <span>{player.stamina}%</span>
         </div>
         <div className="h-1 bg-white/5 rounded-full overflow-hidden">
