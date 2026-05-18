@@ -888,12 +888,18 @@ function simulateFullMatch(
   }
 
   // ── SUPPORT EVENTS ──────────────────────────────────────────
+  // Reduzido drasticamente para ser mais realista.
   const cardMins: number[] = [];
-  for (let i = 0; i < 2 + Math.floor(rng() * 4); i++) {
-    const m = pickUnique(allGamePool.filter(m => m >= 15)); if (m > 0) cardMins.push(m);
+  // Max 4 cartões potenciais (muitos serão filtrados por atributos/árbitro depois)
+  const maxPotentialCards = rng() < 0.3 ? 1 : rng() < 0.7 ? 2 : 4; 
+  for (let i = 0; i < maxPotentialCards; i++) {
+    const m = pickUnique(allGamePool.filter(m => m >= 10)); if (m > 0) cardMins.push(m);
   }
+  
   const dangerousFoulMins: number[] = [];
-  for (let i = 0; i < 1 + Math.floor(rng() * 3); i++) {
+  // Max 2 faltas perigosas (geralmente lances de gol ou cartões)
+  const maxPotentialFouls = rng() < 0.5 ? 1 : 2;
+  for (let i = 0; i < maxPotentialFouls; i++) {
     const m = pickUnique(allGamePool.filter(m => m >= 10)); if (m > 0) dangerousFoulMins.push(m);
   }
   // NOTE: Substitutions are 100% manual now — controlled by the player from MatchPage.
