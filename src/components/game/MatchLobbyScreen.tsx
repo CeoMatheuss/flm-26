@@ -151,10 +151,10 @@ export function MatchLobbyScreen({ matchType, matchId, userId, myClub, oppClub, 
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">
               {lobby?.at_least_one_joined
-                ? '✅ Você entrou — a partida não será simulada automaticamente'
+                ? '✅ Técnico conectado — A partida NÃO será simulada automaticamente'
                 : expired
-                ? 'Ninguém compareceu — será simulada automaticamente'
-                : 'Se nenhum técnico entrar, a partida será simulada automaticamente'}
+                ? '⚠️ Nenhum técnico compareceu — Simulação automática em curso...'
+                : 'Aguarde: se nenhum técnico entrar em 5min, a partida será simulada.'}
             </p>
           </div>
 
@@ -194,11 +194,16 @@ export function MatchLobbyScreen({ matchType, matchId, userId, myClub, oppClub, 
             </Button>
           )}
 
-          {/* Basta 1 jogador entrar para poder iniciar (contra IA do ausente). Sem auto-sim. */}
+          {/* Sistema clássico: basta 1 entrar para travar a auto-simulação */}
           {lobby?.state === 'one_ready' && (
-            <Button onClick={onReady} className="w-full h-11 gap-2 bg-blue-600 hover:bg-blue-700">
-              <Play className="h-4 w-4" /> Iniciar contra IA do adversário
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={onReady} className="w-full h-11 gap-2 bg-blue-600 hover:bg-blue-700">
+                <Play className="h-4 w-4" /> ENTRAR NA PARTIDA
+              </Button>
+              <p className="text-[9px] text-center text-blue-400 font-medium">
+                Partida travada para simulação manual.
+              </p>
+            </div>
           )}
 
           {(lobby?.state === 'start_with_ai' || expired) && !lobby?.at_least_one_joined && (
