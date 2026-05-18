@@ -1334,6 +1334,7 @@ export type Database = {
           player_name: string
           player_overall: number
           player_position: string
+          player_potential: number | null
           visible_stats: Json
         }
         Insert: {
@@ -1348,6 +1349,7 @@ export type Database = {
           player_name: string
           player_overall: number
           player_position: string
+          player_potential?: number | null
           visible_stats?: Json
         }
         Update: {
@@ -1362,6 +1364,7 @@ export type Database = {
           player_name?: string
           player_overall?: number
           player_position?: string
+          player_potential?: number | null
           visible_stats?: Json
         }
         Relationships: []
@@ -6041,6 +6044,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      handle_expired_auction_to_free_agent: { Args: never; Returns: undefined }
       handle_team_league_entry: {
         Args: { _country_id: string; _team_id: string }
         Returns: undefined
