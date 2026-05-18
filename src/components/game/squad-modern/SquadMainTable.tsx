@@ -112,9 +112,7 @@ export function SquadMainTable({ players, starterIds, selectedId, onSelect, acti
   }, [players, starterIds, activeTab, search, sortBy, negotiations]);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden min-w-[700px]">
-      {/* DEBUG */}
-      <div className="px-4 py-1 text-[10px] text-emerald-400 bg-emerald-500/10">DBG tab={activeTab} total={players.length} starters={starterIds.size} filtered={filtered.length}</div>
+    <div className="flex flex-col h-full overflow-hidden min-w-[700px] bg-zinc-950/20 rounded-[2rem]">
       {/* Search & Filters */}
       <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
         <div className="relative w-full sm:w-64">
