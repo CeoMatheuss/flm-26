@@ -119,7 +119,7 @@ export function SquadHeader({ club, season, onBack, onMenu, viewMode, onViewMode
           <button 
             onClick={onToggleTactics}
             className={cn(
-              "hidden xl:flex h-12 px-6 rounded-2xl border transition-all gap-3 font-black uppercase text-[10px] tracking-widest group shadow-lg",
+              "hidden xl:flex h-12 px-6 rounded-2xl border transition-all gap-3 font-black uppercase text-[10px] tracking-widest group shadow-lg items-center justify-center",
               isTacticsOpen 
                 ? "bg-zinc-900 border-white/5 text-white/40 hover:text-red-400 hover:border-red-400/20" 
                 : "bg-emerald-500 border-emerald-400/50 text-zinc-950 hover:bg-emerald-400"
