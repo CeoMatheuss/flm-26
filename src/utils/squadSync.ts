@@ -80,22 +80,32 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
     });
   }
 
-  // Ensure minimum squad size for BOTs or during reload
-  // (In practice, ensure_full_rosters in DB handles this, but here we protect the local state)
-  
-  // Re-order rebuilt array to have starters first, then bench, then others
+  // Priority status updates: Suspended/Injured take precedence over being on pitch
+  rebuilt.forEach(p => {
+    const raw = p as any;
+    if (p.squad_status === 'suspended' || !!p.disciplinary?.isSuspended || !!raw.isSuspended || !!raw.suspended) {
+      p.squad_status = 'suspended';
+    } else if (p.squad_status === 'injured' || !!p.injury || !!raw.isInjured) {
+      p.squad_status = 'injured';
+    }
+  });
+
+  // Re-order rebuilt array to have starters first, then bench, then reserves/injured/suspended
   const starters = rebuilt.filter(p => p.squad_status === 'starter');
   const bench = rebuilt.filter(p => p.squad_status === 'bench');
-  const others = rebuilt.filter(p => p.squad_status !== 'starter' && p.squad_status !== 'bench');
+  const reserves = rebuilt.filter(p => p.squad_status === 'reserve');
+  const injured = rebuilt.filter(p => p.squad_status === 'injured');
+  const suspended = rebuilt.filter(p => p.squad_status === 'suspended');
+  const out = rebuilt.filter(p => !['starter', 'bench', 'reserve', 'injured', 'suspended'].includes(p.squad_status as any));
 
-  const ordered = [...starters, ...bench, ...others];
+  const ordered = [...starters, ...bench, ...reserves, ...injured, ...suspended, ...out];
 
   return ordered.map((player, index) => {
     const raw = player as any;
     const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
     return {
       ...player,
-      squadRole: index < 11 ? 'titular' : index < 18 ? (isBaseYouth ? 'promessa' : 'reserva') : (isBaseYouth ? 'promessa' : 'rotacao'),
+      squadRole: player.squad_status === 'starter' ? 'titular' : player.squad_status === 'bench' ? (isBaseYouth ? 'promessa' : 'reserva') : (isBaseYouth ? 'promessa' : 'rotacao'),
     } as Player;
   });
 };
