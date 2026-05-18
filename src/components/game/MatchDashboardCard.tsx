@@ -157,7 +157,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         .from('world_matches')
         .select(worldSelect)
         .or(`home_team_id.eq.${teamData.id},away_team_id.eq.${teamData.id}`)
-        .neq('status', 'finished')
+        .eq('status', 'scheduled') // Only pending matches
         .order('scheduled_at', { ascending: true })
         .limit(1);
 

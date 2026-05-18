@@ -4795,6 +4795,54 @@ export type Database = {
           },
         ]
       }
+      world_league_standings: {
+        Row: {
+          draws: number | null
+          goal_diff: number | null
+          goals_against: number | null
+          goals_for: number | null
+          id: string
+          league_id: string
+          losses: number | null
+          played: number | null
+          points: number | null
+          season_year: number
+          team_id: string
+          updated_at: string | null
+          wins: number | null
+        }
+        Insert: {
+          draws?: number | null
+          goal_diff?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          id?: string
+          league_id: string
+          losses?: number | null
+          played?: number | null
+          points?: number | null
+          season_year: number
+          team_id: string
+          updated_at?: string | null
+          wins?: number | null
+        }
+        Update: {
+          draws?: number | null
+          goal_diff?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          id?: string
+          league_id?: string
+          losses?: number | null
+          played?: number | null
+          points?: number | null
+          season_year?: number
+          team_id?: string
+          updated_at?: string | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
       world_league_table: {
         Row: {
           country: string | null
@@ -5067,6 +5115,51 @@ export type Database = {
             columns: ["league_id"]
             isOneToOne: false
             referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_player_availability: {
+        Row: {
+          created_at: string | null
+          id: string
+          player_id: string | null
+          reason: string | null
+          rounds_remaining: number | null
+          team_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          player_id?: string | null
+          reason?: string | null
+          rounds_remaining?: number | null
+          team_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          player_id?: string | null
+          reason?: string | null
+          rounds_remaining?: number | null
+          team_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_player_availability_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "world_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_player_availability_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
             referencedColumns: ["id"]
           },
         ]

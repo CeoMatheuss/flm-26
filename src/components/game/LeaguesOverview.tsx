@@ -51,13 +51,26 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
     if (selectedLeagueId) {
       const loadStandings = async () => {
         setLoadingStandings(true);
-        const { data } = await supabase
-          .from('world_league_table')
-          .select('*, world_teams(name, logo)')
+        // Prioritize the synchronized world_league_standings table, fallback to view
+        const { data: syncedData } = await supabase
+          .from('world_league_standings')
+          .select('*, world_teams:world_teams(name, logo)')
           .eq('league_id', selectedLeagueId)
           .order('points', { ascending: false })
-          .order('goals_for', { ascending: false });
-        if (data) setStandings(data);
+          .order('goal_diff', { ascending: false });
+
+        if (syncedData && syncedData.length > 0) {
+          setStandings(syncedData);
+        } else {
+          // Fallback if standings table is empty
+          const { data: viewData } = await supabase
+            .from('world_league_table')
+            .select('*, world_teams(name, logo)')
+            .eq('league_id', selectedLeagueId)
+            .order('points', { ascending: false })
+            .order('goals_for', { ascending: false });
+          if (viewData) setStandings(viewData);
+        }
         setLoadingStandings(false);
       };
       loadStandings();
