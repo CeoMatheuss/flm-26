@@ -4738,6 +4738,39 @@ export type Database = {
         }
         Relationships: []
       }
+      world_event_queue: {
+        Row: {
+          event_hash: string
+          event_type: string
+          id: string
+          match_id: string | null
+          payload: Json
+          processed_at: string | null
+          round: number | null
+          user_id: string | null
+        }
+        Insert: {
+          event_hash: string
+          event_type: string
+          id?: string
+          match_id?: string | null
+          payload: Json
+          processed_at?: string | null
+          round?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          event_hash?: string
+          event_type?: string
+          id?: string
+          match_id?: string | null
+          payload?: Json
+          processed_at?: string | null
+          round?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       world_league_news: {
         Row: {
           category: string | null
@@ -5360,6 +5393,42 @@ export type Database = {
           },
         ]
       }
+      world_sync_state: {
+        Row: {
+          current_round: number | null
+          is_locked: boolean | null
+          last_sync_at: string | null
+          locked_at: string | null
+          metadata: Json | null
+          squad_checksum: string | null
+          standings_checksum: string | null
+          sync_version: number | null
+          user_id: string
+        }
+        Insert: {
+          current_round?: number | null
+          is_locked?: boolean | null
+          last_sync_at?: string | null
+          locked_at?: string | null
+          metadata?: Json | null
+          squad_checksum?: string | null
+          standings_checksum?: string | null
+          sync_version?: number | null
+          user_id: string
+        }
+        Update: {
+          current_round?: number | null
+          is_locked?: boolean | null
+          last_sync_at?: string | null
+          locked_at?: string | null
+          metadata?: Json | null
+          squad_checksum?: string | null
+          standings_checksum?: string | null
+          sync_version?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       world_teams: {
         Row: {
           country: string | null
@@ -5817,6 +5886,10 @@ export type Database = {
           stage: string
         }[]
       }
+      get_world_integrity_checksums: {
+        Args: { _user_id: string }
+        Returns: Json
+      }
       grant_tournament_prize: {
         Args: {
           p_amount: number
@@ -5916,6 +5989,16 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      push_world_sync_event: {
+        Args: {
+          _event_hash: string
+          _event_type: string
+          _match_id?: string
+          _payload: Json
+          _round?: number
+        }
+        Returns: boolean
       }
       qualify_club_world_cup: { Args: { _season_year: number }; Returns: Json }
       qualify_continental_humans: {
