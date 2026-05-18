@@ -57,11 +57,11 @@ Deno.serve(async (req) => {
     for (const m of matches) {
       const simStart = Date.now();
       try {
-        // Atomic claim: only proceed if status is still scheduled or simulating
+        // Atomic claim using allowed 'live' status (check constraint forbids 'simulating')
         const { data: locked, error: lockErr } = await sb.from("world_matches")
-          .update({ status: "simulating" })
+          .update({ status: "live" })
           .eq("id", m.id)
-          .in("status", ["scheduled", "simulating"])
+          .in("status", ["scheduled", "live"])
           .select("id");
 
         if (lockErr) { errors.push({ id: m.id, stage: "lock", err: lockErr.message }); skipped++; continue; }
