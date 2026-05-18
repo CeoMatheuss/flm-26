@@ -174,10 +174,17 @@ function PlayerDetailContent({
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 custom-scrollbar">
           {/* Market & Contract Tiles */}
           <div className="grid grid-cols-3 gap-3">
-            <InfoTile icon={<TrendingUp className="h-4 w-4" />} label="Valor" value={formatMoney(value)} accent="text-emerald-400" />
+            <InfoTile 
+              icon={<TrendingUp className="h-4 w-4" />} 
+              label="Valor" 
+              value={formatMoney(value)} 
+              accent="text-emerald-400"
+              trend={player.evolutionTrend} 
+            />
             <InfoTile icon={<FileText className="h-4 w-4" />} label="Salário" value={`${formatMoney(player.salary)}/s`} accent="text-amber-300" />
             <InfoTile icon={<Award className="h-4 w-4" />} label="Contrato" value={`${player.contract}a`} accent="text-sky-300" />
           </div>
+
 
           {/* Vitals & Position Analysis */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -321,19 +328,30 @@ function PlayerDetailContent({
   );
 }
 
-function InfoTile({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: string }) {
+function InfoTile({ icon, label, value, accent, trend }: { icon: React.ReactNode; label: string; value: string; accent?: string; trend?: 'up' | 'stable' | 'down' }) {
   return (
-    <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all">
+    <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all relative overflow-hidden">
       <div className="flex items-center gap-2 text-white/30 mb-2">
         {icon}
         <span className="text-[9px] uppercase font-black tracking-widest">{label}</span>
       </div>
-      <span className={cn('text-xs font-black truncate block italic tracking-tight', accent || 'text-white')}>
-        {value}
-      </span>
+      <div className="flex items-center justify-between gap-1">
+        <span className={cn('text-xs font-black truncate block italic tracking-tight', accent || 'text-white')}>
+          {value}
+        </span>
+        {trend && trend !== 'stable' && (
+           <span className={cn(
+             "shrink-0",
+             trend === 'up' ? "text-emerald-400" : "text-red-400"
+           )}>
+             {trend === 'up' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+           </span>
+        )}
+      </div>
     </div>
   );
 }
+
 
 function BarBlock({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   const v = Math.max(0, Math.min(100, Math.round(value || 0)));
