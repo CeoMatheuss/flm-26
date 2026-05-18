@@ -204,48 +204,33 @@ export function validateLineup(players: Player[] | null | undefined): { valid: b
   if (!Array.isArray(players) || players.length === 0) return { valid: true };
   
   const safePlayers = players.filter((p): p is Player => !!p && typeof p === 'object' && !!p.position);
-  const starters = safePlayers.slice(0, 11);
+  const starters = safePlayers.filter(p => p.squad_status === 'starter');
+  const bench = safePlayers.filter(p => p.squad_status === 'bench');
   const goalkeepers = starters.filter(p => p.position === 'GOL');
   
-  // Rule: Suspended players cannot be in starters (first 11) or reserves (next 7)
-  // Requirement: "não pode aparecer no banco - não pode ser substituído"
-  const roster = safePlayers.slice(0, 18); // 11 starters + 7 reserves
-  const suspendedInRoster = roster.filter(p => p.disciplinary?.isSuspended);
+  // Rule: Suspended players cannot be in starters or bench
+  const suspendedInRoster = [...starters, ...bench].filter(p => p.disciplinary?.isSuspended || p.squad_status === 'suspended');
 
   if (suspendedInRoster.length > 0) {
-    let newOrder = [...safePlayers];
-    suspendedInRoster.forEach(s => {
-      const idx = newOrder.findIndex(p => p.id === s.id);
-      if (idx !== -1 && idx < 18) {
-        const [removed] = newOrder.splice(idx, 1);
-        newOrder.push(removed); // Move to the end of the array
-      }
-    });
-
     return {
       valid: false,
-      message: `O jogador ${suspendedInRoster[0].name} está SUSPENSO e não pode ser escalado.`,
-      autoFix: newOrder
+      message: `O jogador ${suspendedInRoster[0].name} está SUSPENSO e não pode ser escalado.`
+    };
+  }
+
+  // Rule: Injured players cannot be in starters or bench
+  const injuredInRoster = [...starters, ...bench].filter(p => p.injury || p.squad_status === 'injured');
+  if (injuredInRoster.length > 0) {
+    return {
+      valid: false,
+      message: `O jogador ${injuredInRoster[0].name} está lesionado e não pode ser escalado.`
     };
   }
 
   if (goalkeepers.length > 1) {
-    const keepers = [...goalkeepers].sort((a, b) => (b.overall || 0) - (a.overall || 0));
-    const others = keepers.slice(1);
-    
-    let newOrder = [...safePlayers];
-    others.forEach(k => {
-      const idx = newOrder.findIndex(p => p.id === k.id);
-      if (idx !== -1) {
-        const [removed] = newOrder.splice(idx, 1);
-        newOrder.push(removed);
-      }
-    });
-
     return { 
       valid: false, 
-      message: "Não é permitido possuir 2 goleiros no time titular.",
-      autoFix: newOrder
+      message: "Não é permitido possuir mais de 1 goleiro titular."
     };
   }
 
