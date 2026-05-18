@@ -520,6 +520,10 @@ export function useMatchSimulation() {
   }, [state.phase]);
 
   const loadMatchSnapshot = useCallback((snapshot: any) => {
+    return hydrateMatchRow(snapshot);
+  }, [hydrateMatchRow]);
+
+  const loadMatch = useCallback(async (matchDbId: string): Promise<boolean> => {
     setState(s => ({ ...s, phase: 'loading' }));
     const { data, error } = await supabase.from('live_matches').select('*').eq('id', matchDbId).maybeSingle();
     
@@ -553,7 +557,6 @@ export function useMatchSimulation() {
       }
       const ok = await loadMatch(data.matchDbId);
       if (!ok) {
-        // loadMatch já setou phase='error' internamente
         return { success: false, error: 'Falha ao carregar partida criada.' };
       }
       return { success: true };
