@@ -92,6 +92,19 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Check if this specific player is already listed (active)
+      const { data: existingPlayerListing } = await adminClient
+        .from('transfer_listings')
+        .select('id')
+        .eq('seller_id', userId)
+        .eq('status', 'active')
+        .contains('player_data', { id: playerData.id })
+        .maybeSingle();
+
+      if (existingPlayerListing) {
+        return new Response(JSON.stringify({ error: 'Este jogador já está anunciado no mercado.' }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
       // Check max simultaneous listings per user (limit 5)
       const { count: activeCount } = await adminClient
         .from('transfer_listings')
@@ -102,6 +115,7 @@ Deno.serve(async (req) => {
       if ((activeCount ?? 0) >= 5) {
         return new Response(JSON.stringify({ error: 'Limite de 5 jogadores listados simultaneamente.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
+
 
       // Count total transfers for this player
       const { count: transferCount } = await adminClient
