@@ -287,13 +287,22 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
               {flagFor((player as any).country)}
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenQuickSwap?.();
+                  if (onSwapAction) {
+                    onSwapAction(e);
+                  } else {
+                    e.stopPropagation();
+                    onOpenQuickSwap?.();
+                  }
                 }}
-                className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-[10px] hover:bg-emerald-500 hover:text-zinc-950 transition-all active:scale-90"
-                title="Troca Rápida"
+                className={cn(
+                  "w-8 h-8 rounded-lg border flex items-center justify-center text-[10px] transition-all active:scale-90",
+                  isPendingSwap 
+                    ? "bg-red-500/20 border-red-500/40 text-white animate-pulse" 
+                    : "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500 hover:text-zinc-950"
+                )}
+                title={isPendingSwap ? "Cancelar Troca" : "Substituir Jogador"}
               >
-                🔄
+                {isPendingSwap ? "✖" : "🔄"}
               </button>
             </span>
           </div>
