@@ -1526,6 +1526,9 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
               )}
             </div>
 
+            {/* Fatigue & Injury Alerts (V4) */}
+            <MatchAlerts matchState={matchState} starters={currentStarters} onOpenSubs={() => setExpandedWidget('subs')} />
+
             {/* Expanded Widget */}
             {expandedWidget === 'stats' && (
               <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
