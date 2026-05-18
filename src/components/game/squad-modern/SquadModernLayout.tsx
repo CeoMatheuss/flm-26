@@ -261,7 +261,7 @@ export function SquadModernLayout({
     onUpdatePlayers(newPlayers);
     setPendingSwap(null);
     setPanelOpen(false);
-    toast.success('Troca realizada com sucesso!', {
+    toast.success('Substituição realizada!', {
       description: `${players[idxA].name} ↔ ${players[idxB].name}`
     });
   }, [players, onUpdatePlayers]);
