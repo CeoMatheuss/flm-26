@@ -53,10 +53,11 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
   const canUseInMatch = (player: Player) => {
     const raw = player as any;
     const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
+    if (raw.squad_status === 'injured' || raw.squad_status === 'suspended') return false;
     return !isBaseYouth && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended && !raw.isLoaned && !raw.loanedOut && !raw.inactive && !raw.removed;
   };
-  const starters = safePlayers.slice(0, 11);
-  const bench = safePlayers.slice(11).filter(canUseInMatch);
+  const starters = safePlayers.filter(p => p.squad_status === 'starter');
+  const bench = safePlayers.filter(p => p.squad_status === 'bench');
 
   const setField = <K extends keyof TacticsConfig>(key: K, value: TacticsConfig[K]) => {
     onUpdate({ ...safeTactics, [key]: value });
