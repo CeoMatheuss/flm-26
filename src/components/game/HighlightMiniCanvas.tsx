@@ -1371,7 +1371,7 @@ function HighlightMiniCanvasInner({ type, team, playerName, onComplete, currentM
 
         } else {
           const afterT = (t - 0.72) / 0.28;
-          drawAllPlayers(drift * 0.15);
+          drawAllPlayers(drift * 0.15, false, 0, 0, 0, attTeam, 0.4 * (1 - afterT), 0.3 * (1 - afterT));
           drawPlayer(shooterPos.x + (isHome ? 10 : -10), shooterPos.y, teamColor, teamLight, '10', 9, false, playerName);
           const gkBaseX = goalX + (isHome ? -8 : 8);
           const gkDiveDir = ballEndY > goalY ? 1 : -1;
