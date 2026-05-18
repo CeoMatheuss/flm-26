@@ -655,9 +655,6 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
       ? (player.seasonRatings.reduce((a: number, b: number) => a + b, 0) / player.seasonRatings.length) : null;
     const ovr = getOvrColor(player.overall);
     const value = getPlayerValue(player);
-    const trend = getValueTrend(player);
-    const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
-    const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground';
     const auctionEligible = player.overall >= 65 && player.age <= 35;
 
     const stateBorder = player.injury
