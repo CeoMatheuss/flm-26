@@ -38,18 +38,23 @@ const features = [
 
 type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email' | 'beta-request';
 
-export default function AuthPage() {
+interface AuthPageProps {
+  initialStep?: AuthStep;
+  initialEmail?: string;
+}
+
+export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }: AuthPageProps) {
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
-  const [pendingEmail, setPendingEmail] = useState('');
+  const [pendingEmail, setPendingEmail] = useState(initialEmail);
   const [verificationCode, setVerificationCode] = useState('');
 
   const [resendTimer, setResendTimer] = useState(0);
-  const [step, setStep] = useState<AuthStep>('welcome');
+  const [step, setStep] = useState<AuthStep>(initialStep);
   const [slideIndex, setSlideIndex] = useState(0);
 
   // Auto-rotate carousel
@@ -82,12 +87,15 @@ export default function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (error.message === 'Email not confirmed') {
+      if (error.message === 'Email not confirmed' || error.message?.includes('Email not confirmed')) {
         setPendingEmail(email);
         setStep('verify-email');
         startResendTimer();
-        toast.info('Email não confirmado. Verifique sua caixa de entrada.');
-        await supabase.auth.resend({ type: 'signup', email });
+        toast.info('Email não confirmado. Enviando código de verificação...');
+        // Envia o código customizado em vez do link do Supabase
+        await supabase.functions.invoke('auth-service', {
+          body: { action: 'send-code', email }
+        });
       } else {
         toast.error(error.message);
       }
@@ -157,9 +165,19 @@ export default function AuthPage() {
 
       if (error || data?.error) throw new Error(error?.message || data?.error);
 
-      toast.success('Conta verificada com sucesso! Você já pode entrar.');
-      setStep('login');
-      setEmail(pendingEmail);
+      toast.success('Conta verificada com sucesso!');
+      
+      // Tenta atualizar a sessão local para refletir a confirmação
+      await supabase.auth.refreshSession();
+      
+      // Se já houver uma sessão (caso de redirecionamento do Index), recarrega a página
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email_confirmed_at) {
+        window.location.reload();
+      } else {
+        setStep('login');
+        setEmail(pendingEmail);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Erro ao verificar código');
     } finally {
@@ -167,7 +185,7 @@ export default function AuthPage() {
     }
   };
 
-  const handleResendVerification = async () => {
+  const handleResendVerification = useCallback(async () => {
     if (resendTimer > 0) return;
     setLoading(true);
     const { error } = await supabase.functions.invoke('auth-service', {
@@ -179,7 +197,14 @@ export default function AuthPage() {
       startResendTimer();
     }
     setLoading(false);
-  };
+  }, [pendingEmail, resendTimer, startResendTimer]);
+
+  // Envia código automaticamente se cair direto na verificação (vindo do Index)
+  useEffect(() => {
+    if (step === 'verify-email' && pendingEmail && resendTimer === 0 && initialStep === 'verify-email') {
+      handleResendVerification();
+    }
+  }, [step, pendingEmail, resendTimer, initialStep, handleResendVerification]);
 
   // ── Carousel component ──
   const CarouselPanel = ({ className = '' }: { className?: string }) => (
