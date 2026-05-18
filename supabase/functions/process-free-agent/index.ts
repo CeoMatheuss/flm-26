@@ -18,29 +18,6 @@ function calcPlayerSalaryFloor(player: any): number {
   return Math.floor((ovr * ovr) * 0.6 * ageFactor);
 }
 
-function calcPlayerBaseValue(player: any): number {
-  let baseValue: number;
-  const ovr = player.overall || 50;
-  if (ovr >= 85) baseValue = ovr * 80000;
-  else if (ovr >= 75) baseValue = ovr * 40000;
-  else if (ovr >= 65) baseValue = ovr * 20000;
-  else if (ovr >= 55) baseValue = ovr * 10000;
-  else baseValue = ovr * 5000;
-
-  const age = player.age || 25;
-  let ageFactor: number;
-  if (age <= 20) ageFactor = 1.5;
-  else if (age <= 22) ageFactor = 1.4;
-  else if (age <= 24) ageFactor = 1.3;
-  else if (age <= 27) ageFactor = 1.2;
-  else if (age <= 29) ageFactor = 1.0;
-  else if (age <= 31) ageFactor = 0.7;
-  else if (age <= 33) ageFactor = 0.4;
-  else ageFactor = 0.2;
-
-  return Math.floor(baseValue * ageFactor);
-}
-
 function buildVisibleStats(player: any) {
   const ratings: number[] = player.seasonRatings || [];
   const avgRating = ratings.length > 0 ? +(ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2) : null;
@@ -52,6 +29,9 @@ function buildVisibleStats(player: any) {
     assists: player.assists || 0,
     gamesPlayed: player.gamesPlayed || 0,
     avgRating,
+    overall: player.overall,
+    potential: player.potential,
+    rarity: player.rarity || 'Normal'
   };
 }
 
@@ -70,10 +50,24 @@ function rndAttr(base: number) {
 
 function generateFreeAgentPlayer() {
   const position = positions[Math.floor(Math.random() * positions.length)];
-  const overall = Math.floor(Math.random() * 36) + 50; // 50–85
-  const age = Math.floor(Math.random() * 14) + 22; // 22–35
+  const age = Math.floor(Math.random() * (34 - 16 + 1)) + 16; // 16–34
+  
+  // Rarity logic: 5% chance of rare (66-75), otherwise normal (50-65)
+  const isRare = Math.random() < 0.05;
+  const overall = isRare 
+    ? Math.floor(Math.random() * (75 - 66 + 1)) + 66
+    : Math.floor(Math.random() * (65 - 50 + 1)) + 50;
+  
+  const rarity = isRare ? 'Raro' : 'Normal';
+  
+  // Potential logic: chance for high potential
+  const isPromising = Math.random() < 0.1;
+  const potential = isPromising
+    ? Math.max(overall + 5, Math.floor(Math.random() * (95 - 75 + 1)) + 75)
+    : Math.max(overall, Math.floor(Math.random() * (overall + 10)));
+
   const personality = personalities[Math.floor(Math.random() * personalities.length)];
-  const games = Math.floor(Math.random() * 80);
+  const games = age > 20 ? Math.floor(Math.random() * 80) : Math.floor(Math.random() * 20);
   const goals = position === 'ATA' ? Math.floor(Math.random() * games * 0.5) : Math.floor(Math.random() * games * 0.15);
   const assists = Math.floor(Math.random() * games * 0.2);
   const ratings: number[] = [];
@@ -85,9 +79,11 @@ function generateFreeAgentPlayer() {
     name: rndName(),
     position,
     overall,
+    potential,
+    rarity,
     age,
     salary: calcPlayerSalaryFloor({ overall, age }),
-    stamina: 80,
+    stamina: 100,
     morale: 70,
     goals,
     assists,
