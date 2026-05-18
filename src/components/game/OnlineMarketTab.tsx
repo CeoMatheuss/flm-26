@@ -762,14 +762,14 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                               <span>•</span>
                               <span className="flex items-center gap-0.5"><Zap className="h-2 w-2 text-emerald-400" /> {pd?.stamina ?? 100}%</span>
                               <span>•</span>
+                              <span className={cn("px-1 rounded-[2px] bg-muted/30 font-bold", posColors[listing.player_position]?.text)}>{listing.player_position}</span>
+                              <span>•</span>
                               <span>{pd?.gamesPlayed ?? 0}j</span>
                               <span>⚽{pd?.goals ?? 0}</span>
                               <span>🅰️{pd?.assists ?? 0}</span>
-                              {listing.status !== 'active' && (
-                                <Badge variant="outline" className="text-[7px] h-3 border-orange-500/30 text-orange-400 uppercase">{listing.status}</Badge>
-                              )}
                             </div>
                           </div>
+
 
                           {listing.transfer_count > 2 && (
                             <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 shrink-0 gap-0.5">
