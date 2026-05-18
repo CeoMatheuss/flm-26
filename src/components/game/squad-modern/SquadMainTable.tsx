@@ -22,6 +22,7 @@ import {
 interface Props {
   players: Player[];
   starterIds: Set<string>;
+  benchIds?: Set<string>; // Adicionado para filtrar exatamente 11 reservas
   selectedId: string | null;
   onSelect: (id: string) => void;
   activeTab: string;
@@ -31,7 +32,7 @@ interface Props {
   onOpenQuickSwap?: () => void;
 }
 
-export function SquadMainTable({ players, starterIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId, onOpenQuickSwap }: Props) {
+export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId, onOpenQuickSwap }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
