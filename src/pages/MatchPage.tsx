@@ -1133,7 +1133,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
 
   // Validation helper for substitutions — used by widget click + queue
 
-  const resumeFromBreak = matchState.resumeFromBreak;
+  
 
   const validateSubAllowed = useCallback((): { ok: boolean; reason?: string } => {
     if (isFinished) return { ok: false, reason: '🚫 Partida finalizada — substituições encerradas.' };
