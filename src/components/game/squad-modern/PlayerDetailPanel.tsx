@@ -29,6 +29,7 @@ export type PlayerPanelAction =
 
 interface Props {
   player: Player | null;
+  onSwap?: (player: Player) => void;
   status: PlayerStatus | null;
   delta: AttrDelta;
   open: boolean;
