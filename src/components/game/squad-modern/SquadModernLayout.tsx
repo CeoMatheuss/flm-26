@@ -110,6 +110,19 @@ export function SquadModernLayout({
   }, [players, tactics.formation, onUpdatePlayers]);
 
   useEffect(() => {
+    const startSwapHandler = (e: any) => {
+      const p = e.detail.player;
+      if (pendingSwap && pendingSwap.id === p.id) {
+        setPendingSwap(null);
+      } else {
+        setPendingSwap(p);
+      }
+    };
+    window.addEventListener('flm:start-swap', startSwapHandler);
+    return () => window.removeEventListener('flm:start-swap', startSwapHandler);
+  }, [pendingSwap]);
+
+  useEffect(() => {
     const handler = (e: any) => {
       handleSwap(e.detail.idA, e.detail.idB);
     };
