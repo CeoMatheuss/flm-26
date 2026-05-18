@@ -2622,6 +2622,33 @@ export type Database = {
           },
         ]
       }
+      match_simulation_logs: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          id: string
+          match_id: string
+          match_type: string
+          step: string
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          match_id: string
+          match_type: string
+          step: string
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          match_id?: string
+          match_type?: string
+          step?: string
+        }
+        Relationships: []
+      }
       match_sync_log: {
         Row: {
           match_id: string
