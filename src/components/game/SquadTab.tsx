@@ -12,7 +12,7 @@ import {
   Armchair, Repeat, Zap, Target, Star, Trophy, Info, Layout, Activity, Heart
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { getPlayerBaseValue, getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
+import { getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
 import { canChangePosition, validateLineup } from '@/utils/lineupManager';
 import { FormationView } from './FormationView';
 import { RescindModal } from './RescindModal';
