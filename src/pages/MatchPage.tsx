@@ -219,6 +219,12 @@ export default function MatchPage() {
           navigate('/', { replace: true });
           return;
         }
+        // Proteção extra: se a partida carregada já está finalizada, sai
+        if (state.phase === 'finished') {
+          toast.info('Esta partida já foi encerrada.');
+          navigate('/', { replace: true });
+          return;
+        }
         setInitDone(true);
       } else if (locState && !locState.liveMatchDbId && locState.homePlayers?.length > 0) {
         doStartMatch(locState.homePlayers, locState.tactics);
