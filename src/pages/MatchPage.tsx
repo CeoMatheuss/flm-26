@@ -1217,10 +1217,13 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
               </div>
 
               <CardContent className="p-4 sm:p-6 space-y-4">
-                {isHalftime ? (
-                  <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 text-center space-y-2 animate-fade-in">
-                    <p className="text-3xl">⏸️</p>
-                    <p className="text-xl font-black text-primary uppercase tracking-tighter">Intervalo</p>
+                {matchState.phase === 'break' || isHalftime ? (
+                  <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 text-center space-y-4 animate-fade-in">
+                    <div className="space-y-1">
+                      <p className="text-3xl">⏸️</p>
+                      <p className="text-xl font-black text-primary uppercase tracking-tighter">Intervalo</p>
+                    </div>
+
                     <div className="flex items-center justify-center gap-6">
                        <div className="text-center">
                          <div className="mb-1 flex justify-center">{homeShield ? <ShieldCrest size={32} {...homeShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}</div>
@@ -1235,6 +1238,10 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, awayStre
                          <div className="mb-1 flex justify-center">{awayShield ? <ShieldCrest size={32} {...awayShield} /> : <div className="w-8 h-8 bg-muted rounded-full" />}</div>
                          <p className="text-[10px] font-bold uppercase truncate max-w-[80px]">{awayTeam}</p>
                        </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <HalftimeTimer onComplete={() => resumeFromBreak()} />
                     </div>
                   </div>
                 ) : (
