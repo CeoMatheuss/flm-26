@@ -218,7 +218,22 @@ export function validateLineup(players: Player[] | null | undefined): { valid: b
   if (!Array.isArray(players) || players.length === 0) return { valid: true };
   
   const safePlayers = players.filter((p): p is Player => !!p && typeof p === 'object' && !!p.position);
-  const starters = safePlayers.filter(p => p.squad_status === 'starter');
+  
+  // Lógica de Autocorreção: Se houver mais de 1 goleiro titular, o segundo vai para o banco
+  const starters = safePlayers.slice(0, 11);
+  const goalkeepersInStarters = starters.filter(p => p.position === 'GOL');
+  
+  if (goalkeepersInStarters.length > 1) {
+     // Trigger auto-lineup to fix it
+     const formation = detectActualFormation(players as Player[]);
+     const fixed = autoLineup(players as Player[], formation);
+     return {
+       valid: false,
+       message: "Escalação inválida: apenas 1 goleiro pode iniciar. Corrigindo automaticamente...",
+       autoFix: fixed
+     };
+  }
+
   const bench = safePlayers.filter(p => p.squad_status === 'bench');
   const goalkeepers = starters.filter(p => p.position === 'GOL');
   
