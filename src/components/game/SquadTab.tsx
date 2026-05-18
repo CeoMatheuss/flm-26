@@ -80,8 +80,8 @@ const attrLabels: Record<string, { label: string; icon: string }> = {
   aggression: { label: 'Agressividade', icon: '⚔️' },
 };
 
-const STARTERS_END = 11; // 0-10 = titulares (11 jogadores)
-const RESERVES_END = 18; // 11-17 = reservas (7 jogadores no banco)
+const STARTERS_COUNT = 11;
+const BENCH_COUNT = 7;
 
 function getOvrColor(val: number) {
   if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', glow: 'shadow-[0_0_20px_-5px_rgba(16,185,129,0.5)]' };
