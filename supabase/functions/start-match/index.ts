@@ -841,6 +841,10 @@ function simulateFullMatch(
 
   console.log(`[Sim] H:${homeStrength} A:${awayStrength} | λH:${homeExpected.toFixed(2)} λA:${awayExpected.toFixed(2)} | Final: ${totalHomeGoals}x${totalAwayGoals}`);
 
+  // ── REFEREE SYSTEM ─────────────────────────────────────────
+  const refRigidity = 20 + Math.floor(rng() * 70); // 20 (frouxo) to 90 (rigido)
+  console.log(`[Referee] Rigidity: ${refRigidity}`);
+
   // ── UNIQUE MINUTES ──────────────────────────────────────────
   const usedMinutes = new Set<number>([0, 45, 46]);
   function pickUnique(pool: number[]): number {
