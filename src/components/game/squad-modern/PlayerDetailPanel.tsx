@@ -7,6 +7,7 @@ import {
   X, ArrowUp, ArrowDown, Star, Target, Zap, Trophy, Activity,
   Heart, FileText, TrendingUp, Award, Flag,
   ArrowUpRight, ShoppingCart, ArrowLeftRight, Gavel, Hash, Dumbbell, ChevronsUp,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
