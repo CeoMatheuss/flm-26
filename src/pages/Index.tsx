@@ -278,32 +278,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   usePendingMatchFlush(userId);
   useAutoSimulator(userId);
 
-  // 🔄 World Sync Engine: Force Resync handler
-  useEffect(() => {
-    const handleForceResync = async () => {
-      console.log('[Index] Forçando resincronização total com o servidor...');
-      toast.loading('Sincronizando estado oficial...', { id: 'resync' });
-      
-      const { data: saveRes } = await supabase
-        .from('game_saves')
-        .select('club_data')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (saveRes?.club_data) {
-        setLoadedState(saveRes.club_data as unknown as GameState);
-        toast.success('Estado sincronizado com o servidor!', { id: 'resync' });
-      } else {
-        toast.error('Falha ao obter estado oficial.', { id: 'resync' });
-      }
-    };
-
-    window.addEventListener('flm:force-resync', handleForceResync);
-    return () => window.removeEventListener('flm:force-resync', handleForceResync);
-  }, [userId]);
-
   // Auto-fix and Initialize league + NATIONAL CUPS for current month (CRITICAL SYNC)
   useEffect(() => {
     if (!userId) return;
