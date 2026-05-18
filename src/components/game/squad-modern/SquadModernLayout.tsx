@@ -337,6 +337,27 @@ export function SquadModernLayout({
     if (!confirmAction) return;
     const { type, player, value, total } = confirmAction;
 
+    if (type === 'change-position') {
+      if (!confirmAction.newPosition) return;
+      const newPos = confirmAction.newPosition;
+      
+      setSubmitting(true);
+      try {
+        const updated = players.map(pl => 
+          pl.id === player.id ? { ...pl, position: newPos } : pl
+        );
+        onUpdatePlayers(updated);
+        
+        toast.success(`Posição de ${player.name} alterada para ${newPos}!`);
+        setConfirmAction(null);
+      } catch (err: any) {
+        toast.error("Erro ao alterar posição.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (type === 'promote-youth') {
       if (!confirmAction.promotionProposal) return;
       const proposal = confirmAction.promotionProposal;
