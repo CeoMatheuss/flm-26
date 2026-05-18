@@ -5072,6 +5072,11 @@ export type Database = {
           age: number | null
           created_at: string | null
           id: string
+          injury_body_part: string | null
+          injury_is_relapse: boolean | null
+          injury_severity: string | null
+          injury_type: string | null
+          injury_weeks_remaining: number | null
           name: string
           overall: number | null
           position: string
@@ -5081,6 +5086,11 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           id?: string
+          injury_body_part?: string | null
+          injury_is_relapse?: boolean | null
+          injury_severity?: string | null
+          injury_type?: string | null
+          injury_weeks_remaining?: number | null
           name: string
           overall?: number | null
           position: string
@@ -5090,6 +5100,11 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           id?: string
+          injury_body_part?: string | null
+          injury_is_relapse?: boolean | null
+          injury_severity?: string | null
+          injury_type?: string | null
+          injury_weeks_remaining?: number | null
           name?: string
           overall?: number | null
           position?: string
