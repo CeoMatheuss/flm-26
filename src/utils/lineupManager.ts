@@ -139,7 +139,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     }
   });
 
-  // Fill remaining reserve slots (up to 7) with best remaining
+  // Fill remaining reserve slots (up to 11) with best remaining
   const leftForReserves = allPlayers
     .filter(p => !used.has(p.id) && canPlayMatch(p))
     .sort((a, b) => b.overall - a.overall);
