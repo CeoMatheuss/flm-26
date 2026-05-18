@@ -5484,6 +5484,7 @@ export type Database = {
         Args: { _club_name: string; _country: string; _user_id: string }
         Returns: string
       }
+      auto_fill_team_rosters: { Args: never; Returns: undefined }
       auto_simulate_overdue_matches: { Args: never; Returns: undefined }
       award_club_world_cup_prizes: {
         Args: { _cup_id: string }
