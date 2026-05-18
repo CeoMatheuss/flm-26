@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Player } from '@/types/game';
-import { Zap, Heart, Shield, Activity, TrendingUp, Sparkles } from 'lucide-react';
+import { Zap, Heart, Shield, Activity, TrendingUp, Sparkles, Tag, Handshake } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { PotentialTier, potentialTierInfo, getPotentialTier } from '@/types/infrastructure';
 
@@ -50,7 +50,21 @@ export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPla
         </div>
       </div>
 
-      <h3 className="text-sm font-black italic text-white uppercase tracking-tighter mb-4 truncate relative z-10">{player.name}</h3>
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <h3 className="text-sm font-black italic text-white uppercase tracking-tighter truncate">{player.name}</h3>
+        <div className="flex gap-1">
+          {player.onTransferList && (
+            <div className="p-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" title="À Venda">
+              <Tag className="w-3 h-3" />
+            </div>
+          )}
+          {player.onLoanList && (
+            <div className="p-1 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400" title="Empréstimo">
+              <Handshake className="w-3 h-3" />
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="space-y-2 relative z-10">
         <div className="flex justify-between text-[10px] font-bold text-white/40 uppercase tracking-widest">
