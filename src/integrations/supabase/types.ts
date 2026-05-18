@@ -5866,10 +5866,12 @@ export type Database = {
       }
       seed_initial_world_leagues: { Args: never; Returns: undefined }
       seed_league_data: { Args: { p_league_id: string }; Returns: undefined }
-      simulate_bot_matches_for_round: {
-        Args: { p_league_id: string; p_round: number }
-        Returns: undefined
-      }
+      simulate_bot_matches_for_round:
+        | {
+            Args: { p_competition_id: string; p_round: number; p_type: string }
+            Returns: undefined
+          }
+        | { Args: { p_league_id: string; p_round: number }; Returns: undefined }
       simulate_cup_match: { Args: { _match_id: string }; Returns: undefined }
       simulate_league_matchday: {
         Args: { p_league_id: string; p_matchday: number }
@@ -5882,6 +5884,10 @@ export type Database = {
         Returns: undefined
       }
       simulate_realistic_bot_match: {
+        Args: { p_match_id: string }
+        Returns: undefined
+      }
+      simulate_realistic_bot_tournament_match: {
         Args: { p_match_id: string }
         Returns: undefined
       }
