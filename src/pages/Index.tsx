@@ -91,6 +91,9 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     };
     load();
 
+    // Inicializar o World Sync Engine
+    syncEngine.setUserId(userId);
+
     // Sincronização Realtime para recarregar o estado se mudar no servidor
     const channel = supabase.channel(`sync-app-${userId}`)
       .on('postgres_changes', { 
