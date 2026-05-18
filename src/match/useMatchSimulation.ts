@@ -83,7 +83,7 @@ const INITIAL: MatchState = {
   currentMoment: 'equilíbrio',
   playerStamina: {},
   assistantTips: [],
-  
+  resumeFromBreak: () => {},
 };
 
 interface MatchData {
