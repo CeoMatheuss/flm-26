@@ -1,6 +1,6 @@
 import { Player } from '@/types/game';
 import { motion } from 'framer-motion';
-import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown, Sparkles, Tag, Handshake } from 'lucide-react';
+import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown, Sparkles, Tag, Handshake, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ovrTier, getPositionColor, flagFor, getPlayerStatus, statusMeta } from '../squadHelpers';
 import { useAttributeEvolution } from '../useAttributeEvolution';

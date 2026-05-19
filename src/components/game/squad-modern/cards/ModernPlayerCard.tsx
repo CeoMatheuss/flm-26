@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { Player } from '@/types/game';
-import { Zap, Heart, Shield, Activity, TrendingUp, Sparkles, Tag, Handshake } from 'lucide-react';
+import { Zap, Heart, Shield, Activity, TrendingUp, Sparkles, Tag, Handshake, ArrowLeftRight } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
+import { cn } from '@/lib/utils';
 import swapIcon from '@/assets/swap-icon.png';
 import { PotentialTier, potentialTierInfo, getPotentialTier } from '@/types/infrastructure';
 
