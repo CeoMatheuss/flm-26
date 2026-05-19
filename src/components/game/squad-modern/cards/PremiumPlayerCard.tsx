@@ -97,7 +97,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
                    e.stopPropagation();
                    onOpenQuickSwap?.();
                  }}
-                 className="p-0.5 rounded-lg hover:scale-125 transition-all active:scale-90"
+                  className="p-1 rounded-full hover:scale-125 transition-all active:scale-90 bg-black/20 backdrop-blur-sm border border-white/5"
                  title="Troca Rápida"
                >
                  <img src={swapIcon} alt="Trocar" className="w-6 h-6 object-contain drop-shadow-md" />

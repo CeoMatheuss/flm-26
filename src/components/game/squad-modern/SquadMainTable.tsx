@@ -305,8 +305,8 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
                   }
                 }}
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110",
-                  isPendingSwap && "animate-pulse ring-2 ring-red-500/60"
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110 bg-black/20 backdrop-blur-sm border border-white/5",
+                  isPendingSwap && "animate-pulse ring-1 ring-red-500/40 bg-red-500/10"
                 )}
                 title={isPendingSwap ? "Cancelar Troca" : "Substituir Jogador"}
               >
