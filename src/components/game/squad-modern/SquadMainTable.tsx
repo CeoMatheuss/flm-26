@@ -393,7 +393,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
         <div className="flex flex-col items-end shrink-0">
           <span className="text-[10px] sm:text-[11px] font-black text-white/80 italic whitespace-nowrap">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
-            {isLoanedIn || isLoanedOut ? `${player.loanWeeksRemaining || 0} SEM (EMP)` : `${player.contract} Anos`}
+            {isLoanedIn || isLoanedOut ? `${player.loanWeeksRemaining || 0} SEM (EMP)` : `${player.contract} Temporadas`}
           </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
