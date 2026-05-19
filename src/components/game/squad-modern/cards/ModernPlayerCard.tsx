@@ -39,7 +39,7 @@ export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPla
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110 bg-black/20 backdrop-blur-sm border border-white/5"
             title="Troca Rápida"
           >
-            <img src={swapIcon} alt="Trocar" className="w-9 h-9 object-contain drop-shadow-lg" />
+            <ArrowLeftRight className={cn("w-5 h-5 drop-shadow-lg transition-colors", tierColor)} />
           </button>
         </div>
         <div className="text-right">

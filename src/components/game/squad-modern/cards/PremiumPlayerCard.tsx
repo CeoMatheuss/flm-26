@@ -98,10 +98,10 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
                    onOpenQuickSwap?.();
                  }}
                   className="p-1 rounded-full hover:scale-125 transition-all active:scale-90 bg-black/20 backdrop-blur-sm border border-white/5"
-                 title="Troca Rápida"
-               >
-                 <img src={swapIcon} alt="Trocar" className="w-6 h-6 object-contain drop-shadow-md" />
-               </button>
+                  title="Troca Rápida"
+                >
+                  <ArrowLeftRight className={cn("w-4 h-4 drop-shadow-md transition-colors", tier.color)} />
+                </button>
              )}
              {isStarter && (
                <div className="bg-emerald-500/20 p-1 rounded-lg border border-emerald-500/30">
