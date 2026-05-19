@@ -313,7 +313,10 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
                 {isPendingSwap ? (
                   <span className="text-white font-bold">✖</span>
                 ) : (
-                  <img src={swapIcon} alt="Trocar" className="w-9 h-9 object-contain drop-shadow-lg" />
+                  <ArrowLeftRight className={cn(
+                    "w-4 h-4 transition-colors drop-shadow-sm",
+                    isStarter ? "text-emerald-400" : "text-zinc-400"
+                  )} />
                 )}
               </button>
             </span>
