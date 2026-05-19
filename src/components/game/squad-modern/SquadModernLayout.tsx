@@ -579,7 +579,7 @@ export function SquadModernLayout({
 
   return (
     <div className="h-full min-h-[calc(100vh-180px)] flex flex-col bg-zinc-950 text-white selection:bg-emerald-500/30 overflow-hidden">
-      {!panelOpen && (
+      {!panelOpen && !isTacticsOpen && (
         <SquadHeader 
           club={club} 
           season={season} 
