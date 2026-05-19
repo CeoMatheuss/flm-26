@@ -401,7 +401,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             <span className="text-xs sm:text-sm font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(getPlayerValue(player))}</span>
             <span className="text-[8px] sm:text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
           </div>
-          <ChevronRight className={cn("w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-all group-hover:translate-x-1", isPendingSwap && "text-primary animate-bounce")} />
+          
         </div>
       </div>
     </motion.button>
