@@ -518,20 +518,20 @@ export function AdminTab({ userId, isFounder }: Props) {
     { icon: Gavel, label: 'Leilões', value: stats.totalAuctions, color: 'text-purple-400' },
     { icon: Trophy, label: 'Ligas', value: stats.totalLeagues, color: 'text-cyan-400' },
     { icon: Ban, label: 'Banidos', value: stats.totalBans, color: 'text-red-400' },
-    { icon: BarChart3, label: 'Saves', value: stats.totalSaves, color: 'text-emerald-400' },
-  ] : [];
-
   const CATEGORY_TABS: Record<AdminCategory, string[]> = {
     leagues:       ['leagues_overview'],
     cups:          ['cups_overview', 'tournaments'],
     clubs:         ['users', 'premium', 'bans', 'gameban', 'moderation'],
     players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
-    finance:       ['finance_panel'],
+    finance:       ['finance_panel', 'shop_monitor'],
     customization: ['customization_panel'],
     system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
     maintenance:   ['maintenance', 'direct_msg'],
     simulation:    ['simulation_panel'],
   };
+  const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
+
+  const TAB_META: Record<string, { label: string; icon: React.ElementType }> = {
     team:              { label: 'Equipe',         icon: Users },
     users:             { label: 'Usuários',       icon: Users },
     premium:           { label: 'Premium',        icon: Crown },
@@ -553,12 +553,8 @@ export function AdminTab({ userId, isFounder }: Props) {
     finance_panel:     { label: 'Financeiro',     icon: Wallet },
     shop_monitor:      { label: 'Monitor Loja',    icon: ShoppingBag },
     customization_panel:{ label: 'Personalização', icon: Palette },
-
-    finance_panel:     { label: 'Financeiro',     icon: Wallet },
-    customization_panel:{ label: 'Personalização', icon: Palette },
   };
 
-  return (
     <div className="space-y-3">
       <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
         <CardHeader className="py-2.5">
