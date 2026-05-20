@@ -554,19 +554,19 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           </div>
         </div>
 
-        {isShifted ? (
+        {isShifted && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded p-1.5 flex items-center gap-2 justify-center mx-2">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             <p className="text-[9px] text-amber-200 font-bold leading-tight">
               Transferido p/ {stadiumName} devido a evento.
             </p>
           </div>
-        ) : (
-          <div className="flex items-center justify-center gap-1.5">
-            <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
-            <p className={`text-[10px] font-bold ${isReady ? 'text-destructive' : 'text-muted-foreground'}`}>⏱️ {timeLeft}</p>
-          </div>
         )}
+        <div className="flex items-center justify-center gap-1.5">
+          <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
+          <p className={`text-[10px] font-bold ${isReady ? 'text-destructive' : 'text-muted-foreground'}`}>⏱️ {timeLeft}</p>
+        </div>
+
 
         <div className="flex flex-col gap-1.5 pt-1">
           {suspendedInLineup.length > 0 && isReady && (
