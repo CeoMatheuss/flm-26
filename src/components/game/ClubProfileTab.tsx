@@ -34,6 +34,8 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
   const [editingClubName, setEditingClubName] = useState(false);
   const [editingStadium, setEditingStadium] = useState(false);
   const [newClubName, setNewClubName] = useState(club.name);
+  const [newStadiumName, setNewStadiumName] = useState(club.stadiumName || 'Arena');
+  const [shieldOpen, setShieldOpen] = useState(false);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [payMethod, setPayMethod] = useState<'pix' | 'card'>('pix');
   const [payEmail, setPayEmail] = useState('');
@@ -42,7 +44,6 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
   const [payLoading, setPayLoading] = useState(false);
   const [pixResult, setPixResult] = useState<{ qrBase64?: string; copyPaste?: string } | null>(null);
 
-  const [unlockOpen, setUnlockOpen] = useState(false);
 
   const canEdit = !!profile.customizationUnlocked;
 
