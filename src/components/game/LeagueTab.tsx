@@ -622,63 +622,67 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         </TabsContent>
 
 
-        {/* TAB: CALENDAR */}
-        <TabsContent value="calendar" className="mt-4">
-           <Card>
-             <CardHeader className="border-b bg-muted/20">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-primary" /> Calendário Completo
-                </CardTitle>
-             </CardHeader>
-             <CardContent className="p-0">
-                <ScrollArea className="h-[800px]">
-                  <div className="divide-y">
-                    {Array.from({ length: 38 }).map((_, rIdx) => {
-                      const round = rIdx + 1;
-                      const roundMatches = fixtures.filter(f => f.round === round);
-                      const isCompleted = roundMatches.every(m => m.status === 'finished');
-                      const isCurrent = round === leagueInfo.currentRound;
-                      
-                      return (
-                        <div key={round} className={`p-4 ${isCurrent ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : ''}`}>
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-black flex items-center gap-2">
-                              Rodada {round}
-                              {isCurrent && <Badge className="text-[8px] h-4 bg-primary">Atual</Badge>}
-                              {isCompleted && round < leagueInfo.currentRound && <CheckCircle2 className="h-3 w-3 text-emerald-500" />}
-                            </h4>
-                            <span className="text-[10px] text-muted-foreground">Dia {round}</span>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {roundMatches.map(m => (
-                              <div key={m.id} className="flex items-center justify-between text-[10px] p-2 bg-muted/30 rounded border border-transparent hover:border-border transition-colors">
-                                <div 
-                                  className="flex items-center gap-1.5 w-24 justify-end cursor-pointer hover:text-primary transition-colors"
-                                  onClick={() => navigate(`/club?name=${encodeURIComponent(m.home_team?.name)}`)}
-                                >
-                                  <span className="truncate">{m.home_team?.name}</span>
-                                  <ClubShield club={m.home_team ? { logoUrl: m.home_team.logo } : null} size={14} />
-                                </div>
-                                <span className="font-black bg-background px-2 py-0.5 rounded shadow-sm text-xs">
-                                  {m.status === 'finished' ? `${m.home_goals} x ${m.away_goals}` : '19:30'}
-                                </span>
-                                <div 
-                                  className="flex items-center gap-1.5 w-24 justify-start cursor-pointer hover:text-primary transition-colors"
-                                  onClick={() => navigate(`/club?name=${encodeURIComponent(m.away_team?.name)}`)}
-                                >
-                                  <ClubShield club={m.away_team ? { logoUrl: m.away_team.logo } : null} size={14} />
-                                  <span className="truncate">{m.away_team?.name}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-             </CardContent>
-           </Card>
+        {/* TAB: PRIZES */}
+        <TabsContent value="prizes" className="mt-4">
+          <Card>
+            <CardHeader className="border-b bg-muted/20">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-primary" /> Tabela de Premiação por Posição
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/10">
+                    <TableRow>
+                      <TableHead className="w-20 text-center font-bold">Posição</TableHead>
+                      <TableHead>Classificação</TableHead>
+                      <TableHead className="text-right font-bold">Premiação (R$)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[
+                      { pos: 1, label: "Campeão", prize: 50000000, color: "text-emerald-500 font-black bg-emerald-500/5" },
+                      { pos: 2, label: "Vice-Campeão", prize: 40000000, color: "text-emerald-400 font-bold bg-emerald-400/5" },
+                      { pos: 3, label: "3º Lugar", prize: 35000000, color: "text-emerald-400 bg-emerald-400/5" },
+                      { pos: 4, label: "4º Lugar", prize: 30000000, color: "text-emerald-400 bg-emerald-400/5" },
+                      { pos: 5, label: "Libertadores", prize: 25000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 6, label: "Libertadores", prize: 20000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 7, label: "Libertadores", prize: 18000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 8, label: "Libertadores", prize: 16000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 9, label: "Sul-Americana", prize: 14000000, color: "text-blue-400 bg-blue-400/5" },
+                      { pos: 10, label: "Sul-Americana", prize: 12000000, color: "text-blue-400 bg-blue-400/5" },
+                      { pos: 11, label: "Meio de Tabela", prize: 10000000, color: "" },
+                      { pos: 12, label: "Meio de Tabela", prize: 9000000, color: "" },
+                      { pos: 13, label: "Meio de Tabela", prize: 8000000, color: "" },
+                      { pos: 14, label: "Meio de Tabela", prize: 7000000, color: "" },
+                      { pos: 15, label: "Meio de Tabela", prize: 6000000, color: "" },
+                      { pos: 16, label: "Permanência", prize: 5000000, color: "" },
+                      { pos: 17, label: "Rebaixamento", prize: 4000000, color: "text-red-400 bg-red-400/5" },
+                      { pos: 18, label: "Rebaixamento", prize: 3000000, color: "text-red-500 bg-red-500/5" },
+                      { pos: 19, label: "Rebaixamento", prize: 2000000, color: "text-red-600 bg-red-600/5" },
+                      { pos: 20, label: "Rebaixamento", prize: 1000000, color: "text-red-700 font-bold bg-red-700/5" },
+                    ].map((row) => (
+                      <TableRow key={row.pos} className={row.pos % 2 === 0 ? "bg-muted/5" : ""}>
+                        <TableCell className="text-center font-bold">{row.pos}º</TableCell>
+                        <TableCell className="py-2">
+                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase tracking-wider ${row.color || "bg-muted text-muted-foreground"}`}>
+                            {row.label}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-primary">
+                          R$ {row.prize.toLocaleString('pt-BR')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="p-4 bg-primary/5 text-[10px] text-muted-foreground border-t">
+                * Premiações depositadas automaticamente no saldo do clube ao final da temporada (após a 38ª rodada).
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* TAB: INFO */}
