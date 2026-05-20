@@ -329,7 +329,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {standings.slice(0, 20).map((row, i) => {
+                    {standings.slice(0, 16).map((row, i) => {
                       const isPlayerTeam = row.team_id === leagueInfo.playerTeamId;
                       const diff = (row.goals_for || 0) - (row.goals_against || 0);
                       // Banco salva em W/D/L (Win/Draw/Loss). Convertemos para V/E/D (Vitória/Empate/Derrota).
@@ -346,8 +346,9 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       let rowBg = isPlayerTeam ? "bg-primary/10 hover:bg-primary/20" : "hover:bg-accent/50";
                       
                       if (i < 4) posColor = "text-emerald-500 font-black"; // Libertadores
-                      else if (i < 8) posColor = "text-blue-500 font-bold"; // Sul-Americana
-                      else if (i >= standings.length - 4) posColor = "text-red-500 font-bold"; // Rebaixamento
+                      else if (i < 7) posColor = "text-blue-500 font-bold"; // Libertadores (G7)
+                      else if (i < 9) posColor = "text-blue-400 font-bold"; // Sul-Americana
+                      else if (i >= 13) posColor = "text-red-500 font-bold"; // Rebaixamento (Z3)
 
                       return (
                         <TableRow key={row.id} className={`${rowBg} transition-colors border-b border-border/40`}>
@@ -642,26 +643,22 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                   </TableHeader>
                   <TableBody>
                     {[
-                      { pos: 1, label: "Campeão", prize: 50000000, color: "text-emerald-500 font-black bg-emerald-500/5" },
-                      { pos: 2, label: "Vice-Campeão", prize: 40000000, color: "text-emerald-400 font-bold bg-emerald-400/5" },
-                      { pos: 3, label: "3º Lugar", prize: 35000000, color: "text-emerald-400 bg-emerald-400/5" },
-                      { pos: 4, label: "4º Lugar", prize: 30000000, color: "text-emerald-400 bg-emerald-400/5" },
-                      { pos: 5, label: "Libertadores", prize: 25000000, color: "text-blue-500 bg-blue-500/5" },
-                      { pos: 6, label: "Libertadores", prize: 20000000, color: "text-blue-500 bg-blue-500/5" },
-                      { pos: 7, label: "Libertadores", prize: 18000000, color: "text-blue-500 bg-blue-500/5" },
-                      { pos: 8, label: "Libertadores", prize: 16000000, color: "text-blue-500 bg-blue-500/5" },
-                      { pos: 9, label: "Sul-Americana", prize: 14000000, color: "text-blue-400 bg-blue-400/5" },
-                      { pos: 10, label: "Sul-Americana", prize: 12000000, color: "text-blue-400 bg-blue-400/5" },
-                      { pos: 11, label: "Meio de Tabela", prize: 10000000, color: "" },
-                      { pos: 12, label: "Meio de Tabela", prize: 9000000, color: "" },
-                      { pos: 13, label: "Meio de Tabela", prize: 8000000, color: "" },
-                      { pos: 14, label: "Meio de Tabela", prize: 7000000, color: "" },
-                      { pos: 15, label: "Meio de Tabela", prize: 6000000, color: "" },
-                      { pos: 16, label: "Permanência", prize: 5000000, color: "" },
-                      { pos: 17, label: "Rebaixamento", prize: 4000000, color: "text-red-400 bg-red-400/5" },
-                      { pos: 18, label: "Rebaixamento", prize: 3000000, color: "text-red-500 bg-red-500/5" },
-                      { pos: 19, label: "Rebaixamento", prize: 2000000, color: "text-red-600 bg-red-600/5" },
-                      { pos: 20, label: "Rebaixamento", prize: 1000000, color: "text-red-700 font-bold bg-red-700/5" },
+                      { pos: 1, label: "Campeão", prize: 18000000, color: "text-emerald-500 font-black bg-emerald-500/5" },
+                      { pos: 2, label: "Vice-Campeão", prize: 15000000, color: "text-emerald-400 font-bold bg-emerald-400/5" },
+                      { pos: 3, label: "3º Lugar", prize: 13000000, color: "text-emerald-400 bg-emerald-400/5" },
+                      { pos: 4, label: "4º Lugar", prize: 11000000, color: "text-emerald-400 bg-emerald-400/5" },
+                      { pos: 5, label: "Libertadores", prize: 9000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 6, label: "Libertadores", prize: 8000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 7, label: "Libertadores", prize: 7000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 8, label: "Sul-Americana", prize: 6000000, color: "text-blue-400 bg-blue-400/5" },
+                      { pos: 9, label: "Sul-Americana", prize: 5000000, color: "text-blue-400 bg-blue-400/5" },
+                      { pos: 10, label: "Meio de Tabela", prize: 4500000, color: "" },
+                      { pos: 11, label: "Meio de Tabela", prize: 4000000, color: "" },
+                      { pos: 12, label: "Meio de Tabela", prize: 3500000, color: "" },
+                      { pos: 13, label: "Permanência", prize: 3000000, color: "" },
+                      { pos: 14, label: "Rebaixamento", prize: 2500000, color: "text-red-400 bg-red-400/5" },
+                      { pos: 15, label: "Rebaixamento", prize: 2000000, color: "text-red-500 bg-red-500/5" },
+                      { pos: 16, label: "Rebaixamento", prize: 1500000, color: "text-red-600 bg-red-600/5" },
                     ].map((row) => (
                       <TableRow key={row.pos} className={row.pos % 2 === 0 ? "bg-muted/5" : ""}>
                         <TableCell className="text-center font-bold">{row.pos}º</TableCell>
