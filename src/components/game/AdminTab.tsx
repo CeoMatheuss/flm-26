@@ -917,6 +917,8 @@ export function AdminTab({ userId, isFounder }: Props) {
 
           <TabsContent value="tournaments" className="space-y-3 mt-3">
             <AdminTournamentTab userId={userId} />
+          <TabsContent value="tournaments" className="space-y-3 mt-3">
+            <AdminTournamentTab userId={userId} />
           </TabsContent>
 
           <TabsContent value="versions" className="space-y-3 mt-3">
@@ -927,3 +929,4 @@ export function AdminTab({ userId, isFounder }: Props) {
     </div>
   );
 }
+
