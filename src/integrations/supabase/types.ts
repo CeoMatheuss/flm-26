@@ -131,6 +131,59 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_shop_activity: {
+        Row: {
+          amount_cents: number | null
+          club_name: string | null
+          created_at: string | null
+          id: string
+          item_id: string | null
+          item_name: string | null
+          metadata: Json | null
+          payment_method: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          club_name?: string | null
+          created_at?: string | null
+          id?: string
+          item_id?: string | null
+          item_name?: string | null
+          metadata?: Json | null
+          payment_method?: string | null
+          status: string
+          transaction_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          club_name?: string | null
+          created_at?: string | null
+          id?: string
+          item_id?: string | null
+          item_name?: string | null
+          metadata?: Json | null
+          payment_method?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_shop_activity_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auction_bids: {
         Row: {
           amount: number
