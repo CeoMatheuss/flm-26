@@ -427,27 +427,78 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     if (fans < 50000) {
       newsText = `👕 ${clubName} apresenta novo uniforme para a temporada. O design busca aumentar a conexão com a torcida e renovar as esperanças dos fãs.`;
     } else if (fans < 500000) {
-      newsText = `👕 Novo uniforme do ${clubName} começa a movimentar a torcida. Com vendas iniciais superando as expectativas, o clube aposta no hype para alavancar as receitas.`;
+    } else if (reputation > 80) {
+      newsText = `👕 IMPACTO GLOBAL! O novo uniforme do ${clubName} é aclamado por especialistas e gera filas nas lojas oficiais. Um marco na identidade visual do clube.`;
     } else {
-      newsText = `👕 Torcida lota loja oficial após lançamento do novo uniforme do ${clubName}. O lançamento do novo uniforme do gigante ${clubName} parou a cidade.`;
+      newsText = `👕 O novo manto do ${clubName} já está disponível! A torcida comparece em peso ao lançamento oficial e as primeiras unidades já estão esgotadas.`;
     }
 
-    await (supabase.from('newspaper_entries') as any).insert({
+    await supabase.from('news_articles').insert({
       user_id: userId,
-      text: newsText,
-      category: 'MARKETING',
-      importance: 1,
-      is_event: true
+      title: 'Novo Manto Lançado!',
+      content: newsText,
+      category: 'club',
+      impact: 'positive'
     });
   };
 
   const handleLaunch = async () => {
     if (!uniformsUnlocked) {
-      toast.error('🔒 Compre o desbloqueio de Uniformes na Loja FLM para lançar coleções.');
+      toast.error('Você precisa do slot premium de uniformes para salvar e lançar permanentemente.');
       return;
     }
+
+    setIsLaunching(true);
     try {
-      setIsLaunching(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: clubData } = await supabase.from('clubs')
+        .select('id, name, fans, reputation')
+        .eq('user_id', user.id)
+        .single();
+      if (!clubData) return;
+
+      // Save to game_saves
+      onSave(kits);
+
+      // Save as a launch
+      const { error: launchError } = await supabase
+        .from('club_uniform_launches')
+        .insert({
+          club_id: clubData.id,
+          season_year: 2026,
+          type: activeKit,
+          design_data: kits[activeKit],
+          hype_score: 50 + Math.floor(Math.random() * 50),
+          total_sales: 0,
+          is_active: true
+        });
+
+      if (launchError) throw launchError;
+
+      // News and Notifications
+      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
+      
+      await supabase.from('user_notifications').insert({
+        user_id: user.id,
+        type: 'success',
+        category: 'Marketing',
+        title: 'Uniforme Lançado!',
+        message: `O novo uniforme ${kits[activeKit].name} foi lançado e já está sendo vendido para a torcida!`,
+        icon: '👕'
+      });
+
+      toast.success('Uniforme lançado e salvo com sucesso!');
+      fetchLaunches();
+    } catch (error) {
+      console.error('Error launching uniform:', error);
+      toast.error('Falha ao lançar uniforme.');
+    } finally {
+      setIsLaunching(false);
+    }
+  };
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
