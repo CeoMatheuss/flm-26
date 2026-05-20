@@ -233,7 +233,23 @@ serve(async (req) => {
             console.error('[NEW_PACKAGES] Exceção ao gerar notícia:', e);
           }
 
-          // 5. Notify user about payment and release in Real-Time
+          // 5. Monitor de Auditoria ADM: Atualizar status final
+          try {
+            await supabaseAdmin.from('admin_shop_activity').insert({
+              user_id: orderData.user_id,
+              item_id: orderData.item_id,
+              item_name: orderData.metadata?.item_name,
+              amount_cents: paymentData.transaction_amount * 100,
+              status: 'approved',
+              payment_method: paymentData.payment_method_id,
+              transaction_id: id.toString(),
+              metadata: { ...orderData.metadata, mp_status: paymentData.status }
+            });
+          } catch (admErr) {
+            console.error('[ADM_LOG] Erro ao registrar aprovação:', admErr);
+          }
+
+          // 6. Notify user about payment and release in Real-Time
           if (orderData) {
             // First notification: Payment received
             await supabaseAdmin.from('user_notifications').insert({
@@ -244,6 +260,7 @@ serve(async (req) => {
               title: 'Pagamento Confirmado',
               message: `Recebemos seu pagamento para "${orderData.metadata?.item_name || 'Item'}".`,
               icon: '✅',
+
               data: { order_id: orderId, payment_id: id, status: 'PAID' }
             });
 
