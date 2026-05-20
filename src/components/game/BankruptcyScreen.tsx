@@ -27,7 +27,7 @@ export function BankruptcyScreen({
             <div className="relative">
               <div className="absolute inset-0 bg-destructive/20 blur-xl rounded-full scale-150" />
               <ClubShield 
-                club={{ name: clubName, shield_config: shieldConfig }} 
+                club={{ shield_config: shieldConfig } as any} 
                 size={80} 
                 className="grayscale opacity-60"
               />

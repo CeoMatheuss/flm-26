@@ -329,6 +329,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
                 shieldShape: 'classic',
                 stadiumName: 'Arena ' + bankruptClubData.name,
                 shieldConfig: bankruptClubData.shield_config,
+                logoUrl: '',
               };
               await handleClubCreated(config);
               setIsBankrupt(false);
