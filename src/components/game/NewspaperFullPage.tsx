@@ -194,7 +194,7 @@ export function NewspaperFullPage({ onBack }: Props) {
                       {item.template_key ? (
                         <NewsVisualTemplate templateKey={item.template_key} {...item.metadata} />
                       ) : (
-                        <div className="relative w-full aspect-video sm:aspect-[21/9] overflow-hidden">
+                        <div className="relative w-full aspect-video md:aspect-[25/9] lg:aspect-[32/9] overflow-hidden">
                           {item.image_url ? (
                             <img src={item.image_url} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
                           ) : (
@@ -203,7 +203,7 @@ export function NewspaperFullPage({ onBack }: Props) {
                           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
                           <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6">
                             <Badge className="bg-primary text-white font-black text-[8px] mb-2">{item.category}</Badge>
-                            <h3 className="text-base sm:text-xl font-black text-white leading-tight uppercase italic">{headline}</h3>
+                            <h3 className="text-base sm:text-xl md:text-2xl font-black text-white leading-tight uppercase italic">{headline}</h3>
                           </div>
                         </div>
                       )}
@@ -243,12 +243,12 @@ export function NewspaperFullPage({ onBack }: Props) {
                     {item.template_key ? (
                        <NewsVisualTemplate templateKey={item.template_key} {...item.metadata} className="aspect-[21/9]" />
                     ) : item.image_url ? (
-                      <div className="relative w-full aspect-[16/7] overflow-hidden">
+                      <div className="relative w-full aspect-[16/7] md:aspect-[21/7] overflow-hidden">
                         <img src={item.image_url} alt="Notícia" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       </div>
                     ) : showSigningVisual ? (
-                      <div className="w-full aspect-[21/9] overflow-hidden bg-blue-500/10 flex items-center justify-center relative">
+                      <div className="w-full aspect-[21/9] md:aspect-[32/9] overflow-hidden bg-blue-500/10 flex items-center justify-center relative">
                         <img src={signingImg} alt="Transferência" className="w-full h-full object-cover opacity-30" />
                         <span className="absolute inset-0 flex items-center justify-center font-black text-blue-500/20 text-3xl italic tracking-tighter">TRANSFER NEWS</span>
                       </div>
@@ -258,7 +258,7 @@ export function NewspaperFullPage({ onBack }: Props) {
                         <Badge className={`${categoryColors[item.category] || 'bg-primary/80'} text-[8px] font-bold border-none`}>{item.category}</Badge>
                         <span className="text-[9px] text-muted-foreground font-mono">{new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
                       </div>
-                      <p className="text-xs sm:text-sm font-bold leading-snug group-hover:text-primary transition-colors whitespace-pre-line">{item.text}</p>
+                      <p className="text-xs sm:text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors whitespace-pre-line">{item.text}</p>
                       <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
                         {(reactions[item.id] || []).map(emoji => (
                           <button key={emoji} onClick={() => toggleReaction(item.id, emoji)} className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80">{emoji}</button>

@@ -62,7 +62,7 @@ export function NewsVisualTemplate({
   const isResult = ['league_win', 'league_loss', 'league_draw', 'league_champion', 'cup_advance', 'cup_eliminated', 'cup_champion'].includes(templateKey);
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-xl group bg-black ${isResult ? 'aspect-[21/7]' : 'aspect-video sm:aspect-[21/9]'} ${className}`}>
+    <div className={`relative w-full overflow-hidden rounded-xl group bg-black ${isResult ? 'aspect-[21/7] md:aspect-[32/7]' : 'aspect-video sm:aspect-[21/9] md:aspect-[28/9]'} ${className}`}>
       {/* Background Image */}
       <img 
         src={config.bg} 
@@ -100,7 +100,7 @@ export function NewsVisualTemplate({
             
             <div className="flex flex-col items-center">
               <div className="bg-primary/90 text-white px-3 py-1 rounded-sm skew-x-[-10deg] shadow-lg border border-white/20">
-                <span className="text-lg sm:text-2xl font-black italic tracking-tighter tabular-nums">{score}</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-black italic tracking-tighter tabular-nums">{score}</span>
               </div>
               {competition && (
                 <span className="text-[6px] sm:text-[8px] font-bold text-white/50 uppercase tracking-tighter mt-1">
@@ -131,12 +131,12 @@ export function NewsVisualTemplate({
           <div className="flex items-end justify-between gap-4">
             <div className="flex-1">
               {playerName ? (
-                <h2 className="text-lg sm:text-2xl font-black text-white italic skew-x-[-5deg] leading-none tracking-tighter drop-shadow-2xl">
+                <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-white italic skew-x-[-5deg] leading-none tracking-tighter drop-shadow-2xl">
                   {playerName.toUpperCase()}
                 </h2>
               ) : (
                 <div className="space-y-0.5">
-                  <h2 className="text-sm sm:text-xl font-black text-white italic skew-x-[-5deg] leading-none tracking-tighter drop-shadow-2xl uppercase">
+                  <h2 className="text-sm sm:text-xl md:text-2xl font-black text-white italic skew-x-[-5deg] leading-none tracking-tighter drop-shadow-2xl uppercase">
                     {teamName}
                   </h2>
                   {competition && (
