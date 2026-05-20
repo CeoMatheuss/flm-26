@@ -37,11 +37,14 @@ const CATEGORIES = [
   { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
+  { id: 'scouting', name: 'Olheiros', icon: UserCog, db: 'scouting' },
+  { id: 'fans', name: 'Torcida', icon: Users, db: 'fans' },
   { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
   { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
   { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
   { id: 'painel', name: 'Painel', icon: LayoutDashboard, db: 'painel' },
 ];
+
 
 export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: LojaProps) {
   const [activeCategory, setActiveCategory] = useState('uniform');
