@@ -185,6 +185,19 @@ serve(async (req) => {
                   .from('game_saves')
                   .update({ club_data: clubData, updated_at: new Date().toISOString() })
                   .eq('id', saveRow.id);
+                
+                // Notícia no jornal
+                const newsText = isUniformItem 
+                  ? "👕 A torcida vibra! O clube acaba de desbloquear sua nova linha de uniformes personalizados."
+                  : "💎 Identidade renovada! O clube investe em sua marca e agora possui personalização completa de escudo e nome.";
+                
+                await supabaseAdmin.from('newspaper_entries').insert({
+                  user_id: orderData.user_id,
+                  text: newsText,
+                  category: 'club',
+                  importance: 2
+                });
+
                 console.log(`[UNLOCK] user_id=${orderData.user_id} uniforms=${isUniformItem} customization=${isCustomizationItem}`);
               }
             }
@@ -192,6 +205,33 @@ serve(async (req) => {
             console.error('[UNLOCK] Exceção ao desbloquear:', e);
           }
 
+          // 4.7 NOVOS PACOTES: Olheiros, Torcida, Marketing
+          try {
+            const itemId = (orderData.item_id || '').toString().toLowerCase();
+            const itemName = (orderData.metadata?.item_name || '').toString();
+            
+            if (itemId.includes('scouting') || itemId.includes('fan_boost') || itemId.includes('mkt_')) {
+               let newsText = "";
+               if (itemId.includes('scouting')) {
+                 newsText = `🔍 REDE DE OLHEIROS! O clube expande seu departamento de scout com o ${itemName}. "Vamos encontrar as maiores promessas do mundo", diz o presidente.`;
+               } else if (itemId.includes('fan_boost')) {
+                 newsText = `📣 APOIO MASSIVO! Com o ${itemName}, a torcida promete transformar o estádio em um caldeirão nos próximos jogos.`;
+               } else if (itemId.includes('mkt_')) {
+                 newsText = `🚀 CLUBE EM DESTAQUE! Uma nova campanha de marketing (${itemName}) foi lançada e o clube ganha visibilidade recorde nas redes sociais.`;
+               }
+
+               if (newsText) {
+                 await supabaseAdmin.from('newspaper_entries').insert({
+                   user_id: orderData.user_id,
+                   text: newsText,
+                   category: 'club',
+                   importance: 2
+                 });
+               }
+            }
+          } catch (e) {
+            console.error('[NEW_PACKAGES] Exceção ao gerar notícia:', e);
+          }
 
           // 5. Notify user about payment and release in Real-Time
           if (orderData) {
@@ -212,6 +252,14 @@ serve(async (req) => {
               user_id: orderData.user_id,
               type: 'success',
               category: 'Clube',
+              priority: 'ultra',
+              title: 'Acesso Liberado!',
+              message: `Seu item "${orderData.metadata?.item_name || 'Premium'}" foi liberado automaticamente.`,
+              icon: '🚀',
+              data: { order_id: orderId, item_id: orderData.item_id, delivered: true }
+            });
+          }
+
               priority: 'ultra',
               title: 'Acesso Liberado!',
               message: `Seu item "${orderData.metadata?.item_name || 'Premium'}" foi liberado automaticamente.`,
