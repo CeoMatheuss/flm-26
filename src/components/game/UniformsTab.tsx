@@ -427,71 +427,74 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     if (fans < 50000) {
       newsText = `👕 ${clubName} apresenta novo uniforme para a temporada. O design busca aumentar a conexão com a torcida e renovar as esperanças dos fãs.`;
     } else if (fans < 500000) {
-      newsText = `👕 Novo uniforme do ${clubName} começa a movimentar a torcida. Com vendas iniciais superando as expectativas, o clube aposta no hype para alavancar as receitas.`;
+    } else if (reputation > 80) {
+      newsText = `👕 IMPACTO GLOBAL! O novo uniforme do ${clubName} é aclamado por especialistas e gera filas nas lojas oficiais. Um marco na identidade visual do clube.`;
     } else {
-      newsText = `👕 Torcida lota loja oficial após lançamento do novo uniforme do ${clubName}. O lançamento do novo uniforme do gigante ${clubName} parou a cidade.`;
+      newsText = `👕 O novo manto do ${clubName} já está disponível! A torcida comparece em peso ao lançamento oficial e as primeiras unidades já estão esgotadas.`;
     }
 
-    await (supabase.from('newspaper_entries') as any).insert({
+    await supabase.from('newspaper_entries').insert({
       user_id: userId,
       text: newsText,
-      category: 'MARKETING',
-      importance: 1,
-      is_event: true
+      category: 'club',
+      importance: 2
     });
   };
 
+
   const handleLaunch = async () => {
     if (!uniformsUnlocked) {
-      toast.error('🔒 Compre o desbloqueio de Uniformes na Loja FLM para lançar coleções.');
+      toast.error('Você precisa do slot premium de uniformes para salvar e lançar permanentemente.');
       return;
     }
+
+    setIsLaunching(true);
     try {
-      setIsLaunching(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: clubData } = await (supabase.from('clubs') as any).select('*').eq('user_id', user.id).single();
+      const { data: clubData } = await supabase.from('clubs')
+        .select('id, name, fans, reputation')
+        .eq('user_id', user.id)
+        .single();
       if (!clubData) return;
 
-      if ((clubData.uniform_launches_available || 0) <= 0) {
-        toast.error('Você não possui slots de lançamento disponíveis. Compre na Loja FLM!');
-        return;
-      }
+      // Save to game_saves
+      onSave(kits);
 
-      // 1. Criar registro de lançamento
-      const { data: newLaunch, error: launchError } = await (supabase.from('club_uniform_launches') as any)
+      // Save as a launch
+      // Save as a launch
+      const { error: launchError } = await supabase
+        .from('club_uniform_launches')
         .insert({
           club_id: clubData.id,
-          name: kits.home.name || 'Nova Coleção',
-          config: kits as any,
+          name: kits[activeKit].name || 'Nova Coleção',
+          config: kits[activeKit] as any,
           initial_fans: clubData.fans,
           initial_reputation: clubData.reputation,
           hype_score: 1.0
-        })
-        .select()
-        .single();
+        });
 
       if (launchError) throw launchError;
 
-      // 2. Atualizar clube (consumir slot e definir uniforme atual)
-      await (supabase.from('clubs') as any).update({
-        uniform_launches_available: clubData.uniform_launches_available - 1,
-        current_uniform_launch_id: newLaunch.id,
-        primary_color: kits.home.shirtColor,
-        secondary_color: kits.home.shirtSecondaryColor
-      }).eq('id', clubData.id);
-
-      // 3. Gerar notícia
+      // News and Notifications
       await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
+      
+      await supabase.from('user_notifications').insert({
+        user_id: user.id,
+        type: 'success',
+        category: 'Marketing',
+        title: 'Uniforme Lançado!',
+        message: `O novo uniforme ${kits[activeKit].name} foi lançado e já está sendo vendido para a torcida!`,
+        icon: '👕'
+      });
 
-      toast.success('🚀 Novo uniforme lançado com sucesso!');
+      toast.success('Uniforme lançado e salvo com sucesso!');
       fetchLaunches();
       window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
-      onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
     } catch (error: any) {
       console.error('Launch error:', error);
-      toast.error('Erro ao lançar uniforme: ' + error.message);
+      toast.error('Erro ao lançar uniforme: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setIsLaunching(false);
     }
