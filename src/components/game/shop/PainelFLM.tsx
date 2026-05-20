@@ -162,6 +162,10 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
         kind: 'out',
         category: knownCat,
         label: o.shop_items?.name || (o.metadata as any)?.item_name || 'Compra',
+        amount: Number(o.amount_cents || 0) / 100,
+        source: o.status === 'approved' || o.delivered ? 'Aprovado' : (o.status || 'Pendente'),
+      });
+    }
     for (const s of sponsorships) {
       out.push({
         id: `spons-${s.id}`,
@@ -191,6 +195,7 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
 
     return out.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()).slice(0, 30);
   }, [orders, sponsorships, activeEffects]);
+
 
   // ── Série 7 dias (saídas reais via pedidos) ──────────────────────────────
   const last7 = useMemo(() => {
