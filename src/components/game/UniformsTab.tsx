@@ -441,7 +441,6 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     });
   };
 
-  };
 
   const handleLaunch = async () => {
     if (!uniformsUnlocked) {
