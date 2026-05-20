@@ -28,6 +28,8 @@ import { AdminVersionPanel } from './admin/AdminVersionPanel';
 // import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
 // import { ModerationPanel } from './admin/ModerationPanel';
 import { MaintenanceToggle } from './admin/MaintenanceToggle';
+import { AdminShopMonitor } from './admin/AdminShopMonitor';
+
 
 interface PendingUser {
   id: string;
