@@ -534,6 +534,8 @@ export function AdminTab({ userId, isFounder }: Props) {
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
 
+  const TAB_META: Record<string, { label: string; icon: React.ElementType }> = {
+    team:              { label: 'Equipe',         icon: Users },
     users:             { label: 'Usuários',       icon: Users },
     premium:           { label: 'Premium',        icon: Crown },
     bans:              { label: 'Bans Chat',      icon: Ban },
@@ -556,9 +558,9 @@ export function AdminTab({ userId, isFounder }: Props) {
     customization_panel:{ label: 'Personalização', icon: Palette },
   };
 
+  return (
     <div className="space-y-3">
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
-        <CardHeader className="py-2.5">
+
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-sm flex items-center gap-2">
               {isFounder
