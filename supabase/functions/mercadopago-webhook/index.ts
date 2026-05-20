@@ -39,7 +39,6 @@ serve(async (req) => {
     const dataId = url.searchParams.get('data.id') || url.searchParams.get('id')
 
     // Mercado Pago Signature Verification V2
-    // Manifest: x-signature: ts=...,v1=...
     const parts = xSignature.split(',')
     const tsPart = parts.find(p => p.startsWith('ts='))?.split('=')[1]
     const v1Part = parts.find(p => p.startsWith('v1='))?.split('=')[1]
@@ -98,7 +97,7 @@ serve(async (req) => {
           throw new Error(`Order ${orderId} not found`);
         }
 
-        // 2. Anti-duplication check: if already delivered, just stop
+        // 2. Anti-duplication check
         if (orderData.delivered) {
           console.log(`[DUPLICIDADE EVITADA] Order ${orderId} already delivered.`);
           return new Response(JSON.stringify({ received: true, already_processed: true }), {
@@ -107,14 +106,12 @@ serve(async (req) => {
           });
         }
 
-        // 3. Update order status to 'approved' if not already
-        if (orderData.status !== 'approved' && orderData.status !== 'paid') {
-          await supabaseAdmin.from('payment_orders').update({
-            status: 'approved',
-            payment_id: id.toString(),
-            updated_at: new Date().toISOString()
-          }).eq('id', orderId);
-        }
+        // 3. Update order status
+        await supabaseAdmin.from('payment_orders').update({
+          status: 'approved',
+          payment_id: id.toString(),
+          updated_at: new Date().toISOString()
+        }).eq('id', orderId);
 
         // 4. Deliver product via database RPC (ConfirmPaymentAndReleaseProduct Logic)
         console.log(`[LIBERANDO PRODUTO] Order ID: ${orderId}`);
@@ -125,7 +122,6 @@ serve(async (req) => {
         if (rpcError || !deliverResult?.success) {
           console.error(`[FALHA NA LIBERAÇÃO] Error for order ${orderId}:`, rpcError || deliverResult?.error);
           
-          // Reenviar automaticamente se houver erro (tentativa simples de retry)
           await supabaseAdmin.from('user_notifications').insert({
             user_id: orderData.user_id,
             type: 'warning',
@@ -137,192 +133,49 @@ serve(async (req) => {
         } else {
           console.log(`[PRODUTO LIBERADO] Result for order ${orderId}:`, deliverResult);
 
-          // 4.5 ATIVAR/RENOVAR PREMIUM: qualquer compra aprovada concede 30 dias (reset)
+          // PREMIUM ACTIVATION
           try {
-            const { error: premiumError } = await supabaseAdmin
-              .from('premium_users')
-              .upsert({
-                user_id: orderData.user_id,
-                activated_at: new Date().toISOString(),
-                status: 'active',
-                pix_transaction_id: id.toString(),
-              }, { onConflict: 'user_id' });
-            if (premiumError) {
-              console.error('[PREMIUM] Falha ao ativar/renovar:', premiumError);
-            } else {
-              console.log(`[PREMIUM ATIVADO] user_id=${orderData.user_id} reset 30 dias`);
-              await supabaseAdmin.from('user_notifications').insert({
-                user_id: orderData.user_id,
-                type: 'success',
-                category: 'Premium',
-                priority: 'ultra',
-                title: 'Premium Ativado!',
-                message: 'Sua conta Premium foi ativada/renovada por 30 dias. Aproveite todos os benefícios!',
-                icon: '👑',
-                data: { source: 'auto_purchase', order_id: orderId }
-              });
-            }
-          } catch (e) {
-            console.error('[PREMIUM] Exceção ao ativar:', e);
-          }
-
-          // 4.6 DESBLOQUEIO: uniformes e personalização premium
-          try {
-            const itemName = (orderData.metadata?.item_name || '').toString().toLowerCase();
-            const itemId = (orderData.item_id || '').toString().toLowerCase();
-            const isUniformItem = itemName.includes('uniform') || itemId.includes('uniform');
-            const isCustomizationItem =
-              itemId === 'customization_unlock' ||
-              itemId.includes('customization') ||
-              itemName.includes('personaliza');
-
-            if (isUniformItem || isCustomizationItem) {
-              const { data: saveRow } = await supabaseAdmin
-                .from('game_saves')
-                .select('id, club_data')
-                .eq('user_id', orderData.user_id)
-                .order('updated_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-              if (saveRow) {
-                const clubData = (saveRow.club_data || {}) as Record<string, any>;
-                const clubProfile = { ...(clubData.clubProfile || {}) };
-                if (isUniformItem) clubProfile.uniformsUnlocked = true;
-                if (isCustomizationItem) clubProfile.customizationUnlocked = true;
-                clubData.clubProfile = clubProfile;
-                await supabaseAdmin
-                  .from('game_saves')
-                  .update({ club_data: clubData, updated_at: new Date().toISOString() })
-                  .eq('id', saveRow.id);
-                
-                // Notícia no jornal
-                const newsText = isUniformItem 
-                  ? "👕 A torcida vibra! O clube acaba de desbloquear sua nova linha de uniformes personalizados."
-                  : "💎 Identidade renovada! O clube investe em sua marca e agora possui personalização completa de escudo e nome.";
-                
-                await supabaseAdmin.from('newspaper_entries').insert({
-                  user_id: orderData.user_id,
-                  text: newsText,
-                  category: 'club',
-                  importance: 2
-                });
-
-                console.log(`[UNLOCK] user_id=${orderData.user_id} uniforms=${isUniformItem} customization=${isCustomizationItem}`);
-              }
-            }
-          } catch (e) {
-            console.error('[UNLOCK] Exceção ao desbloquear:', e);
-          }
-
-          // 4.7 NOVOS PACOTES: Olheiros, Torcida, Marketing
-          try {
-            const itemId = (orderData.item_id || '').toString().toLowerCase();
-            const itemName = (orderData.metadata?.item_name || '').toString();
-            
-            if (itemId.includes('scouting') || itemId.includes('fan_boost') || itemId.includes('mkt_')) {
-               let newsText = "";
-               if (itemId.includes('scouting')) {
-                 newsText = `🔍 REDE DE OLHEIROS! O clube expande seu departamento de scout com o ${itemName}. "Vamos encontrar as maiores promessas do mundo", diz o presidente.`;
-               } else if (itemId.includes('fan_boost')) {
-                 newsText = `📣 APOIO MASSIVO! Com o ${itemName}, a torcida promete transformar o estádio em um caldeirão nos próximos jogos.`;
-               } else if (itemId.includes('mkt_')) {
-                 newsText = `🚀 CLUBE EM DESTAQUE! Uma nova campanha de marketing (${itemName}) foi lançada e o clube ganha visibilidade recorde nas redes sociais.`;
-               }
-
-               if (newsText) {
-                 await supabaseAdmin.from('newspaper_entries').insert({
-                   user_id: orderData.user_id,
-                   text: newsText,
-                   category: 'club',
-                   importance: 2
-                 });
-               }
-            }
-          } catch (e) {
-            console.error('[NEW_PACKAGES] Exceção ao gerar notícia:', e);
-          }
-
-          // 5. Monitor de Auditoria ADM: Atualizar status final
-          try {
-            await supabaseAdmin.from('admin_shop_activity').insert({
+            await supabaseAdmin.from('premium_users').upsert({
               user_id: orderData.user_id,
-              item_id: orderData.item_id,
-              item_name: orderData.metadata?.item_name,
-              amount_cents: paymentData.transaction_amount * 100,
-              status: 'approved',
-              payment_method: paymentData.payment_method_id,
-              transaction_id: id.toString(),
-              metadata: { ...orderData.metadata, mp_status: paymentData.status }
-            });
-          } catch (admErr) {
-            console.error('[ADM_LOG] Erro ao registrar aprovação:', admErr);
+              activated_at: new Date().toISOString(),
+              status: 'active',
+              pix_transaction_id: id.toString(),
+            }, { onConflict: 'user_id' });
+          } catch (e) {
+            console.error('[PREMIUM] Exceção:', e);
           }
 
-          // 6. Notify user about payment and release in Real-Time
-          if (orderData) {
-            // First notification: Payment received
-            await supabaseAdmin.from('user_notifications').insert({
-              user_id: orderData.user_id,
-              type: 'success',
-              category: 'Financeiro',
-              priority: 'high',
-              title: 'Pagamento Confirmado',
-              message: `Recebemos seu pagamento para "${orderData.metadata?.item_name || 'Item'}".`,
-              icon: '✅',
-
-              data: { order_id: orderId, payment_id: id, status: 'PAID' }
-            });
-
-            // Second notification: Product delivered
-      } else {
-        // Update status for non-approved payments (pending, rejected, etc)
-        console.log(`[STATUS ATUALIZADO] Payment ${id} status: ${paymentData.status}`);
-        
-        // Registrar atividade na ADM
-        try {
-          const orderId = paymentData.external_reference;
-          const { data: ord } = await supabaseAdmin.from('payment_orders').select('user_id, item_id, metadata').eq('id', orderId).single();
-          
-          await supabaseAdmin.from('admin_shop_activity').insert({
-            user_id: ord?.user_id,
-            item_id: ord?.item_id,
-            item_name: ord?.metadata?.item_name,
-            amount_cents: paymentData.transaction_amount * 100,
-            status: paymentData.status,
-            payment_method: paymentData.payment_method_id,
-            transaction_id: id.toString(),
-            metadata: { mp_status: paymentData.status, order_id: orderId }
+          // NOTIFICATIONS
+          await supabaseAdmin.from('user_notifications').insert({
+            user_id: orderData.user_id,
+            type: 'success',
+            category: 'Financeiro',
+            priority: 'high',
+            title: 'Pagamento Confirmado',
+            message: `Recebemos seu pagamento para "${orderData.metadata?.item_name || 'Item'}".`,
+            icon: '✅',
+            data: { order_id: orderId, payment_id: id, status: 'PAID' }
           });
-        } catch (admErr) {
-          console.error('[ADM_LOG] Erro ao registrar status MP:', admErr);
-        }
 
-        await supabaseAdmin.from('payment_orders').update({
-          status: paymentData.status,
-          payment_id: id.toString(),
-          updated_at: new Date().toISOString()
-        }).eq('id', paymentData.external_reference)
-      }
-
-            });
-          }
-
-              priority: 'ultra',
-              title: 'Acesso Liberado!',
-              message: `Seu item "${orderData.metadata?.item_name || 'Premium'}" foi liberado automaticamente.`,
-              icon: '🚀',
-              data: { order_id: orderId, item_id: orderData.item_id, delivered: true }
-            });
-          }
+          await supabaseAdmin.from('user_notifications').insert({
+            user_id: orderData.user_id,
+            type: 'success',
+            category: 'Premium',
+            priority: 'ultra',
+            title: 'Acesso Liberado!',
+            message: `Seu item "${orderData.metadata?.item_name || 'Premium'}" foi liberado automaticamente.`,
+            icon: '🚀',
+            data: { order_id: orderId, item_id: orderData.item_id, delivered: true }
+          });
         }
       } else {
-        // Update status for non-approved payments (pending, rejected, etc)
-        console.log(`[STATUS ATUALIZADO] Payment ${id} status: ${paymentData.status}`);
+        // Update status for non-approved payments
+        const orderId = paymentData.external_reference;
         await supabaseAdmin.from('payment_orders').update({
           status: paymentData.status,
           payment_id: id.toString(),
           updated_at: new Date().toISOString()
-        }).eq('id', paymentData.external_reference)
+        }).eq('id', orderId);
       }
     }
 
