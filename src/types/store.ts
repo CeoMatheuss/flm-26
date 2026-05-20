@@ -26,6 +26,7 @@ export interface UniformLaunch {
 
 export interface ClubMembership {
   totalMembers: number;
+  manualMembers?: number;
   activePlanId: string | null;
   monthlyRevenue: number;
   happiness: number;
