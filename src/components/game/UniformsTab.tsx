@@ -433,13 +433,14 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       newsText = `👕 O novo manto do ${clubName} já está disponível! A torcida comparece em peso ao lançamento oficial e as primeiras unidades já estão esgotadas.`;
     }
 
-    await supabase.from('news_articles').insert({
+    await supabase.from('newspaper_entries').insert({
       user_id: userId,
-      title: 'Novo Manto Lançado!',
-      content: newsText,
+      text: newsText,
       category: 'club',
-      impact: 'positive'
+      importance: 2
     });
+  };
+
   };
 
   const handleLaunch = async () => {
