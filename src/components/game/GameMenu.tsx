@@ -107,7 +107,8 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
             <Info className="h-3 w-3" />
             <span className="text-[9px] font-medium tracking-wider">FLM 26 MOBILE v{localVersion}</span>
           </div>
-          <span className="text-[9px]">© 2026 FCM</span>
+          <span className="text-[9px]">© 2026 FLM</span>
+
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
