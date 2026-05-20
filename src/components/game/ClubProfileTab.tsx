@@ -9,10 +9,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/com
 import { ShieldCrest, ShieldConfig } from './ShieldCrest';
 import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
-import { Instagram, User, Edit3, Save, Quote, Calendar, Link2, Shield, Pencil, Landmark, Lock, Sparkles, Check, X, Copy } from 'lucide-react';
+import { Instagram, User, Edit3, Save, Quote, Calendar, Link2, Shield, Pencil, Landmark, Lock, Sparkles, Check, X, Copy, CreditCard, QrCode, Loader2 } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { toast } from 'sonner';
 import { formatMoney } from '@/lib/formatMoney';
+import { supabase } from '@/integrations/supabase/client';
+
 
 interface Props {
   club: { name: string; stadiumName?: string; primaryColor?: string; secondaryColor?: string; shieldPattern?: string; shieldShape?: string; shieldIcon?: string; shieldConfig?: any; detailColor?: string; logoUrl?: string; fans: number; reputation: number; country?: string; budget?: number };
