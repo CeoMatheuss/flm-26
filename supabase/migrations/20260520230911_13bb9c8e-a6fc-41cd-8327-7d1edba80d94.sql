@@ -1,0 +1,1 @@
+UPDATE public.shop_items SET price_cents = 1;

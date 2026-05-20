@@ -36,6 +36,9 @@ const CATEGORIES = {
   marketing:   { label: 'Marketing',  icon: Rocket,     color: 'text-pink-400',    bg: 'bg-pink-500/10',    border: 'border-pink-500/30',    dot: '#ec4899' },
   stickers:    { label: 'Pacotinhos', icon: Package,    color: 'text-orange-400',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: '#fb923c' },
   shop:        { label: 'Loja Oficial', icon: ShoppingBag, color: 'text-blue-400', bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: '#3b82f6' },
+  scouting:    { label: 'Olheiros',   icon: Users,      color: 'text-orange-400',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: '#fb923c' },
+  fans:        { label: 'Torcida',     icon: Users,      color: 'text-blue-400',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: '#3b82f6' },
+  uniform:     { label: 'Uniformes',  icon: Shirt,      color: 'text-purple-400',  bg: 'bg-purple-500/10',  border: 'border-purple-500/30',  dot: '#a855f7' },
   stadium:     { label: 'Estádio',    icon: Building2,  color: 'text-cyan-400',    bg: 'bg-cyan-500/10',    border: 'border-cyan-500/30',    dot: '#06b6d4' },
   prize:       { label: 'Premiações', icon: Trophy,     color: 'text-yellow-400',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/30',  dot: '#eab308' },
   purchase:    { label: 'Compras',    icon: ShoppingBag, color: 'text-violet-400', bg: 'bg-violet-500/10',  border: 'border-violet-500/30',  dot: '#8b5cf6' },
@@ -43,6 +46,7 @@ const CATEGORIES = {
   upgrades:    { label: 'Upgrades',   icon: Building2,  color: 'text-sky-400',     bg: 'bg-sky-500/10',     border: 'border-sky-500/30',     dot: '#0ea5e9' },
   other:       { label: 'Outros',     icon: Banknote,   color: 'text-white/70',    bg: 'bg-white/5',        border: 'border-white/10',       dot: '#94a3b8' },
 } as const;
+
 
 export function PainelFLM({ club, userId }: PainelFLMProps) {
   const [loading, setLoading] = useState(true);
@@ -174,19 +178,24 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
       });
     }
     for (const e of activeEffects) {
-      const cat = (e.category === 'marketing' ? 'marketing' : e.category === 'members' ? 'members' : 'other') as any;
+      const cat = (e.category === 'marketing' ? 'marketing' : 
+                   e.category === 'members' ? 'members' : 
+                   e.category === 'scouting' ? 'scouting' : 
+                   e.category === 'fans' ? 'fans' : 'other') as any;
       out.push({
         id: `eff-${e.id}`,
         ts: e.created_at || new Date().toISOString(),
         kind: 'in',
         category: cat,
-        label: e?.bonus_data?.name || `${CATEGORIES[cat]?.label || 'Efeito'} ativo`,
+        label: e?.bonus_data?.name || `${(CATEGORIES as any)[cat]?.label || 'Efeito'} ativo`,
         amount: Number(e?.bonus_data?.dinheiroSemanal ?? e?.bonus_data?.daily_cash ?? 0),
         source: 'Bônus ativo',
       });
     }
+
     return out.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()).slice(0, 30);
   }, [orders, sponsorships, activeEffects]);
+
 
   // ── Série 7 dias (saídas reais via pedidos) ──────────────────────────────
   const last7 = useMemo(() => {

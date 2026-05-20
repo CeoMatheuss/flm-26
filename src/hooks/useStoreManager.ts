@@ -120,14 +120,30 @@ export function useStoreManager(club: Club, userId: string) {
       if (effectError) throw effectError;
 
       // 2. Handle category specific immediate effects
-      if (item.category === 'sponsorship' || item.category === 'members') {
+      if (item.category === 'sponsorship' || item.category === 'members' || item.category === 'marketing' || item.category === 'fans' || item.category === 'scouting') {
         const immediateCash = item.bonus_data?.immediate_cash || 0;
-        if (immediateCash > 0) {
+        const immediateFans = item.bonus_data?.immediate_fans || 0;
+        
+        if (immediateCash > 0 || immediateFans > 0) {
+          const { data: currentClub } = await client.from('clubs').select('budget, fans').eq('id', club.id).single();
           await client.from('clubs').update({ 
-            budget: (club.budget || 0) + immediateCash 
+            budget: (currentClub?.budget || club.budget || 0) + immediateCash,
+            fans: (currentClub?.fans || club.fans || 0) + immediateFans
           }).eq('id', club.id);
           
-          toast.success(`Bônus de assinatura recebido: R$ ${immediateCash.toLocaleString()}`);
+          if (immediateCash > 0) toast.success(`Bônus financeiro recebido: R$ ${immediateCash.toLocaleString()}`);
+          if (immediateFans > 0) toast.success(`Novos torcedores conquistados: +${immediateFans.toLocaleString()}`);
+        }
+
+        // Scouting specific logic
+        if (item.category === 'scouting') {
+          // Additional logic for scouting if needed (handled via active_effects bonus_data)
+          toast.success('Departamento de scout atualizado!');
+        }
+
+        // Fan boost specific logic
+        if (item.category === 'fans') {
+          toast.success('Sua torcida está mais engajada do que nunca!');
         }
 
         // Se for um plano premium SmartPit (do SponsorsTab)
@@ -146,7 +162,7 @@ export function useStoreManager(club: Club, userId: string) {
             daily_value: daily,
             active: true
           });
-        } else {
+        } else if (item.category === 'sponsorship') {
           // Patrocínio normal da loja
           await client.from('club_sponsorships').insert({
             club_id: club.id,
@@ -158,6 +174,7 @@ export function useStoreManager(club: Club, userId: string) {
           });
         }
       }
+
 
       if (item.category === 'uniform') {
         toast.success('Editor de uniforme desbloqueado!');
