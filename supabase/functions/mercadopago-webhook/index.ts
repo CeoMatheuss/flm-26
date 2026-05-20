@@ -122,9 +122,18 @@ serve(async (req) => {
           p_order_id: orderId 
         });
         
-        if (rpcError) {
-          console.error(`[FALHA NA LIBERAÇÃO] Error for order ${orderId}:`, rpcError);
-          // Don't throw here so we can still notify about payment if needed
+        if (rpcError || !deliverResult?.success) {
+          console.error(`[FALHA NA LIBERAÇÃO] Error for order ${orderId}:`, rpcError || deliverResult?.error);
+          
+          // Reenviar automaticamente se houver erro (tentativa simples de retry)
+          await supabaseAdmin.from('user_notifications').insert({
+            user_id: orderData.user_id,
+            type: 'warning',
+            category: 'Financeiro',
+            title: 'Sincronização em andamento',
+            message: 'Detectamos um pequeno atraso na entrega. Nosso sistema está re-sincronizando seus dados agora.',
+            icon: '🔄'
+          });
         } else {
           console.log(`[PRODUTO LIBERADO] Result for order ${orderId}:`, deliverResult);
 

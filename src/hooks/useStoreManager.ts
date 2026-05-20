@@ -13,6 +13,7 @@ export function useStoreManager(club: Club, userId: string) {
     uniformLaunches: [],
     membership: {
       totalMembers: 0,
+      manualMembers: 0,
       activePlanId: null,
       monthlyRevenue: 0,
       happiness: 100
@@ -79,6 +80,7 @@ export function useStoreManager(club: Club, userId: string) {
           ...prev,
           membership: {
             totalMembers: membersRes.data.total_members,
+            manualMembers: membersRes.data.manual_members || 0,
             activePlanId: membersRes.data.active_plan_id,
             monthlyRevenue: Number(membersRes.data.monthly_revenue_cents) / 100,
             happiness: membersRes.data.happiness
@@ -104,111 +106,91 @@ export function useStoreManager(club: Club, userId: string) {
       setLoading(true);
       const client = supabase as any;
       
-      const durationDays = item.duration_days || 30;
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + durationDays);
-
-      // 1. Create Active Effect
-      const { error: effectError } = await client
-        .from('club_active_effects')
+      // Criar o pedido localmente para simular o fluxo de checkout
+      const { data: order, error: orderError } = await client
+        .from('payment_orders')
         .insert({
-          club_id: club.id,
-          item_id: item.id,
-          category: item.category,
-          bonus_data: { ...item.bonus_data, name: item.name },
-          expires_at: expiresAt.toISOString()
-        });
-
-      if (effectError) throw effectError;
-
-      // 2. Handle category specific immediate effects
-      if (item.category === 'sponsorship' || item.category === 'members' || item.category === 'marketing' || item.category === 'fans' || item.category === 'scouting') {
-        const immediateCash = item.bonus_data?.immediate_cash || 0;
-        const immediateFans = item.bonus_data?.immediate_fans || 0;
-        
-        if (immediateCash > 0 || immediateFans > 0) {
-          const { data: currentClub } = await client.from('clubs').select('budget, fans').eq('id', club.id).single();
-          await client.from('clubs').update({ 
-            budget: (currentClub?.budget || club.budget || 0) + immediateCash,
-            fans: (currentClub?.fans || club.fans || 0) + immediateFans
-          }).eq('id', club.id);
-          
-          if (immediateCash > 0) toast.success(`Bônus financeiro recebido: R$ ${immediateCash.toLocaleString()}`);
-          if (immediateFans > 0) toast.success(`Novos torcedores conquistados: +${immediateFans.toLocaleString()}`);
-        }
-
-        // Scouting specific logic
-        if (item.category === 'scouting') {
-          // Additional logic for scouting if needed (handled via active_effects bonus_data)
-          toast.success('Departamento de scout atualizado!');
-        }
-
-        // Fan boost specific logic
-        if (item.category === 'fans') {
-          toast.success('Sua torcida está mais engajada do que nunca!');
-        }
-
-        // Se for um plano premium SmartPit (do SponsorsTab)
-        if (item.bonus_data?.planId) {
-          const totalValue = item.bonus_data.totalValue || 0;
-          const payoutDays = item.bonus_data.payoutDays || 30;
-          const daily = Math.max(1, Math.floor(totalValue / payoutDays));
-
-          await client.from('premium_sponsorships').insert({
-            user_id: userId,
-            plan_id: item.bonus_data.planId,
-            plan_name: item.bonus_data.planName || item.name,
-            total_value: totalValue,
-            received_value: 0,
-            payout_days: payoutDays,
-            daily_value: daily,
-            active: true
-          });
-        } else if (item.category === 'sponsorship') {
-          // Patrocínio normal da loja
-          await client.from('club_sponsorships').insert({
-            club_id: club.id,
-            sponsor_name: item.name,
-            contract_value_cents: (item.bonus_data?.dinheiroSemanal || 0) * 100,
-            payment_type: 'weekly',
-            bonus_data: item.bonus_data,
-            expires_at: expiresAt.toISOString()
-          });
-        }
-      }
-
-
-      if (item.category === 'uniform') {
-        toast.success('Editor de uniforme desbloqueado!');
-      }
-
-      // 3. Generate News
-      await client.from('newspaper_entries').insert({
-        user_id: userId,
-        text: `O ${club.name} oficializou hoje a parceria com ${item.name}. O acordo trará grandes benefícios para o marketing e finanças do clube.`,
-        category: 'finance',
-        importance: 2
-      });
-
-      // 4. Registra como pedido aprovado para aparecer em Ganhos/Histórico
-      try {
-        await client.from('payment_orders').insert({
           user_id: userId,
           item_id: item.id,
           amount_cents: item.price_cents || 0,
-          status: 'approved',
+          status: 'pending',
           payment_method: 'in_game',
-          delivered: true,
           metadata: {
             item_name: item.name,
             category: item.category,
             bonus_data: item.bonus_data ?? null,
             source: 'in_game_redeem',
           },
-        });
-      } catch (e) {
-        console.warn('[store] registro de pedido falhou', e);
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Chamar a função de entrega (sincronização total)
+      const { data: result, error: rpcError } = await client.rpc('deliver_shop_item', {
+        p_order_id: order.id
+      });
+
+      if (rpcError) throw rpcError;
+
+      if (result?.success) {
+        if (result.fans_added > 0) toast.success(`Novos torcedores conquistados: +${result.fans_added.toLocaleString()}`);
+        if (result.members_added > 0) toast.success(`Novos sócios adicionados: +${result.members_added.toLocaleString()}`);
+        if (result.cash_added > 0) toast.success(`Bônus financeiro recebido: R$ ${result.cash_added.toLocaleString()}`);
       }
+
+      // 3. Handle additional logic for specific categories
+      if (item.category === 'scouting') {
+        toast.success('Departamento de scout atualizado!');
+      }
+
+      if (item.category === 'fans') {
+        toast.success('Sua torcida está mais engajada do que nunca!');
+      }
+
+      // Se for um plano premium SmartPit (do SponsorsTab)
+      if (item.bonus_data?.planId) {
+        const totalValue = item.bonus_data.totalValue || 0;
+        const payoutDays = item.bonus_data.payoutDays || 30;
+        const daily = Math.max(1, Math.floor(totalValue / payoutDays));
+
+        await client.from('premium_sponsorships').insert({
+          user_id: userId,
+          plan_id: item.bonus_data.planId,
+          plan_name: item.bonus_data.planName || item.name,
+          total_value: totalValue,
+          received_value: 0,
+          payout_days: payoutDays,
+          daily_value: daily,
+          active: true
+        });
+      } else if (item.category === 'sponsorship') {
+        const durationDays = item.duration_days || 30;
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + durationDays);
+
+        await client.from('club_sponsorships').insert({
+          club_id: club.id,
+          sponsor_name: item.name,
+          contract_value_cents: (item.bonus_data?.dinheiroSemanal || 0) * 100,
+          payment_type: 'weekly',
+          bonus_data: item.bonus_data,
+          expires_at: expiresAt.toISOString()
+        });
+      }
+
+      if (item.category === 'uniform') {
+        toast.success('Editor de uniforme desbloqueado!');
+      }
+
+      // 4. Generate News
+      await client.from('newspaper_entries').insert({
+        user_id: userId,
+        text: `O ${club.name} oficializou hoje a parceria com ${item.name}. O acordo trará grandes benefícios para o marketing e finanças do clube.`,
+        category: 'finance',
+        importance: 2
+      });
 
       toast.success(`${item.name} ativado com sucesso!`);
       fetchStoreData();
