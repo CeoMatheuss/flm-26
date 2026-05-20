@@ -463,16 +463,16 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       onSave(kits);
 
       // Save as a launch
+      // Save as a launch
       const { error: launchError } = await supabase
         .from('club_uniform_launches')
         .insert({
           club_id: clubData.id,
-          season_year: 2026,
-          type: activeKit,
-          design_data: kits[activeKit],
-          hype_score: 50 + Math.floor(Math.random() * 50),
-          total_sales: 0,
-          is_active: true
+          name: kits[activeKit].name || 'Nova Coleção',
+          config: kits[activeKit] as any,
+          initial_fans: clubData.fans,
+          initial_reputation: clubData.reputation,
+          hype_score: 1.0
         });
 
       if (launchError) throw launchError;
