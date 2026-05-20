@@ -407,103 +407,132 @@ export function TrainingTab({
   return (
     <div className="space-y-3 sm:space-y-4 pb-32">
       {/* HEADER: Centro de Treinamento */}
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent overflow-hidden">
-        <CardHeader className="pb-2">
+      <Card className="border-primary/20 bg-card/40 backdrop-blur-md overflow-hidden shadow-xl">
+        <CardHeader className="pb-3 border-b border-white/5 bg-primary/5">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <Dumbbell className="h-5 w-5 text-primary" />
-              Centro de Treinamento
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2.5">
+              <div className="bg-primary/20 p-2 rounded-lg shadow-inner">
+                <Dumbbell className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-black tracking-tight uppercase text-xs opacity-50">Gestão Técnica</span>
+                <span className="font-bold">Centro de Treinamento</span>
+              </div>
               <HelpButton onClick={() => openHelp('ct')} />
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 gap-2 border-primary/30 hover:bg-primary/10"
+                className="h-8 gap-2 border-white/10 bg-white/5 hover:bg-white/10 transition-all text-[10px] font-bold uppercase tracking-tighter"
                 onClick={() => setReportOpen(true)}
               >
-                <History className="h-4 w-4" />
-                Resumo do Treino
+                <History className="h-3.5 w-3.5" />
+                Resumo da Semana
               </Button>
-              <Badge variant="outline" className="text-xs">Nível {ctLevel}/30</Badge>
+              <Badge variant="outline" className="text-[10px] font-black border-primary/30 text-primary bg-primary/5 px-2 py-0.5 uppercase">
+                Nv. {ctLevel}
+              </Badge>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <div className="bg-muted/30 rounded-lg p-3 text-center">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Nível</p>
-              <p className="text-2xl sm:text-3xl font-black text-primary">{ctLevel}</p>
+        <CardContent className="p-4 sm:p-6 space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="bg-muted/30 rounded-xl p-4 border border-white/5 shadow-inner flex flex-col items-center justify-center group hover:bg-muted/40 transition-all">
+              <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mb-1 opacity-60">Status Atual</p>
+              <div className="flex items-baseline gap-1">
+                <p className="text-2xl sm:text-3xl font-black text-primary drop-shadow-sm group-hover:scale-110 transition-transform">Nv. {ctLevel}</p>
+                <span className="text-[10px] text-muted-foreground font-bold">/30</span>
+              </div>
             </div>
-            <div className="bg-muted/30 rounded-lg p-3 text-center">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Eficiência/sem</p>
-              <p className="text-2xl sm:text-3xl font-black text-emerald-400">{efficiency.toFixed(1)}%</p>
+            <div className="bg-muted/30 rounded-xl p-4 border border-white/5 shadow-inner flex flex-col items-center justify-center group hover:bg-muted/40 transition-all">
+              <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mb-1 opacity-60">Poder de Evolução</p>
+              <div className="flex items-baseline gap-1">
+                <p className="text-2xl sm:text-3xl font-black text-emerald-400 drop-shadow-sm group-hover:scale-110 transition-transform">{efficiency.toFixed(1)}%</p>
+                <span className="text-[10px] text-emerald-500/50 font-bold">Bônus</span>
+              </div>
             </div>
-            <div className="bg-muted/30 rounded-lg p-3 text-center col-span-2 sm:col-span-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Elenco</p>
-              <p className="text-2xl sm:text-3xl font-black text-primary">{healthy.length}</p>
+            <div className="bg-muted/30 rounded-xl p-4 border border-white/5 shadow-inner flex flex-col items-center justify-center col-span-2 sm:col-span-1 group hover:bg-muted/40 transition-all">
+              <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mb-1 opacity-60">Elenco em Atividade</p>
+              <div className="flex items-baseline gap-2">
+                <Users className="h-4 w-4 text-primary opacity-50" />
+                <p className="text-2xl sm:text-3xl font-black text-foreground drop-shadow-sm group-hover:scale-110 transition-transform">{healthy.length}</p>
+                <span className="text-[10px] text-muted-foreground font-bold">Atletas</span>
+              </div>
             </div>
           </div>
 
           {ctLevel < 30 && (
             <Button
               onClick={handleUpgrade}
-              className="w-full gap-2"
-              variant={canUpgrade ? 'default' : 'outline'}
+              className="w-full gap-2.5 h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
               disabled={!onUpgradeCT}
             >
-              <TrendingUp className="h-4 w-4" />
-              Melhorar CT — {formatMoney(upgradeCost)}
+              <TrendingUp className="h-5 w-5" />
+              Upgrade Estrutural — {formatMoney(upgradeCost)}
               {!canUpgrade && budget < upgradeCost && (
-                <Badge variant="destructive" className="ml-2 text-[9px]">Saldo insuficiente</Badge>
+                <div className="ml-2 bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[8px] border border-red-500/30">
+                  Falta {formatMoney(upgradeCost - budget)}
+                </div>
               )}
             </Button>
           )}
           {ctLevel >= 30 && (
-            <div className="bg-primary/15 border border-primary/30 rounded-lg p-2 text-center">
-              <p className="text-xs text-primary font-bold">🏆 CT no nível máximo!</p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-center flex items-center justify-center gap-3">
+              <Sparkles className="h-5 w-5 text-emerald-400" />
+              <p className="text-xs text-emerald-400 font-black uppercase tracking-widest">Infraestrutura em Nível de Elite Mundial</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* JOGADORES */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" /> Treino dos Jogadores
-              <HelpButton onClick={() => openHelp('overview')} />
-            </CardTitle>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                size="sm"
-                variant={selectionMode ? 'default' : 'outline'}
-                className="h-7 text-[10px] gap-1.5"
-                onClick={toggleSelectionMode}
-              >
-                <Users className="h-3.5 w-3.5" />
-                {selectionMode ? `Cancelar (${selectedIds.size}/${MAX_GROUP_SIZE})` : 'Treinar em Grupo'}
-              </Button>
-              <div className="flex gap-1 flex-wrap">
-                {['all', 'GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(pos => (
-                  <Button
-                    key={pos}
-                    variant={filterPos === pos ? 'default' : 'outline'}
-                    size="sm"
-                    className="h-6 text-[10px] px-2"
-                    onClick={() => setFilterPos(pos)}
-                  >
-                    {pos === 'all' ? 'Todos' : pos}
-                  </Button>
-                ))}
-              </div>
-            </div>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between flex-wrap gap-4 px-1">
+          <div className="flex flex-col">
+            <h3 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Planejamento de Atletas
+            </h3>
+            <p className="text-[10px] text-muted-foreground font-medium">Gerencie o desenvolvimento individual e coletivo do seu elenco</p>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={selectionMode ? 'default' : 'outline'}
+              className={`h-9 px-4 gap-2 font-bold uppercase tracking-tighter text-[10px] transition-all ${selectionMode ? 'shadow-lg shadow-primary/30 ring-2 ring-primary/20' : 'bg-background/40'}`}
+              onClick={toggleSelectionMode}
+            >
+              <Users className="h-4 w-4" />
+              {selectionMode ? `Cancelar (${selectedIds.size}/${MAX_GROUP_SIZE})` : 'Treino em Massa'}
+            </Button>
+            
+            <Select value={filterPos} onValueChange={setFilterPos}>
+              <SelectTrigger className="h-9 w-32 text-[10px] font-bold uppercase tracking-tighter bg-background/40">
+                <SelectValue placeholder="Posição" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-[10px] font-bold">TODOS</SelectItem>
+                <SelectItem value="GOL" className="text-[10px] font-bold">GOL</SelectItem>
+                <SelectItem value="ZAG" className="text-[10px] font-bold">ZAG</SelectItem>
+                <SelectItem value="LAT" className="text-[10px] font-bold">LAT</SelectItem>
+                <SelectItem value="VOL" className="text-[10px] font-bold">VOL</SelectItem>
+                <SelectItem value="MEI" className="text-[10px] font-bold">MEI</SelectItem>
+                <SelectItem value="ATA" className="text-[10px] font-bold">ATA</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
           {filtered.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-6">Nenhum jogador encontrado.</p>
+            <div className="col-span-full bg-muted/20 border border-dashed border-white/10 rounded-2xl py-12 flex flex-col items-center justify-center text-center">
+              <div className="bg-muted/30 p-4 rounded-full mb-3">
+                <Dumbbell className="h-8 w-8 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm font-bold text-muted-foreground/50 uppercase tracking-widest">Nenhum jogador nestas condições</p>
+            </div>
           )}
           {filtered.sort((a, b) => b.overall - a.overall).map(p => {
             const focus = trainingFocus[p.id] ?? 'mental_grupo';
@@ -512,7 +541,7 @@ export function TrainingTab({
             const gain = bd.expectedWeekly;
             const status = engine.computeStatus(gain, p);
             return (
-              <div key={p.id} className="space-y-1">
+              <div key={p.id} className="flex flex-col gap-1 group">
                 <PlayerTrainingCard
                   player={p}
                   focus={focus}
@@ -526,21 +555,21 @@ export function TrainingTab({
                   onChangeIntensity={(i) => setIntensityForPlayer(p.id, i)}
                   onHelp={openHelp}
                 />
-                <div className="flex flex-wrap items-center justify-end gap-1.5 text-[9px] sm:text-[10px] font-mono px-2">
-                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">CT {bd.ct}%</span>
-                  <span className={`px-1.5 py-0.5 rounded ${bd.age >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                    Idade {bd.age >= 0 ? '+' : ''}{bd.age}%
+                <div className="flex flex-wrap items-center justify-end gap-1.5 text-[8px] font-bold px-3 opacity-60 group-hover:opacity-100 transition-opacity">
+                  <span className="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/5">ESTRUTURA: {bd.ct}%</span>
+                  <span className={`px-2 py-0.5 rounded border ${bd.age >= 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10' : 'bg-red-500/10 text-red-400 border-red-500/10'}`}>
+                    FATOR IDADE: {bd.age >= 0 ? '+' : ''}{bd.age}%
                   </span>
-                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">Inv +{bd.investment}%</span>
-                  <span className="px-1.5 py-0.5 rounded bg-foreground/10 text-foreground font-bold">
-                    Chance {bd.total}% · +{bd.gainPerEvent.toFixed(1)}/evt
+                  <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/10">INVESTIMENTO: +{bd.investment}%</span>
+                  <span className="px-2 py-0.5 rounded bg-foreground/10 text-foreground font-black tracking-tighter">
+                    CHANCE TOTAL: {bd.total}%
                   </span>
                 </div>
               </div>
             );
           })}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* DEPARTAMENTO MÉDICO */}
       {injured.length > 0 && (
