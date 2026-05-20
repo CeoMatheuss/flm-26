@@ -532,9 +532,6 @@ export function AdminTab({ userId, isFounder }: Props) {
     maintenance:   ['maintenance', 'direct_msg'],
     simulation:    ['simulation_panel'],
   };
-  const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
-
-  const TAB_META: Record<string, { label: string; icon: React.ElementType }> = {
     team:              { label: 'Equipe',         icon: Users },
     users:             { label: 'Usuários',       icon: Users },
     premium:           { label: 'Premium',        icon: Crown },
@@ -553,6 +550,10 @@ export function AdminTab({ userId, isFounder }: Props) {
     direct_msg:        { label: 'Msg Direta',     icon: Megaphone },
     support:           { label: 'Suporte',        icon: LifeBuoy },
     versions:          { label: 'Versões',        icon: Shield },
+    finance_panel:     { label: 'Financeiro',     icon: Wallet },
+    shop_monitor:      { label: 'Monitor Loja',    icon: ShoppingBag },
+    customization_panel:{ label: 'Personalização', icon: Palette },
+
     finance_panel:     { label: 'Financeiro',     icon: Wallet },
     customization_panel:{ label: 'Personalização', icon: Palette },
   };
