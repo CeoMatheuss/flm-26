@@ -50,7 +50,7 @@ export function useStoreManager(club: Club, userId: string) {
       if (launchesRes.data) {
         setStats(prev => ({
           ...prev,
-          uniformLaunches: launchesRes.data.map((l: any) => ({
+          uniformLaunches: (launchesRes.data || []).map((l: any) => ({
             id: l.id,
             seasonYear: l.season_year,
             type: l.type,
@@ -61,10 +61,9 @@ export function useStoreManager(club: Club, userId: string) {
             launchedAt: l.launched_at,
             isActive: l.is_active
           }))
-
-          }))
         }));
       }
+
 
       if (statsRes.data) {
         setStats(prev => ({
