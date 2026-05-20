@@ -285,6 +285,22 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
     setShowCheckoutModal(false);
     
     try {
+      // Registrar tentativa de compra na ADM antes de invocar MP
+      try {
+        await supabase.from('admin_shop_activity').insert({
+          user_id: userId,
+          club_name: club?.name,
+          item_id: selectedItem.id,
+          item_name: selectedItem.name,
+          amount_cents: selectedItem.price_cents,
+          status: 'pending',
+          payment_method: checkoutMethod,
+          metadata: { checkout_type: 'start_attempt', email: checkoutEmail }
+        });
+      } catch (admErr) {
+        console.warn('Falha ao registrar tentativa na ADM:', admErr);
+      }
+
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
           item_id: selectedItem.id,
@@ -294,6 +310,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
           cpf: checkoutCpf.replace(/\D/g, '')
         }
       });
+
 
       if (error) throw error;
 
