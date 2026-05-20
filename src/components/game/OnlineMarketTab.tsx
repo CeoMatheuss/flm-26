@@ -1231,17 +1231,21 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             openToOffers={!negotiateLoan._isHelpOnly && (negotiateLoan.open_to_offers ?? true)}
             onSubmit={negotiateLoan._isHelpOnly ? () => setNegotiateLoan(null) : async (terms) => {
               const res = await supabase.functions.invoke('process-transfer', {
-                body: { 
-                  action: 'loan-propose', 
-                  listingId: negotiateLoan.id, 
-                  terms,
-                  clubName 
+                body: {
+                  action: 'loan-offer-create',
+                  listingId: negotiateLoan.id,
+                  clubName,
+                  offeredSalaryPayer: terms.salaryPayer,
+                  offeredSalarySplitPct: terms.salarySplitPct,
+                  offeredLoanFee: terms.loanFee,
+                  message: terms.message,
                 }
               });
               if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao enviar proposta');
               else toast.success(`Proposta de empréstimo enviada para ${negotiateLoan.player_name}!`);
               setNegotiateLoan(null);
             }}
+
             loading={loading}
           />
         )}
