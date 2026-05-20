@@ -1,6 +1,7 @@
 import { Player } from '@/types/game';
 
-export type ShopCategory = 'uniform' | 'sponsorship' | 'marketing' | 'stickers' | 'infrastructure' | 'staff' | 'products' | 'members';
+export type ShopCategory = 'uniform' | 'sponsorship' | 'marketing' | 'stickers' | 'infrastructure' | 'staff' | 'products' | 'members' | 'scouting' | 'fans' | 'customization';
+
 
 export interface ActiveEffect {
   id: string;
