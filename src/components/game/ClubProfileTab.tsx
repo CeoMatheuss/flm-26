@@ -276,14 +276,14 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
                   </div>
                 ) : (
                   <div className="flex items-center justify-between gap-2">
+                    <p className="font-bold text-sm truncate">{club.name}</p>
                     {canEdit && (
                       <Button size="sm" variant="outline" onClick={() => { setNewClubName(club.name); setEditingClubName(true); }} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
                         <Pencil className="h-3 w-3" /> Editar
                       </Button>
                     )}
-
-                    </Button>
                   </div>
+
                 )}
               </CardContent>
             </Card>
