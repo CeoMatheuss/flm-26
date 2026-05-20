@@ -826,6 +826,10 @@ export function AdminTab({ userId, isFounder }: Props) {
                   }
                   setGenerating(false);
                 }}>Gerar</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="finance_panel" className="space-y-3 mt-3">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               <FinancePanel />
@@ -837,17 +841,6 @@ export function AdminTab({ userId, isFounder }: Props) {
             <AdminShopMonitor />
           </TabsContent>
 
-          <TabsContent value="finance_panel" className="space-y-3 mt-3">
-          <TabsContent value="finance_panel" className="space-y-3 mt-3">
-            <FinancePanel />
-          </TabsContent>
-
-          <TabsContent value="shop_monitor" className="space-y-3 mt-3">
-            <AdminShopMonitor />
-          </TabsContent>
-
-            <CustomizationPanel />
-          </TabsContent>
 
           <TabsContent value="simulation_panel" className="space-y-3 mt-3">
             <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
