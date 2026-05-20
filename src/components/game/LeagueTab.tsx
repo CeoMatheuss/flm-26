@@ -329,7 +329,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {standings.map((row, i) => {
+                    {standings.slice(0, 20).map((row, i) => {
                       const isPlayerTeam = row.team_id === leagueInfo.playerTeamId;
                       const diff = (row.goals_for || 0) - (row.goals_against || 0);
                       // Banco salva em W/D/L (Win/Draw/Loss). Convertemos para V/E/D (Vitória/Empate/Derrota).
