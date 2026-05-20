@@ -329,7 +329,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {standings.map((row, i) => {
+                    {standings.slice(0, 20).map((row, i) => {
                       const isPlayerTeam = row.team_id === leagueInfo.playerTeamId;
                       const diff = (row.goals_for || 0) - (row.goals_against || 0);
                       // Banco salva em W/D/L (Win/Draw/Loss). Convertemos para V/E/D (Vitória/Empate/Derrota).
@@ -633,7 +633,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
              <CardContent className="p-0">
                 <ScrollArea className="h-[800px]">
                   <div className="divide-y">
-                    {Array.from({ length: 30 }).map((_, rIdx) => {
+                    {Array.from({ length: 38 }).map((_, rIdx) => {
                       const round = rIdx + 1;
                       const roundMatches = fixtures.filter(f => f.round === round);
                       const isCompleted = roundMatches.every(m => m.status === 'finished');
@@ -689,7 +689,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                 <CardTitle className="text-sm">Regulamento da Liga</CardTitle>
               </CardHeader>
               <CardContent className="text-xs space-y-3 text-muted-foreground">
-                <p>• 16 clubes disputam o título em turno e returno (30 rodadas).</p>
+                <p>• 20 clubes disputam o título em turno e returno (38 rodadas).</p>
                 <p>• <span className="text-emerald-500 font-bold">G4:</span> Classificação direta para a Libertadores Mundial.</p>
                 <p>• <span className="text-blue-500 font-bold">G8:</span> Classificação para a Copa Sul-Americana.</p>
                 <p>• <span className="text-red-500 font-bold">Z4:</span> Rebaixamento para a divisão inferior.</p>
