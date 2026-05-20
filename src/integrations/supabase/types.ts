@@ -2854,6 +2854,7 @@ export type Database = {
           max_members: number
           name: string
           owner_id: string
+          prizes_paid: boolean | null
           round_interval_hours: number
           season: number
           season_end: string | null
@@ -2880,6 +2881,7 @@ export type Database = {
           max_members?: number
           name: string
           owner_id: string
+          prizes_paid?: boolean | null
           round_interval_hours?: number
           season?: number
           season_end?: string | null
@@ -2906,6 +2908,7 @@ export type Database = {
           max_members?: number
           name?: string
           owner_id?: string
+          prizes_paid?: boolean | null
           round_interval_hours?: number
           season?: number
           season_end?: string | null
