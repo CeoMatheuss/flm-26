@@ -244,10 +244,12 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
                     </div>
                     <p className="text-[11px] text-muted-foreground">Forma, cores, símbolo e mais.</p>
                   </div>
-                  <Button size="sm" onClick={openShieldEditor} variant={canEdit ? 'default' : 'outline'} className="shrink-0 gap-1">
-                    {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                    {canEdit ? 'Editar' : 'R$ 10'}
-                  </Button>
+                  {canEdit && (
+                    <Button size="sm" onClick={openShieldEditor} variant="default" className="shrink-0 gap-1">
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Button>
+                  )}
+
                 </div>
               </CardContent>
             </Card>
