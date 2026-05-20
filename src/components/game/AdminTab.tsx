@@ -118,17 +118,18 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [directMsgTitle, setDirectMsgTitle] = useState('');
   const [directMsgContent, setDirectMsgContent] = useState('');
   const [sendingMsg, setSendingMsg] = useState(false);
-
-  useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
       leagues:       ['leagues_overview'],
       cups:          ['cups_overview', 'tournaments'],
       clubs:         ['users', 'premium', 'bans', 'gameban', 'moderation'],
       players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
-      finance:       ['finance_panel'],
+      finance:       ['finance_panel', 'shop_monitor'],
       customization: ['customization_panel'],
       system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
       maintenance:   ['maintenance', 'direct_msg'],
+      simulation:    ['simulation_panel'],
+    };
+
       simulation:    ['simulation_panel'],
     };
     const list = map[activeCategory] || ['users'];
