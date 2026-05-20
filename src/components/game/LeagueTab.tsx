@@ -682,6 +682,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                 <CheckCircle2 className="h-3 w-3" />
                 Premiações sincronizadas. O valor será depositado automaticamente após a 38ª rodada.
               </div>
+            </CardContent>
           </Card>
         </TabsContent>
 

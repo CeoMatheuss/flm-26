@@ -4,10 +4,6 @@
  * Planos totalmente personalizáveis (nome, preço, benefícios).
  * Sincronizado em tempo real com o banco de dados e loja.
  */
- * MembersTab — Sistema de Sócios Torcedores
- * Design: dark com detalhes em dourado, premium mobile-style.
- * Planos totalmente personalizáveis (nome, preço, benefícios).
- */
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
