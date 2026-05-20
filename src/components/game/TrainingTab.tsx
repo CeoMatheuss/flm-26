@@ -286,8 +286,6 @@ function HelpButton({ onClick }: { onClick: () => void }) {
     </div>
   );
 }
-  );
-}
 
 export function TrainingTab({
   players, infrastructure, trainingFocus = {}, onSetTrainingFocus,
