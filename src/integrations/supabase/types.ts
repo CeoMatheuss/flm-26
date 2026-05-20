@@ -639,8 +639,10 @@ export type Database = {
       }
       clubs: {
         Row: {
+          bankrupt_at: string | null
           budget: number | null
           cash: number | null
+          consecutive_negative_days: number | null
           country: string
           created_at: string
           current_uniform_launch_id: string | null
@@ -663,8 +665,10 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          bankrupt_at?: string | null
           budget?: number | null
           cash?: number | null
+          consecutive_negative_days?: number | null
           country?: string
           created_at?: string
           current_uniform_launch_id?: string | null
@@ -687,8 +691,10 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          bankrupt_at?: string | null
           budget?: number | null
           cash?: number | null
+          consecutive_negative_days?: number | null
           country?: string
           created_at?: string
           current_uniform_launch_id?: string | null
@@ -5869,6 +5875,7 @@ export type Database = {
         }
         Returns: number
       }
+      check_all_clubs_bankruptcy: { Args: never; Returns: undefined }
       check_and_advance_league_round: {
         Args: { p_league_id: string }
         Returns: undefined
@@ -6099,6 +6106,10 @@ export type Database = {
           p_season_year: number
         }
         Returns: boolean
+      }
+      handle_club_bankruptcy: {
+        Args: { p_club_id: string }
+        Returns: undefined
       }
       handle_expired_auction_to_free_agent: { Args: never; Returns: undefined }
       handle_team_league_entry: {
