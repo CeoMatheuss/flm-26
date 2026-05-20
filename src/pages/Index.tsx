@@ -373,6 +373,18 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
   const [viewingClubName, setViewedClubName] = useState<string | null>(searchParams.get('name'));
 
+  // Listen for tab change events
+  useEffect(() => {
+    const handleTabChange = (event: any) => {
+      if (event.detail) {
+        setActiveTab(event.detail);
+      }
+    };
+
+    window.addEventListener('flm:change-tab', handleTabChange);
+    return () => window.removeEventListener('flm:change-tab', handleTabChange);
+  }, []);
+
   // Sync URL with viewingClubName
   useEffect(() => {
     const nameFromUrl = searchParams.get('name');
