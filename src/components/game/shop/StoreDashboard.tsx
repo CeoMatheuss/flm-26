@@ -107,6 +107,31 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
           </div>
         </CardContent>
       </Card>
+      {/* Scouting & Fans */}
+      <Card className="bg-slate-900/60 border-amber-500/20 backdrop-blur-md">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2 text-amber-500">
+            <Users className="h-4 w-4" /> Olheiros & Torcida
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[...scoutingEffects, ...fanEffects].length === 0 ? (
+            <p className="text-xs text-white/40 italic">Nenhum bônus ativo</p>
+          ) : (
+            [...scoutingEffects, ...fanEffects].map(effect => (
+              <div key={effect.id} className="p-2 rounded-lg bg-white/5 border border-white/5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-white/80 uppercase">{effect.bonusData.name}</span>
+                  <Badge className="text-[8px] bg-amber-500/10 text-amber-500">Ativo</Badge>
+                </div>
+                <p className="text-[9px] text-white/40 mt-1">
+                  {effect.category === 'scouting' ? 'Busca de jogadores aprimorada' : 'Engajamento de torcida extra'}
+                </p>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       {/* Uniform Sales */}
       <Card className="bg-slate-900/60 border-purple-500/20 backdrop-blur-md lg:col-span-3">
@@ -129,13 +154,17 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
               <p className="text-lg font-black italic text-emerald-400">{formatMoney(stats.dailyRevenue)}</p>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <p className="text-[10px] text-white/40 uppercase font-black">Lançamentos 2026</p>
+              <p className="text-[10px] text-white/40 uppercase font-black">Lançamentos Ativos</p>
               <div className="flex gap-1 mt-1">
-                {['Home', 'Away', 'Third'].map(t => (
-                  <Badge key={t} variant="outline" className="text-[8px] bg-purple-500/10 text-purple-400 border-purple-500/30">
-                    {t}
-                  </Badge>
-                ))}
+                {stats.uniformLaunches.length > 0 ? (
+                  stats.uniformLaunches.map(l => (
+                    <Badge key={l.id} variant="outline" className="text-[8px] bg-purple-500/10 text-purple-400 border-purple-500/30">
+                      {l.type.toUpperCase()}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-[10px] text-white/20 italic">Nenhum</span>
+                )}
               </div>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
@@ -144,6 +173,11 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
             </div>
           </div>
         </CardContent>
+      </Card>
+    </div>
+  );
+}
+
       </Card>
     </div>
   );
