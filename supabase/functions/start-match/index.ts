@@ -1556,7 +1556,21 @@ function simulateFullMatch(
         { type: 'possession', desc: `🛡️ Muralha montada! O ${tName} se fecha com 10 atrás da linha da bola, não dando espaços.` }
       );
     }
-    const chosen = pick(posTypes);
+    // Tempo-based selection
+    const filteredPosTypes = [...posTypes];
+    if (tempo === 'muito-rapido' || tempo === 'rapido') {
+      filteredPosTypes.push(
+        { type: 'counter_attempt', desc: `⚡ O ${tName} tenta acelerar o jogo com passes verticais rápidos!` },
+        { type: 'wing_run', desc: `🏃 ${p1} acelera pela lateral, buscando o fundo em velocidade!` }
+      );
+    } else if (tempo === 'lento' || tempo === 'cadenciado') {
+      filteredPosTypes.push(
+        { type: 'triangulation', desc: `🔺 O ${tName} valoriza a posse, trocando passes curtos e triangulando para cansar o adversário.` },
+        { type: 'possession', desc: `⚽ Controle total! O ${tName} dita o ritmo da partida no meio-campo.` }
+      );
+    }
+
+    const chosen = pick(filteredPosTypes);
     if (chosen.type === 'midfield_foul') stats.fouls[teamIdx]++;
     if (chosen.type === 'tackle' || chosen.type === 'interception') stats.tackles[teamIdx === 0 ? 1 : 0]++;
     if (chosen.type === 'shot_blocked' || chosen.type === 'shot_off') stats.shots[teamIdx]++;
