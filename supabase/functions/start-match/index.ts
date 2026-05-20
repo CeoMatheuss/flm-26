@@ -1367,10 +1367,15 @@ function simulateFullMatch(
     const oppExtras = team === 'home' ? awayExtras : homeExtras;
     const myExtras = team === 'home' ? homeExtras : awayExtras;
     const basePool = sForm >= 1.0
-      ? ['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
+      ? ['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near', 'individual_play', 'cross_danger', 'rebound_box', 'through_ball_danger', 'wing_play']
       : sForm >= 0.85
-        ? ['woodwork', 'great_save', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
-        : ['great_save', 'great_save', 'offside_trap', 'long_shot_miss', 'long_shot_miss', 'header_miss', 'header_miss', 'buildup_play'];
+        ? ['woodwork', 'great_save', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near', 'cross_danger', 'through_ball_danger']
+        : ['great_save', 'great_save', 'offside_trap', 'long_shot_miss', 'long_shot_miss', 'header_miss', 'header_miss', 'buildup_play', 'defensive_error'];
+
+    // Add rare events occasionally
+    if (rng() < 0.03) basePool.push('gk_blunder', 'own_goal');
+    if (rng() < 0.05) basePool.push('injury_event');
+
     const chancePool: string[] = [...basePool];
     // Linha alta adversária → +impedimentos
     if (oppExtras.offsideMul > 1.2) chancePool.push('offside_trap', 'offside_trap');
@@ -1380,11 +1385,16 @@ function simulateFullMatch(
       if (idx >= 0) chancePool.splice(idx, 1);
     }
     // Bola longa / largura larga → mais cruzamentos / cabeceios e contra-ataques
-    if (myExtras.crossBoost > 0.1) chancePool.push('corner_danger', 'header_miss', 'free_kick_near');
+    if (myExtras.crossBoost > 0.1) chancePool.push('corner_danger', 'header_miss', 'free_kick_near', 'cross_danger');
+    if (playStyle === 'contra-ataque') chancePool.push('counter_attack', 'counter_attack');
     // Passe curto → mais construção
-    if (myExtras.shortPassBoost > 0.05) chancePool.push('buildup_play', 'buildup_play');
+    if (myExtras.shortPassBoost > 0.05) chancePool.push('buildup_play', 'buildup_play', 'through_ball_danger');
     // Chutão / passe longo → mais chutes de longe
-    if (myExtras.longShotBoost > 0.08) chancePool.push('long_shot_miss', 'woodwork');
+    if (myExtras.longShotBoost > 0.08) chancePool.push('long_shot_miss', 'woodwork', 'long_passing_play');
+    
+    // Tática retranca total gera mais rebatidas e desarmes
+    if (playStyle === 'retranca-total' && team !== 'home') chancePool.push('defensive_error', 'rebound_box');
+
     const evType = pick(chancePool);
     const descs: Record<string, string> = {
       woodwork: `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área e a bola bate no travessão! ${gkName} do ${opp} apenas observou. A torcida grita!`,
