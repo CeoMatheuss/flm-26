@@ -560,7 +560,8 @@ export function AdminTab({ userId, isFounder }: Props) {
 
   return (
     <div className="space-y-3">
-
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
+        <CardHeader className="py-2.5 px-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-sm flex items-center gap-2">
               {isFounder
@@ -578,6 +579,7 @@ export function AdminTab({ userId, isFounder }: Props) {
           </div>
         </CardHeader>
       </Card>
+
 
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
