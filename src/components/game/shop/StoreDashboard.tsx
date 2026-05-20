@@ -173,12 +173,9 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
             </div>
           </div>
         </CardContent>
+        </CardContent>
       </Card>
     </div>
   );
 }
 
-      </Card>
-    </div>
-  );
-}
