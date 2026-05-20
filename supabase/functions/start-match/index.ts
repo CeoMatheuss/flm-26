@@ -350,7 +350,8 @@ function computeMoment(
   home: SimPlayer[], away: SimPlayer[],
   homeStrength: number, awayStrength: number,
   homeGoals: number, awayGoals: number,
-  homeAdv: number, pressingMod: number
+  homeAdv: number, pressingMod: number,
+  minute: number, tactics: any
 ): MomentPhase {
   const homeAvgStamina = home.filter(p => p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, home.filter(p => p.isOnPitch).length);
   const awayAvgStamina = away.filter(p => p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, away.filter(p => p.isOnPitch).length);
@@ -358,15 +359,34 @@ function computeMoment(
   let homeForce = homeStrength * homeAdv * (homeAvgStamina / 100) * pressingMod;
   let awayForce = awayStrength * (awayAvgStamina / 100);
   
-  // Losing team pushes harder
-  if (homeGoals < awayGoals) homeForce *= 1.15;
-  if (awayGoals < homeGoals) awayForce *= 1.15;
+  // Tactical mentalities impact force
+  if (tactics?.playStyle === 'ataque-total') homeForce *= 1.25;
+  if (tactics?.playStyle === 'retranca-total') homeForce *= 0.7;
+
+  // Score impact: losing team pushes harder
+  if (homeGoals < awayGoals) {
+    homeForce *= (1 + (awayGoals - homeGoals) * 0.1); // More desperate if losing by more
+    if (minute > 80) homeForce *= 1.3; // Desperate blitz in final minutes
+  }
+  if (awayGoals < homeGoals) {
+    awayForce *= (1 + (homeGoals - awayGoals) * 0.1);
+    if (minute > 80) awayForce *= 1.3;
+  }
   
   const diff = homeForce - awayForce;
-  if (diff > 15) return 'domínio_home';
-  if (diff > 5) return 'pressão_home';
-  if (diff < -15) return 'domínio_away';
-  if (diff < -5) return 'pressão_away';
+  
+  // Special phases for late game
+  if (minute > 82) {
+    if (homeGoals < awayGoals && diff > 10) return 'blitz_final_home';
+    if (awayGoals < homeGoals && diff < -10) return 'blitz_final_away';
+    if (homeGoals > awayGoals && tactics?.playStyle === 'retranca-total') return 'retranca_home';
+  }
+
+  if (diff > 25) return 'domínio_home';
+  if (diff > 8) return 'pressão_home';
+  if (diff < -25) return 'domínio_away';
+  if (diff < -8) return 'pressão_away';
+  
   return 'equilíbrio';
 }
 
