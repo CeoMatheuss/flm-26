@@ -5909,6 +5909,10 @@ export type Database = {
         Args: { _division: number }
         Returns: number
       }
+      calculate_daily_uniform_sales: {
+        Args: { p_club_id: string; p_launch_id: string }
+        Returns: undefined
+      }
       calculate_league_reward: { Args: { p_pos: number }; Returns: number }
       calculate_match_scheduled_time: {
         Args: { p_date: string; p_league_id: string }
@@ -6215,6 +6219,7 @@ export type Database = {
         Args: { _amount: number; _auction_id: string }
         Returns: Json
       }
+      process_all_uniform_sales: { Args: never; Returns: undefined }
       process_club_shop_daily: { Args: { p_club_id: string }; Returns: Json }
       process_cup_tick: { Args: { _cup_id: string }; Returns: undefined }
       process_daily_shop_bonuses: { Args: { p_user_id: string }; Returns: Json }
