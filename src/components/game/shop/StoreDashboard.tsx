@@ -69,7 +69,7 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
             activeSponsors.map(sponsor => (
               <div key={sponsor.id} className="p-3 rounded-xl bg-white/5 border border-white/5">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-black uppercase text-white">{sponsor.bonusData.plan_id?.toUpperCase()}</span>
+                  <span className="text-xs font-black uppercase text-white">{sponsor.bonusData.plan_id?.toUpperCase() || sponsor.bonusData.name}</span>
                   <span className="text-[10px] font-bold text-blue-400">Ativo</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -107,10 +107,11 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
           </div>
         </CardContent>
       </Card>
+
       {/* Scouting & Fans */}
-      <Card className="bg-slate-900/60 border-amber-500/20 backdrop-blur-md">
+      <Card className="bg-slate-900/60 border-orange-500/20 backdrop-blur-md">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2 text-amber-500">
+          <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2 text-orange-500">
             <Users className="h-4 w-4" /> Olheiros & Torcida
           </CardTitle>
         </CardHeader>
@@ -122,7 +123,7 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
               <div key={effect.id} className="p-2 rounded-lg bg-white/5 border border-white/5">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-bold text-white/80 uppercase">{effect.bonusData.name}</span>
-                  <Badge className="text-[8px] bg-amber-500/10 text-amber-500">Ativo</Badge>
+                  <Badge className="text-[8px] bg-orange-500/10 text-orange-500">Ativo</Badge>
                 </div>
                 <p className="text-[9px] text-white/40 mt-1">
                   {effect.category === 'scouting' ? 'Busca de jogadores aprimorada' : 'Engajamento de torcida extra'}
@@ -134,14 +135,14 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
       </Card>
 
       {/* Uniform Sales */}
-      <Card className="bg-slate-900/60 border-purple-500/20 backdrop-blur-md lg:col-span-3">
+      <Card className="bg-slate-900/60 border-purple-500/20 backdrop-blur-md lg:col-span-2">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2 text-purple-400">
             <Shirt className="h-4 w-4" /> Vendas de Uniformes & Produtos
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
               <p className="text-[10px] text-white/40 uppercase font-black">Hype da Marca</p>
               <div className="flex items-center gap-2 mt-1">
@@ -154,11 +155,11 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
               <p className="text-lg font-black italic text-emerald-400">{formatMoney(stats.dailyRevenue)}</p>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <p className="text-[10px] text-white/40 uppercase font-black">Lançamentos Ativos</p>
-              <div className="flex gap-1 mt-1">
+              <p className="text-[10px] text-white/40 uppercase font-black">Lançamentos</p>
+              <div className="flex gap-1 mt-1 overflow-x-auto">
                 {stats.uniformLaunches.length > 0 ? (
                   stats.uniformLaunches.map(l => (
-                    <Badge key={l.id} variant="outline" className="text-[8px] bg-purple-500/10 text-purple-400 border-purple-500/30">
+                    <Badge key={l.id} variant="outline" className="text-[8px] bg-purple-500/10 text-purple-400 border-purple-500/30 shrink-0">
                       {l.type.toUpperCase()}
                     </Badge>
                   ))
@@ -173,9 +174,7 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
             </div>
           </div>
         </CardContent>
-        </CardContent>
       </Card>
     </div>
   );
 }
-
