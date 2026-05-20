@@ -233,7 +233,23 @@ serve(async (req) => {
             console.error('[NEW_PACKAGES] Exceção ao gerar notícia:', e);
           }
 
-          // 5. Notify user about payment and release in Real-Time
+          // 5. Monitor de Auditoria ADM: Atualizar status final
+          try {
+            await supabaseAdmin.from('admin_shop_activity').insert({
+              user_id: orderData.user_id,
+              item_id: orderData.item_id,
+              item_name: orderData.metadata?.item_name,
+              amount_cents: paymentData.transaction_amount * 100,
+              status: 'approved',
+              payment_method: paymentData.payment_method_id,
+              transaction_id: id.toString(),
+              metadata: { ...orderData.metadata, mp_status: paymentData.status }
+            });
+          } catch (admErr) {
+            console.error('[ADM_LOG] Erro ao registrar aprovação:', admErr);
+          }
+
+          // 6. Notify user about payment and release in Real-Time
           if (orderData) {
             // First notification: Payment received
             await supabaseAdmin.from('user_notifications').insert({
@@ -244,19 +260,41 @@ serve(async (req) => {
               title: 'Pagamento Confirmado',
               message: `Recebemos seu pagamento para "${orderData.metadata?.item_name || 'Item'}".`,
               icon: '✅',
+
               data: { order_id: orderId, payment_id: id, status: 'PAID' }
             });
 
             // Second notification: Product delivered
-            await supabaseAdmin.from('user_notifications').insert({
-              user_id: orderData.user_id,
-              type: 'success',
-              category: 'Clube',
-              priority: 'ultra',
-              title: 'Acesso Liberado!',
-              message: `Seu item "${orderData.metadata?.item_name || 'Premium'}" foi liberado automaticamente.`,
-              icon: '🚀',
-              data: { order_id: orderId, item_id: orderData.item_id, delivered: true }
+      } else {
+        // Update status for non-approved payments (pending, rejected, etc)
+        console.log(`[STATUS ATUALIZADO] Payment ${id} status: ${paymentData.status}`);
+        
+        // Registrar atividade na ADM
+        try {
+          const orderId = paymentData.external_reference;
+          const { data: ord } = await supabaseAdmin.from('payment_orders').select('user_id, item_id, metadata').eq('id', orderId).single();
+          
+          await supabaseAdmin.from('admin_shop_activity').insert({
+            user_id: ord?.user_id,
+            item_id: ord?.item_id,
+            item_name: ord?.metadata?.item_name,
+            amount_cents: paymentData.transaction_amount * 100,
+            status: paymentData.status,
+            payment_method: paymentData.payment_method_id,
+            transaction_id: id.toString(),
+            metadata: { mp_status: paymentData.status, order_id: orderId }
+          });
+        } catch (admErr) {
+          console.error('[ADM_LOG] Erro ao registrar status MP:', admErr);
+        }
+
+        await supabaseAdmin.from('payment_orders').update({
+          status: paymentData.status,
+          payment_id: id.toString(),
+          updated_at: new Date().toISOString()
+        }).eq('id', paymentData.external_reference)
+      }
+
             });
           }
 

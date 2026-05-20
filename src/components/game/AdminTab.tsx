@@ -17,8 +17,10 @@ import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
   AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy,
-  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench, Send, Loader2
+  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench, Send, Loader2, ShoppingBag
 } from 'lucide-react';
+
+
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -28,6 +30,8 @@ import { AdminVersionPanel } from './admin/AdminVersionPanel';
 // import { AdminAnnouncementsPanel } from './admin/AdminAnnouncementsPanel';
 // import { ModerationPanel } from './admin/ModerationPanel';
 import { MaintenanceToggle } from './admin/MaintenanceToggle';
+import { AdminShopMonitor } from './admin/AdminShopMonitor';
+
 
 interface PendingUser {
   id: string;
@@ -123,7 +127,7 @@ export function AdminTab({ userId, isFounder }: Props) {
       cups:          ['cups_overview', 'tournaments'],
       clubs:         ['users', 'premium', 'bans', 'gameban', 'moderation'],
       players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
-      finance:       ['finance_panel'],
+      finance:       ['finance_panel', 'shop_monitor'],
       customization: ['customization_panel'],
       system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
       maintenance:   ['maintenance', 'direct_msg'],
@@ -132,6 +136,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     const list = map[activeCategory] || ['users'];
     setActiveTab(prev => list.includes(prev) ? prev : list[0]);
   }, [activeCategory, isFounder]);
+
 
   useEffect(() => {
     const check = async () => {
@@ -523,7 +528,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     cups:          ['cups_overview', 'tournaments'],
     clubs:         ['users', 'premium', 'bans', 'gameban', 'moderation'],
     players:       isFounder ? ['generator', 'abuse'] : ['abuse'],
-    finance:       ['finance_panel'],
+    finance:       ['finance_panel', 'shop_monitor'],
     customization: ['customization_panel'],
     system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
     maintenance:   ['maintenance', 'direct_msg'],
@@ -551,13 +556,14 @@ export function AdminTab({ userId, isFounder }: Props) {
     support:           { label: 'Suporte',        icon: LifeBuoy },
     versions:          { label: 'Versões',        icon: Shield },
     finance_panel:     { label: 'Financeiro',     icon: Wallet },
+    shop_monitor:      { label: 'Monitor Loja',    icon: ShoppingBag },
     customization_panel:{ label: 'Personalização', icon: Palette },
   };
 
   return (
     <div className="space-y-3">
       <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
-        <CardHeader className="py-2.5">
+        <CardHeader className="py-2.5 px-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-sm flex items-center gap-2">
               {isFounder
@@ -575,6 +581,7 @@ export function AdminTab({ userId, isFounder }: Props) {
           </div>
         </CardHeader>
       </Card>
+
 
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -821,16 +828,19 @@ export function AdminTab({ userId, isFounder }: Props) {
                 }}>Gerar</Button>
               </CardContent>
             </Card>
-            {/* <AdminScoutsAndStaffGenerators userId={userId} /> */}
           </TabsContent>
 
           <TabsContent value="finance_panel" className="space-y-3 mt-3">
-            <FinancePanel />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <FinancePanel />
+              <AdminShopMonitor />
+            </div>
           </TabsContent>
 
-          <TabsContent value="customization_panel" className="space-y-3 mt-3">
-            <CustomizationPanel />
+          <TabsContent value="shop_monitor" className="space-y-3 mt-3">
+            <AdminShopMonitor />
           </TabsContent>
+
 
           <TabsContent value="simulation_panel" className="space-y-3 mt-3">
             <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
@@ -906,7 +916,9 @@ export function AdminTab({ userId, isFounder }: Props) {
             <AdminVersionPanel />
           </TabsContent>
         </Tabs>
+
       </AdminLayout>
     </div>
   );
 }
+
