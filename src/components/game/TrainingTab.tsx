@@ -95,6 +95,28 @@ function HelpButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+function PlayerTrainingCard({
+  player, focus, intensity, gain, status, selectionMode, selected,
+  onToggleSelect, onChangeFocus, onChangeIntensity, onHelp,
+}: {
+  player: Player;
+  focus: TrainingFocusKey;
+  intensity: TrainingIntensity;
+  gain: number;
+  status: 'evoluindo' | 'normal' | 'lento' | 'travado';
+  selectionMode: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
+  onChangeFocus: (f: TrainingFocusKey) => void;
+  onChangeIntensity: (i: TrainingIntensity) => void;
+  onHelp: (section: HelpSection) => void;
+}) {
+  const isGroup = isGroupFocus(focus);
+  const trainingType: 'group' | 'specific' = isGroup ? 'group' : 'specific';
+  const progress = player.trainingProgress ?? 0;
+  const isInjured = !!player.injury;
+  const isGrave = isInjured && player.injury?.severity === 'grave';
+
   const intensityColors = {
     leve: 'border-emerald-500/30 hover:bg-emerald-500/10 data-[state=on]:bg-emerald-500 data-[state=on]:text-white',
     moderado: 'border-amber-500/30 hover:bg-amber-500/10 data-[state=on]:bg-amber-500 data-[state=on]:text-white',
