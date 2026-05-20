@@ -6220,6 +6220,10 @@ export type Database = {
         Args: { p_league_id: string }
         Returns: undefined
       }
+      recompute_player_competition_stats: {
+        Args: { p_league_id: string }
+        Returns: undefined
+      }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       replace_bot_with_player:
