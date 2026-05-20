@@ -633,7 +633,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
              <CardContent className="p-0">
                 <ScrollArea className="h-[800px]">
                   <div className="divide-y">
-                    {Array.from({ length: 30 }).map((_, rIdx) => {
+                    {Array.from({ length: 38 }).map((_, rIdx) => {
                       const round = rIdx + 1;
                       const roundMatches = fixtures.filter(f => f.round === round);
                       const isCompleted = roundMatches.every(m => m.status === 'finished');
