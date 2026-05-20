@@ -173,18 +173,22 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
         kind: 'in',
         category: 'sponsorship',
         label: s.sponsor_name,
-        amount: Number(s.contract_value_cents) / 100,
-        source: 'Contrato ativo',
-      });
-    }
     for (const e of activeEffects) {
-      const cat = (e.category === 'marketing' ? 'marketing' : e.category === 'members' ? 'members' : 'other') as any;
+      const cat = (e.category === 'marketing' ? 'marketing' : 
+                   e.category === 'members' ? 'members' : 
+                   e.category === 'scouting' ? 'scouting' : 
+                   e.category === 'fans' ? 'fans' : 'other') as any;
       out.push({
         id: `eff-${e.id}`,
         ts: e.created_at || new Date().toISOString(),
         kind: 'in',
         category: cat,
         label: e?.bonus_data?.name || `${CATEGORIES[cat]?.label || 'Efeito'} ativo`,
+        amount: Number(e?.bonus_data?.dinheiroSemanal ?? e?.bonus_data?.daily_cash ?? 0),
+        source: 'Bônus ativo',
+      });
+    }
+
         amount: Number(e?.bonus_data?.dinheiroSemanal ?? e?.bonus_data?.daily_cash ?? 0),
         source: 'Bônus ativo',
       });
