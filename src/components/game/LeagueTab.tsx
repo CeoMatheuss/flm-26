@@ -631,7 +631,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                 </CardTitle>
              </CardHeader>
              <CardContent className="p-0">
-                <ScrollArea className="h-[500px]">
+                <ScrollArea className="h-[800px]">
                   <div className="divide-y">
                     {Array.from({ length: 30 }).map((_, rIdx) => {
                       const round = rIdx + 1;
