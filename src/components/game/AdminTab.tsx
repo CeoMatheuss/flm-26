@@ -518,6 +518,9 @@ export function AdminTab({ userId, isFounder }: Props) {
     { icon: Gavel, label: 'Leilões', value: stats.totalAuctions, color: 'text-purple-400' },
     { icon: Trophy, label: 'Ligas', value: stats.totalLeagues, color: 'text-cyan-400' },
     { icon: Ban, label: 'Banidos', value: stats.totalBans, color: 'text-red-400' },
+    { icon: BarChart3, label: 'Saves', value: stats.totalSaves, color: 'text-emerald-400' },
+  ] : [];
+
   const CATEGORY_TABS: Record<AdminCategory, string[]> = {
     leagues:       ['leagues_overview'],
     cups:          ['cups_overview', 'tournaments'],
@@ -531,8 +534,6 @@ export function AdminTab({ userId, isFounder }: Props) {
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
 
-  const TAB_META: Record<string, { label: string; icon: React.ElementType }> = {
-    team:              { label: 'Equipe',         icon: Users },
     users:             { label: 'Usuários',       icon: Users },
     premium:           { label: 'Premium',        icon: Crown },
     bans:              { label: 'Bans Chat',      icon: Ban },
