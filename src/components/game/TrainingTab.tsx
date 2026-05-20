@@ -594,22 +594,31 @@ export function TrainingTab({
 
       {/* PAINEL FLUTUANTE — Treino em Grupo */}
       {selectionMode && (
-        <div className="fixed bottom-3 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[680px] z-40">
-          <div className="rounded-2xl border border-primary/40 bg-card/95 backdrop-blur-md shadow-2xl p-3 sm:p-4 space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                <p className="text-sm font-bold">Treino em Grupo</p>
-                <Badge variant="outline" className="text-[10px]">{selectedIds.size}/{MAX_GROUP_SIZE} selecionados</Badge>
+        <div className="fixed bottom-6 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[600px] z-50 animate-in fade-in slide-in-from-bottom-10 duration-500">
+          <div className="rounded-2xl border border-primary/40 bg-card/90 backdrop-blur-xl shadow-[0_20px_50px_rgba(var(--primary),0.3)] p-4 sm:p-5 space-y-4 ring-1 ring-white/10">
+            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/20 p-1.5 rounded-lg shadow-inner">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex flex-col">
+                  <p className="text-sm font-black uppercase tracking-tight">Treinamento em Massa</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">Aplicar configurações para {selectedIds.size} atletas simultaneamente</p>
+                </div>
               </div>
-              <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={toggleSelectionMode}>
-                <X className="h-3.5 w-3.5 mr-1" /> Sair
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-8 w-8 p-0 rounded-full hover:bg-white/10 transition-colors" 
+                onClick={toggleSelectionMode}
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Tipo</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest px-1">Método de Trabalho</label>
                 <Select
                   value={bulkType}
                   onValueChange={(v) => {
@@ -618,27 +627,31 @@ export function TrainingTab({
                     setBulkFocus(t === 'group' ? 'mental_grupo' : 'passing');
                   }}
                 >
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 text-xs bg-muted/30 border-white/5 rounded-xl shadow-inner">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="group">👥 Grupo</SelectItem>
-                    <SelectItem value="specific">🎯 Específico</SelectItem>
+                    <SelectItem value="group" className="text-xs font-bold">👥 Treino Coletivo</SelectItem>
+                    <SelectItem value="specific" className="text-xs font-bold">🎯 Foco Individual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Foco</label>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest px-1">Foco Principal</label>
                 <Select value={bulkFocus} onValueChange={(v) => setBulkFocus(v as TrainingFocusKey)}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 text-xs bg-muted/30 border-white/5 rounded-xl shadow-inner">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {bulkType === 'group' ? (
                       <SelectGroup>
-                        <SelectLabel>Grupos</SelectLabel>
-                        {groupOptions.map(k => <SelectItem key={k} value={k} className="text-xs">{focusLabels[k]}</SelectItem>)}
+                        <SelectLabel className="text-[10px] font-black uppercase text-muted-foreground/50 py-2">Categorias de Grupo</SelectLabel>
+                        {groupOptions.map(k => <SelectItem key={k} value={k} className="text-xs font-medium">{focusLabels[k]}</SelectItem>)}
                       </SelectGroup>
                     ) : (
                       <SelectGroup>
-                        <SelectLabel>Atributos</SelectLabel>
-                        {specificOptions.map(k => <SelectItem key={k} value={k} className="text-xs">{focusLabels[k]}</SelectItem>)}
+                        <SelectLabel className="text-[10px] font-black uppercase text-muted-foreground/50 py-2">Atributos Técnicos</SelectLabel>
+                        {specificOptions.map(k => <SelectItem key={k} value={k} className="text-xs font-medium">{focusLabels[k]}</SelectItem>)}
                       </SelectGroup>
                     )}
                   </SelectContent>
@@ -646,29 +659,41 @@ export function TrainingTab({
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Intensidade</label>
-              <div className="flex gap-1.5">
+            <div className="space-y-2">
+              <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest px-1 text-center block">Nível de Intensidade</label>
+              <div className="flex gap-2 p-1.5 bg-muted/30 rounded-xl border border-white/5 shadow-inner">
                 {(['leve', 'moderado', 'pesado'] as TrainingIntensity[]).map(int => {
                   const ic = intensityConfig[int];
+                  const isActive = bulkIntensity === int;
+                  const colors = {
+                    leve: 'data-[state=on]:bg-emerald-500 hover:bg-emerald-500/10',
+                    moderado: 'data-[state=on]:bg-amber-500 hover:bg-amber-500/10',
+                    pesado: 'data-[state=on]:bg-red-500 hover:bg-red-500/10',
+                  };
                   return (
                     <Button
                       key={int}
                       size="sm"
-                      variant={bulkIntensity === int ? 'default' : 'outline'}
-                      className="flex-1 h-8 text-[10px] sm:text-xs gap-1"
+                      variant="ghost"
+                      data-state={isActive ? 'on' : 'off'}
+                      className={`flex-1 h-9 text-[10px] font-black gap-2 rounded-lg transition-all ${colors[int]} ${isActive ? 'text-white shadow-md scale-105' : 'opacity-40 hover:opacity-100'}`}
                       onClick={() => setBulkIntensity(int)}
                     >
-                      {ic.emoji} {ic.label}
+                      <span className="text-sm">{ic.emoji}</span>
+                      {ic.label}
                     </Button>
                   );
                 })}
               </div>
             </div>
 
-            <Button onClick={applyBulk} className="w-full gap-2" disabled={selectedIds.size === 0}>
-              <CheckCircle2 className="h-4 w-4" />
-              Aplicar a todos ({selectedIds.size})
+            <Button 
+              onClick={applyBulk} 
+              className="w-full h-12 gap-3 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-xl shadow-primary/30 transition-all active:scale-[0.98] rounded-xl" 
+              disabled={selectedIds.size === 0}
+            >
+              <CheckCircle2 className="h-5 w-5" />
+              Confirmar para {selectedIds.size} Jogadores
             </Button>
           </div>
         </div>
