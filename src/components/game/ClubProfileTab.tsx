@@ -82,10 +82,61 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
     toast.success('Escudo atualizado!');
   };
 
-  const copyPix = () => {
-    navigator.clipboard.writeText('flm26@pix.com');
-    toast.success('Chave Pix copiada!');
+  const copyToClipboard = (text: string, label = 'Código') => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado!`);
   };
+
+  const formatCpf = (v: string) => {
+    const d = v.replace(/\D/g, '').slice(0, 11);
+    return d
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  };
+
+  const startCheckout = async () => {
+    if (!payEmail.includes('@')) {
+      toast.error('Informe um e-mail válido para o comprovante.');
+      return;
+    }
+    if (payMethod === 'card') {
+      if (!payName || payName.trim().split(' ').length < 2) {
+        toast.error('Informe seu nome completo.');
+        return;
+      }
+      if (payCpf.replace(/\D/g, '').length !== 11) {
+        toast.error('Informe um CPF válido (11 dígitos).');
+        return;
+      }
+    }
+    setPayLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
+        body: {
+          item_id: 'customization_unlock',
+          method: payMethod,
+          email: payEmail,
+          full_name: payName,
+          cpf: payCpf.replace(/\D/g, ''),
+        },
+      });
+      if (error) throw error;
+      if (payMethod === 'pix' && data?.pix_qr_code) {
+        setPixResult({ qrBase64: data.pix_qr_code_base64, copyPaste: data.pix_qr_code });
+      } else if (data?.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        toast.error('Não foi possível iniciar o pagamento.');
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Erro ao processar pagamento. Tente novamente.');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
 
   // Format instagram as link
   const getInstagramUrl = (val: string) => {
