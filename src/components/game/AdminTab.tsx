@@ -117,7 +117,7 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [activeTab, setActiveTab] = useState<string>('users');
   const [directMsgTitle, setDirectMsgTitle] = useState('');
   const [directMsgContent, setDirectMsgContent] = useState('');
-  const [sendingMsg, setSendingMsg] = useState(false);
+  useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
       leagues:       ['leagues_overview'],
       cups:          ['cups_overview', 'tournaments'],
@@ -129,12 +129,10 @@ export function AdminTab({ userId, isFounder }: Props) {
       maintenance:   ['maintenance', 'direct_msg'],
       simulation:    ['simulation_panel'],
     };
-
-      simulation:    ['simulation_panel'],
-    };
     const list = map[activeCategory] || ['users'];
     setActiveTab(prev => list.includes(prev) ? prev : list[0]);
   }, [activeCategory, isFounder]);
+
 
   useEffect(() => {
     const check = async () => {
