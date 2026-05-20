@@ -1417,13 +1417,6 @@ function simulateFullMatch(
       buildup_play: `${buildupDesc(team, tName)} finaliza, mas a defesa do ${opp} bloqueia!`,
       free_kick_near: `🎯 Falta perigosa! ${pName} ajeita com carinho... parte para a bola... cobra com veneno por cima da barreira! Ela passa assustando o goleiro!`,
     };
-      counter_attack: `🏃💨 CONTRA-ATAQUE FULMINANTE DO ${tName}! ${pName} rouba a bola no campo de defesa… toca rápido para ${p2Name}… ${p2Name} carrega em velocidade pelo meio… deixa um zagueiro pra trás… aciona ${pName} de novo na entrada da área… ${pName} bate forte mas ${gkName} se estica e defende! Que jogada construída!`,
-      buildup_play: `⚙️ Bela construção do ${tName}! ${p2Name} sai jogando da defesa… troca passe curto com ${pName}… ${pName} devolve de primeira… ${p2Name} avança com a bola dominada… abre na ponta para ${pName}… ${pName} corta para o meio, dribla ${defName} e cruza rasteiro… mas a defesa adversária afasta no último segundo!`,
-      free_kick_near: `🎯 Falta perigosa para o ${tName}! ${p2Name} posiciona a bola… aguarda a barreira… cobra colocado por cima da barreira… a bola tem efeito e busca o ângulo… ${gkName} voa e espalma para escanteio! Quase um golaço de falta!`,
-      penalty_hit: `🎯 PÊNALTI! ${pName} do ${tName} se prepara... parte para a bola... ⚽ GOOOOOOOOOOL!!! Cobrança magistral, sem chances para o goleiro!`,
-      penalty_save: `🧤 PÊNALTI DEFENDIDO! ${pName} do ${tName} solta a bomba, mas ${gkName} do ${opp} voa no canto e busca! Espetacular defesa que mantém o placar!`,
-      penalty_out: `❌ PÊNALTI PARA FORA! ${pName} tenta colocar demais, a bola raspa a trave e vai pela linha de fundo! Torcida não acredita no que viu!`,
-    };
     if (evType === 'great_save') { stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++; }
     if (evType === 'corner_danger') stats.corners[teamIdx]++;
     if (evType === 'offside_trap') stats.offsides[teamIdx]++;
