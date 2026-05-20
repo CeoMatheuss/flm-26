@@ -311,10 +311,12 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
                 ) : (
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-bold text-sm truncate">{club.stadiumName || 'Arena'}</p>
-                    <Button size="sm" variant="outline" onClick={() => requireUnlock(() => { setNewStadiumName(club.stadiumName || 'Arena'); setEditingStadium(true); })} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
-                      {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                      {canEdit ? 'Editar' : 'R$ 10'}
-                    </Button>
+                    {canEdit && (
+                      <Button size="sm" variant="outline" onClick={() => { setNewStadiumName(club.stadiumName || 'Arena'); setEditingStadium(true); }} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
+                        <Pencil className="h-3 w-3" /> Editar
+                      </Button>
+                    )}
+
                   </div>
                 )}
               </CardContent>
