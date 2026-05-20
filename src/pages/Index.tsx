@@ -995,20 +995,18 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
       <main className={`${activeTab === 'shop' ? 'w-full' : 'max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4'}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {activeTab !== 'shop' && (
-            <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
-              <GameMenu 
-                showAdmin={showAdmin} 
-                onTabChange={setActiveTab} 
-                onShowTutorial={() => setShowTutorial(true)} 
-                onMarketSubTabChange={setMarketSubTab} 
-                tutorialCompleted={tutorialCompleted}
-                updateAvailable={updateAvailable}
-                onUpdateNow={updateNow}
-              />
-              <GameNavBar />
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
+            <GameMenu 
+              showAdmin={showAdmin} 
+              onTabChange={setActiveTab} 
+              onShowTutorial={() => setShowTutorial(true)} 
+              onMarketSubTabChange={setMarketSubTab} 
+              tutorialCompleted={tutorialCompleted}
+              updateAvailable={updateAvailable}
+              onUpdateNow={updateNow}
+            />
+            <GameNavBar />
+          </div>
           <ErrorBoundary label={`tab:${activeTab}`}>
             <GameTabRouter
               game={game}
