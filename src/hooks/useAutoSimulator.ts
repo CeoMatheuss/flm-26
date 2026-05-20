@@ -12,12 +12,14 @@ export function useAutoSimulator(userId: string | undefined) {
           supabase.functions.invoke('world-match-simulator'),
           supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' } }),
           supabase.functions.invoke('process-transfer', { body: { action: 'resolve-decisions' } }),
+          supabase.rpc('process_all_uniform_sales'),
           supabase.functions.invoke('legacy-auto-sim'),
         ]);
       } catch (err) {
         console.error('[AutoSim] Erro na simulação:', err);
       }
     };
+
     runSim();
 
     // Verificação agressiva a cada 30 segundos para o sistema antigo de 5min
