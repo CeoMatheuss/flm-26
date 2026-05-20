@@ -1543,6 +1543,19 @@ function simulateFullMatch(
       { type: 'wing_run', desc: `🏃‍♂️ ${p1} dispara pela ponta direita do ${tName}! Deixa ${def} para trás e prepara o cruzamento na área.` },
       { type: 'header_duel', desc: `💢 Disputa aérea no meio-campo! ${p1} e ${def} sobem juntos e a bola sobra para ${p2} retomar a posse.` },
     ];
+
+    // Contextual variety based on momentPhase
+    if (momentPhase === 'blitz_final_home' && team === 'home') {
+      posTypes.push(
+        { type: 'pressing', desc: `🔥 BLITZ TOTAL! O ${tName} se lança desesperadamente ao ataque! ${p1} e ${p2} pressionam a saída do ${opp} na base da vontade!` },
+        { type: 'possession', desc: `⏱️ O ${tName} gira a bola rápido, tentando encontrar o espaço final. Tensão máxima nos minutos finais!` }
+      );
+    } else if (momentPhase === 'retranca_home' && team === 'home') {
+       posTypes.push(
+        { type: 'possession', desc: `🕒 O ${tName} gasta o tempo como pode. ${p1} segura a bola na bandeirinha de escanteio sob vaias do ${opp}.` },
+        { type: 'possession', desc: `🛡️ Muralha montada! O ${tName} se fecha com 10 atrás da linha da bola, não dando espaços.` }
+      );
+    }
     const chosen = pick(posTypes);
     if (chosen.type === 'midfield_foul') stats.fouls[teamIdx]++;
     if (chosen.type === 'tackle' || chosen.type === 'interception') stats.tackles[teamIdx === 0 ? 1 : 0]++;
