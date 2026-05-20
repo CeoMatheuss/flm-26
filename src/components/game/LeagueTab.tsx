@@ -147,15 +147,38 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         setFixtures(enhancedFixtures);
       }
 
-      // 3. Load Player Stats from the new Stats Engine
-      const { data: statsData } = await supabase
+      // 3. Load Player Stats from the Stats Engine (manual join — no FK in DB)
+      const { data: statsData, error: statsError } = await supabase
         .from('player_competition_stats')
-        .select('*, player:world_players(name, position), team:world_teams(name, logo)')
+        .select('*')
         .eq('competition_id', teamData.league_id)
+        .eq('season', new Date().getFullYear())
         .order('goals', { ascending: false })
-        .limit(50);
-      
-      if (statsData) setPlayerStats(statsData);
+        .limit(100);
+
+      if (statsError) console.error('[LeagueTab] stats error', statsError);
+
+      if (statsData && statsData.length > 0) {
+        const playerIds = [...new Set(statsData.map(s => s.player_id).filter(Boolean))];
+        const teamIds = [...new Set(statsData.map(s => s.team_id).filter(Boolean))];
+
+        const [{ data: playersData }, { data: teamsData }] = await Promise.all([
+          supabase.from('world_players').select('id, name, position').in('id', playerIds),
+          supabase.from('world_teams').select('id, name, logo').in('id', teamIds),
+        ]);
+
+        const playerMap = new Map((playersData || []).map(p => [p.id, p]));
+        const teamMap = new Map((teamsData || []).map(t => [t.id, t]));
+
+        const enriched = statsData.map(s => ({
+          ...s,
+          player: playerMap.get(s.player_id) || { name: 'Jogador', position: '-' },
+          team: teamMap.get(s.team_id) || { name: 'Time', logo: null },
+        }));
+        setPlayerStats(enriched);
+      } else {
+        setPlayerStats([]);
+      }
 
     }
     setLoading(false);
