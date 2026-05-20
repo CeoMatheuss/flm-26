@@ -142,21 +142,24 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
+        <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <p className="text-[10px] text-white/40 uppercase font-black">Hype da Marca</p>
+              <p className="text-[10px] text-white/40 uppercase font-black">Hype do Uniforme</p>
               <div className="flex items-center gap-2 mt-1">
                 <TrendingUp className="h-4 w-4 text-emerald-400" />
-                <span className="text-lg font-black italic">84%</span>
+                <span className="text-lg font-black italic">
+                  {stats.uniformLaunches.length > 0 ? `${stats.uniformLaunches[0].hypeScore}%` : '0%'}
+                </span>
               </div>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <p className="text-[10px] text-white/40 uppercase font-black">Receita Diária</p>
+              <p className="text-[10px] text-white/40 uppercase font-black">Receita Diária (Estimada)</p>
               <p className="text-lg font-black italic text-emerald-400">{formatMoney(stats.dailyRevenue)}</p>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
               <p className="text-[10px] text-white/40 uppercase font-black">Lançamentos</p>
-              <div className="flex gap-1 mt-1 overflow-x-auto">
+              <div className="flex gap-1 mt-1 overflow-x-auto pb-1 scrollbar-hide">
                 {stats.uniformLaunches.length > 0 ? (
                   stats.uniformLaunches.map(l => (
                     <Badge key={l.id} variant="outline" className="text-[8px] bg-purple-500/10 text-purple-400 border-purple-500/30 shrink-0">
@@ -169,10 +172,16 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
               </div>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <p className="text-[10px] text-white/40 uppercase font-black">Vendas Totais</p>
-              <p className="text-lg font-black italic">{formatMoney(stats.totalRevenue)}</p>
+              <p className="text-[10px] text-white/40 uppercase font-black">Vendas Totais (Lançamento)</p>
+              <p className="text-lg font-black italic">
+                {stats.uniformLaunches.length > 0 
+                  ? stats.uniformLaunches[0].totalSales.toLocaleString()
+                  : '0'}
+              </p>
             </div>
           </div>
+        </CardContent>
+
         </CardContent>
       </Card>
     </div>
