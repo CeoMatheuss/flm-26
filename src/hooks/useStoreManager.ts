@@ -53,12 +53,15 @@ export function useStoreManager(club: Club, userId: string) {
           uniformLaunches: launchesRes.data.map((l: any) => ({
             id: l.id,
             seasonYear: l.season_year,
-            type: l.uniform_type,
-            designData: l.design_data,
-            hypeScore: l.hype_score,
-            totalSales: Number(l.total_sales_cents) / 100,
+            type: l.type,
+            designData: l.config,
+            hypeScore: Math.round((l.hype_score || 0) * 100),
+            totalSales: Number(l.total_sales_count || 0),
+            totalRevenue: Number(l.total_revenue_cents || 0) / 100,
             launchedAt: l.launched_at,
             isActive: l.is_active
+          }))
+
           }))
         }));
       }
