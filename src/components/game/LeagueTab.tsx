@@ -659,7 +659,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       { pos: 14, label: "Rebaixamento", prize: 2500000, color: "text-red-400 bg-red-400/5" },
                       { pos: 15, label: "Rebaixamento", prize: 2000000, color: "text-red-500 bg-red-500/5" },
                       { pos: 16, label: "Rebaixamento", prize: 1500000, color: "text-red-600 bg-red-600/5" },
-                    ]
                     ].map((row) => (
                       <TableRow key={row.pos} className={row.pos % 2 === 0 ? "bg-muted/5" : ""}>
                         <TableCell className="text-center font-bold">{row.pos}º</TableCell>
