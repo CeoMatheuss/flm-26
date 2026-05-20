@@ -228,15 +228,15 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
   }, [fixtures, currentRound]);
 
   const topScorers = useMemo(() => {
-    return [...playerStats].sort((a, b) => b.goals - a.goals).slice(0, 10);
+    return [...playerStats].sort((a, b) => b.goals - a.goals).slice(0, 30);
   }, [playerStats]);
 
   const topAssists = useMemo(() => {
-    return [...playerStats].sort((a, b) => b.assists - a.assists).slice(0, 10);
+    return [...playerStats].sort((a, b) => b.assists - a.assists).slice(0, 30);
   }, [playerStats]);
 
   const topRatings = useMemo(() => {
-    return [...playerStats].filter(s => s.games_played >= 3).sort((a, b) => b.avg_rating - a.avg_rating).slice(0, 10);
+    return [...playerStats].filter(s => s.games_played >= 3).sort((a, b) => b.avg_rating - a.avg_rating).slice(0, 30);
   }, [playerStats]);
 
   if (loading && standings.length === 0) {
@@ -631,7 +631,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                 </CardTitle>
              </CardHeader>
              <CardContent className="p-0">
-                <ScrollArea className="h-[500px]">
+                <ScrollArea className="h-[800px]">
                   <div className="divide-y">
                     {Array.from({ length: 30 }).map((_, rIdx) => {
                       const round = rIdx + 1;
