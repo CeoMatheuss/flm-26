@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
-import { Dumbbell, HelpCircle, TrendingUp, AlertTriangle, Flame, Scale, Turtle, X, Users, CheckCircle2, History } from 'lucide-react';
+import { Dumbbell, HelpCircle, TrendingUp, AlertTriangle, Flame, Scale, Turtle, X, Users, CheckCircle2, History, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TrainingFocusKey, TrainingIntensity } from '@/training/TrainingTypes';
 import { focusLabels, intensityConfig, isGroupFocus, groupWeights } from '@/training/TrainingTypes';
