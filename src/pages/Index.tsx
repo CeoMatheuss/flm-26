@@ -9,6 +9,7 @@ import { UpdateAnnouncementModal, GAME_VERSION } from '@/components/game/UpdateA
 import { DatabaseResetWidget } from '@/components/game/DatabaseResetWidget';
 import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
+import { BankruptcyScreen } from '@/components/game/BankruptcyScreen';
 import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { SeasonAwardsModal } from '@/components/game/SeasonAwardsModal';
@@ -64,15 +65,23 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   const [gameReady, setGameReady] = useState(false);
   const [hasSave, setHasSave] = useState(false);
   const [isNewClub, setIsNewClub] = useState(false);
+  const [isBankrupt, setIsBankrupt] = useState(false);
+  const [bankruptClubData, setBankruptClubData] = useState<{ name: string; shield_config: any } | null>(null);
   const [displayName, setDisplayName] = useState('Manager');
 
   useEffect(() => {
     const load = async () => {
-      const [saveRes, profileRes] = await Promise.all([
+      const [saveRes, profileRes, clubRes] = await Promise.all([
         supabase.from('game_saves').select('club_data').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('profiles').select('display_name').eq('user_id', userId).maybeSingle(),
+        supabase.from('clubs').select('name, shield_config, bankrupt_at').eq('user_id', userId).maybeSingle(),
       ]);
       if (profileRes.data?.display_name) setDisplayName(profileRes.data.display_name);
+      
+      if (clubRes.data?.bankrupt_at) {
+        setIsBankrupt(true);
+        setBankruptClubData({ name: clubRes.data.name, shield_config: clubRes.data.shield_config });
+      }
       if (saveRes.data?.club_data) {
         try {
           const loaded = saveRes.data.club_data as unknown as GameState;
@@ -288,6 +297,58 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   }, [userId, displayName]);
 
   if (!gameReady) return <GameLoadingScreen message="Carregando seu clube" subMessage="Preparando dados do jogo" />;
+  
+  if (isBankrupt) {
+    return (
+      <BankruptcyScreen 
+        clubName={bankruptClubData?.name || 'Seu Clube'} 
+        shieldConfig={bankruptClubData?.shield_config}
+        onSignOut={onSignOut}
+        onReactivate={async () => {
+          const loadingToast = toast.loading('Reativando clube...');
+          try {
+            // Limpar data de falência e resetar game_save
+            await supabase.from('clubs').update({ 
+              bankrupt_at: null,
+              budget: 1000000,
+              cash: 1000000,
+              fans: 1000,
+              reputation: 65,
+              consecutive_negative_days: 0
+            }).eq('user_id', userId);
+            
+            // Re-executar criação (sem mudar nome)
+            if (bankruptClubData) {
+              const config: ClubConfig = {
+                name: bankruptClubData.name,
+                country: 'Brasil', // Default or fetch
+                primaryColor: '#444',
+                secondaryColor: '#fff',
+                detailColor: '#000',
+                shieldPattern: 'solid',
+                shieldShape: 'classic',
+                stadiumName: 'Arena ' + bankruptClubData.name,
+                shieldConfig: bankruptClubData.shield_config,
+              };
+              await handleClubCreated(config);
+              setIsBankrupt(false);
+            }
+          } catch (e) {
+            toast.error('Erro ao reativar clube');
+          } finally {
+            toast.dismiss(loadingToast);
+          }
+        }}
+        onCreateNew={async () => {
+          // Deletar clube antigo para permitir criação de novo
+          await supabase.from('clubs').delete().eq('user_id', userId);
+          setHasSave(false);
+          setIsBankrupt(false);
+        }}
+      />
+    );
+  }
+
   if (!hasSave) return <ClubCreation userId={userId} onComplete={handleClubCreated} />;
   return <GameUI userId={userId} userEmail={userEmail} displayName={displayName} onSignOut={onSignOut} initialState={loadedState} isNewClub={isNewClub} />;
 }
