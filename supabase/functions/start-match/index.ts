@@ -344,13 +344,14 @@ function drainStamina(players: SimPlayer[], minute: number, pressingMod: number,
 
 // ── MOMENT SYSTEM ──────────────────────────────────────────
 
-type MomentPhase = 'pressão_home' | 'pressão_away' | 'equilíbrio' | 'domínio_home' | 'domínio_away';
+type MomentPhase = 'pressão_home' | 'pressão_away' | 'equilíbrio' | 'domínio_home' | 'domínio_away' | 'contra_ataque_home' | 'contra_ataque_away' | 'blitz_final_home' | 'blitz_final_away' | 'retranca_home' | 'retranca_away';
 
 function computeMoment(
   home: SimPlayer[], away: SimPlayer[],
   homeStrength: number, awayStrength: number,
   homeGoals: number, awayGoals: number,
-  homeAdv: number, pressingMod: number
+  homeAdv: number, pressingMod: number,
+  minute: number, tactics: any
 ): MomentPhase {
   const homeAvgStamina = home.filter(p => p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, home.filter(p => p.isOnPitch).length);
   const awayAvgStamina = away.filter(p => p.isOnPitch).reduce((s, p) => s + p.stamina, 0) / Math.max(1, away.filter(p => p.isOnPitch).length);
@@ -358,15 +359,34 @@ function computeMoment(
   let homeForce = homeStrength * homeAdv * (homeAvgStamina / 100) * pressingMod;
   let awayForce = awayStrength * (awayAvgStamina / 100);
   
-  // Losing team pushes harder
-  if (homeGoals < awayGoals) homeForce *= 1.15;
-  if (awayGoals < homeGoals) awayForce *= 1.15;
+  // Tactical mentalities impact force
+  if (tactics?.playStyle === 'ataque-total') homeForce *= 1.25;
+  if (tactics?.playStyle === 'retranca-total') homeForce *= 0.7;
+
+  // Score impact: losing team pushes harder
+  if (homeGoals < awayGoals) {
+    homeForce *= (1 + (awayGoals - homeGoals) * 0.1); // More desperate if losing by more
+    if (minute > 80) homeForce *= 1.3; // Desperate blitz in final minutes
+  }
+  if (awayGoals < homeGoals) {
+    awayForce *= (1 + (homeGoals - awayGoals) * 0.1);
+    if (minute > 80) awayForce *= 1.3;
+  }
   
   const diff = homeForce - awayForce;
-  if (diff > 15) return 'domínio_home';
-  if (diff > 5) return 'pressão_home';
-  if (diff < -15) return 'domínio_away';
-  if (diff < -5) return 'pressão_away';
+  
+  // Special phases for late game
+  if (minute > 82) {
+    if (homeGoals < awayGoals && diff > 10) return 'blitz_final_home';
+    if (awayGoals < homeGoals && diff < -10) return 'blitz_final_away';
+    if (homeGoals > awayGoals && tactics?.playStyle === 'retranca-total') return 'retranca_home';
+  }
+
+  if (diff > 25) return 'domínio_home';
+  if (diff > 8) return 'pressão_home';
+  if (diff < -25) return 'domínio_away';
+  if (diff < -8) return 'pressão_away';
+  
   return 'equilíbrio';
 }
 
@@ -1035,18 +1055,46 @@ function simulateFullMatch(
   const allPlanned: SimEvent[] = [];
   let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
 
-  function buildupDesc(team: 'home' | 'away', tName: string): string {
+  function buildupDesc(team: 'home' | 'away', tName: string, type: string = 'normal'): string {
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
+    const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
     const p3 = pool.filter(p => p.name !== p1 && p.name !== p2).length > 0 ? pick(pool.filter(p => p.name !== p1 && p.name !== p2)).name : p2;
     const p4 = pool.filter(p => ![p1, p2, p3].includes(p.name)).length > 0 ? pick(pool.filter(p => ![p1, p2, p3].includes(p.name))).name : p3;
+    const opp = oppPool.length > 0 ? pick(oppPool).name : 'Adversário';
+
+    if (type === 'counter_attack') {
+      const counters = [
+        `⚡ CONTRA-ATAQUE VELOZ! ${p1} intercepta o passe e lança ${p2} em profundidade… ${p2} arranca em alta velocidade pela ala, deixa ${opp} para trás e cruza para ${p3} na área!`,
+        `🚀 Transição rápida do ${tName}! ${p1} ganha a bola na defesa e faz um passe longo primoroso para ${p2}… ele domina tirando do marcador e aciona ${p3} livre no comando do ataque!`,
+        `🔥 O ${tName} pega a defesa adversária aberta! ${p1} conduz em velocidade, tabela com ${p2} e enfia uma bola magistral para ${p3} invadir a área!`,
+      ];
+      return pick(counters);
+    }
+
+    if (type === 'long_passing') {
+      const sequences = [
+        `🔄 O ${tName} trabalha a bola com paciência… ${p1} para ${p2}… ${p2} inverte para ${p3}… a equipe envolve o adversário com trocas de passes precisas até que ${p4} encontra o espaço para o arremate!`,
+        `⚽ Domínio absoluto do ${tName}! A bola passa de pé em pé: ${p1}, ${p2}, ${p3}… o time controla o ritmo do jogo e busca a brecha na defesa. ${p4} recebe na entrada da área!`,
+      ];
+      return pick(sequences);
+    }
+
+    if (type === 'high_press') {
+      const press = [
+        `🛑 PRESSÃO ALTA! ${p1} abafa a saída de bola e força o erro de ${opp}! ${p2} recupera na intermediária ofensiva e já aciona ${p3} na cara do gol!`,
+        `⚠️ Recuperação alta do ${tName}! ${p1} e ${p2} fecham as opções de passe, a bola sobra para ${p3} que já prepara o chute de primeira!`,
+      ];
+      return pick(press);
+    }
+
     const buildups = [
       `${p1} sai jogando da defesa do ${tName}… aciona ${p2} no meio-campo… ${p2} gira sob marcação e lança ${p3} pela ponta… ${p3} acelera, dribla a marcação e cruza rasteiro para ${p4} concluir`,
       `${p1} recebe na intermediária… troca curta com ${p2}… ${p2} devolve de primeira… ${p1} avança com bola dominada e enfia para ${p3} entre os zagueiros… ${p3} bate firme`,
       `${p1} desarma no meio-campo… inicia transição rápida… toque para ${p2}… ${p2} carrega e lança em profundidade para ${p3}… ${p3} domina no peito e finaliza`,
       `${p1} pressiona alto e recupera a bola… aciona ${p2} no corredor central… tabela com ${p3}… ${p3} devolve, ${p2} avança livre e bate cruzado`,
-      `${p1} arma a jogada do ${tName} pela direita… troca passe com ${p2}… ${p2} inverte longo para ${p3} aberto na esquerda… ${p3} corta para o meio e cruza rasteiro… ${p4} aparece de surpresa`,
+      `${p1} arma a jogada do ${tName} pela direita… troca passe com ${p2}… ${p2} inverte longo para ${p3} abertona esquerda… ${p3} corta para o meio e cruza rasteiro… ${p4} aparece de surpresa`,
     ];
     return pick(buildups);
   }
@@ -1319,10 +1367,15 @@ function simulateFullMatch(
     const oppExtras = team === 'home' ? awayExtras : homeExtras;
     const myExtras = team === 'home' ? homeExtras : awayExtras;
     const basePool = sForm >= 1.0
-      ? ['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
+      ? ['woodwork', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near', 'individual_play', 'cross_danger', 'rebound_box', 'through_ball_danger', 'wing_play']
       : sForm >= 0.85
-        ? ['woodwork', 'great_save', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near']
-        : ['great_save', 'great_save', 'offside_trap', 'long_shot_miss', 'long_shot_miss', 'header_miss', 'header_miss', 'buildup_play'];
+        ? ['woodwork', 'great_save', 'great_save', 'corner_danger', 'offside_trap', 'long_shot_miss', 'header_miss', 'counter_attack', 'buildup_play', 'free_kick_near', 'cross_danger', 'through_ball_danger']
+        : ['great_save', 'great_save', 'offside_trap', 'long_shot_miss', 'long_shot_miss', 'header_miss', 'header_miss', 'buildup_play', 'defensive_error'];
+
+    // Add rare events occasionally
+    if (rng() < 0.03) basePool.push('gk_blunder', 'own_goal');
+    if (rng() < 0.05) basePool.push('injury_event');
+
     const chancePool: string[] = [...basePool];
     // Linha alta adversária → +impedimentos
     if (oppExtras.offsideMul > 1.2) chancePool.push('offside_trap', 'offside_trap');
@@ -1332,11 +1385,16 @@ function simulateFullMatch(
       if (idx >= 0) chancePool.splice(idx, 1);
     }
     // Bola longa / largura larga → mais cruzamentos / cabeceios e contra-ataques
-    if (myExtras.crossBoost > 0.1) chancePool.push('corner_danger', 'header_miss', 'free_kick_near');
+    if (myExtras.crossBoost > 0.1) chancePool.push('corner_danger', 'header_miss', 'free_kick_near', 'cross_danger');
+    if (playStyle === 'contra-ataque') chancePool.push('counter_attack', 'counter_attack');
     // Passe curto → mais construção
-    if (myExtras.shortPassBoost > 0.05) chancePool.push('buildup_play', 'buildup_play');
+    if (myExtras.shortPassBoost > 0.05) chancePool.push('buildup_play', 'buildup_play', 'through_ball_danger');
     // Chutão / passe longo → mais chutes de longe
-    if (myExtras.longShotBoost > 0.08) chancePool.push('long_shot_miss', 'woodwork');
+    if (myExtras.longShotBoost > 0.08) chancePool.push('long_shot_miss', 'woodwork', 'long_passing_play');
+    
+    // Tática retranca total gera mais rebatidas e desarmes
+    if (playStyle === 'retranca-total' && team !== 'home') chancePool.push('defensive_error', 'rebound_box');
+
     const evType = pick(chancePool);
     const descs: Record<string, string> = {
       woodwork: `📐 TRAVE!!! ${pName} do ${tName} solta uma bomba de fora da área e a bola bate no travessão! ${gkName} do ${opp} apenas observou. A torcida grita!`,
@@ -1345,12 +1403,19 @@ function simulateFullMatch(
       offside_trap: `⛳ Impedimento! ${pName} do ${tName} partiu antes da hora e o bandeirinha marcou posição irregular. Lance anulado por centímetros!`,
       long_shot_miss: `💨 ${pName} puxa para o pé direito e arrisca de longa distância! A bola sobe um pouco acima do travessão. Boa tentativa do ${tName}!`,
       header_miss: `👤 ${pName} cabeceia após cruzamento de ${p2Name}, mas a bola passa por cima do gol! Chance desperdiçada pelo ${tName}! O jogador leva as mãos à cabeça!`,
-      counter_attack: `🏃💨 CONTRA-ATAQUE FULMINANTE DO ${tName}! ${pName} rouba a bola no campo de defesa… toca rápido para ${p2Name}… ${p2Name} carrega em velocidade pelo meio… deixa um zagueiro pra trás… aciona ${pName} de novo na entrada da área… ${pName} bate forte mas ${gkName} se estica e defende! Que jogada construída!`,
-      buildup_play: `⚙️ Bela construção do ${tName}! ${p2Name} sai jogando da defesa… troca passe curto com ${pName}… ${pName} devolve de primeira… ${p2Name} avança com a bola dominada… abre na ponta para ${pName}… ${pName} corta para o meio, dribla ${defName} e cruza rasteiro… mas a defesa adversária afasta no último segundo!`,
-      free_kick_near: `🎯 Falta perigosa para o ${tName}! ${p2Name} posiciona a bola… aguarda a barreira… cobra colocado por cima da barreira… a bola tem efeito e busca o ângulo… ${gkName} voa e espalma para escanteio! Quase um golaço de falta!`,
-      penalty_hit: `🎯 PÊNALTI! ${pName} do ${tName} se prepara... parte para a bola... ⚽ GOOOOOOOOOOL!!! Cobrança magistral, sem chances para o goleiro!`,
-      penalty_save: `🧤 PÊNALTI DEFENDIDO! ${pName} do ${tName} solta a bomba, mas ${gkName} do ${opp} voa no canto e busca! Espetacular defesa que mantém o placar!`,
-      penalty_out: `❌ PÊNALTI PARA FORA! ${pName} tenta colocar demais, a bola raspa a trave e vai pela linha de fundo! Torcida não acredita no que viu!`,
+      counter_attack: `⚡ CONTRA-ATAQUE EXPLOSIVO! ${buildupDesc(team, tName, 'counter_attack')} finaliza cruzado, mas a bola sai tirando tinta do poste!`,
+      individual_play: `🕺 JOGADA INDIVIDUAL! ${pName} recebe na intermediária, finta dois marcadores, invade a área com um drible desconcertante em ${defName} e bate firme! O estádio levanta!`,
+      cross_danger: `🏹 Cruzamento perigoso! ${p2Name} ganha da marcação na linha de fundo e manda na medida para ${pName}… ele testa consciente, mas a defesa bloqueia no último segundo!`,
+      rebound_box: `💥 Bate-rebate na área! Após o chute bloqueado, a bola fica viva, ${pName} tenta o chute mas a defesa afasta o perigo em cima da linha! Tensão total!`,
+      through_ball_danger: `🎯 Passe em profundidade! ${p2Name} vê o movimento de ${pName} e faz o lançamento entre os zagueiros… ele domina e tenta o toque por cobertura, mas erra o alvo por pouco!`,
+      wing_play: `🏃 Pelas laterais! ${p2Name} avança com liberdade, faz a inversão de jogo magistral para ${pName} que domina no peito e já prepara o cruzamento… a defesa do ${opp} se vira para afastar!`,
+      long_passing_play: `🔄 ${buildupDesc(team, tName, 'long_passing')} finaliza de longe, obrigando ${gkName} a trabalhar!`,
+      defensive_error: `⚠️ Erro defensivo! ${defName} se atrapalha na saída de bola, ${pName} recupera e tenta o chute rápido… a bola desvia e sai em escanteio!`,
+      gk_blunder: `😱 FALHA DO GOLEIRO! ${gkName} tenta encaixar o chute fraco de ${pName}, mas deixa a bola escapar! Por sorte, ${defName} aparece para salvar o gol certo!`,
+      own_goal: `🤦 GOL CONTRA!!! Que infelicidade! ${defName} tenta cortar o cruzamento de ${p2Name} e acaba mandando contra a própria rede! O estádio fica em silêncio...`,
+      injury_event: `🏥 PREOCUPAÇÃO! ${pName} cai no gramado após a dividida e pede atendimento médico. Parece uma lesão muscular... o jogo fica paralisado.`,
+      buildup_play: `${buildupDesc(team, tName)} finaliza, mas a defesa do ${opp} bloqueia!`,
+      free_kick_near: `🎯 Falta perigosa! ${pName} ajeita com carinho... parte para a bola... cobra com veneno por cima da barreira! Ela passa assustando o goleiro!`,
     };
     if (evType === 'great_save') { stats.shotsOnTarget[teamIdx]++; stats.saves[teamIdx === 0 ? 1 : 0]++; }
     if (evType === 'corner_danger') stats.corners[teamIdx]++;
@@ -1478,7 +1543,34 @@ function simulateFullMatch(
       { type: 'wing_run', desc: `🏃‍♂️ ${p1} dispara pela ponta direita do ${tName}! Deixa ${def} para trás e prepara o cruzamento na área.` },
       { type: 'header_duel', desc: `💢 Disputa aérea no meio-campo! ${p1} e ${def} sobem juntos e a bola sobra para ${p2} retomar a posse.` },
     ];
-    const chosen = pick(posTypes);
+
+    // Contextual variety based on momentPhase
+    if (momentPhase === 'blitz_final_home' && team === 'home') {
+      posTypes.push(
+        { type: 'pressing', desc: `🔥 BLITZ TOTAL! O ${tName} se lança desesperadamente ao ataque! ${p1} e ${p2} pressionam a saída do ${opp} na base da vontade!` },
+        { type: 'possession', desc: `⏱️ O ${tName} gira a bola rápido, tentando encontrar o espaço final. Tensão máxima nos minutos finais!` }
+      );
+    } else if (momentPhase === 'retranca_home' && team === 'home') {
+       posTypes.push(
+        { type: 'possession', desc: `🕒 O ${tName} gasta o tempo como pode. ${p1} segura a bola na bandeirinha de escanteio sob vaias do ${opp}.` },
+        { type: 'possession', desc: `🛡️ Muralha montada! O ${tName} se fecha com 10 atrás da linha da bola, não dando espaços.` }
+      );
+    }
+    // Tempo-based selection
+    const filteredPosTypes = [...posTypes];
+    if (tempo === 'muito-rapido' || tempo === 'rapido') {
+      filteredPosTypes.push(
+        { type: 'counter_attempt', desc: `⚡ O ${tName} tenta acelerar o jogo com passes verticais rápidos!` },
+        { type: 'wing_run', desc: `🏃 ${p1} acelera pela lateral, buscando o fundo em velocidade!` }
+      );
+    } else if (tempo === 'lento' || tempo === 'cadenciado') {
+      filteredPosTypes.push(
+        { type: 'triangulation', desc: `🔺 O ${tName} valoriza a posse, trocando passes curtos e triangulando para cansar o adversário.` },
+        { type: 'possession', desc: `⚽ Controle total! O ${tName} dita o ritmo da partida no meio-campo.` }
+      );
+    }
+
+    const chosen = pick(filteredPosTypes);
     if (chosen.type === 'midfield_foul') stats.fouls[teamIdx]++;
     if (chosen.type === 'tackle' || chosen.type === 'interception') stats.tackles[teamIdx === 0 ? 1 : 0]++;
     if (chosen.type === 'shot_blocked' || chosen.type === 'shot_off') stats.shots[teamIdx]++;

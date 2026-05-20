@@ -183,17 +183,19 @@ export function useMatchSimulation() {
       switch (ev.type) {
         case 'woodwork': s.shots[idx]++; s.shotsOnTarget[idx]++; break;
         case 'great_save': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
-        case 'corner_danger': s.corners[idx]++; break;
+        case 'corner_danger': case 'corner_kick': s.corners[idx]++; break;
         case 'offside_trap': s.offsides[idx]++; break;
-        case 'long_shot_miss': case 'header_miss': s.shots[idx]++; break;
+        case 'long_shot_miss': case 'header_miss': case 'shot_off': s.shots[idx]++; break;
         case 'yellow_card': s.fouls[idx]++; s.yellowCards[idx]++; break;
         case 'red_card': s.fouls[idx]++; s.redCards[idx]++; break;
         case 'dangerous_foul': s.fouls[opp]++; break;
         case 'midfield_foul': case 'foul': s.fouls[idx]++; break;
-        case 'tackle': s.tackles[opp]++; break;
+        case 'tackle': case 'interception': s.tackles[opp]++; break;
         case 'penalty_miss': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
-        case 'possession': case 'dribble_ok': case 'through_ball': case 'crossing': case 'long_pass': case 'pressing': s.passes[idx]++; break;
-        case 'counter_attack': case 'free_kick_near': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
+        case 'possession': case 'dribble_ok': case 'through_ball': case 'crossing': case 'long_pass': case 'pressing': case 'triangulation': case 'one_two': case 'wing_run': s.passes[idx]++; break;
+        case 'counter_attack': case 'free_kick_near': case 'individual_play': case 'through_ball_danger': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
+        case 'shot_blocked': s.shots[idx]++; break;
+        case 'gk_save': s.shots[idx]++; s.shotsOnTarget[idx]++; s.saves[opp]++; break;
       }
     }
     
