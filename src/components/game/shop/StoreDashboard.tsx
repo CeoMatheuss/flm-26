@@ -17,6 +17,8 @@ interface StoreDashboardProps {
 export function StoreDashboard({ stats }: StoreDashboardProps) {
   const marketingEffects = stats.activeEffects.filter(e => e.category === 'marketing');
   const activeSponsors = stats.activeEffects.filter(e => e.category === 'sponsorship');
+  const scoutingEffects = stats.activeEffects.filter(e => e.category === 'scouting');
+  const fanEffects = stats.activeEffects.filter(e => e.category === 'fans');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
