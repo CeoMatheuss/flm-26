@@ -445,49 +445,130 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
         </CardContent>
       </Card>
 
-      {/* ─────────── Unlock Dialog ─────────── */}
-      <Dialog open={unlockOpen} onOpenChange={setUnlockOpen}>
-        <DialogContent className="max-w-md">
+      {/* ─────────── Unlock Dialog (Mercado Pago) ─────────── */}
+      <Dialog open={unlockOpen} onOpenChange={(o) => { setUnlockOpen(o); if (!o) setPixResult(null); }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-amber-400" /> Personalização Premium
             </DialogTitle>
             <DialogDescription>
-              Desbloqueie a edição completa de identidade do clube por <span className="font-bold text-amber-400">R$ 10</span> (pagamento único).
+              Desbloqueio único por <span className="font-bold text-amber-400">R$ 10,00</span> via Mercado Pago.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 py-2">
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-              <p className="text-xs font-bold text-amber-400">O que você desbloqueia:</p>
-              <ul className="text-[11px] space-y-1 text-muted-foreground">
-                <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Mudar o nome do clube quantas vezes quiser</li>
-                <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Mudar o nome do estádio</li>
-                <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Editar escudo (forma, cores, ícone, etc.)</li>
-              </ul>
+          {pixResult ? (
+            <div className="space-y-3 py-2">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-3 text-center">
+                <p className="text-xs font-bold text-emerald-400">Escaneie o QR Code para pagar</p>
+                {pixResult.qrBase64 && (
+                  <img
+                    src={`data:image/png;base64,${pixResult.qrBase64}`}
+                    alt="QR Code Pix"
+                    className="mx-auto w-48 h-48 rounded-md bg-white p-2"
+                  />
+                )}
+                {pixResult.copyPaste && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] text-muted-foreground">Ou copie o código Pix:</p>
+                    <div className="flex gap-2">
+                      <Input value={pixResult.copyPaste} readOnly className="h-8 text-[10px] font-mono" />
+                      <Button size="sm" variant="outline" onClick={() => copyToClipboard(pixResult.copyPaste!, 'Código Pix')} className="h-8 shrink-0">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  A liberação é automática assim que o pagamento for confirmado.
+                </p>
+              </div>
+              <Button variant="outline" onClick={() => setUnlockOpen(false)} className="w-full">Fechar</Button>
             </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+                <p className="text-xs font-bold text-amber-400">O que você desbloqueia:</p>
+                <ul className="text-[11px] space-y-1 text-muted-foreground">
+                  <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Mudar o nome do clube quantas vezes quiser</li>
+                  <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Mudar o nome do estádio</li>
+                  <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Editar escudo (forma, cores, ícone, etc.)</li>
+                </ul>
+              </div>
 
-            <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-              <p className="text-xs font-bold">Como pagar:</p>
-              <ol className="text-[11px] space-y-1 text-muted-foreground list-decimal list-inside">
-                <li>Envie <span className="font-bold text-foreground">R$ 10,00</span> via Pix para a chave abaixo</li>
-                <li>Inclua seu <span className="font-bold text-foreground">e-mail de cadastro</span> na mensagem</li>
-                <li>O admin libera em até <span className="font-bold text-foreground">24h</span></li>
-              </ol>
-              <div className="flex items-center gap-2 mt-2 p-2 rounded bg-muted/40 border border-border/50">
-                <span className="text-[11px] font-mono flex-1 truncate">flm26@pix.com</span>
-                <Button size="sm" variant="ghost" onClick={copyPix} className="h-6 px-2">
-                  <Copy className="h-3 w-3" />
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={payMethod === 'pix' ? 'default' : 'outline'}
+                  onClick={() => setPayMethod('pix')}
+                  className="gap-1.5"
+                >
+                  <QrCode className="h-4 w-4" /> Pix
+                </Button>
+                <Button
+                  type="button"
+                  variant={payMethod === 'card' ? 'default' : 'outline'}
+                  onClick={() => setPayMethod('card')}
+                  className="gap-1.5"
+                >
+                  <CreditCard className="h-4 w-4" /> Cartão
                 </Button>
               </div>
-            </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setUnlockOpen(false)} className="w-full">Fechar</Button>
-          </DialogFooter>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-medium">E-mail para comprovante</label>
+                  <Input
+                    type="email"
+                    value={payEmail}
+                    onChange={(e) => setPayEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    className="h-8 text-xs mt-1"
+                  />
+                </div>
+                {payMethod === 'card' && (
+                  <>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground font-medium">Nome completo</label>
+                      <Input
+                        value={payName}
+                        onChange={(e) => setPayName(e.target.value)}
+                        placeholder="Nome no cartão"
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground font-medium">CPF</label>
+                      <Input
+                        value={payCpf}
+                        onChange={(e) => setPayCpf(formatCpf(e.target.value))}
+                        placeholder="000.000.000-00"
+                        className="h-8 text-xs mt-1"
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="outline" onClick={() => setUnlockOpen(false)} className="flex-1" disabled={payLoading}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={startCheckout}
+                  disabled={payLoading}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-black gap-1.5"
+                >
+                  {payLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Pagar R$ 10,00
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
+
 
       {/* ─────────── Shield Editor Sheet ─────────── */}
       <Sheet open={shieldOpen} onOpenChange={setShieldOpen}>
