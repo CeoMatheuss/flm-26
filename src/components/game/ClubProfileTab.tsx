@@ -9,10 +9,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/com
 import { ShieldCrest, ShieldConfig } from './ShieldCrest';
 import { CrestBuilder, defaultShieldConfig } from './CrestBuilder';
 import { shieldPropsFromClub, hasShield } from './shieldHelpers';
-import { Instagram, User, Edit3, Save, Quote, Calendar, Link2, Shield, Pencil, Landmark, Lock, Sparkles, Check, X, Copy } from 'lucide-react';
+import { Instagram, User, Edit3, Save, Quote, Calendar, Link2, Shield, Pencil, Landmark, Lock, Sparkles, Check, X, Copy, CreditCard, QrCode, Loader2 } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { toast } from 'sonner';
 import { formatMoney } from '@/lib/formatMoney';
+import { supabase } from '@/integrations/supabase/client';
+
 
 interface Props {
   club: { name: string; stadiumName?: string; primaryColor?: string; secondaryColor?: string; shieldPattern?: string; shieldShape?: string; shieldIcon?: string; shieldConfig?: any; detailColor?: string; logoUrl?: string; fans: number; reputation: number; country?: string; budget?: number };
@@ -35,6 +37,13 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
   const [newStadiumName, setNewStadiumName] = useState(club.stadiumName || 'Arena');
   const [shieldOpen, setShieldOpen] = useState(false);
   const [unlockOpen, setUnlockOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState<'pix' | 'card'>('pix');
+  const [payEmail, setPayEmail] = useState('');
+  const [payName, setPayName] = useState('');
+  const [payCpf, setPayCpf] = useState('');
+  const [payLoading, setPayLoading] = useState(false);
+  const [pixResult, setPixResult] = useState<{ qrBase64?: string; copyPaste?: string } | null>(null);
+
 
   const canEdit = !!profile.customizationUnlocked;
 
@@ -73,10 +82,61 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
     toast.success('Escudo atualizado!');
   };
 
-  const copyPix = () => {
-    navigator.clipboard.writeText('flm26@pix.com');
-    toast.success('Chave Pix copiada!');
+  const copyToClipboard = (text: string, label = 'Código') => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado!`);
   };
+
+  const formatCpf = (v: string) => {
+    const d = v.replace(/\D/g, '').slice(0, 11);
+    return d
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  };
+
+  const startCheckout = async () => {
+    if (!payEmail.includes('@')) {
+      toast.error('Informe um e-mail válido para o comprovante.');
+      return;
+    }
+    if (payMethod === 'card') {
+      if (!payName || payName.trim().split(' ').length < 2) {
+        toast.error('Informe seu nome completo.');
+        return;
+      }
+      if (payCpf.replace(/\D/g, '').length !== 11) {
+        toast.error('Informe um CPF válido (11 dígitos).');
+        return;
+      }
+    }
+    setPayLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
+        body: {
+          item_id: 'customization_unlock',
+          method: payMethod,
+          email: payEmail,
+          full_name: payName,
+          cpf: payCpf.replace(/\D/g, ''),
+        },
+      });
+      if (error) throw error;
+      if (payMethod === 'pix' && data?.pix_qr_code) {
+        setPixResult({ qrBase64: data.pix_qr_code_base64, copyPaste: data.pix_qr_code });
+      } else if (data?.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        toast.error('Não foi possível iniciar o pagamento.');
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Erro ao processar pagamento. Tente novamente.');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
 
   // Format instagram as link
   const getInstagramUrl = (val: string) => {
@@ -184,10 +244,12 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
                     </div>
                     <p className="text-[11px] text-muted-foreground">Forma, cores, símbolo e mais.</p>
                   </div>
-                  <Button size="sm" onClick={openShieldEditor} variant={canEdit ? 'default' : 'outline'} className="shrink-0 gap-1">
-                    {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                    {canEdit ? 'Editar' : 'R$ 10'}
-                  </Button>
+                  {canEdit && (
+                    <Button size="sm" onClick={openShieldEditor} variant="default" className="shrink-0 gap-1">
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Button>
+                  )}
+
                 </div>
               </CardContent>
             </Card>
@@ -215,11 +277,13 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
                 ) : (
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-bold text-sm truncate">{club.name}</p>
-                    <Button size="sm" variant={canEdit ? 'outline' : 'outline'} onClick={() => requireUnlock(() => { setNewClubName(club.name); setEditingClubName(true); })} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
-                      {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                      {canEdit ? 'Editar' : 'R$ 10'}
-                    </Button>
+                    {canEdit && (
+                      <Button size="sm" variant="outline" onClick={() => { setNewClubName(club.name); setEditingClubName(true); }} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
+                        <Pencil className="h-3 w-3" /> Editar
+                      </Button>
+                    )}
                   </div>
+
                 )}
               </CardContent>
             </Card>
@@ -247,10 +311,12 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
                 ) : (
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-bold text-sm truncate">{club.stadiumName || 'Arena'}</p>
-                    <Button size="sm" variant="outline" onClick={() => requireUnlock(() => { setNewStadiumName(club.stadiumName || 'Arena'); setEditingStadium(true); })} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
-                      {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                      {canEdit ? 'Editar' : 'R$ 10'}
-                    </Button>
+                    {canEdit && (
+                      <Button size="sm" variant="outline" onClick={() => { setNewStadiumName(club.stadiumName || 'Arena'); setEditingStadium(true); }} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
+                        <Pencil className="h-3 w-3" /> Editar
+                      </Button>
+                    )}
+
                   </div>
                 )}
               </CardContent>
@@ -385,49 +451,130 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
         </CardContent>
       </Card>
 
-      {/* ─────────── Unlock Dialog ─────────── */}
-      <Dialog open={unlockOpen} onOpenChange={setUnlockOpen}>
-        <DialogContent className="max-w-md">
+      {/* ─────────── Unlock Dialog (Mercado Pago) ─────────── */}
+      <Dialog open={unlockOpen} onOpenChange={(o) => { setUnlockOpen(o); if (!o) setPixResult(null); }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-amber-400" /> Personalização Premium
             </DialogTitle>
             <DialogDescription>
-              Desbloqueie a edição completa de identidade do clube por <span className="font-bold text-amber-400">R$ 10</span> (pagamento único).
+              Desbloqueio único por <span className="font-bold text-amber-400">R$ 10,00</span> via Mercado Pago.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 py-2">
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-              <p className="text-xs font-bold text-amber-400">O que você desbloqueia:</p>
-              <ul className="text-[11px] space-y-1 text-muted-foreground">
-                <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Mudar o nome do clube quantas vezes quiser</li>
-                <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Mudar o nome do estádio</li>
-                <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Editar escudo (forma, cores, ícone, etc.)</li>
-              </ul>
+          {pixResult ? (
+            <div className="space-y-3 py-2">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-3 text-center">
+                <p className="text-xs font-bold text-emerald-400">Escaneie o QR Code para pagar</p>
+                {pixResult.qrBase64 && (
+                  <img
+                    src={`data:image/png;base64,${pixResult.qrBase64}`}
+                    alt="QR Code Pix"
+                    className="mx-auto w-48 h-48 rounded-md bg-white p-2"
+                  />
+                )}
+                {pixResult.copyPaste && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] text-muted-foreground">Ou copie o código Pix:</p>
+                    <div className="flex gap-2">
+                      <Input value={pixResult.copyPaste} readOnly className="h-8 text-[10px] font-mono" />
+                      <Button size="sm" variant="outline" onClick={() => copyToClipboard(pixResult.copyPaste!, 'Código Pix')} className="h-8 shrink-0">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  A liberação é automática assim que o pagamento for confirmado.
+                </p>
+              </div>
+              <Button variant="outline" onClick={() => setUnlockOpen(false)} className="w-full">Fechar</Button>
             </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+                <p className="text-xs font-bold text-amber-400">O que você desbloqueia:</p>
+                <ul className="text-[11px] space-y-1 text-muted-foreground">
+                  <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Mudar o nome do clube quantas vezes quiser</li>
+                  <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Mudar o nome do estádio</li>
+                  <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-emerald-400" /> Editar escudo (forma, cores, ícone, etc.)</li>
+                </ul>
+              </div>
 
-            <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-              <p className="text-xs font-bold">Como pagar:</p>
-              <ol className="text-[11px] space-y-1 text-muted-foreground list-decimal list-inside">
-                <li>Envie <span className="font-bold text-foreground">R$ 10,00</span> via Pix para a chave abaixo</li>
-                <li>Inclua seu <span className="font-bold text-foreground">e-mail de cadastro</span> na mensagem</li>
-                <li>O admin libera em até <span className="font-bold text-foreground">24h</span></li>
-              </ol>
-              <div className="flex items-center gap-2 mt-2 p-2 rounded bg-muted/40 border border-border/50">
-                <span className="text-[11px] font-mono flex-1 truncate">flm26@pix.com</span>
-                <Button size="sm" variant="ghost" onClick={copyPix} className="h-6 px-2">
-                  <Copy className="h-3 w-3" />
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={payMethod === 'pix' ? 'default' : 'outline'}
+                  onClick={() => setPayMethod('pix')}
+                  className="gap-1.5"
+                >
+                  <QrCode className="h-4 w-4" /> Pix
+                </Button>
+                <Button
+                  type="button"
+                  variant={payMethod === 'card' ? 'default' : 'outline'}
+                  onClick={() => setPayMethod('card')}
+                  className="gap-1.5"
+                >
+                  <CreditCard className="h-4 w-4" /> Cartão
                 </Button>
               </div>
-            </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setUnlockOpen(false)} className="w-full">Fechar</Button>
-          </DialogFooter>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-medium">E-mail para comprovante</label>
+                  <Input
+                    type="email"
+                    value={payEmail}
+                    onChange={(e) => setPayEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    className="h-8 text-xs mt-1"
+                  />
+                </div>
+                {payMethod === 'card' && (
+                  <>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground font-medium">Nome completo</label>
+                      <Input
+                        value={payName}
+                        onChange={(e) => setPayName(e.target.value)}
+                        placeholder="Nome no cartão"
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground font-medium">CPF</label>
+                      <Input
+                        value={payCpf}
+                        onChange={(e) => setPayCpf(formatCpf(e.target.value))}
+                        placeholder="000.000.000-00"
+                        className="h-8 text-xs mt-1"
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="outline" onClick={() => setUnlockOpen(false)} className="flex-1" disabled={payLoading}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={startCheckout}
+                  disabled={payLoading}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-black gap-1.5"
+                >
+                  {payLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Pagar R$ 10,00
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
+
 
       {/* ─────────── Shield Editor Sheet ─────────── */}
       <Sheet open={shieldOpen} onOpenChange={setShieldOpen}>

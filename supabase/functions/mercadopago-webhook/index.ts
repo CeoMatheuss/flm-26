@@ -157,12 +157,17 @@ serve(async (req) => {
             console.error('[PREMIUM] Exceção ao ativar:', e);
           }
 
-          // 4.6 DESBLOQUEIO DE UNIFORMES: se o item comprado é de uniforme, liberar uniformsUnlocked
+          // 4.6 DESBLOQUEIO: uniformes e personalização premium
           try {
             const itemName = (orderData.metadata?.item_name || '').toString().toLowerCase();
             const itemId = (orderData.item_id || '').toString().toLowerCase();
             const isUniformItem = itemName.includes('uniform') || itemId.includes('uniform');
-            if (isUniformItem) {
+            const isCustomizationItem =
+              itemId === 'customization_unlock' ||
+              itemId.includes('customization') ||
+              itemName.includes('personaliza');
+
+            if (isUniformItem || isCustomizationItem) {
               const { data: saveRow } = await supabaseAdmin
                 .from('game_saves')
                 .select('id, club_data')
@@ -173,18 +178,20 @@ serve(async (req) => {
               if (saveRow) {
                 const clubData = (saveRow.club_data || {}) as Record<string, any>;
                 const clubProfile = { ...(clubData.clubProfile || {}) };
-                clubProfile.uniformsUnlocked = true;
+                if (isUniformItem) clubProfile.uniformsUnlocked = true;
+                if (isCustomizationItem) clubProfile.customizationUnlocked = true;
                 clubData.clubProfile = clubProfile;
                 await supabaseAdmin
                   .from('game_saves')
                   .update({ club_data: clubData, updated_at: new Date().toISOString() })
                   .eq('id', saveRow.id);
-                console.log(`[UNIFORMS] Desbloqueado para user_id=${orderData.user_id}`);
+                console.log(`[UNLOCK] user_id=${orderData.user_id} uniforms=${isUniformItem} customization=${isCustomizationItem}`);
               }
             }
           } catch (e) {
-            console.error('[UNIFORMS] Exceção ao desbloquear:', e);
+            console.error('[UNLOCK] Exceção ao desbloquear:', e);
           }
+
 
           // 5. Notify user about payment and release in Real-Time
           if (orderData) {
