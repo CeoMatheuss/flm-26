@@ -1055,18 +1055,46 @@ function simulateFullMatch(
   const allPlanned: SimEvent[] = [];
   let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
 
-  function buildupDesc(team: 'home' | 'away', tName: string): string {
+  function buildupDesc(team: 'home' | 'away', tName: string, type: string = 'normal'): string {
     const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
+    const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
     const p3 = pool.filter(p => p.name !== p1 && p.name !== p2).length > 0 ? pick(pool.filter(p => p.name !== p1 && p.name !== p2)).name : p2;
     const p4 = pool.filter(p => ![p1, p2, p3].includes(p.name)).length > 0 ? pick(pool.filter(p => ![p1, p2, p3].includes(p.name))).name : p3;
+    const opp = oppPool.length > 0 ? pick(oppPool).name : 'Adversário';
+
+    if (type === 'counter_attack') {
+      const counters = [
+        `⚡ CONTRA-ATAQUE VELOZ! ${p1} intercepta o passe e lança ${p2} em profundidade… ${p2} arranca em alta velocidade pela ala, deixa ${opp} para trás e cruza para ${p3} na área!`,
+        `🚀 Transição rápida do ${tName}! ${p1} ganha a bola na defesa e faz um passe longo primoroso para ${p2}… ele domina tirando do marcador e aciona ${p3} livre no comando do ataque!`,
+        `🔥 O ${tName} pega a defesa adversária aberta! ${p1} conduz em velocidade, tabela com ${p2} e enfia uma bola magistral para ${p3} invadir a área!`,
+      ];
+      return pick(counters);
+    }
+
+    if (type === 'long_passing') {
+      const sequences = [
+        `🔄 O ${tName} trabalha a bola com paciência… ${p1} para ${p2}… ${p2} inverte para ${p3}… a equipe envolve o adversário com trocas de passes precisas até que ${p4} encontra o espaço para o arremate!`,
+        `⚽ Domínio absoluto do ${tName}! A bola passa de pé em pé: ${p1}, ${p2}, ${p3}… o time controla o ritmo do jogo e busca a brecha na defesa. ${p4} recebe na entrada da área!`,
+      ];
+      return pick(sequences);
+    }
+
+    if (type === 'high_press') {
+      const press = [
+        `🛑 PRESSÃO ALTA! ${p1} abafa a saída de bola e força o erro de ${opp}! ${p2} recupera na intermediária ofensiva e já aciona ${p3} na cara do gol!`,
+        `⚠️ Recuperação alta do ${tName}! ${p1} e ${p2} fecham as opções de passe, a bola sobra para ${p3} que já prepara o chute de primeira!`,
+      ];
+      return pick(press);
+    }
+
     const buildups = [
       `${p1} sai jogando da defesa do ${tName}… aciona ${p2} no meio-campo… ${p2} gira sob marcação e lança ${p3} pela ponta… ${p3} acelera, dribla a marcação e cruza rasteiro para ${p4} concluir`,
       `${p1} recebe na intermediária… troca curta com ${p2}… ${p2} devolve de primeira… ${p1} avança com bola dominada e enfia para ${p3} entre os zagueiros… ${p3} bate firme`,
       `${p1} desarma no meio-campo… inicia transição rápida… toque para ${p2}… ${p2} carrega e lança em profundidade para ${p3}… ${p3} domina no peito e finaliza`,
       `${p1} pressiona alto e recupera a bola… aciona ${p2} no corredor central… tabela com ${p3}… ${p3} devolve, ${p2} avança livre e bate cruzado`,
-      `${p1} arma a jogada do ${tName} pela direita… troca passe com ${p2}… ${p2} inverte longo para ${p3} aberto na esquerda… ${p3} corta para o meio e cruza rasteiro… ${p4} aparece de surpresa`,
+      `${p1} arma a jogada do ${tName} pela direita… troca passe com ${p2}… ${p2} inverte longo para ${p3} abertona esquerda… ${p3} corta para o meio e cruza rasteiro… ${p4} aparece de surpresa`,
     ];
     return pick(buildups);
   }
