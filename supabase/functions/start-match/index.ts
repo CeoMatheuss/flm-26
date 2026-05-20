@@ -344,7 +344,7 @@ function drainStamina(players: SimPlayer[], minute: number, pressingMod: number,
 
 // ── MOMENT SYSTEM ──────────────────────────────────────────
 
-type MomentPhase = 'pressão_home' | 'pressão_away' | 'equilíbrio' | 'domínio_home' | 'domínio_away';
+type MomentPhase = 'pressão_home' | 'pressão_away' | 'equilíbrio' | 'domínio_home' | 'domínio_away' | 'contra_ataque_home' | 'contra_ataque_away' | 'blitz_final_home' | 'blitz_final_away' | 'retranca_home' | 'retranca_away';
 
 function computeMoment(
   home: SimPlayer[], away: SimPlayer[],
