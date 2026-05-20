@@ -162,10 +162,6 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
         kind: 'out',
         category: knownCat,
         label: o.shop_items?.name || (o.metadata as any)?.item_name || 'Compra',
-        amount: Number(o.amount_cents || 0) / 100,
-        source: o.status === 'approved' || o.delivered ? 'Aprovado' : (o.status || 'Pendente'),
-      });
-    }
     for (const s of sponsorships) {
       out.push({
         id: `spons-${s.id}`,
@@ -173,6 +169,10 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
         kind: 'in',
         category: 'sponsorship',
         label: s.sponsor_name,
+        amount: Number(s.contract_value_cents) / 100,
+        source: 'Contrato ativo',
+      });
+    }
     for (const e of activeEffects) {
       const cat = (e.category === 'marketing' ? 'marketing' : 
                    e.category === 'members' ? 'members' : 
@@ -183,16 +183,12 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
         ts: e.created_at || new Date().toISOString(),
         kind: 'in',
         category: cat,
-        label: e?.bonus_data?.name || `${CATEGORIES[cat]?.label || 'Efeito'} ativo`,
+        label: e?.bonus_data?.name || `${(CATEGORIES as any)[cat]?.label || 'Efeito'} ativo`,
         amount: Number(e?.bonus_data?.dinheiroSemanal ?? e?.bonus_data?.daily_cash ?? 0),
         source: 'Bônus ativo',
       });
     }
 
-        amount: Number(e?.bonus_data?.dinheiroSemanal ?? e?.bonus_data?.daily_cash ?? 0),
-        source: 'Bônus ativo',
-      });
-    }
     return out.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()).slice(0, 30);
   }, [orders, sponsorships, activeEffects]);
 
