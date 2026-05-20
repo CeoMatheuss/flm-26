@@ -276,10 +276,12 @@ export function ClubProfileTab({ club, season, profile, onSave, onRenameClub, on
                   </div>
                 ) : (
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-bold text-sm truncate">{club.name}</p>
-                    <Button size="sm" variant={canEdit ? 'outline' : 'outline'} onClick={() => requireUnlock(() => { setNewClubName(club.name); setEditingClubName(true); })} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
-                      {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                      {canEdit ? 'Editar' : 'R$ 10'}
+                    {canEdit && (
+                      <Button size="sm" variant="outline" onClick={() => { setNewClubName(club.name); setEditingClubName(true); }} className="shrink-0 h-7 px-2 gap-1 text-[10px]">
+                        <Pencil className="h-3 w-3" /> Editar
+                      </Button>
+                    )}
+
                     </Button>
                   </div>
                 )}
