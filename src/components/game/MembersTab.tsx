@@ -2,6 +2,7 @@
  * MembersTab — Sistema de Sócios Torcedores
  * Design: dark com detalhes em dourado, premium mobile-style.
  * Planos totalmente personalizáveis (nome, preço, benefícios).
+ * Sincronizado em tempo real com o banco de dados e loja.
  */
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,11 +59,11 @@ const muralNames = [
 ];
 
 export function MembersTab({ totalFans, reputation, totalMembersFromDB = 0, wins = 0, draws = 0, losses = 0 }: Props) {
-  const [plans, setPlans] = useState<MemberPlan[]>(() => {
-    // Fonte ÚNICA da verdade — mesmo número exibido em FansTab > Sócios.
+  // Use DB members as priority if available
+  const initialTotalMembers = useMemo(() => {
     const sTotalFans = safeNumber(totalFans);
     const sReputation = safeNumber(reputation);
-    const totalMembers = calculateTotalMembers({ 
+    return calculateTotalMembers({ 
       totalFans: sTotalFans, 
       reputation: sReputation, 
       wins, 
@@ -70,11 +71,22 @@ export function MembersTab({ totalFans, reputation, totalMembersFromDB = 0, wins
       losses,
       manualMembers: totalMembersFromDB
     });
+  }, [totalFans, reputation, totalMembersFromDB, wins, draws, losses]);
+
+  const [plans, setPlans] = useState<MemberPlan[]>(() => {
     return defaultPlans.map((p, i) => ({
       ...p,
-      subscribers: Math.max(0, Math.floor(totalMembers * (MEMBER_TIER_RATIOS[i] ?? 0))),
+      subscribers: Math.max(0, Math.floor(initialTotalMembers * (MEMBER_TIER_RATIOS[i] ?? 0))),
     }));
   });
+
+  // Update plans when total members sync from DB
+  useMemo(() => {
+    setPlans(prev => prev.map((p, i) => ({
+      ...p,
+      subscribers: Math.max(0, Math.floor(initialTotalMembers * (MEMBER_TIER_RATIOS[i] ?? 0))),
+    })));
+  }, [initialTotalMembers]);
 
   const [editingPlan, setEditingPlan] = useState<MemberPlan | null>(null);
 

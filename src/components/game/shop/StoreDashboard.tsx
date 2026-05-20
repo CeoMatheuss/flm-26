@@ -92,11 +92,15 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
         <CardContent className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-xs text-white/60">Base de Sócios</span>
-            <span className="text-sm font-black">{stats.membership.totalMembers.toLocaleString()}</span>
+            <span className="text-sm font-black text-amber-400">
+              {stats.membership.totalMembers.toLocaleString()}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-white/60">Receita Mensal</span>
-            <span className="text-sm font-black text-emerald-400">{formatMoney(stats.membership.monthlyRevenue)}</span>
+            <span className="text-sm font-black text-emerald-400">
+              {formatMoney(stats.membership.monthlyRevenue)}
+            </span>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between items-center text-[10px]">

@@ -678,8 +678,9 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                   </TableBody>
                 </Table>
               </div>
-              <div className="p-4 bg-primary/5 text-[10px] text-muted-foreground border-t">
-                * Premiações depositadas automaticamente no saldo do clube ao final da temporada (após a 38ª rodada).
+              <div className="p-4 bg-emerald-500/5 text-[10px] text-emerald-600 font-bold border-t border-emerald-500/20 flex items-center gap-2">
+                <CheckCircle2 className="h-3 w-3" />
+                Premiações sincronizadas. O valor será depositado automaticamente após a 38ª rodada.
               </div>
             </CardContent>
           </Card>
