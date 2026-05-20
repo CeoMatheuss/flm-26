@@ -491,58 +491,10 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
       toast.success('Uniforme lançado e salvo com sucesso!');
       fetchLaunches();
-    } catch (error) {
-      console.error('Error launching uniform:', error);
-      toast.error('Falha ao lançar uniforme.');
-    } finally {
-      setIsLaunching(false);
-    }
-  };
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: clubData } = await (supabase.from('clubs') as any).select('*').eq('user_id', user.id).single();
-      if (!clubData) return;
-
-      if ((clubData.uniform_launches_available || 0) <= 0) {
-        toast.error('Você não possui slots de lançamento disponíveis. Compre na Loja FLM!');
-        return;
-      }
-
-      // 1. Criar registro de lançamento
-      const { data: newLaunch, error: launchError } = await (supabase.from('club_uniform_launches') as any)
-        .insert({
-          club_id: clubData.id,
-          name: kits.home.name || 'Nova Coleção',
-          config: kits as any,
-          initial_fans: clubData.fans,
-          initial_reputation: clubData.reputation,
-          hype_score: 1.0
-        })
-        .select()
-        .single();
-
-      if (launchError) throw launchError;
-
-      // 2. Atualizar clube (consumir slot e definir uniforme atual)
-      await (supabase.from('clubs') as any).update({
-        uniform_launches_available: clubData.uniform_launches_available - 1,
-        current_uniform_launch_id: newLaunch.id,
-        primary_color: kits.home.shirtColor,
-        secondary_color: kits.home.shirtSecondaryColor
-      }).eq('id', clubData.id);
-
-      // 3. Gerar notícia
-      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
-
-      toast.success('🚀 Novo uniforme lançado com sucesso!');
-      fetchLaunches();
       window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
-      onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
     } catch (error: any) {
       console.error('Launch error:', error);
-      toast.error('Erro ao lançar uniforme: ' + error.message);
+      toast.error('Erro ao lançar uniforme: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setIsLaunching(false);
     }
