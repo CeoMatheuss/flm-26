@@ -828,10 +828,14 @@ export function AdminTab({ userId, isFounder }: Props) {
           </TabsContent>
 
           <TabsContent value="finance_panel" className="space-y-3 mt-3">
+          <TabsContent value="finance_panel" className="space-y-3 mt-3">
             <FinancePanel />
           </TabsContent>
 
-          <TabsContent value="customization_panel" className="space-y-3 mt-3">
+          <TabsContent value="shop_monitor" className="space-y-3 mt-3">
+            <AdminShopMonitor />
+          </TabsContent>
+
             <CustomizationPanel />
           </TabsContent>
 
