@@ -773,6 +773,7 @@ Deno.serve(async (req) => {
           seller_id: listing.seller_id,
           buyer_id: userId,
           buyer_club_name: (clubName || '').slice(0, 50),
+          offered_terms: body.offeredTerms || null,
           offered_salary_payer: validPayer,
           offered_salary_split_pct: validPayer === 'split' ? split : 0,
           offered_loan_fee: fee,
