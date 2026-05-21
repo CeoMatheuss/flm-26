@@ -69,6 +69,10 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <DropdownMenuItem onClick={() => goToMarket('loans')} className="menu-item"><ArrowLeftRight className="h-3.5 w-3.5 text-primary/70" /> Empréstimos <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
 
         <div className="my-1.5 border-t border-border/20" />
+        <p className="menu-category">🛒 Loja</p>
+        <DropdownMenuItem onClick={() => onTabChange('shop')} className="menu-item"><ShoppingCart className="h-3.5 w-3.5 text-emerald-400" /> Loja FLM <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+
+        <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">🌍 Comunidade</p>
         <DropdownMenuItem onClick={() => onTabChange('fans')} className="menu-item"><Heart className="h-3.5 w-3.5 text-primary/70" /> Torcida <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('members')} className="menu-item"><Crown className="h-3.5 w-3.5 text-yellow-400" /> Sócios Torcedores <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
