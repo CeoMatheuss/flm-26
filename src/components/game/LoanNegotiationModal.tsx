@@ -303,18 +303,19 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
         </ScrollArea>
 
         <DialogFooter className="p-6 bg-zinc-900/50 border-t border-zinc-800">
-          <Button variant="ghost" onClick={onClose} className="text-zinc-400 hover:text-white">Cancelar</Button>
-          {mode === 'setup' && (
+          <Button variant="ghost" onClick={activeClose} className="text-zinc-400 hover:text-white">Cancelar</Button>
+          {(mode === 'setup' || mode === 'list') && (
             <Button 
-              onClick={() => onConfirm(terms)} 
+              disabled={loading}
+              onClick={() => activeSubmit(terms)} 
               className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black uppercase tracking-wider"
             >
-              Anunciar Jogador
+              {loading ? 'Anunciando...' : 'Anunciar Jogador'}
             </Button>
           )}
           {mode === 'view' && !isOwner && (
             <div className="flex gap-2">
-              <Button onClick={() => onConfirm(terms)} className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black">
+              <Button disabled={loading} onClick={() => activeSubmit(terms)} className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black">
                 Aceitar Termos
               </Button>
               <Button variant="outline" onClick={() => {}} className="border-zinc-700 font-bold">
@@ -323,8 +324,8 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
             </div>
           )}
           {mode === 'negotiate' && (
-            <Button onClick={() => onConfirm(terms)} className="bg-primary hover:bg-primary/90 font-black">
-              Enviar Contraproposta
+            <Button disabled={loading} onClick={() => activeSubmit(terms)} className="bg-primary hover:bg-primary/90 font-black">
+              {loading ? 'Enviando...' : 'Enviar Contraproposta'}
             </Button>
           )}
         </DialogFooter>
