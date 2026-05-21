@@ -586,6 +586,7 @@ Deno.serve(async (req) => {
           salary_split_pct: validPayer === 'split' ? split : 0,
           loan_fee: fee,
           open_to_offers: openToOffers !== false,
+          loan_terms: body.loanTerms || null,
         })
         .select()
         .single();
