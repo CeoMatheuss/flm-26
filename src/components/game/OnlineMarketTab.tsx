@@ -22,7 +22,8 @@ import { LoanedPlayer } from '@/hooks/useGame';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
 import { useLiveMatchGuard } from './LiveMatchGuard';
-import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
+import { LoanNegotiationModal } from './LoanNegotiationModal';
+import { LoanTerms } from '@/types/loan';
 
 interface TransferListing {
   id: string;
