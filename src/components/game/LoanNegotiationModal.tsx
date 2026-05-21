@@ -252,21 +252,35 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-bold flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-zinc-500" /> Jogar contra Dono
-                  </Label>
-                  <p className="text-xs text-zinc-500">Permite enfrentar seu clube original em competições.</p>
-                </div>
-                <Switch 
-                  disabled={isViewOnly}
-                  checked={terms.canPlayAgainstOwner}
-                  onCheckedChange={(v) => setTerms(p => ({ ...p, canPlayAgainstOwner: v }))}
-                />
+            <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-bold flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-zinc-500" /> Jogar contra Dono
+                </Label>
+                <p className="text-xs text-zinc-500">Permite enfrentar seu clube original em competições.</p>
               </div>
+              <Switch 
+                disabled={isViewOnly}
+                checked={terms.canPlayAgainstOwner}
+                onCheckedChange={(v) => setTerms(p => ({ ...p, canPlayAgainstOwner: v }))}
+              />
+            </div>
 
-              <div className="space-y-3 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+            <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-bold flex items-center gap-2">
+                  <Ban className="h-4 w-4 text-zinc-500" /> Permitir Cancelamento
+                </Label>
+                <p className="text-xs text-zinc-500">Clube dono pode chamar o jogador de volta antecipadamente.</p>
+              </div>
+              <Switch 
+                disabled={isViewOnly}
+                checked={terms.allowTermination}
+                onCheckedChange={(v) => setTerms(p => ({ ...p, allowTermination: v }))}
+              />
+            </div>
+
+            <div className="space-y-3 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
                 <Label className="text-xs uppercase text-zinc-500 font-bold flex items-center gap-1.5">
                   <TrendingUp className="h-3 w-3" /> Promessa de Utilização
                 </Label>
