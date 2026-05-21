@@ -33,7 +33,7 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
 
   const activeOpen = isOpen || open || false;
   const activeClose = onClose || (() => onOpenChange?.(false));
-  const activeSubmit = (terms: any) => {
+  const activeSubmit = (terms: LoanTerms) => {
     if (onConfirm) onConfirm(terms);
     else if (onSubmit) onSubmit(terms);
   };
