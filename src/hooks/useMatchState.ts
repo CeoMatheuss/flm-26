@@ -204,12 +204,16 @@ export function useMatchState(initialState: any, userId?: string) {
       if (!isFriendly && userId) {
         supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle().then(({ data: team }) => {
           if (team?.league_id) {
-            supabase.rpc('update_league_standing', {
-              _team_id: team.id,
-              _goals_for: isHome ? homeGoals : awayGoals,
-              _goals_against: isHome ? awayGoals : homeGoals,
-              _outcome: outcome
-            });
+            supabase.from('world_league_table').update({
+              goals_for: row.goals_for + (isHome ? homeGoals : awayGoals),
+              goals_against: row.goals_against + (isHome ? awayGoals : homeGoals),
+              points: row.points + (isWin ? 3 : isDraw ? 1 : 0),
+              played: (row.played || 0) + 1,
+              wins: (row.wins || 0) + (isWin ? 1 : 0),
+              draws: (row.draws || 0) + (isDraw ? 1 : 0),
+              losses: (row.losses || 0) + (outcome === 'loss' ? 1 : 0),
+              updated_at: new Date().toISOString()
+            }).eq('id', row.id);
           }
         });
       }
