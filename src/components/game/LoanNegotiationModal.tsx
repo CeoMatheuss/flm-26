@@ -281,6 +281,22 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
             </div>
 
             <div className="space-y-3 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+              <Label className="text-xs uppercase text-zinc-500 font-bold flex items-center gap-1.5">
+                <Target className="h-3 w-3" /> Multa de Rescisão
+              </Label>
+              <div className="relative">
+                <Input 
+                  disabled={isViewOnly}
+                  type="number"
+                  value={terms.terminationFee}
+                  onChange={(e) => setTerms(p => ({ ...p, terminationFee: Number(e.target.value) }))}
+                  className="bg-zinc-900 border-zinc-800 pl-8"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-xs font-bold">R$</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
                 <Label className="text-xs uppercase text-zinc-500 font-bold flex items-center gap-1.5">
                   <TrendingUp className="h-3 w-3" /> Promessa de Utilização
                 </Label>
