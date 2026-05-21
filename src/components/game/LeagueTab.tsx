@@ -35,7 +35,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get team and league info
     const { data: teamData } = await supabase
       .from('world_teams')
       .select('*, world_leagues(*, country_ref:world_countries(*))')
@@ -48,14 +47,68 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         id: teamData.league_id,
         name: league?.name || 'Liga',
         country: league?.country,
-        division: league?.division || 1, // Store division
+        division: league?.division || 1,
         flag: (league as any)?.country_ref?.flag_emoji || '⚽',
         playerTeamId: teamData.id,
         currentRound: league?.current_round || 1
       });
       setCurrentRound(league?.current_round || 1);
 
-      // 1. Load Standings with Club metadata for shields
+      // 🤖 Simulação Orgânica de Bots (Simula rodadas pendentes)
+      const simulateBotRounds = async () => {
+        const { data: matches } = await supabase
+          .from('world_matches')
+          .select('*')
+          .eq('league_id', teamData.league_id)
+          .eq('status', 'scheduled')
+          .lt('round', league?.current_round || 1);
+        
+        if (matches && matches.length > 0) {
+          console.log(`[League] Simulando ${matches.length} partidas atrasadas...`);
+          for (const m of matches) {
+            const hGoals = Math.floor(Math.random() * 4);
+            const aGoals = Math.floor(Math.random() * 3);
+            const outcome = hGoals > aGoals ? 'win' : (hGoals === aGoals ? 'draw' : 'loss');
+            
+            await supabase.from('world_matches').update({
+              home_goals: hGoals,
+              away_goals: aGoals,
+              status: 'finished'
+            }).eq('id', m.id);
+
+            // Atualiza tabela para mandante
+            const { data: hRow } = await supabase.from('world_league_table').select('*').eq('team_id', m.home_team_id).maybeSingle();
+            if (hRow) {
+              await supabase.from('world_league_table').update({
+                played: (hRow.played || 0) + 1,
+                wins: (hRow.wins || 0) + (hGoals > aGoals ? 1 : 0),
+                draws: (hRow.draws || 0) + (hGoals === aGoals ? 1 : 0),
+                losses: (hRow.losses || 0) + (hGoals < aGoals ? 1 : 0),
+                goals_for: (hRow.goals_for || 0) + hGoals,
+                goals_against: (hRow.goals_against || 0) + aGoals,
+                points: (hRow.points || 0) + (hGoals > aGoals ? 3 : (hGoals === aGoals ? 1 : 0))
+              }).eq('id', hRow.id);
+            }
+
+            // Atualiza tabela para visitante
+            const { data: aRow } = await supabase.from('world_league_table').select('*').eq('team_id', m.away_team_id).maybeSingle();
+            if (aRow) {
+              await supabase.from('world_league_table').update({
+                played: (aRow.played || 0) + 1,
+                wins: (aRow.wins || 0) + (aGoals > hGoals ? 1 : 0),
+                draws: (aRow.draws || 0) + (aGoals === hGoals ? 1 : 0),
+                losses: (aRow.losses || 0) + (aGoals < hGoals ? 1 : 0),
+                goals_for: (aRow.goals_for || 0) + aGoals,
+                goals_against: (aRow.goals_against || 0) + hGoals,
+                points: (aRow.points || 0) + (aGoals > hGoals ? 3 : (aGoals === hGoals ? 1 : 0))
+              }).eq('id', aRow.id);
+            }
+          }
+        }
+      };
+
+      await simulateBotRounds();
+
       const { data: standingsData } = await supabase
         .from('world_league_table')
         .select(`
@@ -73,14 +126,12 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         .order('goals_for', { ascending: false });
       
       if (standingsData) {
-        // Enhance with real club metadata for shields
         const teamIds = standingsData.map(r => r.world_teams?.user_id).filter(Boolean);
         const { data: clubsData } = await supabase
           .from('clubs')
           .select('*')
           .in('user_id', teamIds);
 
-        // Buscar shield_config completo das save games via RPC pública
         const teamNames = standingsData.map(r => r.world_teams?.name).filter(Boolean);
         const { data: shieldsData } = await supabase.rpc('get_club_shields_by_names', { _names: teamNames });
         const shieldByName = new Map<string, any>((shieldsData || []).map((s: any) => [s.club_name, s.shield]));
@@ -92,7 +143,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
             ...row,
             world_teams: {
               ...row.world_teams,
-              ...club, // Spread club metadata (primaryColor, shield_config, etc) into team
+              ...club, 
               shield_config: shieldFromSave || (club as any)?.shield_config,
             }
           };
@@ -100,7 +151,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         setStandings(enhancedStandings);
       }
 
-      // 2. Load Fixtures with Club metadata
       const { data: fixturesData } = await supabase
         .from('world_matches')
         .select(`
@@ -147,7 +197,6 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         setFixtures(enhancedFixtures);
       }
 
-      // 3. Load Player Stats from the Stats Engine (manual join — no FK in DB)
       const { data: statsData, error: statsError } = await supabase
         .from('player_competition_stats')
         .select('*')
