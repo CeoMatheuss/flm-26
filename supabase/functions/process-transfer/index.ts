@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════
     // LIVE MATCH GUARD: bloqueia ações sensíveis durante partida ao vivo
     // ═══════════════════════════════════════════════════════════════
-    const SENSITIVE_ACTIONS = new Set(['list', 'offer', 'accept', 'reject', 'buy', 'cancel-listing']);
+    const SENSITIVE_ACTIONS = new Set(['list', 'offer', 'accept', 'respond', 'buy', 'cancel-listing', 'loan-list', 'loan-accept', 'loan-offer-create', 'loan-offer-accept']);
     if (SENSITIVE_ACTIONS.has(action)) {
       const { data: liveMatch } = await adminClient
         .from('live_matches')
@@ -586,6 +586,7 @@ Deno.serve(async (req) => {
           salary_split_pct: validPayer === 'split' ? split : 0,
           loan_fee: fee,
           open_to_offers: openToOffers !== false,
+          loan_terms: body.loanTerms || null,
         })
         .select()
         .single();
@@ -772,6 +773,7 @@ Deno.serve(async (req) => {
           seller_id: listing.seller_id,
           buyer_id: userId,
           buyer_club_name: (clubName || '').slice(0, 50),
+          offered_terms: body.offeredTerms || null,
           offered_salary_payer: validPayer,
           offered_salary_split_pct: validPayer === 'split' ? split : 0,
           offered_loan_fee: fee,
@@ -818,6 +820,7 @@ Deno.serve(async (req) => {
 
       await adminClient.from('loan_offers').update({
         status: 'countered',
+        counter_offered_terms: body.counterOfferedTerms || null,
         counter_salary_payer: validPayer,
         counter_salary_split_pct: validPayer === 'split' ? split : 0,
         counter_loan_fee: fee,
@@ -891,9 +894,10 @@ Deno.serve(async (req) => {
       }
 
       // Determine final terms: counter takes priority if set
-      const finalPayer = offer.counter_salary_payer || offer.offered_salary_payer;
-      const finalSplit = offer.counter_salary_payer ? (offer.counter_salary_split_pct || 0) : (offer.offered_salary_split_pct || 0);
-      const finalFee = offer.counter_loan_fee != null ? offer.counter_loan_fee : offer.offered_loan_fee;
+      const finalTerms = offer.counter_offered_terms || offer.offered_terms || {};
+      const finalPayer = finalTerms.salaryPercentageBorrower === 100 ? 'buyer' : (finalTerms.salaryPercentageOwner === 100 ? 'seller' : 'split');
+      const finalSplit = finalTerms.salaryPercentageBorrower || 100;
+      const finalFee = finalTerms.loanFee || 0;
 
       // Limit 3 loans-in for buyer
       const { count: loansIn } = await adminClient
@@ -931,7 +935,7 @@ Deno.serve(async (req) => {
           user_id: offer.buyer_id,
           type: 'loan_offer_accepted',
           title: '✅ Empréstimo fechado',
-          message: `${listing.player_name} chegará por empréstimo. Taxa: R$${(Number(finalFee) / 1000).toFixed(0)}k.`,
+          message: `${listing.player_name} chegará por empréstimo. Taxa: R$${(Number(finalFee) / 1000).toFixed(0)}k. Divisão salarial: ${finalSplit}% pago por você.`,
           icon: '✅',
           data: { listing_id: listing.id, player: listing.player_data },
         },

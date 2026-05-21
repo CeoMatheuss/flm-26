@@ -20,7 +20,8 @@ import { formatMoney } from '@/lib/formatMoney';
 import { toast } from 'sonner';
 import type { TacticsConfig } from '@/types/tactics';
 import { useLiveMatchGuard } from './LiveMatchGuard';
-import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
+import { LoanNegotiationModal } from './LoanNegotiationModal';
+import { LoanTerms } from '@/types/loan';
 import { SquadCard } from './squad/SquadCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuickSwapPanel } from './squad/QuickSwapPanel';
@@ -1205,7 +1206,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           salary: loanCandidate.salary || 0,
         } : { name: '', position: 'MEI', age: 0, overall: 0, salary: 0 }}
         loading={loanSubmitting}
-        onSubmit={async (terms) => {
+        onSubmit={async (terms: LoanTerms) => {
           if (!loanCandidate) return;
           setLoanSubmitting(true);
           try {

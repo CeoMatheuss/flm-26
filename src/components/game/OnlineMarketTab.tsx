@@ -22,7 +22,8 @@ import { LoanedPlayer } from '@/hooks/useGame';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { formatMoney } from '@/lib/formatMoney';
 import { useLiveMatchGuard } from './LiveMatchGuard';
-import { LoanNegotiationModal, type LoanTerms } from './LoanNegotiationModal';
+import { LoanNegotiationModal } from './LoanNegotiationModal';
+import { LoanTerms } from '@/types/loan';
 
 interface TransferListing {
   id: string;
@@ -1223,29 +1224,37 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
               overall: negotiateLoan.player_overall,
               salary: negotiateLoan.salary || 0,
             }}
-            listedTerms={negotiateLoan._isHelpOnly ? undefined : {
-              salaryPayer: negotiateLoan.salary_payer,
-              salarySplitPct: negotiateLoan.salary_split_pct,
-              loanFee: negotiateLoan.loan_fee,
+            initialTerms={negotiateLoan._isHelpOnly ? undefined : {
+              duration: 12,
+              loanFee: negotiateLoan.loan_fee || 0,
+              salaryPercentageOwner: negotiateLoan.salary_split_pct ? (negotiateLoan.salary_payer === 'seller' ? negotiateLoan.salary_split_pct : 100 - negotiateLoan.salary_split_pct) : 0,
+              salaryPercentageBorrower: negotiateLoan.salary_split_pct ? (negotiateLoan.salary_payer === 'buyer' ? negotiateLoan.salary_split_pct : 100 - negotiateLoan.salary_split_pct) : 100,
+              obligatoryPurchase: false,
+              allowTermination: true,
+              minStayMonths: 0,
+              terminationFee: 0,
+              canPlayAgainstOwner: false,
+              usagePriority: 'none',
+              minMinutesRequired: 0,
+              performanceBonus: 0,
             }}
-            openToOffers={!negotiateLoan._isHelpOnly && (negotiateLoan.open_to_offers ?? true)}
-            onSubmit={negotiateLoan._isHelpOnly ? () => setNegotiateLoan(null) : async (terms) => {
+            onSubmit={async (terms: LoanTerms) => {
+              if (negotiateLoan._isHelpOnly) {
+                setNegotiateLoan(null);
+                return;
+              }
               const res = await supabase.functions.invoke('process-transfer', {
                 body: {
                   action: 'loan-offer-create',
                   listingId: negotiateLoan.id,
                   clubName,
-                  offeredSalaryPayer: terms.salaryPayer,
-                  offeredSalarySplitPct: terms.salarySplitPct,
-                  offeredLoanFee: terms.loanFee,
-                  message: terms.message,
+                  offeredTerms: terms,
                 }
               });
               if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao enviar proposta');
               else toast.success(`Proposta de empréstimo enviada para ${negotiateLoan.player_name}!`);
               setNegotiateLoan(null);
             }}
-
             loading={loading}
           />
         )}

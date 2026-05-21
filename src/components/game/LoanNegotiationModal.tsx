@@ -1,241 +1,363 @@
-import { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, Coins, HandCoins, AlertCircle, HelpCircle } from 'lucide-react';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatMoney } from '@/lib/formatMoney';
-
-export type SalaryPayer = 'seller' | 'buyer' | 'split';
-
-export interface LoanTerms {
-  salaryPayer: SalaryPayer;
-  salarySplitPct: number; // % paid by SELLER (clube atual) when 'split'
-  loanFee: number;
-  message?: string;
-}
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Calendar, DollarSign, Percent, Clock, Ban, Shield, Zap, TrendingUp, Handshake, Target } from 'lucide-react';
+import { LoanTerms, defaultLoanTerms } from '@/types/loan';
 
 interface Props {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  mode: 'list' | 'negotiate'; // list = seller listing, negotiate = buyer proposing
-  /** Player base info to show in header */
-  player: {
-    name: string;
-    position: string;
-    age: number;
-    overall: number;
-    salary: number;
-  };
-  /** When negotiating, the listed terms shown for reference */
-  listedTerms?: LoanTerms;
-  /** Allow negotiation (buyer can propose). If false in negotiate mode, only "Aceitar" is shown */
+  isOpen?: boolean; // Keep for compatibility
+  open?: boolean; // Keep for compatibility
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
+  player: any;
+  onConfirm?: (terms: LoanTerms) => void;
+  onSubmit?: (terms: LoanTerms) => void | Promise<void>;
+  initialTerms?: LoanTerms;
+  listedTerms?: any;
   openToOffers?: boolean;
-  /** Submit handler */
-  onSubmit: (terms: LoanTerms) => Promise<void> | void;
-  /** Optional: accept listed terms as-is (negotiate mode only) */
-  onAcceptListed?: () => Promise<void> | void;
+  mode: 'setup' | 'view' | 'negotiate' | 'list';
+  isOwner?: boolean;
   loading?: boolean;
 }
 
-const MIN_FEE = 0;
-const MAX_FEE = 50_000_000;
+export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, player, onConfirm, onSubmit, initialTerms, mode, isOwner, loading }: Props) {
+  const [terms, setTerms] = useState<LoanTerms>(initialTerms || defaultLoanTerms);
 
-export function LoanNegotiationModal({
-  open, onOpenChange, mode, player, listedTerms, openToOffers = true,
-  onSubmit, onAcceptListed, loading = false,
-}: Props) {
-  const initial: LoanTerms = listedTerms ?? {
-    salaryPayer: 'buyer',
-    salarySplitPct: 50,
-    loanFee: Math.max(50_000, Math.round(player.salary * 6)),
-    message: '',
+  const activeOpen = isOpen || open || false;
+  const activeClose = onClose || (() => onOpenChange?.(false));
+  const activeSubmit = (terms: LoanTerms) => {
+    if (onConfirm) onConfirm(terms);
+    else if (onSubmit) onSubmit(terms);
   };
-  const [payer, setPayer] = useState<SalaryPayer>(initial.salaryPayer);
-  const [split, setSplit] = useState<number>(initial.salarySplitPct || 50);
-  const [fee, setFee] = useState<number>(initial.loanFee);
-  const [message, setMessage] = useState<string>('');
 
-  const monthlySalary = player.salary;
-  const sellerCost = useMemo(() => {
-    if (payer === 'seller') return monthlySalary;
-    if (payer === 'split') return Math.round(monthlySalary * (split / 100));
-    return 0;
-  }, [payer, split, monthlySalary]);
-  const buyerCost = monthlySalary - sellerCost;
-
-  const handleSubmit = () => {
-    onSubmit({ salaryPayer: payer, salarySplitPct: payer === 'split' ? split : 0, loanFee: Math.max(0, fee), message });
+  const handleSalaryBorrowerChange = (val: number) => {
+    const borrower = Math.min(100, Math.max(0, val));
+    setTerms(prev => ({
+      ...prev,
+      salaryPercentageBorrower: borrower,
+      salaryPercentageOwner: 100 - borrower
+    }));
   };
+
+  const handleSalaryOwnerChange = (val: number) => {
+    const owner = Math.min(100, Math.max(0, val));
+    setTerms(prev => ({
+      ...prev,
+      salaryPercentageOwner: owner,
+      salaryPercentageBorrower: 100 - owner
+    }));
+  };
+
+  const isViewOnly = mode === 'view';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <ArrowLeftRight className="h-4 w-4 text-primary" />
-            {mode === 'list' ? 'Listar para empréstimo' : 'Negociar empréstimo'}
-            <HoverCard openDelay={100} closeDelay={100}>
-              <HoverCardTrigger asChild>
-                <button className="p-1 rounded-full hover:bg-white/10 transition-colors">
-                  <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
-                </button>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80 bg-[#0a0c14] border-white/10 backdrop-blur-xl shadow-2xl p-4 z-[100]">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 border-b border-white/5 pb-2">
-                    <ArrowLeftRight className="h-4 w-4 text-[#8b5cf6]" />
-                    <h4 className="text-sm font-black italic uppercase tracking-wider text-white">O que são Empréstimos?</h4>
-                  </div>
-                  <div className="space-y-2 text-xs text-white/70 leading-relaxed italic">
-                    <p>O <span className="text-white font-bold">Empréstimo</span> permite que um clube ceda temporariamente um jogador a outro, mantendo o vínculo federativo.</p>
-                    <div className="bg-white/5 rounded-lg p-2 border border-white/5 space-y-2">
-                      <p><span className="text-[#8b5cf6] font-bold">● Salários:</span> Pode ser pago integralmente por um dos clubes ou dividido entre ambos.</p>
-                      <p><span className="text-[#8b5cf6] font-bold">● Taxas:</span> O clube que recebe o jogador pode pagar uma taxa única de transferência temporária.</p>
-                      <p><span className="text-[#8b5cf6] font-bold">● Duração:</span> O contrato dura até o final da temporada atual ou conforme acordado.</p>
-                    </div>
-                    <p className="text-[10px] text-white/40 border-t border-white/5 pt-2 uppercase font-black">Ideal para dar rodagem a jovens talentos ou reduzir custos salariais.</p>
-                  </div>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
+    <Dialog open={activeOpen} onOpenChange={activeClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-zinc-950 border-zinc-800">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="text-xl font-black flex items-center gap-2">
+            <Handshake className="h-5 w-5 text-emerald-400" />
+            {mode === 'setup' || mode === 'list' ? 'Configurar Termos de Empréstimo' : 'Negociar Empréstimo'}
           </DialogTitle>
-          <DialogDescription className="text-xs">
-            {mode === 'list'
-              ? 'Defina os termos com que você aceita ceder o jogador.'
-              : 'Faça uma proposta com seus termos. O clube atual pode aceitar, recusar ou contrapropor.'}
-          </DialogDescription>
+
+          <div className="flex items-center gap-3 mt-2">
+            <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-lg text-emerald-400">
+              {player?.overall}
+            </div>
+            <div>
+              <p className="font-bold text-white leading-none">{player?.name}</p>
+              <p className="text-xs text-zinc-400 mt-1 uppercase tracking-wider font-mono">
+                {player?.position} • {player?.age} anos • {formatMoney(player?.salary || 0)}/mês
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
-        {/* Player card */}
-        <div className="rounded-lg border border-border/30 bg-card/50 p-3 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-lg flex flex-col items-center justify-center bg-primary/10 border border-primary/30">
-            <span className="text-base font-black text-primary leading-none">{player.overall}</span>
-            <span className="text-[7px] text-muted-foreground">OVR</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">{player.name}</p>
-            <p className="text-[10px] text-muted-foreground">
-              {player.position} • {player.age}a • Salário base R${(monthlySalary / 1000).toFixed(0)}k/mês
-            </p>
-          </div>
-        </div>
-
-        {/* Listed reference (negotiate mode) */}
-        {mode === 'negotiate' && listedTerms && (
-          <div className="rounded-md bg-muted/30 border border-border/20 p-2 text-[10px] space-y-0.5">
-            <p className="font-bold text-muted-foreground uppercase tracking-wider">Termos do anúncio</p>
-            <p>Quem paga: <span className="text-foreground font-semibold">{listedTerms.salaryPayer === 'seller' ? 'Clube atual' : listedTerms.salaryPayer === 'buyer' ? 'Receptor' : `Dividido ${listedTerms.salarySplitPct}/${100 - listedTerms.salarySplitPct}`}</span></p>
-            <p>Taxa: <span className="text-foreground font-semibold">{formatMoney(listedTerms.loanFee)}</span></p>
-            {!openToOffers && (
-              <p className="text-amber-400 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> Este clube não aceita contrapropostas.</p>
-            )}
-          </div>
-        )}
-
-        {/* Terms form */}
-        <div className="space-y-3">
-          <div>
-            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Quem paga o salário</Label>
-            <div className="grid grid-cols-3 gap-1.5 mt-1.5">
-              {([
-                { v: 'seller', label: 'Clube atual', sub: '100%' },
-                { v: 'split', label: 'Dividido', sub: 'split' },
-                { v: 'buyer', label: 'Receptor', sub: '100%' },
-              ] as const).map(opt => (
-                <button
-                  key={opt.v}
-                  type="button"
-                  onClick={() => setPayer(opt.v)}
-                  className={`px-2 py-1.5 rounded-md border text-[10px] font-medium transition-colors ${payer === opt.v ? 'bg-primary text-primary-foreground border-primary' : 'bg-card/40 border-border/30 text-muted-foreground hover:bg-card/70'}`}
+        <ScrollArea className="flex-1 p-6 pt-2">
+          <div className="space-y-6">
+            {/* Seção 1: Duração e Financeiro */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs uppercase text-zinc-500 font-bold flex items-center gap-1.5">
+                  <Calendar className="h-3 w-3" /> Duração
+                </Label>
+                <Select 
+                  disabled={isViewOnly}
+                  value={terms.duration.toString()} 
+                  onValueChange={(v) => setTerms(p => ({ ...p, duration: Number(v) }))}
                 >
-                  <div className="font-bold leading-tight">{opt.label}</div>
-                  <div className="opacity-70 text-[9px] mt-0.5">{opt.sub}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {payer === 'split' && (
-            <div className="rounded-md bg-card/40 border border-border/20 p-2.5">
-              <div className="flex items-center justify-between mb-1.5">
-                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Divisão do salário</Label>
-                <span className="text-[10px] font-bold text-primary">{split}% / {100 - split}%</span>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3">3 Meses</SelectItem>
+                    <SelectItem value="6">6 Meses</SelectItem>
+                    <SelectItem value="12">1 Temporada (12m)</SelectItem>
+                    <SelectItem value="24">2 Temporadas (24m)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Slider min={10} max={90} step={5} value={[split]} onValueChange={([v]) => setSplit(v)} />
-              <p className="text-[9px] text-muted-foreground mt-1">Clube atual paga {split}% • Receptor paga {100 - split}%</p>
-            </div>
-          )}
 
-          <div>
-            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <HandCoins className="h-3 w-3" /> Taxa de empréstimo (paga pelo receptor)
-            </Label>
-            <div className="flex items-center gap-2 mt-1.5">
-              <Input
-                type="number"
-                min={MIN_FEE}
-                max={MAX_FEE}
-                step={10000}
-                value={fee}
-                onChange={e => setFee(Math.max(0, Number(e.target.value) || 0))}
-                className="h-8 text-xs"
-              />
-              <span className="text-[10px] text-muted-foreground shrink-0 w-20 text-right">{formatMoney(fee)}</span>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase text-zinc-500 font-bold flex items-center gap-1.5">
+                  <DollarSign className="h-3 w-3" /> Taxa de Empréstimo
+                </Label>
+                <div className="relative">
+                  <Input 
+                    disabled={isViewOnly}
+                    type="number"
+                    value={terms.loanFee}
+                    onChange={(e) => setTerms(p => ({ ...p, loanFee: Number(e.target.value) }))}
+                    className="bg-zinc-900 border-zinc-800 pl-8"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-xs font-bold">R$</span>
+                </div>
+              </div>
             </div>
-            <div className="flex gap-1 mt-1.5">
-              {[0, 100_000, 500_000, 1_000_000, 5_000_000].map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setFee(v)}
-                  className="text-[9px] px-2 py-0.5 rounded bg-card/40 border border-border/20 text-muted-foreground hover:bg-card/70"
+
+            {/* Seção 2: Divisão Salarial */}
+            <div className="space-y-3 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+              <Label className="text-xs uppercase text-zinc-500 font-bold flex items-center gap-1.5">
+                <Percent className="h-3 w-3" /> Divisão Salarial
+              </Label>
+              <div className="grid grid-cols-2 gap-6 items-center">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-bold uppercase text-zinc-500">
+                    <span>Clube Dono</span>
+                    <span className="text-white">{terms.salaryPercentageOwner}%</span>
+                  </div>
+                  <Input 
+                    disabled={isViewOnly}
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="10"
+                    value={terms.salaryPercentageOwner}
+                    onChange={(e) => handleSalaryOwnerChange(Number(e.target.value))}
+                    className="h-2 p-0 accent-emerald-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-bold uppercase text-zinc-500">
+                    <span>Clube Receptor</span>
+                    <span className="text-white">{terms.salaryPercentageBorrower}%</span>
+                  </div>
+                  <Input 
+                    disabled={isViewOnly}
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="10"
+                    value={terms.salaryPercentageBorrower}
+                    onChange={(e) => handleSalaryBorrowerChange(Number(e.target.value))}
+                    className="h-2 p-0 accent-emerald-500"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-zinc-500 text-center italic mt-2">
+                O clube receptor pagará <span className="text-white font-bold">{formatMoney((player?.salary || 0) * (terms.salaryPercentageBorrower / 100))}</span> mensais.
+              </p>
+            </div>
+
+            {/* Seção 3: Compra e Cláusulas */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-bold">Opção de Compra</Label>
+                  <p className="text-xs text-zinc-500">Permite ao clube receptor comprar o jogador.</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  {terms.optionalPurchasePrice !== undefined && (
+                    <div className="relative w-32">
+                      <Input 
+                        disabled={isViewOnly}
+                        type="number"
+                        placeholder="Valor"
+                        value={terms.optionalPurchasePrice}
+                        onChange={(e) => setTerms(p => ({ ...p, optionalPurchasePrice: Number(e.target.value) }))}
+                        className="h-8 bg-zinc-950 border-zinc-800 pl-7 text-xs"
+                      />
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] font-bold">R$</span>
+                    </div>
+                  )}
+                  <Switch 
+                    disabled={isViewOnly}
+                    checked={terms.optionalPurchasePrice !== undefined}
+                    onCheckedChange={(checked) => setTerms(p => ({ ...p, optionalPurchasePrice: checked ? player?.marketValue || 1000000 : undefined }))}
+                  />
+                </div>
+              </div>
+
+              {terms.optionalPurchasePrice !== undefined && (
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold">Compra Obrigatória</Label>
+                    <p className="text-xs text-zinc-500">A compra torna-se obrigatória ao fim do prazo.</p>
+                  </div>
+                  <Switch 
+                    disabled={isViewOnly}
+                    checked={terms.obligatoryPurchase}
+                    onCheckedChange={(v) => setTerms(p => ({ ...p, obligatoryPurchase: v }))}
+                  />
+                </div>
+              )}
+
+              <Separator className="bg-zinc-800" />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                  <div className="space-y-0.5">
+                    <Label className="text-xs font-bold flex items-center gap-1.5">
+                      <Clock className="h-3 w-3 text-zinc-500" /> Permanência Mín.
+                    </Label>
+                    <p className="text-[10px] text-zinc-500">Meses até poder cancelar.</p>
+                  </div>
+                  <Select 
+                    disabled={isViewOnly}
+                    value={terms.minStayMonths.toString()}
+                    onValueChange={(v) => setTerms(p => ({ ...p, minStayMonths: Number(v) }))}
+                  >
+                    <SelectTrigger className="w-16 h-8 bg-zinc-950 border-zinc-800 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="6">6</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                  <div className="space-y-0.5">
+                    <Label className="text-xs font-bold flex items-center gap-1.5">
+                      <Zap className="h-3 w-3 text-zinc-500" /> Bônus de Perf.
+                    </Label>
+                    <p className="text-[10px] text-zinc-500">Pago por gol/assistência.</p>
+                  </div>
+                  <Input 
+                    disabled={isViewOnly}
+                    type="number"
+                    value={terms.performanceBonus}
+                    onChange={(e) => setTerms(p => ({ ...p, performanceBonus: Number(e.target.value) }))}
+                    className="w-20 h-8 bg-zinc-950 border-zinc-800 text-xs"
+                  />
+                </div>
+              </div>
+
+            <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-bold flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-zinc-500" /> Jogar contra Dono
+                </Label>
+                <p className="text-xs text-zinc-500">Permite enfrentar seu clube original em competições.</p>
+              </div>
+              <Switch 
+                disabled={isViewOnly}
+                checked={terms.canPlayAgainstOwner}
+                onCheckedChange={(v) => setTerms(p => ({ ...p, canPlayAgainstOwner: v }))}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-bold flex items-center gap-2">
+                  <Ban className="h-4 w-4 text-zinc-500" /> Permitir Cancelamento
+                </Label>
+                <p className="text-xs text-zinc-500">Clube dono pode chamar o jogador de volta antecipadamente.</p>
+              </div>
+              <Switch 
+                disabled={isViewOnly}
+                checked={terms.allowTermination}
+                onCheckedChange={(v) => setTerms(p => ({ ...p, allowTermination: v }))}
+              />
+            </div>
+
+            <div className="space-y-3 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+              <Label className="text-xs uppercase text-zinc-500 font-bold flex items-center gap-1.5">
+                <Target className="h-3 w-3" /> Multa de Rescisão
+              </Label>
+              <div className="relative">
+                <Input 
+                  disabled={isViewOnly}
+                  type="number"
+                  value={terms.terminationFee}
+                  onChange={(e) => setTerms(p => ({ ...p, terminationFee: Number(e.target.value) }))}
+                  className="bg-zinc-900 border-zinc-800 pl-8"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-xs font-bold">R$</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+                <Label className="text-xs uppercase text-zinc-500 font-bold flex items-center gap-1.5">
+                  <TrendingUp className="h-3 w-3" /> Promessa de Utilização
+                </Label>
+                <Select 
+                  disabled={isViewOnly}
+                  value={terms.usagePriority}
+                  onValueChange={(v: any) => setTerms(p => ({ ...p, usagePriority: v }))}
                 >
-                  {v === 0 ? 'Grátis' : formatMoney(v)}
-                </button>
-              ))}
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma Exigência</SelectItem>
+                    <SelectItem value="rotacao">Jogador de Rotação</SelectItem>
+                    <SelectItem value="titular">Titular Importante</SelectItem>
+                    <SelectItem value="estrela">Peça Chave / Estrela</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-zinc-500 uppercase font-bold">Mínimo de minutos (p/ mês)</span>
+                  <Input 
+                    disabled={isViewOnly}
+                    type="number"
+                    step="45"
+                    min="0"
+                    value={terms.minMinutesRequired}
+                    onChange={(e) => setTerms(p => ({ ...p, minMinutesRequired: Number(e.target.value) }))}
+                    className="w-20 h-7 bg-zinc-950 border-zinc-800 text-[10px]"
+                  />
+                </div>
+              </div>
             </div>
           </div>
+        </ScrollArea>
 
-          {/* Cost preview */}
-          <div className="grid grid-cols-2 gap-2 rounded-md bg-card/30 border border-border/20 p-2">
-            <div>
-              <p className="text-[9px] text-muted-foreground uppercase">Custo / mês — Clube atual</p>
-              <p className="text-xs font-bold text-amber-400 flex items-center gap-1"><Coins className="h-3 w-3" /> {formatMoney(sellerCost)}</p>
-            </div>
-            <div>
-              <p className="text-[9px] text-muted-foreground uppercase">Custo / mês — Receptor</p>
-              <p className="text-xs font-bold text-primary flex items-center gap-1"><Coins className="h-3 w-3" /> {formatMoney(buyerCost)}</p>
-            </div>
-          </div>
-
-          {mode === 'negotiate' && (
-            <div>
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Mensagem (opcional)</Label>
-              <Input
-                placeholder="Ex.: Garantimos minutos como titular."
-                value={message}
-                onChange={e => setMessage(e.target.value.slice(0, 200))}
-                className="h-8 text-xs mt-1.5"
-              />
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={loading}>Cancelar</Button>
-          {mode === 'negotiate' && onAcceptListed && (
-            <Button variant="outline" size="sm" onClick={onAcceptListed} disabled={loading} className="gap-1">
-              <Badge variant="outline" className="text-[8px] px-1 h-3.5">rápido</Badge>
-              Aceitar termos
+        <DialogFooter className="p-6 bg-zinc-900/50 border-t border-zinc-800">
+          <Button variant="ghost" onClick={activeClose} className="text-zinc-400 hover:text-white">Cancelar</Button>
+          {(mode === 'setup' || mode === 'list') && (
+            <Button 
+              disabled={loading}
+              onClick={() => activeSubmit(terms)} 
+              className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black uppercase tracking-wider"
+            >
+              {loading ? 'Anunciando...' : 'Anunciar Jogador'}
             </Button>
           )}
-          <Button size="sm" onClick={handleSubmit} disabled={loading || (mode === 'negotiate' && !openToOffers)} className="gap-1">
-            {mode === 'list' ? 'Publicar empréstimo' : 'Enviar proposta'}
-          </Button>
+          {mode === 'view' && !isOwner && (
+            <div className="flex gap-2">
+              <Button disabled={loading} onClick={() => activeSubmit(terms)} className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black">
+                Aceitar Termos
+              </Button>
+              <Button variant="outline" onClick={() => {}} className="border-zinc-700 font-bold">
+                Negociar
+              </Button>
+            </div>
+          )}
+          {mode === 'negotiate' && (
+            <Button disabled={loading} onClick={() => activeSubmit(terms)} className="bg-primary hover:bg-primary/90 font-black">
+              {loading ? 'Enviando...' : 'Enviar Contraproposta'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
