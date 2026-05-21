@@ -935,7 +935,7 @@ Deno.serve(async (req) => {
           user_id: offer.buyer_id,
           type: 'loan_offer_accepted',
           title: '✅ Empréstimo fechado',
-          message: `${listing.player_name} chegará por empréstimo. Taxa: R$${(Number(finalFee) / 1000).toFixed(0)}k.`,
+          message: `${listing.player_name} chegará por empréstimo. Taxa: R$${(Number(finalFee) / 1000).toFixed(0)}k. Divisão salarial: ${finalSplit}% pago por você.`,
           icon: '✅',
           data: { listing_id: listing.id, player: listing.player_data },
         },
