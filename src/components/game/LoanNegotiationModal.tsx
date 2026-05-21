@@ -59,13 +59,14 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
   const isViewOnly = mode === 'view';
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={activeOpen} onOpenChange={activeClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-zinc-950 border-zinc-800">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="text-xl font-black flex items-center gap-2">
             <Handshake className="h-5 w-5 text-emerald-400" />
-            {mode === 'setup' ? 'Configurar Termos de Empréstimo' : 'Negociar Empréstimo'}
+            {mode === 'setup' || mode === 'list' ? 'Configurar Termos de Empréstimo' : 'Negociar Empréstimo'}
           </DialogTitle>
+
           <div className="flex items-center gap-3 mt-2">
             <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-lg text-emerald-400">
               {player?.overall}
