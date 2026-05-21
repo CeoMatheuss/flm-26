@@ -13,17 +13,27 @@ import { Calendar, DollarSign, Percent, Clock, Ban, Shield, Zap, TrendingUp, Han
 import { LoanTerms, defaultLoanTerms } from '@/types/loan';
 
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean; // Keep for compatibility
+  open?: boolean; // Keep for compatibility
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
   player: any;
-  onConfirm: (terms: LoanTerms) => void;
+  onConfirm?: (terms: LoanTerms) => void;
+  onSubmit?: (terms: LoanTerms) => void | Promise<void>;
   initialTerms?: LoanTerms;
-  mode: 'setup' | 'view' | 'negotiate';
+  listedTerms?: any;
+  openToOffers?: boolean;
+  mode: 'setup' | 'view' | 'negotiate' | 'list';
   isOwner?: boolean;
+  loading?: boolean;
 }
 
-export function LoanNegotiationModal({ isOpen, onClose, player, onConfirm, initialTerms, mode, isOwner }: Props) {
+export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, player, onConfirm, onSubmit, initialTerms, mode, isOwner, loading }: Props) {
   const [terms, setTerms] = useState<LoanTerms>(initialTerms || defaultLoanTerms);
+
+  const activeOpen = isOpen || open || false;
+  const activeClose = onClose || (() => onOpenChange?.(false));
+  const activeSubmit = onConfirm || onSubmit;
 
   const handleSalaryBorrowerChange = (val: number) => {
     const borrower = Math.min(100, Math.max(0, val));
