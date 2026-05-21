@@ -820,6 +820,7 @@ Deno.serve(async (req) => {
 
       await adminClient.from('loan_offers').update({
         status: 'countered',
+        counter_offered_terms: body.counterOfferedTerms || null,
         counter_salary_payer: validPayer,
         counter_salary_split_pct: validPayer === 'split' ? split : 0,
         counter_loan_fee: fee,
