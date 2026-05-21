@@ -892,9 +892,10 @@ Deno.serve(async (req) => {
       }
 
       // Determine final terms: counter takes priority if set
-      const finalPayer = offer.counter_salary_payer || offer.offered_salary_payer;
-      const finalSplit = offer.counter_salary_payer ? (offer.counter_salary_split_pct || 0) : (offer.offered_salary_split_pct || 0);
-      const finalFee = offer.counter_loan_fee != null ? offer.counter_loan_fee : offer.offered_loan_fee;
+      const finalTerms = offer.counter_offered_terms || offer.offered_terms || {};
+      const finalPayer = finalTerms.salaryPercentageBorrower === 100 ? 'buyer' : (finalTerms.salaryPercentageOwner === 100 ? 'seller' : 'split');
+      const finalSplit = finalTerms.salaryPercentageBorrower || 100;
+      const finalFee = finalTerms.loanFee || 0;
 
       // Limit 3 loans-in for buyer
       const { count: loansIn } = await adminClient
