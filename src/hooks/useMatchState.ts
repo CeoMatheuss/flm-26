@@ -62,16 +62,44 @@ export function useMatchState(initialState: any, userId?: string) {
 
     const isWin = isHome ? homeGoals > awayGoals : awayGoals > homeGoals;
     const isDraw = homeGoals === awayGoals;
+    const outcome = isWin ? 'win' : isDraw ? 'draw' : 'loss';
 
     deps.setClub(prev => {
       const match = prev.matches.find(m => m.id === matchId);
-      if (match?.played) return prev; // Trava para evitar processamento duplo
+      if (match?.played) return prev; 
       
+      const compLower = (competition || '').toLowerCase();
+      const isFriendly = !competition || compLower.includes('amistos');
+      const isCup = deps.isCup || compLower.includes('copa') || compLower.includes('cup');
+      const isContinental = compLower.includes('continental') || compLower.includes('libertadores') || compLower.includes('sul-americana');
+      const isWorld = compLower.includes('mundial') || compLower.includes('world');
+
+      let rankingComp: 'friendly' | 'league' | 'continental' | 'world' = 'league';
+      if (isFriendly) rankingComp = 'friendly';
+      else if (isWorld) rankingComp = 'world';
+      else if (isContinental || isCup) rankingComp = 'continental';
+
+      // 🏆 Sincronização Global do Ranking via motor central
+      import('@/match/rankingUpdater').then(({ updateGlobalRanking }) => {
+        updateGlobalRanking({
+          userId: userId || '',
+          clubName: prev.name,
+          outcome,
+          competition: rankingComp,
+          competitionLabel: competition
+        });
+      });
+
       const teamStrength = prev.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, prev.players.length);
-      const strengthDiff = 65 - teamStrength;
-      const strengthFactor = 1 + (strengthDiff / 100);
-      const baseWin = 20, baseDraw = 5, baseLoss = -15;
-      const rankingDelta = Math.round((isWin ? baseWin : isDraw ? baseDraw : baseLoss) * strengthFactor);
+      const opponentStrength = match?.opponentStrength || 65;
+      const strengthDiff = opponentStrength - teamStrength;
+      
+      // Motor ELO Simplificado
+      const strengthFactor = 1 + (strengthDiff / 50);
+      const basePoints = { win: 20, draw: 5, loss: -15 };
+      const compWeights = { friendly: 0.5, league: 1.0, continental: 1.6, world: 2.0 };
+      
+      const rankingDelta = Math.round(basePoints[outcome] * strengthFactor * compWeights[rankingComp]);
       setRanking(r => Math.max(100, r + rankingDelta));
 
       const sponsorIncome = deps.sponsors.reduce((s: number, sp: any) => s + sp.monthlyPay, 0);
@@ -80,15 +108,13 @@ export function useMatchState(initialState: any, userId?: string) {
       const ticketRevenue = Math.floor(prev.fans * prev.ticketPrice * 0.1);
       const prize = (isWin ? 150000 : isDraw ? 75000 : 30000) + stadiumBonus + ticketRevenue;
 
-      const compLower = (competition || '').toLowerCase();
-      const isFriendly = !competition || compLower.includes('amistos');
       let leaguePrize = 0;
       if (!isFriendly) {
         const stadiumLeagueScale = 1 + ((deps.infrastructure?.stadium?.level || 1) - 1) * 0.05;
         const resultMult = isWin ? 1.5 : isDraw ? 1.0 : 0.75;
         leaguePrize = Math.round(20000 * resultMult * stadiumLeagueScale);
       }
-      if (deps.isCup) {
+      if (isCup) {
         const cupBase = isWin ? 50000 : isDraw ? 20000 : 10000;
         leaguePrize = cupBase; 
       }
@@ -105,7 +131,6 @@ export function useMatchState(initialState: any, userId?: string) {
         }
       }
 
-      // 🛡️ Centralized Finance Processing
       if (!deps.isFriendly && !isFriendly && deps.processMatchFinance) {
         deps.processMatchFinance(
           { 
@@ -169,23 +194,34 @@ export function useMatchState(initialState: any, userId?: string) {
         }).then(() => {});
       }
 
-      if (!deps.isCup) {
+      if (!isCup) {
         deps.setSeason((s: any) => ({ ...s, currentWeek: Math.min(s.totalWeeks || 38, s.currentWeek + 1) }));
       }
 
       const totalMatchRevenue = deps.isFriendly ? 0 : (prize + sponsorWeekly + leaguePrize - stadiumPenaltyFine);
+
+      // 🔄 Sincronização com world_league_table (Simulação orgânica)
+      if (!isFriendly && userId) {
+        supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle().then(({ data: team }) => {
+          if (team?.league_id) {
+            supabase.rpc('update_league_standing', {
+              _team_id: team.id,
+              _goals_for: isHome ? homeGoals : awayGoals,
+              _goals_against: isHome ? awayGoals : homeGoals,
+              _outcome: outcome
+            });
+          }
+        });
+      }
 
       return {
         ...prev,
         matches: prev.matches.map(m => m.id === matchId ? { ...m, played: true, result: { home: homeGoals, away: awayGoals } } : m),
         players: prev.players.map(p => {
           if (deps.isFriendly) return p;
-          
-          // Definitivo: Desgaste baseado em resistência (físico)
           const physical = p.attributes?.physical || 60;
           const resistanceBonus = (physical - 50) * 0.15;
           const drain = Math.max(10, Math.floor(Math.random() * 10 + 18 - resistanceBonus));
-          
           const newStamina = Math.max(0, p.stamina - drain);
           return {
             ...p,
@@ -196,7 +232,6 @@ export function useMatchState(initialState: any, userId?: string) {
             gamesPlayed: p.gamesPlayed + 1,
           };
         }),
-
         budget: prev.budget + totalMatchRevenue,
         fans: Math.max(1000, prev.fans + fanChange),
         reputation: Math.min(100, Math.max(1, prev.reputation + repChange - stadiumPenaltyRep)),
