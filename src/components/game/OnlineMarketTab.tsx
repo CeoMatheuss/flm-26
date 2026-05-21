@@ -1238,7 +1238,11 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
               minMinutesRequired: 0,
               performanceBonus: 0,
             }}
-            onSubmit={negotiateLoan._isHelpOnly ? () => setNegotiateLoan(null) : async (terms: any) => {
+            onSubmit={async (terms: LoanTerms) => {
+              if (negotiateLoan._isHelpOnly) {
+                setNegotiateLoan(null);
+                return;
+              }
               const res = await supabase.functions.invoke('process-transfer', {
                 body: {
                   action: 'loan-offer-create',
