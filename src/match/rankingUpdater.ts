@@ -1,15 +1,8 @@
 /**
  * rankingUpdater.ts — Atualiza global_ranking após cada partida.
  *
- * Pontos por resultado:
- *   • Vitória  → +12 (×peso da competição)
- *   • Empate   → +4
- *   • Derrota  → -6
- *
- * Pesos:
- *   amistoso 0.5 · liga 1.0 · continental 1.6 · mundial 2.0 (Copas Nacionais desativadas)
- *
- * Nunca destrói histórico — sempre incrementa via UPDATE.
+ * Motor ELO Simplificado:
+ *   Pontos = BASE * PESO_COMPETIÇÃO * (1 + DIF_FORÇA / 50)
  */
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,9 +17,9 @@ const WEIGHT: Record<RankingCompetition, number> = {
 };
 
 const BASE: Record<RankingOutcome, number> = {
-  win: 12,
-  draw: 4,
-  loss: -6,
+  win: 20,
+  draw: 5,
+  loss: -15,
 };
 
 interface UpdateInput {
@@ -35,14 +28,18 @@ interface UpdateInput {
   outcome: RankingOutcome;
   competition: RankingCompetition;
   competitionLabel?: string;
+  opponentStrength?: number;
+  teamStrength?: number;
 }
 
 export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
-  const { userId, clubName, outcome, competition, competitionLabel } = input;
+  const { userId, clubName, outcome, competition, competitionLabel, opponentStrength = 65, teamStrength = 65 } = input;
   if (!userId) return;
-  const delta = Math.round(BASE[outcome] * WEIGHT[competition]);
 
-  // Tenta carregar a linha atual (insere se não existir).
+  const strengthDiff = opponentStrength - teamStrength;
+  const strengthFactor = 1 + (strengthDiff / 50);
+  const delta = Math.round(BASE[outcome] * WEIGHT[competition] * strengthFactor);
+
   const { data: row } = await supabase
     .from('global_ranking')
     .select('id, ranking_points, games_played, wins, draws, losses')
@@ -53,7 +50,7 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
     await supabase.from('global_ranking').insert({
       user_id: userId,
       club_name: clubName,
-      ranking_points: Math.max(0, delta),
+      ranking_points: Math.max(0, 100 + delta),
       games_played: 1,
       wins: outcome === 'win' ? 1 : 0,
       draws: outcome === 'draw' ? 1 : 0,
@@ -68,13 +65,14 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
     .from('global_ranking')
     .update({
       club_name: clubName,
-      ranking_points: Math.max(0, (row.ranking_points ?? 0) + delta),
+      ranking_points: Math.max(0, (row.ranking_points ?? 100) + delta),
       games_played: (row.games_played ?? 0) + 1,
       wins: (row.wins ?? 0) + (outcome === 'win' ? 1 : 0),
       draws: (row.draws ?? 0) + (outcome === 'draw' ? 1 : 0),
       losses: (row.losses ?? 0) + (outcome === 'loss' ? 1 : 0),
       last_change: delta,
       current_competition: competitionLabel ?? 'Amistoso',
+      updated_at: new Date().toISOString()
     })
     .eq('id', row.id);
 }
