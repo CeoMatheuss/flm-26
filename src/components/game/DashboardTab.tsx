@@ -357,29 +357,47 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-3xl sm:text-4xl font-black text-foreground tabular-nums leading-none">
-                  {club.stats.points}<span className="text-sm font-bold text-muted-foreground ml-1">pts</span>
-                </p>
-                <div className="flex items-center gap-1.5 mt-2">
-                  <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/10">
-                    Posição #{Math.floor(Math.random() * 50) + 1}
-                  </Badge>
-                  <span className="text-[10px] text-muted-foreground">Aproveit. {winRate}%</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-pulse" />
-              </div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-border/10">
-              <div className="flex justify-between items-center mb-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Meta da Diretoria</span>
-                <span className="text-[10px] font-bold text-primary">{(club.stats.points / 50 * 100).toFixed(0)}%</span>
-              </div>
-              <Progress value={Math.min(100, (club.stats.points / 50) * 100)} className="h-2 progress-glow" />
-            </div>
+            {useMemo(() => {
+              // Dinâmica de Metas baseada no OVR do elenco
+              const avgOvr = club.players.length > 0 ? Math.round(club.players.reduce((s, p) => s + (p.overall || 0), 0) / club.players.length) : 0;
+              let boardGoal = 45; // Default: Top 10
+              let goalLabel = "Top 10";
+              
+              if (avgOvr >= 80) { boardGoal = 85; goalLabel = "Título"; }
+              else if (avgOvr >= 75) { boardGoal = 70; goalLabel = "G4"; }
+              else if (avgOvr >= 70) { boardGoal = 60; goalLabel = "G6"; }
+              else if (avgOvr < 60) { boardGoal = 35; goalLabel = "Evitar Rebaixamento"; }
+
+              const progress = Math.min(100, Math.max(0, (club.stats.points / boardGoal) * 100));
+
+              return (
+                <>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="text-3xl sm:text-4xl font-black text-foreground tabular-nums leading-none">
+                        {club.stats.points}<span className="text-sm font-bold text-muted-foreground ml-1">pts</span>
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/10">
+                          Meta: {goalLabel}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">Aproveit. {winRate}%</span>
+                      </div>
+                    </div>
+                    <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                      <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-border/10">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Progresso da Temporada</span>
+                      <span className="text-[10px] font-bold text-primary">{progress.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2 progress-glow" />
+                  </div>
+                </>
+              );
+            }, [club.stats.points, club.players])}
           </CardContent>
         </Card>
 
