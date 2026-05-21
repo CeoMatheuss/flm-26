@@ -1206,7 +1206,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
           salary: loanCandidate.salary || 0,
         } : { name: '', position: 'MEI', age: 0, overall: 0, salary: 0 }}
         loading={loanSubmitting}
-        onSubmit={async (terms) => {
+        onSubmit={async (terms: LoanTerms) => {
           if (!loanCandidate) return;
           setLoanSubmitting(true);
           try {
