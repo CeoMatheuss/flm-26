@@ -2431,6 +2431,7 @@ export type Database = {
           id: string
           listed_at: string
           loan_fee: number
+          loan_terms: Json | null
           open_to_offers: boolean
           player_age: number
           player_data: Json
@@ -2453,6 +2454,7 @@ export type Database = {
           id?: string
           listed_at?: string
           loan_fee?: number
+          loan_terms?: Json | null
           open_to_offers?: boolean
           player_age: number
           player_data: Json
@@ -2475,6 +2477,7 @@ export type Database = {
           id?: string
           listed_at?: string
           loan_fee?: number
+          loan_terms?: Json | null
           open_to_offers?: boolean
           player_age?: number
           player_data?: Json
@@ -2490,6 +2493,53 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      loan_negotiations: {
+        Row: {
+          created_at: string
+          id: string
+          is_counter_offer: boolean | null
+          listing_id: string | null
+          message: string | null
+          offered_terms: Json
+          receiver_id: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_counter_offer?: boolean | null
+          listing_id?: string | null
+          message?: string | null
+          offered_terms: Json
+          receiver_id: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_counter_offer?: boolean | null
+          listing_id?: string | null
+          message?: string | null
+          offered_terms?: Json
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_negotiations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "loan_listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loan_offers: {
         Row: {
