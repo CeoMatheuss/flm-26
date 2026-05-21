@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatMoney } from '@/lib/formatMoney';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, DollarSign, Percent, Clock, Ban, Shield, Zap, TrendingUp, Handshake } from 'lucide-react';
+import { Calendar, DollarSign, Percent, Clock, Ban, Shield, Zap, TrendingUp, Handshake, Target } from 'lucide-react';
 import { LoanTerms, defaultLoanTerms } from '@/types/loan';
 
 interface Props {
