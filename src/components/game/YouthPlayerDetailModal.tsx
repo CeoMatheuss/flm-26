@@ -68,9 +68,91 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
   const moraleInfo = getMoraleLabel(prospect.morale ?? 60);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        setIsConfirmingPromotion(false);
+        onClose();
+      }
+    }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-primary/20 bg-background/95 backdrop-blur-xl">
-        {/* Banner Section */}
+        {isConfirmingPromotion ? (
+          <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                <ShieldCheck className="h-10 w-10 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black uppercase tracking-tight">Confirmar Promoção</h3>
+                <p className="text-sm text-muted-foreground">Você está prestes a oferecer o primeiro contrato profissional para {prospect.name}.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-6 rounded-2xl bg-card border border-border/50 space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                  <Coins className="h-3.5 w-3.5" /> Detalhes Financeiros
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/30">
+                    <span className="text-xs font-bold text-muted-foreground uppercase">Salário Mensal</span>
+                    <span className="text-sm font-black text-emerald-400">{formatMoney(prospect.salary || 500)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/30">
+                    <span className="text-xs font-bold text-muted-foreground uppercase">Bônus de Assinatura</span>
+                    <span className="text-sm font-black text-white">{formatMoney(0)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-card border border-border/50 space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5" /> Vínculo Contratual
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/30">
+                    <span className="text-xs font-bold text-muted-foreground uppercase">Duração</span>
+                    <span className="text-sm font-black text-white">3 Temporadas</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/30">
+                    <span className="text-xs font-bold text-muted-foreground uppercase">Status no Elenco</span>
+                    <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">Reserva</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-3 items-start">
+              <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-200/80 leading-relaxed">
+                Ao subir para o profissional, o jogador ocupará uma vaga no elenco principal e seu salário será debitado mensalmente do seu orçamento. 
+                {prospect.age < 18 && (
+                  <strong> Atenção: O jogador tem menos de 18 anos e pode ter dificuldades físicas inicialmente.</strong>
+                )}
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsConfirmingPromotion(false)}
+                className="flex-1 h-12 font-bold uppercase tracking-wider text-xs border-border/50"
+              >
+                Voltar
+              </Button>
+              <Button 
+                onClick={() => {
+                  onPromote(prospect.id);
+                  setIsConfirmingPromotion(false);
+                }}
+                className="flex-[2] h-12 bg-primary hover:bg-primary/90 font-black uppercase tracking-wider text-xs shadow-lg shadow-primary/20"
+              >
+                Confirmar e Contratar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Banner Section */}
         <div className="relative h-48 w-full bg-gradient-to-br from-primary/20 via-background to-accent/20 overflow-hidden border-b border-border/50">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(37,99,235,0.1),transparent)]" />
           
