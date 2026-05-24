@@ -35,6 +35,7 @@ import { RulesTab } from '@/components/game/RulesTab';
 import { CopasTab } from './CopasTab';
 import { WorldLeagues } from './WorldLeagues';
 import { WorldCupTab } from './WorldCupTab';
+import { ContinentalTab } from './ContinentalTab';
 
 
 import { AdminTab } from '@/components/game/AdminTab';
@@ -177,6 +178,10 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
       <TabsContent value="worldcup">
         <WorldCupTab userId={userId} />
+      </TabsContent>
+
+      <TabsContent value="continental">
+        <ContinentalTab club={game.club} />
       </TabsContent>
 
       <TabsContent value="world">
