@@ -1,15 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Shirt, Palette, Save, Sparkles, ShoppingBag, TrendingUp, Trophy, History, BarChart3, Info, Rocket, ArrowUpRight, Loader2 } from 'lucide-react';
+import { Shirt, Palette, Save, Sparkles, ShoppingBag, TrendingUp, Trophy, History, BarChart3, Info, Rocket, ArrowUpRight, Loader2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { Sponsor } from '@/types/sponsor';
+
 
 export interface UniformKit {
   name: string;
@@ -358,6 +359,15 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   const [activeLaunch, setActiveLaunch] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingLaunchId, setPendingLaunchId] = useState<string | null>(null);
+  const [checkoutData, setCheckoutData] = useState<any>(null);
+  const [paymentStep, setPaymentStep] = useState<'checkout' | 'pix' | 'processing'>('checkout');
+  const [pixInfo, setPixInfo] = useState<any>(null);
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [cpf, setCpf] = useState('');
+
 
   useEffect(() => {
     fetchLaunches();
@@ -459,12 +469,8 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         .single();
       if (!clubData) return;
 
-      // Save to game_saves
-      onSave(kits);
-
-      // Save as a launch
-      // Save as a launch
-      const { error: launchError } = await supabase
+      // 1. Criar rascunho temporário do lançamento
+      const { data: launch, error: launchError } = await supabase
         .from('club_uniform_launches')
         .insert({
           club_id: clubData.id,
@@ -472,33 +478,116 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           config: kits[activeKit] as any,
           initial_fans: clubData.fans,
           initial_reputation: clubData.reputation,
-          hype_score: 1.0
-        });
+          hype_score: 1.0,
+          status: 'draft',
+          price_cents: 1000 // R$ 10,00 por lançamento de uniforme
+        })
+        .select()
+        .single();
 
       if (launchError) throw launchError;
 
-      // News and Notifications
-      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
+      setPendingLaunchId(launch.id);
+      setShowPaymentModal(true);
+      setPaymentStep('checkout');
       
-      await supabase.from('user_notifications').insert({
-        user_id: user.id,
-        type: 'success',
-        category: 'Marketing',
-        title: 'Uniforme Lançado!',
-        message: `O novo uniforme ${kits[activeKit].name} foi lançado e já está sendo vendido para a torcida!`,
-        icon: '👕'
-      });
-
-      toast.success('Uniforme lançado e salvo com sucesso!');
-      fetchLaunches();
-      window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+      toast.info('Design validado! Prossiga com o pagamento para oficializar o lançamento.');
     } catch (error: any) {
       console.error('Launch error:', error);
-      toast.error('Erro ao lançar uniforme: ' + (error.message || 'Erro desconhecido'));
+      toast.error('Erro ao preparar lançamento: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setIsLaunching(false);
     }
   };
+
+  const executeKitPayment = async () => {
+    if (!pendingLaunchId) return;
+    
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
+
+      const { data: clubData } = await supabase.from('clubs').select('name').eq('user_id', user.id).single();
+
+      // Registrar tentativa no monitor ADM
+      await supabase.from('admin_shop_activity').insert({
+        user_id: user.id,
+        club_name: clubData?.name,
+        item_name: `Lançamento: ${kits[activeKit].name}`,
+        amount_cents: 1000,
+        status: 'attempting',
+        payment_method: 'pix',
+        metadata: { uniform_id: pendingLaunchId, type: 'uniform_launch' }
+      });
+
+      // Chamar function de checkout
+      const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
+        body: { 
+          item_id: 'uniform_launch_token', // ID virtual ou mapeado
+          method: 'pix',
+          email: email,
+          full_name: fullName,
+          cpf: cpf.replace(/\D/g, ''),
+          custom_amount: 1000,
+          metadata: { uniform_id: pendingLaunchId, item_type: 'uniform_launch' }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.pix_qr_code) {
+        setPixInfo(data);
+        setPaymentStep('pix');
+        
+        // Atualizar monitor
+        await supabase.from('admin_shop_activity').update({ status: 'pending' }).eq('metadata->>uniform_id', pendingLaunchId);
+      }
+    } catch (e: any) {
+      toast.error('Erro ao processar pagamento.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Monitorar pagamento
+  useEffect(() => {
+    if (paymentStep !== 'pix' || !pixInfo?.order_id) return;
+
+    const channel = supabase
+      .channel('uniform-payment')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'payment_orders',
+        filter: `id=eq.${pixInfo.order_id}`
+      }, (payload: any) => {
+        if (payload.new.status === 'approved') {
+          handlePaymentSuccess();
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [paymentStep, pixInfo]);
+
+  const handlePaymentSuccess = async () => {
+    setShowPaymentModal(false);
+    toast.success('Pagamento aprovado! Seu uniforme agora é oficial.');
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: clubData } = await supabase.from('clubs').select('name, fans, reputation').eq('user_id', user?.id).single();
+    
+    if (user && clubData) {
+      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
+    }
+    
+    fetchLaunches();
+    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+    const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
+    audio.play().catch(() => {});
+  };
+
 
   const calculateCurrentSales = (launch: any, clubFans: number, clubRep: number) => {
     if (!launch) return { daily: 0, total: 0, hype: 0, daysSinceLaunch: 0, revenue: 0 };
@@ -819,6 +908,65 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           </CardContent>
         </Card>
       )}
+      {/* Modal de Pagamento de Uniforme */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <Card className="w-full max-w-md bg-[#0a0f1a] border-primary/20 shadow-2xl animate-in zoom-in-95 duration-300">
+            <CardHeader className="text-center pb-2">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Shirt className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle className="text-xl font-black italic uppercase tracking-tighter">Oficializar Lançamento</CardTitle>
+              <p className="text-xs text-muted-foreground">O novo manto do seu clube está quase pronto!</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {paymentStep === 'checkout' ? (
+                <div className="space-y-4">
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] uppercase font-black text-muted-foreground">Valor do Lançamento</span>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-none font-bold">R$ 10,00</Badge>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">O uniforme será desbloqueado permanentemente, iniciará vendas na loja e gerará hype imediato.</p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Input placeholder="Nome Completo" value={fullName} onChange={e => setFullName(e.target.value)} className="bg-white/5 border-white/10" />
+                    <Input placeholder="E-mail" type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-white/5 border-white/10" />
+                    <Input placeholder="CPF" value={cpf} onChange={e => setCpf(e.target.value)} className="bg-white/5 border-white/10" />
+                  </div>
+
+                  <Button onClick={executeKitPayment} className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-black italic uppercase tracking-wider" disabled={loading}>
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Zap className="h-5 w-5 mr-2" />}
+                    Pagar com PIX
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-center space-y-4 py-4">
+                  <div className="p-4 bg-white rounded-2xl shadow-inner">
+                    <img src={pixInfo?.pix_qr_code_base64} alt="QR Code PIX" className="w-48 h-48" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-white">Escaneie o QR Code</p>
+                    <p className="text-[10px] text-muted-foreground">Aguardando aprovação em tempo real...</p>
+                  </div>
+                  <Button variant="outline" className="w-full text-[10px] h-8 bg-white/5" onClick={() => {
+                    navigator.clipboard.writeText(pixInfo?.pix_qr_code);
+                    toast.success('Copiado!');
+                  }}>Copiar Código PIX</Button>
+                  <div className="flex items-center gap-2 text-[10px] text-primary animate-pulse font-bold">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Aguardando pagamento...
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button variant="ghost" className="w-full text-xs text-white/40" onClick={() => setShowPaymentModal(false)}>Cancelar Lançamento</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
+

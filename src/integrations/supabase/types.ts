@@ -800,7 +800,10 @@ export type Database = {
           last_sales_update_at: string | null
           launched_at: string
           name: string
+          payment_order_id: string | null
           peak_daily_sales: number | null
+          price_cents: number | null
+          status: string | null
           total_revenue_cents: number | null
           total_sales_count: number | null
         }
@@ -814,7 +817,10 @@ export type Database = {
           last_sales_update_at?: string | null
           launched_at?: string
           name: string
+          payment_order_id?: string | null
           peak_daily_sales?: number | null
+          price_cents?: number | null
+          status?: string | null
           total_revenue_cents?: number | null
           total_sales_count?: number | null
         }
@@ -828,7 +834,10 @@ export type Database = {
           last_sales_update_at?: string | null
           launched_at?: string
           name?: string
+          payment_order_id?: string | null
           peak_daily_sales?: number | null
+          price_cents?: number | null
+          status?: string | null
           total_revenue_cents?: number | null
           total_sales_count?: number | null
         }
@@ -838,6 +847,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_uniform_launches_payment_order_id_fkey"
+            columns: ["payment_order_id"]
+            isOneToOne: false
+            referencedRelation: "payment_orders"
             referencedColumns: ["id"]
           },
         ]
