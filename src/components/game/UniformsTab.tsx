@@ -123,7 +123,7 @@ interface Props {
   sponsors?: Sponsor[];
   players?: Array<{ name: string; position: string; overall: number; goals?: number; gamesPlayed?: number }>;
   clubReputation?: number;
-  uniformsUnlocked?: boolean;
+  uniformsUnlocked?: boolean; // Now redundant but kept for prop compatibility if needed elsewhere
 }
 
 function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; sponsorName?: string; size?: 'sm' | 'md' | 'lg' }) {
@@ -455,10 +455,13 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
 
   const handleLaunch = async () => {
+    // Free for all players
+    /*
     if (!uniformsUnlocked) {
       toast.error('Você precisa do slot premium de uniformes para salvar e lançar permanentemente.');
       return;
     }
+    */
 
     setIsLaunching(true);
     try {
@@ -482,16 +485,19 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           initial_reputation: clubData.reputation,
           hype_score: 1.0,
           status: 'draft',
-          price_cents: 1000 // R$ 10,00 por lançamento de uniforme
+          price_cents: 0 // Free launch
         })
         .select()
         .single();
 
-      if (launchError) throw launchError;
+        if (launchError) throw launchError;
 
-      setPendingLaunchId(launch.id);
-      setShowPaymentModal(true);
-      setPaymentStep('checkout');
+        // Skip payment modal and go straight to success
+        await handlePaymentSuccessInternal(launch.id, clubData.name, clubData.fans, clubData.reputation);
+        
+        // setPendingLaunchId(launch.id);
+        // setShowPaymentModal(true);
+        // setPaymentStep('checkout');
       
       toast.info('Design validado! Prossiga com o pagamento para oficializar o lançamento.');
     } catch (error: any) {
@@ -573,21 +579,28 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     return () => { supabase.removeChannel(channel); };
   }, [paymentStep, pixInfo]);
 
-  const handlePaymentSuccess = async () => {
-    setShowPaymentModal(false);
-    toast.success('Pagamento aprovado! Seu uniforme agora é oficial.');
+  const handlePaymentSuccessInternal = async (launchId: string, clubName: string, fans: number, reputation: number) => {
+    toast.success('Uniforme lançado com sucesso!');
     
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: clubData } = await supabase.from('clubs').select('name, fans, reputation').eq('user_id', user?.id).single();
     
-    if (user && clubData) {
-      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
+    if (user) {
+      // Mark launch as approved/active since it's free now
+      await supabase.from('club_uniform_launches').update({ status: 'approved' }).eq('id', launchId);
+      await generateLaunchNews(user.id, clubName, fans, reputation);
     }
     
     fetchLaunches();
     window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
     const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
     audio.play().catch(() => {});
+  };
+
+  const handlePaymentSuccess = async () => {
+    setShowPaymentModal(false);
+    // This is now handled by handlePaymentSuccessInternal for new launches
+    // but kept for compatibility with any existing pending payments
+    fetchLaunches();
   };
 
 
@@ -618,31 +631,19 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   const salesStats = useMemo(() => calculateCurrentSales(activeLaunch, clubReputation || 50, clubReputation || 50), [activeLaunch, clubReputation]);
 
   const handleSave = () => {
+    /*
     if (!uniformsUnlocked) {
       toast.error('🔒 Compre o desbloqueio de Uniformes na Loja FLM para salvar.');
       return;
     }
+    */
     onSave({ ...kits, shirtSales: { totalSold, revenue: totalRevenue, topSellers } });
     toast.success('🎽 Uniformes salvos com sucesso!');
   };
 
   return (
     <div className="space-y-4">
-      {!uniformsUnlocked && (
-        <Card className="border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-transparent">
-          <CardContent className="p-3 flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/20">
-              <Shirt className="h-5 w-5 text-amber-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-amber-500">🔒 Criação de uniformes bloqueada</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Compre o desbloqueio de <strong>Uniformes</strong> na <strong>Loja FLM</strong> para salvar e lançar coleções. Esse desbloqueio é independente da personalização do clube (nome, estádio e escudo).
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Removal of locked warning as it's now free */}
       {/* Launch Dashboard */}
       {activeLaunch && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
