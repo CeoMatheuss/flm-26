@@ -187,17 +187,37 @@ export function WorldCupTab({ userId }: { userId: string }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {matches.map(m => (
           <Card key={m.id} className={`bg-card/40 border-border/50 hover:border-yellow-500/30 transition-colors ${m.home_team?.user_id === userId || m.away_team?.user_id === userId ? 'ring-1 ring-yellow-500/40' : ''}`}>
-            <CardContent className="p-4 flex items-center justify-between gap-4">
-               <div className="flex items-center gap-3 flex-1 min-w-0">
+            <CardContent className="p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-[8px] font-black uppercase text-yellow-500/60 mb-1">
+                <span>{m.stage === 'quarter-finals' ? 'Quartas' : m.stage === 'semi-finals' ? 'Semi' : 'Final'}</span>
+                <span className="flex items-center gap-1"><Clock className="h-2 w-2" /> {new Date(m.scheduled_at).toLocaleDateString('pt-BR')}</span>
+              </div>
+              
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <ClubShield club={toShieldClub(m.home_team) as any} size={32} />
                   <span className="text-xs font-black truncate">{m.home_team.clubs.name}</span>
                 </div>
 
-                <div className="flex flex-col items-center justify-center min-w-[60px]">
+                <div className="flex flex-col items-center justify-center min-w-[70px]">
                   {m.status === 'finished' ? (
-                    <span className="text-sm font-black tabular-nums">{m.home_goals} - {m.away_goals}</span>
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black tabular-nums">{m.home_goals + (m.home_extra_goals || 0)}</span>
+                        <span className="text-[10px] text-white/20">-</span>
+                        <span className="text-sm font-black tabular-nums">{m.away_goals + (m.away_extra_goals || 0)}</span>
+                      </div>
+                      {m.has_extra_time && (
+                        <span className="text-[7px] font-bold text-yellow-500 uppercase tracking-widest mt-0.5">Prorrogação</span>
+                      )}
+                      {(m.home_penalty_goals > 0 || m.away_penalty_goals > 0) && (
+                        <span className="text-[8px] font-black text-emerald-400 mt-1">
+                          ({m.home_penalty_goals} - {m.away_penalty_goals}) PÊNALTIS
+                        </span>
+                      )}
+                    </div>
                   ) : (
-                    <Badge variant="secondary" className="text-[8px] uppercase">{m.stage === 'quarter-finals' ? 'Quartas' : m.stage === 'semi-finals' ? 'Semi' : 'Final'}</Badge>
+                    <Badge variant="outline" className="text-[8px] uppercase border-yellow-500/20 text-yellow-500/80">AGENDADO</Badge>
                   )}
                 </div>
 
@@ -205,9 +225,11 @@ export function WorldCupTab({ userId }: { userId: string }) {
                   <span className="text-xs font-black truncate text-right">{m.away_team.clubs.name}</span>
                   <ClubShield club={toShieldClub(m.away_team) as any} size={32} />
                 </div>
+              </div>
             </CardContent>
           </Card>
         ))}
+
       </div>
     </div>
   );
