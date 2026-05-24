@@ -3,6 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { isHighlightEvent } from '@/components/game/HighlightMiniCanvas';
 import { calculateTacticalModifiers } from './tacticalEngine';
 import { TacticsConfig } from '@/types/tactics';
+import { PlayerRating, calculatePlayerRatings } from './ratings/ratingEngine';
+import { Player } from '@/types/game';
+
+export type { PlayerRating };
 
 export interface SimEvent {
   minute: number;
