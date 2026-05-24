@@ -169,7 +169,54 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date>(new Date());
   const [dbPlayers, setDbPlayers] = useState<Player[]>(club.players || []);
+  const [liveStats, setLiveStats] = useState<{ points: number; wins: number; draws: number; losses: number; rank?: number } | null>(null);
   
+  const fetchLiveStats = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { data: teamData } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
+      if (teamData) {
+        const { data: statsData } = await supabase
+          .from('world_league_table')
+          .select('points, wins, draws, losses')
+          .eq('team_id', teamData.id)
+          .maybeSingle();
+        
+        if (statsData) {
+          // Também busca a posição na tabela
+          const { data: fullTable } = await supabase
+            .from('world_league_table')
+            .select('team_id')
+            .eq('league_id', teamData.league_id)
+            .order('points', { ascending: false })
+            .order('wins', { ascending: false })
+            .order('goals_for', { ascending: false });
+          
+          const rank = fullTable ? fullTable.findIndex(t => t.team_id === teamData.id) + 1 : undefined;
+          
+          setLiveStats({
+            points: statsData.points,
+            wins: statsData.wins,
+            draws: statsData.draws,
+            losses: statsData.losses,
+            rank: rank && rank > 0 ? rank : undefined
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar stats da liga:', error);
+    }
+  }, [userId]);
+
+  const refreshDashboard = useCallback(async () => {
+    setIsSyncing(true);
+    // Dispara evento global para forçar hooks (useGame, etc) a recarregarem se necessário
+    window.dispatchEvent(new CustomEvent('flm:refresh-game-state'));
+    await fetchLiveStats();
+    setLastSync(new Date());
+    setTimeout(() => setIsSyncing(false), 1000);
+  }, [fetchLiveStats]);
+
   // 🔄 Sincronização automática do elenco via Realtime
   useEffect(() => {
     if (!userId) return;
@@ -192,6 +239,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     };
 
     loadPlayers();
+    fetchLiveStats();
 
     const channel = supabase.channel(`dashboard-players-${userId}`)
       .on('postgres_changes', { 
@@ -206,10 +254,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, fetchLiveStats]);
 
   // Sincronização automática via Realtime
-
   useEffect(() => {
     if (!userId) return;
 
@@ -231,15 +278,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     return () => {
       channels.forEach(ch => supabase.removeChannel(ch));
     };
-  }, [userId]);
+  }, [userId, refreshDashboard]);
 
-  const refreshDashboard = useCallback(async () => {
-    setIsSyncing(true);
-    // Dispara evento global para forçar hooks (useGame, etc) a recarregarem se necessário
-    window.dispatchEvent(new CustomEvent('flm:refresh-game-state'));
-    setLastSync(new Date());
-    setTimeout(() => setIsSyncing(false), 1000);
-  }, []);
 
 
   const tiredPlayers = club.players.filter(p => p.stamina < 45);
