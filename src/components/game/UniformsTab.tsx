@@ -522,7 +522,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
           item_id: 'uniform_launch_token',
-          method: 'mercadolivre', // Usando Mercado Livre como solicitado
+          method: 'pix', // Garantindo o método correto para gerar QR Code
           email: email,
           full_name: fullName,
           cpf: cpf.replace(/\D/g, ''),
