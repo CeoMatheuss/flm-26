@@ -26,9 +26,9 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
     );
   }, [players, searchQuery]);
 
-  const starters = useMemo(() => players.slice(0, 11), [players]);
-  const reserves = useMemo(() => players.slice(11, 18), [players]);
-  const youth = useMemo(() => players.slice(18), [players]);
+  const starters = useMemo(() => players.filter(p => p.squad_status === 'starter'), [players]);
+  const reserves = useMemo(() => players.filter(p => p.squad_status === 'bench'), [players]);
+  const youth = useMemo(() => players.filter(p => !['starter', 'bench'].includes(p.squad_status || '')), [players]);
 
   const handlePlayerSelect = (player: Player) => {
     if (!selectedPlayerA) {

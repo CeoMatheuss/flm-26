@@ -129,10 +129,13 @@ export function SquadCard({ player, onClick, onSwap, isPendingSwap }: SquadCardP
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={cn(
-                "text-[10px] font-black tracking-tighter uppercase px-2 py-0 border-2",
+                "text-[9px] font-black tracking-tighter uppercase px-1.5 py-0 border-2",
                 posColors[player.position]
               )}>
                 {player.position}
+              </Badge>
+              <Badge variant="secondary" className="text-[8px] font-black tracking-tighter uppercase px-1 py-0 bg-white/5 text-white/40 border-none">
+                {player.squad_status === 'starter' ? 'Titular' : player.squad_status === 'bench' ? 'Reserva' : player.squad_status === 'injured' ? 'Lesionado' : player.squad_status === 'suspended' ? 'Suspenso' : 'Fora'}
               </Badge>
               {player.shirtNumber && (
                 <span className="text-xs font-mono font-black text-white/40">#{player.shirtNumber}</span>
