@@ -461,8 +461,7 @@ export function YouthAcademyModernTab({
                 <div className="mt-2">
                   <Button 
                     onClick={() => {
-                      onPromote(selectedProspect.id);
-                      setSelectedProspect(null);
+                      setIsConfirmingPromotion(true);
                     }}
                     className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-wider text-xs sm:text-sm shadow-[0_10px_30px_rgba(16,185,129,0.3)] transition-all active:scale-95 group whitespace-normal text-center px-3"
                   >
@@ -470,8 +469,10 @@ export function YouthAcademyModernTab({
                     <span className="leading-tight">Promover ao Profissional</span>
                   </Button>
                 </div>
-              </motion.div>
-            ) : (
+              </>
+            )}
+          </motion.div>
+        ) : (
               <div className="sticky top-28 p-10 rounded-[2.5rem] bg-zinc-900/20 border-2 border-dashed border-white/5 flex flex-col items-center justify-center text-center opacity-40">
                 <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mb-8">
                   <Info className="w-10 h-10 text-white/20" />
