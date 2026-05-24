@@ -847,6 +847,10 @@ export function AdminTab({ userId, isFounder }: Props) {
             <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
           </TabsContent>
 
+          <TabsContent value="auto_test" className="space-y-3 mt-3">
+            <AutoTestSystem />
+          </TabsContent>
+
           <TabsContent value="beta_access" className="space-y-3 mt-3">
             <SystemPanel adminUserId={userId} sections={['beta']} defaultSection="beta" />
           </TabsContent>
