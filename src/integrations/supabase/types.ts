@@ -863,8 +863,10 @@ export type Database = {
           peak_daily_sales: number | null
           price_cents: number | null
           status: string | null
+          total_revenue: number | null
           total_revenue_cents: number | null
           total_sales_count: number | null
+          total_sold: number | null
         }
         Insert: {
           club_id: string
@@ -880,8 +882,10 @@ export type Database = {
           peak_daily_sales?: number | null
           price_cents?: number | null
           status?: string | null
+          total_revenue?: number | null
           total_revenue_cents?: number | null
           total_sales_count?: number | null
+          total_sold?: number | null
         }
         Update: {
           club_id?: string
@@ -897,8 +901,10 @@ export type Database = {
           peak_daily_sales?: number | null
           price_cents?: number | null
           status?: string | null
+          total_revenue?: number | null
           total_revenue_cents?: number | null
           total_sales_count?: number | null
+          total_sold?: number | null
         }
         Relationships: [
           {
@@ -5677,6 +5683,47 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "transfer_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      uniform_sales_history: {
+        Row: {
+          club_id: string
+          created_at: string | null
+          id: string
+          launch_id: string | null
+          metadata: Json | null
+          quantity: number
+          revenue: number
+          sale_date: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string | null
+          id?: string
+          launch_id?: string | null
+          metadata?: Json | null
+          quantity?: number
+          revenue?: number
+          sale_date?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string | null
+          id?: string
+          launch_id?: string | null
+          metadata?: Json | null
+          quantity?: number
+          revenue?: number
+          sale_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uniform_sales_history_launch_id_fkey"
+            columns: ["launch_id"]
+            isOneToOne: false
+            referencedRelation: "club_uniform_launches"
             referencedColumns: ["id"]
           },
         ]
