@@ -45,6 +45,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
+  const [autoSimTriggered, setAutoSimTriggered] = useState(false);
 
   // Após a partida terminar, exibir imediatamente os dados do próximo jogo.
   // Mantemos `recentFinished` apenas para sinalizar avanço/refresh em background,
