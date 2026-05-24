@@ -168,7 +168,7 @@ export function simulateSeasonEnd(
             points: m.points,
             goalDiff: m.goals_for - m.goals_against,
           });
-        } else if (pos > total - 3) {
+        } else if (pos > total - 4) {
           relegations.push({
             memberId: m.id,
             userId: m.user_id,

@@ -352,7 +352,7 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       else if (i < 7) posColor = "text-blue-500 font-bold"; // Libertadores (G7)
 
                       else if (i < 9) posColor = "text-blue-400 font-bold"; // Sul-Americana
-                      else if (i >= 13) posColor = "text-red-500 font-bold"; // Rebaixamento (Z3)
+                      else if (i >= 12) posColor = "text-red-500 font-bold"; // Rebaixamento (Z4: 13º, 14º, 15º, 16º)
 
                       return (
                         <TableRow key={row.id} className={`${rowBg} transition-colors border-b border-border/40`}>
