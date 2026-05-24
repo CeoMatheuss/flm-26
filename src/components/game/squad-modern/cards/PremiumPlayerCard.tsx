@@ -56,7 +56,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         <div className="flex justify-between items-start">
           <div className="flex flex-col items-center">
             <div className={cn(
-              'text-3xl font-black italic leading-none tracking-tighter drop-shadow-lg flex items-center gap-0.5',
+              'text-2xl sm:text-3xl font-black italic leading-none tracking-tighter drop-shadow-lg flex items-center gap-0.5',
               (player as any).rarity === 'Craque geracional' ? 'text-amber-400' :
               (player as any).rarity === 'Promessa' ? 'text-cyan-400' :
               (player as any).rarity === 'Bom talento' ? 'text-blue-400' :
