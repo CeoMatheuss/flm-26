@@ -240,11 +240,11 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
         </div>
       </header>
 
-      {/* Conteúdo: mobile = stack, desktop = split */}
-      <div className="flex-1 overflow-y-auto lg:overflow-hidden">
-        <div className="h-full flex flex-col lg:flex-row gap-3 sm:gap-4 p-2 sm:p-4">
+      {/* Conteúdo: layout vertical (campo em cima, painel embaixo) */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col gap-3 sm:gap-4 p-2 sm:p-4">
           {/* Campo */}
-          <div className="lg:flex-1 bg-zinc-900/20 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center min-h-0 relative">
+          <div className="w-full bg-zinc-900/20 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center relative">
             {safePlayers.length < 11 ? (
               <div className="w-full aspect-[4/5] sm:aspect-[16/10] flex flex-col items-center justify-center text-white/40 gap-2">
                 <div className="w-10 h-10 rounded-full border-2 border-emerald-500/40 border-t-emerald-500 animate-spin" />
@@ -296,7 +296,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
 
 
           {/* Painel de ajustes */}
-          <aside className="lg:w-[340px] xl:w-[380px] shrink-0 flex flex-col gap-3 lg:overflow-y-auto lg:pr-1">
+          <aside className="w-full flex flex-col gap-3">
             {/* Formação */}
             <Card className="bg-zinc-900/60 border-white/5 rounded-2xl">
               <CardContent className="p-4 space-y-3">
