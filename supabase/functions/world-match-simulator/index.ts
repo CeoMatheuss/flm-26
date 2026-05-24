@@ -38,9 +38,9 @@ Deno.serve(async (req) => {
       .order("scheduled_at", { ascending: true })
       .limit(BATCH_SIZE);
 
-    // Also simulate World Cup matches
-    const { data: cupMatches } = await sb.from("world_cup_matches")
-      .select("*, home_team:world_teams!world_cup_matches_home_team_id_fkey(id,name,strength), away_team:world_teams!world_cup_matches_away_team_id_fkey(id,name,strength)")
+    // Also simulate Tournament/Mundial matches
+    const { data: cupMatches } = await sb.from("tournament_matches")
+      .select("*, home_team:world_teams!tournament_matches_home_team_id_fkey(id,name,strength), away_team:world_teams!tournament_matches_away_team_id_fkey(id,name,strength)")
       .eq("status", "scheduled")
       .lte("scheduled_at", tolerance)
       .limit(BATCH_SIZE);
