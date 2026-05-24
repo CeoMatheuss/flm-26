@@ -383,7 +383,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     );
   }, [nextMatch, club.stadiumName, club.stadiumOps, stadiumLevel]);
 
-  const stadiumCapacity = resolvedStadium.capacity;
+  const stadiumCapacity = (resolvedStadium as any).capacity || 20000;
 
   const handleGoToMatch = () => {
     if (!nextMatch) return;
