@@ -1,39 +1,32 @@
 // Mapeamento de continentes -> nomes oficiais das copas internacionais
 export interface InternationalCupNames {
   principal: string;
-  secundaria: string;
   emoji: string;
 }
 
 export const INTERNATIONAL_CUPS: Record<string, InternationalCupNames> = {
   'Europa': {
     principal: 'UEFA Champions League',
-    secundaria: 'UEFA Europa League',
     emoji: '🇪🇺',
   },
   'América do Sul': {
     principal: 'Copa Libertadores da América',
-    secundaria: 'Copa Sul-Americana',
     emoji: '🌎',
   },
   'América do Norte': {
     principal: 'CONCACAF Champions Cup',
-    secundaria: 'CONCACAF Liga',
     emoji: '🌎',
   },
   'África': {
     principal: 'CAF Champions League',
-    secundaria: 'CAF Confederation Cup',
     emoji: '🌍',
   },
   'Ásia': {
     principal: 'AFC Champions League',
-    secundaria: 'AFC Cup',
     emoji: '🌏',
   },
   'Oceania': {
     principal: 'OFC Champions League',
-    secundaria: 'OFC President Cup',
     emoji: '🌏',
   },
 };
