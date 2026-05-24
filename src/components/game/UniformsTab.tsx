@@ -1019,7 +1019,4 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   );
 }
 
-    </div>
-  );
-}
 
