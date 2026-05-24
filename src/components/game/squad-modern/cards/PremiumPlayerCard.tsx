@@ -112,11 +112,11 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         </div>
 
         {/* Name - Big and Bold */}
-        <div className="mt-1 mb-1">
-          <h3 className="text-lg font-black italic text-white uppercase tracking-tighter leading-none truncate group-hover:text-emerald-300 transition-colors">
+        <div className="mt-1 mb-1 min-w-0">
+          <h3 className="text-sm sm:text-lg font-black italic text-white uppercase tracking-tighter leading-none truncate group-hover:text-emerald-300 transition-colors">
             {player.name.split(' ').pop()}
           </h3>
-          <p className="text-[10px] text-white/40 font-bold truncate mt-1">
+          <p className="text-[9px] sm:text-[10px] text-white/40 font-bold truncate mt-1">
             {player.name}
           </p>
         </div>
