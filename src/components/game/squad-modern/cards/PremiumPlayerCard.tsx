@@ -29,7 +29,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        'relative w-full min-h-[280px] rounded-[1.5rem] overflow-hidden group transition-all duration-300',
+        'relative w-full min-h-[240px] sm:min-h-[280px] rounded-2xl sm:rounded-[1.5rem] overflow-hidden group transition-all duration-300',
         'border-2 shadow-2xl',
         (player as any).rarity && (player as any).rarity !== 'Comum'
           ? (player as any).rarity === 'Craque geracional' ? 'border-amber-400 shadow-amber-400/20' :
@@ -51,12 +51,12 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
       <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all" />
 
       {/* Card Content */}
-      <div className="relative h-full flex flex-col p-4 z-10">
+      <div className="relative h-full flex flex-col p-2.5 sm:p-4 z-10">
         {/* Top Section: OVR & Position */}
         <div className="flex justify-between items-start">
           <div className="flex flex-col items-center">
             <div className={cn(
-              'text-3xl font-black italic leading-none tracking-tighter drop-shadow-lg flex items-center gap-0.5',
+              'text-2xl sm:text-3xl font-black italic leading-none tracking-tighter drop-shadow-lg flex items-center gap-0.5',
               (player as any).rarity === 'Craque geracional' ? 'text-amber-400' :
               (player as any).rarity === 'Promessa' ? 'text-cyan-400' :
               (player as any).rarity === 'Bom talento' ? 'text-blue-400' :
@@ -112,11 +112,11 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
         </div>
 
         {/* Name - Big and Bold */}
-        <div className="mt-1 mb-1">
-          <h3 className="text-lg font-black italic text-white uppercase tracking-tighter leading-none truncate group-hover:text-emerald-300 transition-colors">
+        <div className="mt-1 mb-1 min-w-0">
+          <h3 className="text-sm sm:text-lg font-black italic text-white uppercase tracking-tighter leading-none truncate group-hover:text-emerald-300 transition-colors">
             {player.name.split(' ').pop()}
           </h3>
-          <p className="text-[10px] text-white/40 font-bold truncate mt-1">
+          <p className="text-[9px] sm:text-[10px] text-white/40 font-bold truncate mt-1">
             {player.name}
           </p>
         </div>
