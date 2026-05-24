@@ -495,6 +495,36 @@ export type Database = {
           },
         ]
       }
+      club_ranking_history: {
+        Row: {
+          created_at: string | null
+          final_points: number
+          final_position: number
+          id: string
+          season: number
+          titles_won: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          final_points: number
+          final_position: number
+          id?: string
+          season: number
+          titles_won?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          final_points?: number
+          final_position?: number
+          id?: string
+          season?: number
+          titles_won?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       club_shop_products: {
         Row: {
           base_price_cents: number
@@ -1680,9 +1710,15 @@ export type Database = {
           id: string
           last_change: number
           losses: number
+          points_history: Json | null
+          prev_position: number | null
           ranking_points: number
+          recent_form: Json | null
+          titles_count: number | null
+          titles_data: Json | null
           updated_at: string
           user_id: string
+          winning_streak: number | null
           wins: number
         }
         Insert: {
@@ -1694,9 +1730,15 @@ export type Database = {
           id?: string
           last_change?: number
           losses?: number
+          points_history?: Json | null
+          prev_position?: number | null
           ranking_points?: number
+          recent_form?: Json | null
+          titles_count?: number | null
+          titles_data?: Json | null
           updated_at?: string
           user_id: string
+          winning_streak?: number | null
           wins?: number
         }
         Update: {
@@ -1708,9 +1750,15 @@ export type Database = {
           id?: string
           last_change?: number
           losses?: number
+          points_history?: Json | null
+          prev_position?: number | null
           ranking_points?: number
+          recent_form?: Json | null
+          titles_count?: number | null
+          titles_data?: Json | null
           updated_at?: string
           user_id?: string
+          winning_streak?: number | null
           wins?: number
         }
         Relationships: []
@@ -6465,6 +6513,7 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      update_ranking_positions: { Args: never; Returns: undefined }
       upgrade_club_shop: { Args: { p_club_id: string }; Returns: Json }
       upsert_player_stats: {
         Args: {
