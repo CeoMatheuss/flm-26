@@ -810,8 +810,10 @@ function simulateFullMatch(
         const pos = i === 0 ? 'GOL' : i < 5 ? 'ZAG' : i < 9 ? 'MEI' : 'ATA';
         const ovr = clamp(Math.floor(awayStrength + (rng() * 8 - 4)), 30, 99);
         const attrs = genAwayAttrs(ovr, pos);
+        // Fallback name pool since awayNames was undefined in prior versions
+        const botNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Alves', 'Pereira', 'Lima', 'Gomes', 'Costa', 'Ribeiro', 'Martins', 'Carvalho', 'Almeida', 'Lopes', 'Soares', 'Fernandes'];
         return {
-          ...mapPlayer({ name: `BOT ${awayNames[i % awayNames.length]}`, overall: ovr, position: pos, attributes: attrs }, i, 'away'),
+          ...mapPlayer({ name: `BOT ${botNames[i % botNames.length]}`, overall: ovr, position: pos, attributes: attrs }, i, 'away'),
           isOnPitch: i < 11,
           squadStatus: i < 11 ? 'starter' : 'bench'
         };
