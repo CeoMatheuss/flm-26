@@ -1,10 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Minus, Trophy, Swords, Star, Flame, BarChart3, RefreshCw, Globe, Users, Shield } from 'lucide-react';
+import { 
+  TrendingUp, TrendingDown, Minus, Trophy, Swords, Star, 
+  Flame, BarChart3, RefreshCw, Globe, Users, Shield,
+  History, Target, Award, ArrowUpRight, ArrowDownRight
+} from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 
 interface RankingEntry {
   id: string;
@@ -17,6 +23,11 @@ interface RankingEntry {
   losses: number;
   last_change: number;
   current_competition: string;
+  prev_position?: number;
+  recent_form?: string[];
+  titles_count?: number;
+  winning_streak?: number;
+  points_history?: any[];
   clubs?: {
     shield_config: any;
     logo_url: string | null;
@@ -33,15 +44,16 @@ interface Props {
 
 export function RankingTab({ rating, rankingHistory, clubName, stats, season }: Props) {
   const [userId, setUserId] = useState<string | null>(null);
+  const [rankings, setRankings] = useState<RankingEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [myPosition, setMyPosition] = useState<number | null>(null);
+  const [view, setView] = useState<'global' | 'history'>('global');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUserId(data.session?.user?.id ?? null);
     });
   }, []);
-  const [rankings, setRankings] = useState<RankingEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [myPosition, setMyPosition] = useState<number | null>(null);
 
   const fetchRankings = async () => {
     setLoading(true);
@@ -72,38 +84,14 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
     setLoading(false);
   };
 
-  // Ensure user has a ranking entry
   useEffect(() => {
-    if (!userId) return;
-    const ensureEntry = async () => {
-      const { data } = await supabase
-        .from('global_ranking')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (!data) {
-        await supabase.from('global_ranking').insert({
-          user_id: userId,
-          club_name: clubName,
-          ranking_points: 0,
-          games_played: stats.wins + stats.draws + stats.losses,
-          wins: stats.wins,
-          draws: stats.draws,
-          losses: stats.losses,
-        });
-      } else {
-        await supabase.from('global_ranking').update({ club_name: clubName }).eq('user_id', userId);
-      }
-      fetchRankings();
-    };
-    ensureEntry();
-  }, [userId, clubName]);
+    if (userId) fetchRankings();
+  }, [userId]);
 
   // Realtime subscription
   useEffect(() => {
     const channel = supabase
-      .channel('global-ranking-changes')
+      .channel('global-ranking-updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'global_ranking' }, () => {
         fetchRankings();
       })
@@ -111,143 +99,300 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const totalGames = stats.wins + stats.draws + stats.losses;
-  const winRate = totalGames > 0 ? Math.round((stats.wins / totalGames) * 100) : 0;
+  const me = useMemo(() => rankings.find(r => r.user_id === userId), [rankings, userId]);
+
+  const variation = useMemo(() => {
+    if (!me || !me.prev_position || !myPosition) return 0;
+    return me.prev_position - myPosition;
+  }, [me, myPosition]);
+
+  const chartData = useMemo(() => {
+    if (!me?.points_history) return [];
+    return (me.points_history as any[]).map((h, i) => ({
+      index: i,
+      points: h.points,
+      delta: h.delta
+    }));
+  }, [me]);
+
+  const renderForm = (form: string[] = []) => {
+    return (
+      <div className="flex gap-1">
+        {form.map((res, i) => (
+          <div 
+            key={i}
+            className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-sm
+              ${res === 'V' ? 'bg-emerald-500' : res === 'E' ? 'bg-amber-500' : 'bg-red-500'}`}
+          >
+            {res}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div className="space-y-4">
-      {/* My Ranking Summary */}
-      <Card className="border-primary/30 bg-gradient-to-br from-card to-primary/5">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                <Globe className="h-3 w-3" /> Ranking Global
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-bold">{myPosition ? `#${myPosition}` : '—'}</h2>
-              <p className="text-sm font-semibold text-primary">{clubName}</p>
-            </div>
-            <div className="text-right space-y-1">
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Temporada {season}</p>
-              <p className="text-2xl font-bold">{rankings.find(r => r.user_id === userId)?.ranking_points ?? 0} <span className="text-xs text-muted-foreground">pts</span></p>
-              <div className="flex gap-3 text-xs font-mono justify-end">
-                <span className="text-emerald-500 font-bold">{stats.wins}V</span>
-                <span className="text-amber-500 font-bold">{stats.draws}E</span>
-                <span className="text-red-500 font-bold">{stats.losses}D</span>
+    <div className="space-y-6 pb-20 sm:pb-10">
+      {/* Dynamic Header / My Stats Bento */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Main Card: Rank & Points */}
+        <Card className="md:col-span-2 border-primary/20 bg-gradient-to-br from-card via-card to-primary/10 overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+            <Trophy className="w-32 h-32" />
+          </div>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row justify-between gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/20 p-2 rounded-xl">
+                    <Globe className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Global Ranking</h3>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-5xl font-black italic tracking-tighter">#{myPosition || '—'}</span>
+                      {variation !== 0 && (
+                        <Badge variant={variation > 0 ? "default" : "destructive"} className="h-6 gap-1 animate-in fade-in zoom-in duration-500">
+                          {variation > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                          {Math.abs(variation)}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-6">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Pontos Atuais</p>
+                    <p className="text-3xl font-bold text-primary">{me?.ranking_points || 0}</p>
+                  </div>
+                  <div className="h-10 w-px bg-border/50" />
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Desempenho</p>
+                    {renderForm(me?.recent_form)}
+                  </div>
+                </div>
               </div>
-              {totalGames > 0 && (
-                <p className="text-[10px] text-muted-foreground">{winRate}% aproveitamento</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* How it works */}
-      <Card>
-        <CardHeader className="pb-2 px-4 pt-4">
-          <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <BarChart3 className="h-3.5 w-3.5" /> Como Funciona
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-2">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-center">
-              <Trophy className="h-4 w-4 mx-auto text-emerald-400 mb-1" />
-              <p className="text-xs font-bold text-emerald-400">Vitória</p>
-              <p className="text-[10px] text-muted-foreground">+ pontos</p>
+              <div className="flex-1 min-h-[120px] bg-black/10 rounded-2xl p-4 border border-white/5">
+                <p className="text-[10px] text-muted-foreground uppercase mb-2 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" /> Evolução Recente
+                </p>
+                <div className="h-20 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Tooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-popover border border-border p-2 rounded-lg text-[10px] shadow-xl">
+                                <p className="font-bold">{payload[0].value} pts</p>
+                                <p className={payload[0].payload.delta >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                                  {payload[0].payload.delta >= 0 ? '+' : ''}{payload[0].payload.delta}
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="points" 
+                        stroke="var(--primary)" 
+                        fillOpacity={1} 
+                        fill="url(#colorPoints)" 
+                        strokeWidth={3}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 text-center">
-              <Minus className="h-4 w-4 mx-auto text-primary mb-1" />
-              <p className="text-xs font-bold text-primary">Empate</p>
-              <p className="text-[10px] text-muted-foreground">+ poucos pts</p>
-            </div>
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2 text-center">
-              <TrendingDown className="h-4 w-4 mx-auto text-destructive mb-1" />
-              <p className="text-xs font-bold text-destructive">Derrota</p>
-              <p className="text-[10px] text-muted-foreground">− pontos</p>
-            </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="text-[10px] sm:text-xs text-muted-foreground space-y-1 mt-2">
-            <p className="flex items-center gap-1"><Trophy className="h-3 w-3" /> <strong>Peso:</strong> Liga 1.0 · Copa 1.2 · Continental 1.6 · Mundial 2.0</p>
-            <p className="flex items-center gap-1"><Swords className="h-3 w-3" /> <strong>Adversário forte:</strong> ganhar vale mais, perder dói menos</p>
-            <p className="flex items-center gap-1"><Shield className="h-3 w-3" /> <strong>Adversário fraco:</strong> ganhar vale menos, perder dói mais</p>
-            <p className="flex items-center gap-1"><Star className="h-3 w-3" /> <strong>Campeão:</strong> +10% a +25% ao final da temporada</p>
-            <p className="flex items-center gap-1"><Flame className="h-3 w-3" /> <strong>Rebaixado:</strong> −10% a −25% ao final da temporada</p>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Small Cards Column */}
+        <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
+          <Card className="border-emerald-500/20 bg-emerald-500/5">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold">Sequência</p>
+                <p className="text-2xl font-black italic">{me?.winning_streak || 0}V</p>
+              </div>
+              <Flame className={`h-8 w-8 ${me?.winning_streak && me.winning_streak >= 3 ? 'text-orange-500 animate-pulse' : 'text-muted-foreground/30'}`} />
+            </CardContent>
+          </Card>
+          
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold">Títulos</p>
+                <p className="text-2xl font-black italic">{me?.titles_count || 0}</p>
+              </div>
+              <Award className={`h-8 w-8 ${me?.titles_count && me.titles_count > 0 ? 'text-amber-500' : 'text-muted-foreground/30'}`} />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Global Ranking Table */}
-      <Card>
-        <CardHeader className="pb-2 px-4 pt-4 flex flex-row items-center justify-between">
-          <CardTitle className="text-xs sm:text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <Globe className="h-3.5 w-3.5" /> Classificação Global
-          </CardTitle>
+      <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-sm">
+        <CardHeader className="pb-4 px-6 pt-6 flex flex-row items-center justify-between border-b border-white/5">
+          <div>
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Star className="h-5 w-5 text-amber-500" /> Elite Mundial de Clubes
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Ranking atualizado em tempo real baseado em performance global</p>
+          </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-[9px] gap-1">
-              <Users className="h-3 w-3" /> {rankings.length} times
-            </Badge>
-            <Button variant="ghost" size="sm" onClick={fetchRankings} disabled={loading} className="h-7 px-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchRankings} 
+              disabled={loading} 
+              className="h-9 px-3 gap-2 bg-background/50 border-white/10"
+            >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Sincronizar</span>
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="px-2 sm:px-4 pb-4">
-          {loading && rankings.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-8">Carregando ranking...</p>
-          ) : rankings.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-8">Nenhum clube no ranking ainda</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-border/50 text-muted-foreground">
-                    <th className="text-left py-2 px-1 w-8">#</th>
-                    <th className="text-left py-2 px-1">Clube</th>
-                    <th className="text-right py-2 px-1">Pts</th>
-                    <th className="text-center py-2 px-1 hidden sm:table-cell">V</th>
-                    <th className="text-center py-2 px-1 hidden sm:table-cell">E</th>
-                    <th className="text-center py-2 px-1 hidden sm:table-cell">D</th>
-                    <th className="text-left py-2 px-1 hidden sm:table-cell">Competição</th>
-                  </tr>
-                </thead>
-                <tbody>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/30 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <th className="py-3 px-6 text-left font-bold w-16">Pos</th>
+                  <th className="py-3 px-2 text-left font-bold">Clube</th>
+                  <th className="py-3 px-4 text-center font-bold hidden md:table-cell">Forma</th>
+                  <th className="py-3 px-4 text-right font-bold">Pts</th>
+                  <th className="py-3 px-4 text-center font-bold hidden sm:table-cell">V/E/D</th>
+                  <th className="py-3 px-6 text-right font-bold w-20">Var</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                <AnimatePresence mode="popLayout">
                   {rankings.map((entry, idx) => {
                     const pos = idx + 1;
                     const isMe = entry.user_id === userId;
+                    const entryVar = entry.prev_position ? entry.prev_position - pos : 0;
+                    
                     return (
-                      <tr
+                      <motion.tr
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ delay: idx * 0.02, duration: 0.2 }}
                         key={entry.id}
-                        className={`border-b border-border/30 transition-colors ${isMe ? 'bg-primary/10 font-semibold' : 'hover:bg-muted/30'}`}
+                        className={`group transition-all duration-300 ${isMe ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/50'}`}
                       >
-                        <td className="py-2 px-1">
-                          {pos <= 3 ? (
-                            <span className={`font-bold ${pos === 1 ? 'text-amber-400' : pos === 2 ? 'text-slate-300' : 'text-orange-400'}`}>
-                              {pos}
-                            </span>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-2">
+                            {pos <= 3 ? (
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black italic shadow-lg
+                                ${pos === 1 ? 'bg-gradient-to-br from-amber-300 to-amber-600 text-black' : 
+                                  pos === 2 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-black' : 
+                                  'bg-gradient-to-br from-orange-400 to-orange-700 text-white'}`}>
+                                {pos}
+                              </div>
+                            ) : (
+                              <span className="text-sm font-bold text-muted-foreground ml-2">{pos}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 px-2">
+                          <div 
+                            className="flex items-center gap-3 cursor-pointer group-hover:translate-x-1 transition-transform"
+                            onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: entry.club_name } }))}
+                          >
+                            <div className="relative">
+                              <ClubShield club={entry.clubs as any} size={32} />
+                              {isMe && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className={`text-sm font-bold truncate max-w-[120px] sm:max-w-[200px] ${isMe ? 'text-primary' : ''}`}>
+                                {entry.club_name}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Target className="h-2.5 w-2.5" /> {entry.current_competition}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center hidden md:table-cell">
+                          <div className="flex justify-center">
+                            {renderForm(entry.recent_form)}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <span className="text-sm font-black italic text-primary">{entry.ranking_points}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center hidden sm:table-cell">
+                          <div className="flex items-center justify-center gap-2 text-[10px] font-mono opacity-60">
+                            <span className="text-emerald-500">{entry.wins}V</span>
+                            <span className="text-amber-500">{entry.draws}E</span>
+                            <span className="text-red-500">{entry.losses}D</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          {entryVar !== 0 ? (
+                            <div className={`flex items-center justify-end gap-1 font-bold text-xs ${entryVar > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {entryVar > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                              {Math.abs(entryVar)}
+                            </div>
                           ) : (
-                            <span className="text-muted-foreground">{pos}</span>
+                            <Minus className="h-3 w-3 text-muted-foreground/30 ml-auto" />
                           )}
                         </td>
-                        <td className="py-2 px-1 truncate max-w-[100px] sm:max-w-[160px] cursor-pointer hover:text-primary transition-colors flex items-center gap-2" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: entry.club_name } }))}>
-                          <ClubShield club={entry.clubs as any} size={20} />
-                          <span className="truncate">{entry.club_name || 'Sem nome'}</span>
-                          {isMe && <Badge variant="outline" className="ml-1 text-[8px] px-1 py-0">Você</Badge>}
-                        </td>
-                        <td className="py-2 px-1 text-right font-bold">{entry.ranking_points}</td>
-                        <td className="py-2 px-1 text-center text-emerald-500 font-bold hidden sm:table-cell">{entry.wins}</td>
-                        <td className="py-2 px-1 text-center text-amber-500 font-bold hidden sm:table-cell">{entry.draws}</td>
-                        <td className="py-2 px-1 text-center text-red-500 font-bold hidden sm:table-cell">{entry.losses}</td>
-                        <td className="py-2 px-1 text-muted-foreground truncate max-w-[80px] hidden sm:table-cell">{entry.current_competition}</td>
-                      </tr>
+                      </motion.tr>
                     );
                   })}
-                </tbody>
-              </table>
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Info Card */}
+      <Card className="border-white/5 bg-background/50">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="space-y-1">
+              <p className="text-xs font-bold flex items-center gap-2 text-primary">
+                <Shield className="h-3.5 w-3.5" /> PESO DAS VITÓRIAS
+              </p>
+              <p className="text-[10px] text-muted-foreground">O ranking utiliza motor ELO. Ganhar de times com OVR maior rende bônus expressivos.</p>
             </div>
-          )}
+            <div className="space-y-1">
+              <p className="text-xs font-bold flex items-center gap-2 text-amber-500">
+                <Trophy className="h-3.5 w-3.5" /> PESO DE COMPETIÇÃO
+              </p>
+              <p className="text-[10px] text-muted-foreground">Mundial (2.0x), Continental (1.6x), Liga (1.0x) e Amistosos (0.5x).</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-bold flex items-center gap-2 text-orange-500">
+                <Flame className="h-3.5 w-3.5" /> MULTIPLICADORES
+              </p>
+              <p className="text-[10px] text-muted-foreground">Sequências de vitórias ativam multiplicadores de até 25% nos pontos ganhos.</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-bold flex items-center gap-2 text-emerald-500">
+                <History className="h-3.5 w-3.5" /> DECAIMENTO
+              </p>
+              <p className="text-[10px] text-muted-foreground">Times inativos ou em má fase perdem reputação e posições gradualmente.</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
