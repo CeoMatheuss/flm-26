@@ -23,13 +23,16 @@ interface WorldCupMatch {
 
 const toShieldClub = (t: any) => {
   if (!t) return null;
-  const club = t.clubs || {};
+  const club = t?.clubs || {};
   return {
     ...club,
-    shield_config: club.shield_config,
-    name: club.name
+    shield_config: club?.shield_config,
+    name: club?.name || 'Time'
   };
 };
+
+const getClubName = (t: any) => t?.clubs?.name || 'Time';
+
 
 export function WorldCupTab({ userId }: { userId: string }) {
   const [cup, setCup] = useState<any>(null);
@@ -40,7 +43,7 @@ export function WorldCupTab({ userId }: { userId: string }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: cupData } = await supabase
+      const { data: cupData, error: cupErr } = await supabase
         .from('world_cup_competitions')
         .select('*')
         .eq('status', 'active')
@@ -48,26 +51,62 @@ export function WorldCupTab({ userId }: { userId: string }) {
         .limit(1)
         .maybeSingle();
 
+      if (cupErr) console.error('[WorldCup] cup error:', cupErr);
+
       if (cupData) {
         setCup(cupData);
-        const { data: matchData } = await supabase
+        
+        // 1. Buscar matches
+        const { data: matchData, error: matchErr } = await supabase
           .from('world_cup_matches')
-          .select(`
-            *,
-            home_team:world_cup_teams!world_cup_matches_home_team_id_fkey(*, clubs(*)),
-            away_team:world_cup_teams!world_cup_matches_away_team_id_fkey(*, clubs(*))
-          `)
+          .select('*')
           .eq('cup_id', cupData.id)
           .order('scheduled_at', { ascending: true });
-        
-        if (matchData) setMatches(matchData as any[]);
+
+        if (matchErr) console.error('[WorldCup] match error:', matchErr);
+
+        if (matchData && matchData.length > 0) {
+          // 2. Buscar teams
+          const teamIds = [...new Set([
+            ...matchData.map(m => m.home_team_id),
+            ...matchData.map(m => m.away_team_id)
+          ])].filter(Boolean);
+
+          const { data: teamsData } = await supabase
+            .from('world_cup_teams')
+            .select('*')
+            .in('id', teamIds);
+
+          // 3. Buscar clubes
+          const clubIds = [...new Set((teamsData || []).map(t => t.club_id))].filter(Boolean);
+          const { data: clubsData } = await supabase
+            .from('clubs')
+            .select('id, name, shield_config, logo_url, user_id, primary_color, secondary_color')
+            .in('id', clubIds);
+
+          const teamMap = new Map((teamsData || []).map(t => {
+            const club = (clubsData || []).find(c => c.id === t.club_id);
+            return [t.id, { ...t, clubs: club || { name: 'Time' } }];
+          }));
+
+          const enriched = matchData.map(m => ({
+            ...m,
+            home_team: teamMap.get(m.home_team_id),
+            away_team: teamMap.get(m.away_team_id)
+          }));
+
+          setMatches(enriched as any);
+        } else {
+          setMatches([]);
+        }
       }
     } catch (e) {
-      console.error(e);
+      console.error('[WorldCup] load error:', e);
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => { loadData(); }, [userId]);
 
