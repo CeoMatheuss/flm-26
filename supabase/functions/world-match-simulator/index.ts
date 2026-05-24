@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         if (finErr) {
           errors.push({ id: m.id, stage: "finalize", err: finErr.message });
           // Try to revert lock
-          await sb.from("world_matches").update({ status: "scheduled" }).eq("id", m.id);
+          await sb.from(table).update({ status: "scheduled" }).eq("id", m.id);
           skipped++;
           continue;
         }
