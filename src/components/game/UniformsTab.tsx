@@ -358,6 +358,15 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   const [activeLaunch, setActiveLaunch] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingLaunchId, setPendingLaunchId] = useState<string | null>(null);
+  const [checkoutData, setCheckoutData] = useState<any>(null);
+  const [paymentStep, setPaymentStep] = useState<'checkout' | 'pix' | 'processing'>('checkout');
+  const [pixInfo, setPixInfo] = useState<any>(null);
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [cpf, setCpf] = useState('');
+
 
   useEffect(() => {
     fetchLaunches();
@@ -459,12 +468,8 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         .single();
       if (!clubData) return;
 
-      // Save to game_saves
-      onSave(kits);
-
-      // Save as a launch
-      // Save as a launch
-      const { error: launchError } = await supabase
+      // 1. Criar rascunho temporário do lançamento
+      const { data: launch, error: launchError } = await supabase
         .from('club_uniform_launches')
         .insert({
           club_id: clubData.id,
@@ -472,33 +477,116 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           config: kits[activeKit] as any,
           initial_fans: clubData.fans,
           initial_reputation: clubData.reputation,
-          hype_score: 1.0
-        });
+          hype_score: 1.0,
+          status: 'draft',
+          price_cents: 1000 // R$ 10,00 por lançamento de uniforme
+        })
+        .select()
+        .single();
 
       if (launchError) throw launchError;
 
-      // News and Notifications
-      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
+      setPendingLaunchId(launch.id);
+      setShowPaymentModal(true);
+      setPaymentStep('checkout');
       
-      await supabase.from('user_notifications').insert({
-        user_id: user.id,
-        type: 'success',
-        category: 'Marketing',
-        title: 'Uniforme Lançado!',
-        message: `O novo uniforme ${kits[activeKit].name} foi lançado e já está sendo vendido para a torcida!`,
-        icon: '👕'
-      });
-
-      toast.success('Uniforme lançado e salvo com sucesso!');
-      fetchLaunches();
-      window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+      toast.info('Design validado! Prossiga com o pagamento para oficializar o lançamento.');
     } catch (error: any) {
       console.error('Launch error:', error);
-      toast.error('Erro ao lançar uniforme: ' + (error.message || 'Erro desconhecido'));
+      toast.error('Erro ao preparar lançamento: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setIsLaunching(false);
     }
   };
+
+  const executeKitPayment = async () => {
+    if (!pendingLaunchId) return;
+    
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
+
+      const { data: clubData } = await supabase.from('clubs').select('name').eq('user_id', user.id).single();
+
+      // Registrar tentativa no monitor ADM
+      await supabase.from('admin_shop_activity').insert({
+        user_id: user.id,
+        club_name: clubData?.name,
+        item_name: `Lançamento: ${kits[activeKit].name}`,
+        amount_cents: 1000,
+        status: 'attempting',
+        payment_method: 'pix',
+        metadata: { uniform_id: pendingLaunchId, type: 'uniform_launch' }
+      });
+
+      // Chamar function de checkout
+      const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
+        body: { 
+          item_id: 'uniform_launch_token', // ID virtual ou mapeado
+          method: 'pix',
+          email: email,
+          full_name: fullName,
+          cpf: cpf.replace(/\D/g, ''),
+          custom_amount: 1000,
+          metadata: { uniform_id: pendingLaunchId, item_type: 'uniform_launch' }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.pix_qr_code) {
+        setPixInfo(data);
+        setPaymentStep('pix');
+        
+        // Atualizar monitor
+        await supabase.from('admin_shop_activity').update({ status: 'pending' }).eq('metadata->>uniform_id', pendingLaunchId);
+      }
+    } catch (e: any) {
+      toast.error('Erro ao processar pagamento.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Monitorar pagamento
+  useEffect(() => {
+    if (paymentStep !== 'pix' || !pixInfo?.order_id) return;
+
+    const channel = supabase
+      .channel('uniform-payment')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'payment_orders',
+        filter: `id=eq.${pixInfo.order_id}`
+      }, (payload: any) => {
+        if (payload.new.status === 'approved') {
+          handlePaymentSuccess();
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [paymentStep, pixInfo]);
+
+  const handlePaymentSuccess = async () => {
+    setShowPaymentModal(false);
+    toast.success('Pagamento aprovado! Seu uniforme agora é oficial.');
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: clubData } = await supabase.from('clubs').select('name, fans, reputation').eq('user_id', user?.id).single();
+    
+    if (user && clubData) {
+      await generateLaunchNews(user.id, clubData.name, clubData.fans, clubData.reputation);
+    }
+    
+    fetchLaunches();
+    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+    const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
+    audio.play().catch(() => {});
+  };
+
 
   const calculateCurrentSales = (launch: any, clubFans: number, clubRep: number) => {
     if (!launch) return { daily: 0, total: 0, hype: 0, daysSinceLaunch: 0, revenue: 0 };

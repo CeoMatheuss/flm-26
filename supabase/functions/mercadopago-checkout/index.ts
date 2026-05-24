@@ -26,16 +26,27 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user) throw new Error('Unauthorized')
 
-    const { item_id, method, email, full_name, cpf } = await req.json()
+    const { item_id, method, email, full_name, cpf, custom_amount, metadata: custom_metadata } = await req.json()
 
-    // Get item details
-    const { data: item, error: itemError } = await supabaseAdmin
-      .from('shop_items')
-      .select('*')
-      .eq('id', item_id)
-      .single()
+    let item: any;
+    if (item_id === 'uniform_launch_token') {
+      item = {
+        id: 'uniform_launch',
+        name: 'Lançamento de Uniforme',
+        price_cents: custom_amount || 1000
+      };
+    } else {
+      // Get item details
+      const { data: shopItem, error: itemError } = await supabaseAdmin
+        .from('shop_items')
+        .select('*')
+        .eq('id', item_id)
+        .single()
 
-    if (itemError || !item) throw new Error('Item not found')
+      if (itemError || !shopItem) throw new Error('Item not found')
+      item = shopItem;
+    }
+
 
     // Create payment order (using admin client to bypass RLS)
     const { data: order, error: orderError } = await supabaseAdmin
@@ -50,8 +61,10 @@ serve(async (req) => {
           email: email || user.email, 
           full_name, 
           cpf,
-          item_name: item.name
+          item_name: item.name,
+          ...(custom_metadata || {})
         }
+
 
       })
       .select()
