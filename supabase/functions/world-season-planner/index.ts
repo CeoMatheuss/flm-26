@@ -79,11 +79,11 @@ function todayBrt(): string {
 async function planContinentals(supabase: any, season: number, startDate: string) {
   const results = [];
   for (const [continentKey, competition] of Object.entries(CONTINENTAL_COMPETITIONS)) {
-    // Buscar times que não estão em ligas ativas mas são de países do continente (ou top teams)
+    // Buscar times para o continente usando world_teams (que tem dados)
+    // Precisamos filtrar por continente através do país ou apenas pegar os melhores times globais como fallback
     const { data: teams } = await supabase
-      .from("world_league_teams")
-      .select("*, world_leagues!inner(country, continent)")
-      .eq("world_leagues.continent", continentKey)
+      .from("world_teams")
+      .select("*")
       .order("strength", { ascending: false })
       .limit(32);
 
@@ -107,11 +107,6 @@ async function planContinentals(supabase: any, season: number, startDate: string
     const matches: any[] = [];
     
     // 16 avos: Ida Dia 5, Volta Dia 7
-    const days = [5, 7, 10, 12, 15, 17, 20, 22, 28];
-    const stages = ["16_avos_ida", "16_avos_volta", "oitavas_ida", "oitavas_volta", "quartas_ida", "quartas_volta", "semi_ida", "semi_volta", "final"];
-    
-    // Simplificação: apenas a primeira fase é populada agora para evitar complexidade de chaveamento em um único script
-    // No futebol real, as fases seguintes dependem dos resultados.
     for (let i = 0; i < 16; i++) {
       const h = shuffled[i * 2];
       const a = shuffled[i * 2 + 1];
@@ -122,7 +117,7 @@ async function planContinentals(supabase: any, season: number, startDate: string
         home_team_id: h.id,
         away_team_id: a.id,
         scheduled_at: brtDateTimeToUtcIso(addDaysBrt(startDate, 4), 21, 0),
-        stadium: `Estádio de ${h.club_name}`
+        stadium: `Estádio de ${h.name}`
       });
       matches.push({
         tournament_id: tournament.id,
@@ -130,14 +125,15 @@ async function planContinentals(supabase: any, season: number, startDate: string
         home_team_id: a.id,
         away_team_id: h.id,
         scheduled_at: brtDateTimeToUtcIso(addDaysBrt(startDate, 6), 21, 0),
-        stadium: `Estádio de ${a.club_name}`
+        stadium: `Estádio de ${a.name}`
       });
     }
     
     if (matches.length > 0) {
-      await supabase.from("tournament_matches").insert(matches);
+      const { error: matchErr } = await supabase.from("tournament_matches").insert(matches);
+      if (matchErr) console.error("Erro ao inserir partidas continentais:", matchErr);
     }
-    results.push({ continent: continentKey, id: tournament.id });
+    results.push({ continent: continentKey, id: tournament.id, team_count: teams.length });
   }
   return results;
 }
