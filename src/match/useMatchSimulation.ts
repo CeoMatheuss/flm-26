@@ -149,6 +149,7 @@ function subscribeToLoop(fn: Subscriber): () => void {
 
 export function useMatchSimulation() {
   const [state, setState] = useState<MatchState>(INITIAL);
+  const [homePlayers, setHomePlayers] = useState<Player[]>([]);
   const [currentTactics, setCurrentTactics] = useState<TacticsConfig | null>(null);
   
   const tacticalMods = useMemo(() => {
