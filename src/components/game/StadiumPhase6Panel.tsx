@@ -137,7 +137,7 @@ export function StadiumPhase6Panel({
                         onClick={() => onBuyUpgrade(cfg.id)}
                         className="h-8 text-[11px]"
                       >
-                        R$ {(cfg.cost/1_000_000).toFixed(2)}M
+                        FL$ {(cfg.cost/1_000_000).toFixed(2)}M
                       </Button>
                     )}
                     <p className="text-[9px] text-muted-foreground mt-1">
