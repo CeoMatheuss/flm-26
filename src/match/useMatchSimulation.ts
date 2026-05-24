@@ -350,7 +350,7 @@ export function useMatchSimulation() {
           .then(async () => {
             console.log("[MATCH] Finalizado via Cronômetro. Sincronizando persistence...");
             try {
-              const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId });
+              const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId } as any);
               const syncData = syncDataRaw as any;
 
               if (rpcError) {
@@ -450,7 +450,7 @@ export function useMatchSimulation() {
             .then(async () => {
               console.log("[MATCH] Finalizado via Apito Final. Sincronizando persistence...");
               try {
-                const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId });
+                const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId } as any);
                 const syncData = syncDataRaw as any;
                 
                 if (rpcError) {

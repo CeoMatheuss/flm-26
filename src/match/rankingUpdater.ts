@@ -139,7 +139,7 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<RankingUp
       fanMessage = growth.message;
 
       // Atualizar clube
-      await supabase.rpc('increment_club_fans', { 
+      await supabase.rpc('increment_club_fans' as any, { 
         _user_id: userId, 
         _delta: deltaFans 
       });
