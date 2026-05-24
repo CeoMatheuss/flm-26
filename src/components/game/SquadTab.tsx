@@ -440,8 +440,8 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                 )}
               </div>
             </div>
-            <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
-              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5"><FileText className="w-3 h-3" /> Contrato</p>
+            <div className={`bg-white/5 border ${player.contract <= 1 ? 'border-red-500/30 bg-red-500/5' : 'border-white/5'} p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors`}>
+              <p className={`text-[10px] font-black ${player.contract <= 1 ? 'text-red-400' : 'text-white/30'} uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5`}><FileText className="w-3 h-3" /> Contrato</p>
               <p className={`text-xl font-black ${player.contract <= 1 ? 'text-red-400 animate-pulse' : 'text-white'}`}>{player.contract}a</p>
             </div>
             <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center group hover:bg-white/10 transition-colors">
