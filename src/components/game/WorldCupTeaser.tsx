@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Trophy, Globe, Loader2, Sparkles, ChevronRight, Music } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
