@@ -2223,49 +2223,75 @@ function ImprovedSubsView({
       {/* 2-column layout: SAI | ENTRA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {/* COL 1: SAI */}
-        <div className="space-y-1">
-          <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">⬅ Quem SAI</p>
-          <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
-            {starters.map((p) => {
-              const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
-              const staminaColor = staminaColorClass(stamina);
-              const isQueued = queuedOutIds.has(p.id);
-              const isSelected = p.id === selectedSubOut;
+        <div className="space-y-1.5 rounded-lg bg-gradient-to-b from-red-500/[0.04] to-transparent border border-red-500/15 p-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]" />
+              Quem SAI
+            </p>
+            <span className="text-[9px] text-muted-foreground font-mono">{sortedStarters.length}</span>
+          </div>
+          <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+            {groupByPosition(sortedStarters).map(({ key, players }) => {
+              const meta = GROUP_META[key];
               return (
-                <button
-                  key={p.id}
-                  onClick={() => !isQueued && !blocked && onSelectSubOut(isSelected ? null : p.id)}
-                  disabled={isQueued || blocked}
-                  className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1 transition-all text-left ${
-                    isSelected ? 'bg-red-500/15 border-red-500/50 ring-1 ring-red-400/50'
-                    : isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60'
-                    : blocked ? 'border-border/20 opacity-40 cursor-not-allowed'
-                    : 'bg-card/60 border-border/30 hover:border-red-400/40 hover:bg-red-500/5'
-                  }`}
-                >
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-black text-primary shrink-0">
-                    {p.position}
+                <div key={`sai-${key}`} className="space-y-1">
+                  <div className={`flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${meta.color}`}>
+                    <span>{meta.icon}</span>
+                    <span>{meta.label}</span>
+                    <span className="flex-1 h-px bg-gradient-to-r from-current/30 to-transparent opacity-40" />
+                    <span className="font-mono opacity-60">{players.length}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-bold truncate">{p.name}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-[9px] text-muted-foreground">OVR {p.overall}</span>
-                      <div className="h-1 flex-1 max-w-[40px] rounded-full bg-muted/20 overflow-hidden">
-                        <div className={`h-full ${staminaColor}`} style={{ width: `${stamina}%` }} />
-                      </div>
-                      <span className="text-[8px] font-mono text-muted-foreground">{stamina}%</span>
-                    </div>
-                  </div>
-                </button>
+                  {players.map((p) => {
+                    const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
+                    const staminaColor = staminaColorClass(stamina);
+                    const isQueued = queuedOutIds.has(p.id);
+                    const isSelected = p.id === selectedSubOut;
+                    const lowStamina = stamina < 60;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => !isQueued && !blocked && onSelectSubOut(isSelected ? null : p.id)}
+                        disabled={isQueued || blocked}
+                        className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1.5 transition-all text-left ${
+                          isSelected ? 'bg-red-500/15 border-red-500/60 ring-1 ring-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.15)]'
+                          : isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60'
+                          : blocked ? 'border-border/20 opacity-40 cursor-not-allowed'
+                          : 'bg-card/60 border-border/30 hover:border-red-400/40 hover:bg-red-500/5'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-[9px] font-black text-primary shrink-0">
+                          {p.position}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-bold truncate flex items-center gap-1">
+                            {p.name}
+                            {lowStamina && <span title="Cansado" className="text-[8px]">🔻</span>}
+                          </p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[9px] font-mono text-muted-foreground">OVR {p.overall}</span>
+                            <div className="h-1 flex-1 max-w-[48px] rounded-full bg-muted/20 overflow-hidden">
+                              <div className={`h-full ${staminaColor} transition-all`} style={{ width: `${stamina}%` }} />
+                            </div>
+                            <span className="text-[8px] font-mono text-muted-foreground tabular-nums w-7 text-right">{stamina}%</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
         </div>
 
         {/* COL 2: ENTRA */}
-        <div className="space-y-1">
+        <div className="space-y-1.5 rounded-lg bg-gradient-to-b from-emerald-500/[0.05] to-transparent border border-emerald-500/15 p-2">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Quem ENTRA →</p>
+            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+              Quem ENTRA
+            </p>
             {selectedPlayer && (
               <button onClick={() => onSelectSubOut(null)} className="text-[9px] text-muted-foreground hover:text-foreground">
                 ✕ limpar
@@ -2274,23 +2300,24 @@ function ImprovedSubsView({
           </div>
 
           {/* Position filter chips */}
-          <div className="flex gap-0.5 overflow-x-auto pb-0.5">
+          <div className="flex gap-1 overflow-x-auto pb-0.5">
             {([
               { k: 'all', l: 'Todos' },
-              { k: 'gk', l: '🥅' },
-              { k: 'def', l: '🛡️' },
-              { k: 'mid', l: '⚙️' },
-              { k: 'atk', l: '⚔️' },
+              { k: 'gk', l: '🥅 GOL' },
+              { k: 'def', l: '🛡️ DEF' },
+              { k: 'mid', l: '⚙️ MEI' },
+              { k: 'atk', l: '⚔️ ATA' },
             ] as const).map(f => (
               <button
                 key={f.k}
                 onClick={() => setPosFilter(f.k)}
-                className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded transition-colors ${
-                  posFilter === f.k ? 'bg-primary text-primary-foreground' : 'bg-card/60 border border-border/30 text-muted-foreground hover:text-foreground'
+                className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded-md transition-colors font-semibold ${
+                  posFilter === f.k ? 'bg-emerald-500 text-emerald-950 shadow-[0_0_8px_rgba(52,211,153,0.4)]' : 'bg-card/60 border border-border/30 text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {f.l}
               </button>
+
             ))}
           </div>
 
