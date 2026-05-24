@@ -143,7 +143,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Refresh global player rankings if any match was finalized
+    if (finalized > 0) {
+      await sb.rpc("calculate_player_ranking_points").then(() => {}, (e: any) => {
+        debug.push({ stage: "sync_player_rankings", err: e?.message });
+      });
+    }
+
     return new Response(JSON.stringify({
+
       ok: true,
       found: matches.length,
       finalized,

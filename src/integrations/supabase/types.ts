@@ -1897,6 +1897,68 @@ export type Database = {
           },
         ]
       }
+      global_player_ranking: {
+        Row: {
+          avg_rating: number | null
+          current_position: number | null
+          id: string
+          last_update: string | null
+          mvp_count: number | null
+          player_id: string
+          position_rank: number | null
+          prev_position: number | null
+          ranking_points: number | null
+          reputation_level: string | null
+          reputation_score: number | null
+          seasonal_points: number | null
+          total_assists: number | null
+          total_clean_sheets: number | null
+          total_goals: number | null
+        }
+        Insert: {
+          avg_rating?: number | null
+          current_position?: number | null
+          id?: string
+          last_update?: string | null
+          mvp_count?: number | null
+          player_id: string
+          position_rank?: number | null
+          prev_position?: number | null
+          ranking_points?: number | null
+          reputation_level?: string | null
+          reputation_score?: number | null
+          seasonal_points?: number | null
+          total_assists?: number | null
+          total_clean_sheets?: number | null
+          total_goals?: number | null
+        }
+        Update: {
+          avg_rating?: number | null
+          current_position?: number | null
+          id?: string
+          last_update?: string | null
+          mvp_count?: number | null
+          player_id?: string
+          position_rank?: number | null
+          prev_position?: number | null
+          ranking_points?: number | null
+          reputation_level?: string | null
+          reputation_score?: number | null
+          seasonal_points?: number | null
+          total_assists?: number | null
+          total_clean_sheets?: number | null
+          total_goals?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "global_player_ranking_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "world_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_ranking: {
         Row: {
           club_name: string
@@ -6651,6 +6713,7 @@ export type Database = {
         }
         Returns: number
       }
+      calculate_player_ranking_points: { Args: never; Returns: undefined }
       calculate_ranking_points: {
         Args: {
           p_competition_type: string
