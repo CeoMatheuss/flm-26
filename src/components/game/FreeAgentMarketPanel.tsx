@@ -381,8 +381,8 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-[10px] font-bold text-primary">{formatMoney(agent.player_data?.salary || 500)}/mês</p>
-                            <p className="text-[8px] text-muted-foreground">Valor: {formatMoney(agent.player_data?.value || 50000)}</p>
+                            <p className="text-[10px] font-bold text-primary">Salário Livre</p>
+                            <p className="text-[8px] text-muted-foreground">Passe Livre</p>
                           </div>
                         </div>
 
