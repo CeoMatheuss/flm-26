@@ -287,7 +287,7 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
                   </div>
                   <div className="flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
-                    <span>Bilheteria: R${(report.impacts.revenue / 1000).toFixed(0)}k</span>
+                    <span>Bilheteria: FL${(report.impacts.revenue / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span>🏟️ Público: {report.impacts.attendance.toLocaleString('pt-BR')}</span>
