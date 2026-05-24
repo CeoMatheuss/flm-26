@@ -7,11 +7,7 @@ const corsHeaders = {
 
 /**
  * world-season-orchestrator
- * Manages the 30-day season cycle:
- * Day 01: Reset and Plan League (2 rounds/day for 19 days)
- * Day 19: End League, Process Awards, Qualify for Mundial
- * Day 20: Generate Mundial Matches
- * Day 30: End Season, Reset
+ * Manages the 30-day season cycle.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -22,120 +18,100 @@ Deno.serve(async (req) => {
   );
 
   try {
-    // 1. Get current season state
     const { data: state, error: sErr } = await sb
       .from("season_system_state")
       .select("*")
       .limit(1)
       .single();
 
-    if (sErr || !state) {
-      throw new Error("Season state not found. Run migration first.");
-    }
+    if (sErr || !state) throw new Error("Season state not found.");
 
-    // Calculate current day based on season_start_at
     const now = new Date();
     const start = new Date(state.season_start_at);
-    const diffDays = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const currentDay = diffDays; // No clamping here to allow multi-season progression
+    const currentDay = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const logs = [];
 
-    console.log(`[Season Orchestrator] Day ${currentDay} of Season ${state.current_season}`);
-
-    // Update state day if changed
     if (state.current_day !== currentDay) {
       await sb.from("season_system_state").update({ current_day: currentDay }).eq("id", state.id);
     }
 
-    const logs = [];
-
-    // --- DAY 01: START LEAGUE ---
+    // --- DAY 01: LEAGUE START ---
     if (currentDay === 1 && state.phase !== 'league') {
-      logs.push("Starting Day 1: League Initialization");
-      
-      // Reset Leagues
-      const resetRes = await sb.functions.invoke('world-leagues-reset', { body: {} });
-      logs.push(`Leagues Reset: ${JSON.stringify(resetRes.data)}`);
-
-      // Plan Season with 2 rounds per day
-      const planRes = await sb.functions.invoke('world-season-planner', { 
-        body: { force: true, rounds_per_day: 2 } 
-      });
-      logs.push(`Season Planned: ${JSON.stringify(planRes.data)}`);
-
+      logs.push("Initializing Season Day 1");
+      await sb.functions.invoke('world-leagues-reset');
+      await sb.functions.invoke('world-season-planner', { body: { force: true, rounds_per_day: 2 } });
       await sb.from("season_system_state").update({ phase: 'league' }).eq("id", state.id);
     }
 
-    // --- DAY 19: LEAGUE END & MUNDIAL QUALIFICATION ---
+    // --- DAY 19: LEAGUE END & QUALIFY ---
     if (currentDay === 19 && state.phase === 'league') {
-      logs.push("Day 19: Processing League End");
-
-      // Verify if all matches finished (best effort)
-      const { count: pending } = await sb.from("world_matches")
-        .select("id", { count: 'exact', head: true })
-        .neq("status", "finished");
-
-      if (pending && pending > 0) {
-        logs.push(`Warning: ${pending} matches still pending. Forcing simulation...`);
-        await sb.functions.invoke('world-match-simulator', { body: { force_until_empty: true } });
-      }
-
-      // Qualify teams for Mundial
+      logs.push("Processing League End (Day 19)");
       await sb.rpc('qualify_teams_for_mundial');
-      logs.push("Teams qualified for Mundial");
-
-      // Process Awards
-      await sb.functions.invoke('process-season-awards');
-      logs.push("Season awards processed");
-
       await sb.from("season_system_state").update({ phase: 'transition' }).eq("id", state.id);
     }
 
-    // --- DAY 20: MUNDIAL START ---
+    // --- DAY 20: GENERATE MUNDIAL ---
     if (currentDay === 20 && state.phase === 'transition') {
-      logs.push("Day 20: Generating Mundial");
-
-      // We'll call a dedicated logic for Mundial Generation
+      logs.push("Generating Mundial de Clubes (Day 20)");
+      
       const { data: qualified } = await sb.from("world_league_table")
         .select("team_id, team:world_teams(name, logo, strength)")
-        .eq("qualified_for_mundial", true);
+        .eq("qualified_for_mundial", true)
+        .limit(32);
 
-      if (qualified && qualified.length > 0) {
-        // Create Mundial Competition
+      if (qualified && qualified.length >= 8) {
         const { data: cup } = await sb.from("world_cup_competitions").insert({
-          name: `Mundial de Clubes - Temporada ${state.current_season}`,
+          name: `Mundial de Clubes - Temp ${state.current_season}`,
           season_year: state.current_season,
           status: 'active'
         }).select().single();
 
         if (cup) {
-           // Insert teams into Mundial
-           const cupTeams = qualified.map(q => ({
-             cup_id: cup.id,
-             team_id: q.team_id
-           }));
-           await sb.from("world_cup_teams").insert(cupTeams);
+          const teams = qualified.map(q => q.team_id);
+          const numGroups = Math.min(8, Math.floor(teams.length / 4));
+          const matchInserts = [];
 
-           // Generate matches (simple knockout for now or group stage if needed)
-           // For now, let's assume a simplified version
-           logs.push(`Mundial competition ${cup.id} created with ${qualified.length} teams`);
+          // Simple Round Robin for groups
+          for (let g = 0; g < numGroups; g++) {
+            const groupTeams = teams.slice(g * 4, (g + 1) * 4);
+            for (let i = 0; i < groupTeams.length; i++) {
+              for (let j = i + 1; j < groupTeams.length; j++) {
+                // Schedule matches for Day 20-24
+                const dayOffset = i + j - 1; // Simplistic
+                const kickoff = new Date(start.getTime() + (19 + dayOffset) * 24 * 60 * 60 * 1000);
+                kickoff.setUTCHours(18, 0, 0, 0);
+
+                matchInserts.push({
+                  cup_id: cup.id,
+                  home_team_id: groupTeams[i],
+                  away_team_id: groupTeams[j],
+                  round: 1, // Group stage
+                  status: 'scheduled',
+                  scheduled_at: kickoff.toISOString(),
+                  match_data: { group: String.fromCharCode(65 + g) }
+                });
+              }
+            }
+          }
+          if (matchInserts.length > 0) {
+            await sb.from("world_cup_matches").insert(matchInserts);
+          }
         }
       }
-
       await sb.from("season_system_state").update({ phase: 'mundial' }).eq("id", state.id);
     }
 
-    // --- DAY 30: SEASON RESET ---
+    // --- DAY 30: RESET ---
     if (currentDay >= 30) {
-      logs.push("Day 30+: Resetting for new season");
-      await sb.from("season_system_state").update({ 
+      logs.push("Season Cycle Complete. Resetting...");
+      await sb.from("season_system_state").update({
         current_season: state.current_season + 1,
         season_start_at: now.toISOString(),
         current_day: 1,
         phase: 'league'
       }).eq("id", state.id);
-      
-      // Trigger Day 1 logic immediately for the new season
-      await sb.functions.invoke('world-season-orchestrator');
+      // Recurse to handle Day 1
+      return await sb.functions.invoke('world-season-orchestrator');
     }
 
     return new Response(JSON.stringify({ ok: true, day: currentDay, logs }), {
