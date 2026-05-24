@@ -95,7 +95,7 @@ export function GlobalCompetitionsWidget({ userId }: Props) {
           <Calendar className="w-4 h-4" />
           Próximos Jogos Oficiais
           <Badge variant="outline" className="ml-auto text-[10px]">
-            Mundial &gt; Continental &gt; Copa &gt; Liga
+            Mundial &gt; Libertadores &gt; Copa &gt; Liga
           </Badge>
         </CardTitle>
       </CardHeader>
