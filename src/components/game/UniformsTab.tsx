@@ -646,7 +646,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       {/* Removal of locked warning as it's now free */}
       {/* Launch Dashboard */}
       {activeLaunch && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
           <Card className="bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20">
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-1">
@@ -747,19 +747,19 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       </div>
 
       {/* Main Content: Preview + Editor */}
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-         <Card className="sm:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10 shadow-inner">
-          <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px]">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+         <Card className="lg:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10 shadow-inner">
+          <CardContent className="p-4 sm:p-6 flex flex-col items-center justify-center min-h-[240px] sm:min-h-[300px]">
             <ShirtPreview kit={currentKit} sponsorName={shirtSponsor?.name} size="lg" />
-            <div className="mt-6 text-center">
-              <p className="text-lg font-black uppercase italic text-white tracking-tighter">{currentKit.name}</p>
-              <p className="text-xs text-muted-foreground font-bold uppercase">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
+            <div className="mt-4 sm:mt-6 text-center">
+              <p className="text-base sm:text-lg font-black uppercase italic text-white tracking-tighter">{currentKit.name}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
             </div>
           </CardContent>
         </Card>
 
 
-        <Card className="sm:col-span-3 border-0 bg-muted/10">
+        <Card className="lg:col-span-3 border-0 bg-muted/10">
           <CardHeader className="pb-2 pt-3 px-3">
             <CardTitle className="text-xs flex items-center gap-1.5">
               <Palette className="h-3.5 w-3.5 text-primary" /> Personalizar
@@ -770,6 +770,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           </CardContent>
         </Card>
       </div>
+
 
       {/* Quick Templates */}
       <Card className="border-0 bg-muted/10">
