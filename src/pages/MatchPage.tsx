@@ -2063,7 +2063,7 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap }: {
+function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap, playerRatings }: {
   currentStarters: Player[];
   currentBench: Player[];
   hasAnyPlayers: boolean;
