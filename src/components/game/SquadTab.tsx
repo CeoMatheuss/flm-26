@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { getPlayerValue, isPlayerGem, getValueTrend } from '@/utils/playerGenerator';
-import { canChangePosition, validateLineup } from '@/utils/lineupManager';
+import { canChangePosition, validateLineup, autoLineup } from '@/utils/lineupManager';
 import { FormationView } from './FormationView';
 import { RescindModal } from './RescindModal';
 import { formatMoney } from '@/lib/formatMoney';
