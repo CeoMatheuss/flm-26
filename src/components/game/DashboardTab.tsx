@@ -16,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
+import { WorldCupTeaser } from './WorldCupTeaser';
+
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { WaitingListPanel } from './WaitingListPanel';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
@@ -561,6 +563,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         <LeagueStandingsMini userId={userId} />
         <GlobalRankingMini userId={userId} />
       </div>
+      
+      <WorldCupTeaser userId={userId} onOpenWorldCup={() => (window as any).dispatchEvent(new CustomEvent('flm:change-tab', { detail: 'worldcup' }))} />
+
 
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
 
