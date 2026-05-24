@@ -21,30 +21,29 @@ export function WorldLeagues({ userId, rating = 0, rankingHistory = [], clubName
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-xl font-black flex items-center gap-2">
-          <Globe className="h-6 w-6 text-purple-400" /> Mundo do Futebol
-        </h2>
-        <TabsList className="bg-muted/50 p-1">
-          <TabsTrigger value="overview" onClick={() => setActiveTab('overview')} className="text-xs px-4">Ligas Mundiais</TabsTrigger>
-          <TabsTrigger value="copas" onClick={() => setActiveTab('copas')} className="text-xs px-4 flex items-center gap-1.5">
-            <Trophy className="h-3 w-3" /> Copas Nacionais
-          </TabsTrigger>
-          <TabsTrigger value="mundial" onClick={() => setActiveTab('mundial')} className="text-xs px-4 flex items-center gap-1.5">
-            <Star className="h-3 w-3 text-yellow-500" /> Mundial
-          </TabsTrigger>
-        </TabsList>
-      </div>
-
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsContent value="overview" className="mt-0">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-xl font-black flex items-center gap-2">
+            <Globe className="h-6 w-6 text-purple-400" /> Mundo do Futebol
+          </h2>
+          <TabsList className="bg-muted/50 p-1">
+            <TabsTrigger value="overview" className="text-xs px-4">Ligas Mundiais</TabsTrigger>
+            <TabsTrigger value="copas" className="text-xs px-4 flex items-center gap-1.5">
+              <Trophy className="h-3 w-3" /> Copas Nacionais
+            </TabsTrigger>
+            <TabsTrigger value="mundial" className="text-xs px-4 flex items-center gap-1.5">
+              <Star className="h-3 w-3 text-yellow-500" /> Mundial
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="overview" className="mt-4">
           <LeaguesOverview onBack={() => {}} />
         </TabsContent>
-        <TabsContent value="copas" className="mt-0">
+        <TabsContent value="copas" className="mt-4">
           <CopasTab userId={userId} />
         </TabsContent>
-        <TabsContent value="mundial" className="mt-0">
+        <TabsContent value="mundial" className="mt-4">
           <WorldCupTab userId={userId} />
         </TabsContent>
       </Tabs>
