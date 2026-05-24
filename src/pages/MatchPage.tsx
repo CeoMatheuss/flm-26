@@ -153,11 +153,16 @@ export default function MatchPage() {
         const { calculateStadiumEconomy } = await import('@/match/stadiumEconomyEngine');
         const { getEffectiveCapacity, isStadiumBlockedForBigMatch } = await import('@/match/stadiumEvents');
 
+        const competitionLabel = (locState.competition || '').toLowerCase();
+        const isWorldCup = competitionLabel.includes('mundial') || competitionLabel.includes('world');
+
         const importance: 'amistoso' | 'liga' | 'classico' | 'final' =
-          (locState.competition || '').toLowerCase().includes('final') ? 'final'
-          : (locState.competition || '').toLowerCase().includes('clás') ? 'classico'
-          : (locState.competition || '').toLowerCase().includes('amistos') ? 'amistoso'
+          isWorldCup ? 'final'
+          : competitionLabel.includes('final') ? 'final'
+          : competitionLabel.includes('clás') ? 'classico'
+          : competitionLabel.includes('amistos') ? 'amistoso'
           : 'liga';
+
 
         // V2 — danos reduzem capacidade base
         const damages = locState.stadiumOps?.damages ?? [];
