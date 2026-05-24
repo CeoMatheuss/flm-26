@@ -1723,6 +1723,43 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                 </CardContent>
               </Card>
             )}
+            
+            {expandedWidget === 'ratings' && (
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <Star className="h-3.5 w-3.5 text-amber-500" /> Notas dos Jogadores
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {Object.values(matchState.playerRatings || {}).sort((a, b) => b.rating - a.rating).map((rating, idx) => (
+                      <div key={rating.playerId} className="flex items-center justify-between p-2 rounded-lg bg-card/60 border border-border/10">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-muted-foreground w-4">{idx + 1}º</span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold truncate">{rating.stats.name}</p>
+                            <p className="text-[9px] text-muted-foreground">{rating.stats.position}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                             <p className="text-[9px] font-bold uppercase" style={{ color: rating.color }}>{rating.label}</p>
+                             <div className="flex gap-1 justify-end">
+                                {rating.stats.goals > 0 && <span className="text-[8px] bg-primary/20 text-primary px-1 rounded">{rating.stats.goals} G</span>}
+                                {rating.stats.assists > 0 && <span className="text-[8px] bg-emerald-500/20 text-emerald-500 px-1 rounded">{rating.stats.assists} A</span>}
+                             </div>
+                          </div>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm text-white" style={{ backgroundColor: rating.color }}>
+                            {rating.rating.toFixed(1)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {expandedWidget === 'lineup' && (
               <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
