@@ -58,7 +58,7 @@ interface PlayerRankingEntry {
 
 
 export function PlayerRankingTab() {
-  const [rankings, setRankings] = useState<PlayerRankingEntry[]>([]);
+  const [rankings, setRankings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('global');
@@ -100,7 +100,7 @@ export function PlayerRankingTab() {
 
       // Se houver erro ou poucos dados, complementamos com jogadores reais do world_players
       // para garantir que "todos os jogadores reais" apareçam
-      let finalData = rankingData || [];
+      let finalData: any[] = rankingData || [];
 
       if (rankingError || finalData.length < 50) {
         // Busca jogadores com maior overall que podem ainda não estar no ranking persistido
@@ -142,6 +142,11 @@ export function PlayerRankingTab() {
               prev_position: 0,
               total_goals: 0,
               total_assists: 0,
+              total_clean_sheets: 0,
+              mvp_count: 0,
+              position_rank: 0,
+              seasonal_points: 0,
+              last_update: new Date().toISOString(),
               avg_rating: 6.0,
               players: {
                 ...p,
@@ -157,13 +162,14 @@ export function PlayerRankingTab() {
         }
       }
 
-      setRankings(finalData as any[]);
+      setRankings(finalData);
     } catch (error) {
       console.error('Error fetching player rankings:', error);
     } finally {
       setLoading(false);
     }
   };
+
 
 
   useEffect(() => {
