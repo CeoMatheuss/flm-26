@@ -480,8 +480,9 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
             </TabsContent>
           </Tabs>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </>
+      )}
+    </DialogContent>
+  </Dialog>
   );
 }
