@@ -742,7 +742,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
                       }`}
                     >
                       <QrCode className="h-4 w-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest italic">PIX</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest italic">Mercado Livre</span>
                     </button>
                     <button 
                       onClick={() => setCheckoutMethod('card')}
