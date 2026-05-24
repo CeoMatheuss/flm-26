@@ -2344,9 +2344,9 @@ Deno.serve(async (req) => {
     try {
       // Filter out invalid/duplicate players before syncing
       const seenIds = new Set();
-      const validStatsPayload = result.allPlayers
+      const statsPayload = result.allPlayers
         .filter(p => {
-          if (!p.id || seenIds.has(p.id)) return false;
+          if (!p.id || seenIds.has(p.id) || p.id.includes('-')) return false;
           seenIds.add(p.id);
           return true;
         })
@@ -2358,11 +2358,9 @@ Deno.serve(async (req) => {
           rating: p.rating || 6.0,
           yellow_card: (p.yellowCards || 0) > 0,
           red_card: p.redCards || 0,
+          is_gk: p.position === 'GOL',
+          clean_sheet: (p.team === 'home' ? result.awayGoals === 0 : result.homeGoals === 0)
         }));
-
-        is_gk: p.position === 'GOL',
-        clean_sheet: (p.team === 'home' ? result.awayGoals === 0 : result.homeGoals === 0)
-      })).filter(p => !p.player_id.includes('-')); // filter out temp bot IDs like 'away-1'
 
       if (statsPayload.length > 0) {
         const { error: syncErr } = await adminClient.rpc('sync_player_match_stats', {
