@@ -1433,8 +1433,21 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                       {/* Score Display */}
                       <div className="flex flex-col items-center justify-center px-4">
                         <div className={`text-4xl sm:text-6xl font-black font-mono tracking-tighter transition-all duration-300 ${goalFlash ? 'text-yellow-400 scale-110' : 'text-foreground'}`}>
-                          {homeGoals}<span className="text-muted-foreground/20 mx-1 sm:mx-2">:</span>{awayGoals}
+                          {homeGoals + (matchState.latestEvent?.type === 'penalty_shootout' || matchState.latestEvent?.type === 'penalty_shootout_miss' ? 0 : (matchState as any).home_extra_goals || 0)}
+                          <span className="text-muted-foreground/20 mx-1 sm:mx-2">:</span>
+                          {awayGoals + (matchState.latestEvent?.type === 'penalty_shootout' || matchState.latestEvent?.type === 'penalty_shootout_miss' ? 0 : (matchState as any).away_extra_goals || 0)}
                         </div>
+                        {((matchState as any).home_penalty_goals > 0 || (matchState as any).away_penalty_goals > 0) && (
+                          <div className="text-[10px] sm:text-xs font-black text-emerald-400 mt-1 uppercase tracking-widest animate-in fade-in zoom-in duration-500">
+                            ({(matchState as any).home_penalty_goals} - {(matchState as any).away_penalty_goals}) Pênaltis
+                          </div>
+                        )}
+                        {(matchState as any).has_extra_time && !(matchState.latestEvent?.type.includes('penalty')) && (
+                          <div className="text-[8px] font-bold text-yellow-500 uppercase tracking-tighter mt-0.5">
+                            Prorrogação
+                          </div>
+                        )}
+
                         {!isFinished && (
                            <div className="w-full mt-2 h-1 bg-muted/20 rounded-full overflow-hidden">
                              <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${(progress || 0) * 100}%` }} />
