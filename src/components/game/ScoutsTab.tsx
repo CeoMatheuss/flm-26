@@ -314,7 +314,7 @@ export function ScoutsTab({ userId, budget }: { userId: string, budget: number }
                     <div>
                       <h4 className="font-black text-white text-xl italic uppercase leading-none">{scout.name}</h4>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge className={`text-[8px] font-black uppercase ${LEVEL_CONFIG[scout.level as ScoutLevel]?.color}`}>
+                        <Badge className={`text-[8px] font-black uppercase ${LEVEL_CONFIG[scout.level as ScoutLevel]?.color || ''}`}>
                           {scout.level}
                         </Badge>
                         <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">{scout.country}</span>
