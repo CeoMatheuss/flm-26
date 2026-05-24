@@ -471,7 +471,7 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
               <p className="text-xs font-bold flex items-center gap-2 text-amber-500">
                 <Trophy className="h-3.5 w-3.5" /> PESO DE COMPETIÇÃO
               </p>
-              <p className="text-[10px] text-muted-foreground">Mundial (2.0x), Continental (1.6x), Liga (1.0x) e Amistosos (0.5x).</p>
+              <p className="text-[10px] text-muted-foreground">Mundial (2.0x), Libertadores (1.6x), Liga (1.0x) e Amistosos (0.5x).</p>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-bold flex items-center gap-2 text-orange-500">

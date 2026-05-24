@@ -10,7 +10,7 @@ export type SponsorObjectiveKind =
   | 'top5'             // Terminar no top 5
   | 'top10'            // Terminar no top 10
   | 'avoid_relegation' // Evitar rebaixamento (top 16)
-  | 'continental'      // Classificar para competição continental (top 4)
+  | 'continental'      // Classificar para competição continental (top 8)
   | 'win_n_matches';   // Vencer N partidas oficiais na temporada
 
 export interface SponsorObjective {
@@ -182,7 +182,7 @@ export function isObjectiveMet(obj: SponsorObjective, ctx: SeasonContext): boole
     case 'win_title':
       return ctx.leaguePosition === 1;
     case 'continental':
-      return ctx.leaguePosition !== null && ctx.leaguePosition <= 4;
+      return ctx.leaguePosition !== null && ctx.leaguePosition <= 8;
     case 'top5':
       return ctx.leaguePosition !== null && ctx.leaguePosition <= 5;
     case 'top10':

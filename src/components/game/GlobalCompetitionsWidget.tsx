@@ -24,7 +24,7 @@ interface Props {
 
 const COMPETITION_META: Record<string, { icon: any; label: string; color: string; bg: string }> = {
   world_cup:    { icon: Globe,  label: 'Mundial',     color: 'text-yellow-500',   bg: 'bg-yellow-500/10 border-yellow-500/30' },
-  continental:  { icon: Star,   label: 'Continental', color: 'text-purple-500',   bg: 'bg-purple-500/10 border-purple-500/30' },
+  continental:  { icon: Star,   label: 'Libertadores', color: 'text-purple-500',   bg: 'bg-purple-500/10 border-purple-500/30' },
   national_cup: { icon: Trophy, label: 'Copa',        color: 'text-orange-500',   bg: 'bg-orange-500/10 border-orange-500/30' },
   league:       { icon: Medal,  label: 'Liga',        color: 'text-blue-500',     bg: 'bg-blue-500/10 border-blue-500/30' },
 };
@@ -95,7 +95,7 @@ export function GlobalCompetitionsWidget({ userId }: Props) {
           <Calendar className="w-4 h-4" />
           Próximos Jogos Oficiais
           <Badge variant="outline" className="ml-auto text-[10px]">
-            Mundial &gt; Continental &gt; Copa &gt; Liga
+            Mundial &gt; Libertadores &gt; Copa &gt; Liga
           </Badge>
         </CardTitle>
       </CardHeader>
