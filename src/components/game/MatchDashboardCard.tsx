@@ -328,15 +328,29 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
   // Live countdown timer — sincronizado com o horário da liga (ScheduledAt)
   // Auto-dispara simulação quando os 5 minutos do lobby expiram sem o usuário entrar
-  // (autoSimTriggered declarado no topo)
   useEffect(() => { setAutoSimTriggered(false); }, [nextMatch?.matchId]);
+
+  // Retry de auto-sim a cada 30s enquanto a partida estiver presa no estado "simulando"
+  useEffect(() => {
+    if (!autoSimTriggered || !nextMatch?.matchId) return;
+    const retry = setInterval(async () => {
+      try {
+        console.log('[MatchDashboardCard] Retry auto-sim para', nextMatch.matchId);
+        const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
+        triggerAutoSim();
+      } catch (err) {
+        console.error('[MatchDashboardCard] Retry auto-sim falhou:', err);
+      }
+    }, 30000);
+    return () => clearInterval(retry);
+  }, [autoSimTriggered, nextMatch?.matchId]);
 
   useEffect(() => {
     if (!nextMatch?.date || nextMatch.status === 'finished') return;
     const update = async () => {
       const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
-      
+
       // Janela clássica de 5 minutos APÓS o horário agendado para o lobby
       const LOBBY_WINDOW_MS = 5 * 60 * 1000;
       const diff = scheduledTime - now;
@@ -349,7 +363,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           setIsReady(true);
         } else {
           // Passou dos 5 minutos: dispara simulação automática no servidor
-          setTimeLeft('⌛ Simulando automaticamente...');
+          // Mostra há quanto tempo está aguardando para o usuário ter feedback
+          const elapsedMin = Math.floor(Math.abs(diff) / 60000);
+          const elapsedTxt = elapsedMin >= 60
+            ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m`
+            : `${elapsedMin}m`;
+          setTimeLeft(`⌛ Processando no servidor (${elapsedTxt})`);
           setIsReady(false);
 
           if (!autoSimTriggered) {
@@ -372,7 +391,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       const h = Math.floor(totalSeconds / 3600);
       const m = Math.floor((totalSeconds % 3600) / 60);
       const s = totalSeconds % 60;
-      
+
       if (h >= 1) {
         setTimeLeft(`Inicia em ${h}h ${String(m).padStart(2, '0')}m`);
       } else {
@@ -585,8 +604,14 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           </div>
         )}
         <div className="flex items-center justify-center gap-1.5">
-          <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
-          <p className={`text-[10px] font-bold ${isReady ? 'text-destructive' : 'text-muted-foreground'}`}>⏱️ {timeLeft}</p>
+          {autoSimTriggered ? (
+            <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
+          ) : (
+            <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
+          )}
+          <p className={`text-[10px] font-bold ${autoSimTriggered ? 'text-amber-500' : isReady ? 'text-destructive' : 'text-muted-foreground'}`}>
+            {autoSimTriggered ? timeLeft.replace('⌛ ', '') : `⏱️ ${timeLeft}`}
+          </p>
         </div>
 
 
@@ -599,27 +624,34 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
               </p>
             </div>
           )}
-          <Button
-            size="sm"
-            variant={isReady ? 'default' : 'outline'}
-            className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady ? 'animate-pulse' : ''}`}
-            onClick={handleGoToMatch}
-            disabled={!isReady || nextMatch.status === 'finished' || suspendedInLineup.length > 0}
-          >
-            {nextMatch.status === 'finished' ? (
-              <><X className="h-3.5 w-3.5" /> PARTIDA ENCERRADA</>
-            ) : isReady ? (
-              suspendedInLineup.length > 0 ? (
-                <><X className="h-3.5 w-3.5" /> JOGADOR SUSPENSO</>
+          {autoSimTriggered ? (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded p-2 flex items-center gap-2 justify-center">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500 shrink-0" />
+              <p className="text-[10px] font-bold text-amber-200 leading-tight">
+                Aguardando servidor finalizar a partida…
+              </p>
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              variant={isReady ? 'default' : 'outline'}
+              className={`gap-2 text-[10px] h-8 w-full font-bold ${isReady ? 'animate-pulse' : ''}`}
+              onClick={handleGoToMatch}
+              disabled={!isReady || nextMatch.status === 'finished' || suspendedInLineup.length > 0}
+            >
+              {nextMatch.status === 'finished' ? (
+                <><X className="h-3.5 w-3.5" /> PARTIDA ENCERRADA</>
+              ) : isReady ? (
+                suspendedInLineup.length > 0 ? (
+                  <><X className="h-3.5 w-3.5" /> JOGADOR SUSPENSO</>
+                ) : (
+                  <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
+                )
               ) : (
-                <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
-              )
-            ) : autoSimTriggered ? (
-              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Simulando partida…</>
-            ) : (
-              <><Eye className="h-3.5 w-3.5" /> Aguardando horário</>
-            )}
-          </Button>
+                <><Eye className="h-3.5 w-3.5" /> Aguardando horário</>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     );
