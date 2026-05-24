@@ -1666,7 +1666,14 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                 className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'stats' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
                 <BarChart3 className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-tight">Estat.</span>
+                <span className="text-[10px] font-black uppercase tracking-tight">Geral</span>
+              </button>
+              <button 
+                onClick={() => setExpandedWidget(expandedWidget === 'ratings' ? null : 'ratings')}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'ratings' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
+              >
+                <Star className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Notas</span>
               </button>
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'lineup' ? null : 'lineup')}
