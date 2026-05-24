@@ -1545,6 +1545,16 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
               </div>
             )}
 
+            {/* Live Ratings Pulse (Destaque do Jogo) */}
+            {!isFinished && !activeHighlight && !goalFlash && Object.keys(matchState.playerRatings || {}).length > 0 && (
+              <div className="flex items-center justify-center gap-2 py-1 px-3 bg-amber-500/10 border border-amber-500/20 rounded-full animate-in fade-in duration-500">
+                <Star className="h-3 w-3 text-amber-500 fill-amber-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">
+                  Melhor em Campo: {Object.values(matchState.playerRatings).sort((a,b) => b.rating - a.rating)[0].stats.name} ({Object.values(matchState.playerRatings).sort((a,b) => b.rating - a.rating)[0].rating.toFixed(1)})
+                </span>
+              </div>
+            )}
+
 
             {/* 2D Canvas — highlights (fixed aspect ratio, capped width) */}
             {!isFinished && activeHighlight && (
