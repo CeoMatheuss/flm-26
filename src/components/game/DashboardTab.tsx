@@ -1,4 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+// @ts-ignore
+import useSound from 'use-sound';
+
 import { Club, Player } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
@@ -164,7 +167,9 @@ interface Props {
   onGoToFriendly?: () => void;
   userId?: string;
   onOpenTournament?: (tournamentId: string) => void;
+  onOpenWorldCup?: () => void;
   onExploreOtherModes?: () => void;
+
   clubProfile?: ClubProfile;
   season?: number;
   currentWeek?: number;
@@ -174,7 +179,7 @@ interface Props {
   onRestAll?: () => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, onExploreOtherModes, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, onOpenWorldCup, onExploreOtherModes, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date>(new Date());
   const [dbPlayers, setDbPlayers] = useState<Player[]>(club.players || []);
@@ -564,7 +569,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         <GlobalRankingMini userId={userId} />
       </div>
       
-      <WorldCupTeaser userId={userId} onOpenWorldCup={() => (window as any).dispatchEvent(new CustomEvent('flm:change-tab', { detail: 'worldcup' }))} />
+      <WorldCupTeaser userId={userId} onOpenWorldCup={onOpenWorldCup} />
 
 
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />

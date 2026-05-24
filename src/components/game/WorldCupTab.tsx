@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+// @ts-ignore
+import useSound from 'use-sound';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Globe, Loader2, Sparkles, Star, History, Target, Users, Zap, TrendingUp, Info } from 'lucide-react';
