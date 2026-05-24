@@ -774,7 +774,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
                       </>
                     ) : (
                       <>
-                        {checkoutMethod === 'pix' ? 'GERAR PIX PARA PAGAMENTO' : 'REALIZAR PAGAMENTO'}
+                        {checkoutMethod === 'pix' ? 'Pagar via Mercado Livre (R$ 0,01)' : 'REALIZAR PAGAMENTO (R$ 0,01)'}
                         <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
