@@ -8,7 +8,7 @@ import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, TrendingDown, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle, Globe, RefreshCcw, Bell, Wallet } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, TrendingDown, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle, Globe, RefreshCcw, Bell, Wallet, AlertTriangle } from 'lucide-react';
 import { calculateStadiumEconomy, safeNumber } from '@/match/stadiumEconomyEngine';
 
 import { ClubShield } from './ClubShield';
@@ -465,7 +465,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           <CardContent className="p-4">
             <div className="flex items-start gap-4">
               <div className="shrink-0 w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400">
-                <Activity className="h-6 w-6 animate-pulse" />
+                <AlertTriangle className="h-6 w-6 animate-pulse" />
               </div>
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">

@@ -65,7 +65,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
       };
       score += (penalties[player.position]?.[targetPos] || -30);
     }
-    score += (player.stamina / 10);
+    score += (player.stamina / 5); // Aumentado peso da stamina para rodízio extremo (era /10)
     score += (player.morale / 20);
     return score;
   };

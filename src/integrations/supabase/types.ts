@@ -348,6 +348,33 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_schedule: {
+        Row: {
+          competition_type: string
+          created_at: string | null
+          day_of_month: number
+          id: string
+          match_time: string
+          phase_name: string | null
+        }
+        Insert: {
+          competition_type: string
+          created_at?: string | null
+          day_of_month: number
+          id?: string
+          match_time: string
+          phase_name?: string | null
+        }
+        Update: {
+          competition_type?: string
+          created_at?: string | null
+          day_of_month?: number
+          id?: string
+          match_time?: string
+          phase_name?: string | null
+        }
+        Relationships: []
+      }
       chat_bans: {
         Row: {
           banned_at: string
@@ -4072,6 +4099,39 @@ export type Database = {
         }
         Relationships: []
       }
+      player_fatigue_logs: {
+        Row: {
+          competition_type: string | null
+          created_at: string | null
+          id: string
+          injury_risk: boolean | null
+          match_id: string | null
+          player_id: string
+          stamina_after: number | null
+          stamina_before: number | null
+        }
+        Insert: {
+          competition_type?: string | null
+          created_at?: string | null
+          id?: string
+          injury_risk?: boolean | null
+          match_id?: string | null
+          player_id: string
+          stamina_after?: number | null
+          stamina_before?: number | null
+        }
+        Update: {
+          competition_type?: string | null
+          created_at?: string | null
+          id?: string
+          injury_risk?: boolean | null
+          match_id?: string | null
+          player_id?: string
+          stamina_after?: number | null
+          stamina_before?: number | null
+        }
+        Relationships: []
+      }
       player_missions: {
         Row: {
           category: string
@@ -7646,6 +7706,7 @@ export type Database = {
         Args: { _match_id: string }
         Returns: string
       }
+      seed_extreme_calendar: { Args: never; Returns: undefined }
       seed_initial_world_leagues: { Args: never; Returns: undefined }
       seed_league_data: { Args: { p_league_id: string }; Returns: undefined }
       simulate_bot_matches_for_round:
