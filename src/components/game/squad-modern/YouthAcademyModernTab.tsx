@@ -270,6 +270,7 @@ export function YouthAcademyModernTab({
                 selected={selectedProspect?.id === p.id}
                 onClick={() => {
                   setSelectedProspect(p);
+                  setIsConfirmingPromotion(false);
                   if (onSelect) onSelect(p);
                 }} 
               />
