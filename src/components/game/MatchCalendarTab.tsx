@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -242,36 +242,41 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         setMyTeamId(teamData.id);
       }
 
-      if (teamData?.league) {
-        const league = teamData.league as any;
-        setSelectedMatchday(league.current_round || 1);
-        setMaxMatchdays(league.total_rounds || 30);
-        setLeagueDivision(league.division || 1);
-        setLeagueName(league.name || 'Liga');
+      if (teamData?.league_id) {
+        const { data: leagueData } = await supabase
+          .from('world_leagues')
+          .select('id, name, current_round, total_rounds, division')
+          .eq('id', teamData.league_id)
+          .single();
 
-        const { data: wm } = await supabase
-          .from('world_matches')
-          .select(`
-            *, 
-            home_team:world_teams!world_matches_home_team_id_fkey(id, name, logo, is_bot, user_id), 
-            away_team:world_teams!world_matches_away_team_id_fkey(id, name, logo, is_bot, user_id)
-          `)
-          .eq('league_id', league.id)
-          .order('round', { ascending: true })
-          .order('scheduled_at', { ascending: true });
-        
-        if (wm) {
-          const userIds = [...wm.map(m => m.home_team?.user_id), ...wm.map(m => m.away_team?.user_id)].filter(Boolean);
-          const { data: clubsData } = await supabase.from('clubs').select('*').in('user_id', userIds);
+        if (leagueData) {
+          const league = leagueData as any;
+          setSelectedMatchday(league.current_round || 1);
+          setMaxMatchdays(league.total_rounds || 30);
+          setLeagueDivision(league.division || 1);
+          setLeagueName(league.name || 'Liga');
 
-          const enhanced = wm.map(m => ({
-            ...m,
-            competition_kind: 'league' as const,
-            competition_name: league.name || 'Liga',
-            home_full: { ...m.home_team, ...clubsData?.find(c => c.user_id === m.home_team?.user_id) },
-            away_full: { ...m.away_team, ...clubsData?.find(c => c.user_id === m.away_team?.user_id) }
-          }));
-          setWorldMatches(enhanced);
+          const { data: wm } = await supabase
+            .from('world_matches')
+            .select(`
+              *, 
+              home_team:world_teams!world_matches_home_team_id_fkey(id, name, logo, is_bot, user_id, shield_config, primary_color, secondary_color, detail_color, shield_pattern, shield_shape, shield_icon), 
+              away_team:world_teams!world_matches_away_team_id_fkey(id, name, logo, is_bot, user_id, shield_config, primary_color, secondary_color, detail_color, shield_pattern, shield_shape, shield_icon)
+            `)
+            .eq('league_id', league.id)
+            .order('round', { ascending: true })
+            .order('scheduled_at', { ascending: true });
+          
+          if (wm) {
+            const enhanced = wm.map(m => ({
+              ...m,
+              competition_kind: 'league' as const,
+              competition_name: league.name || 'Liga',
+              home_full: m.home_team,
+              away_full: m.away_team
+            }));
+            setWorldMatches(enhanced);
+          }
         }
       }
 
@@ -342,6 +347,20 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   
   useEffect(() => {
     load();
+    
+    // Realtime subscription for matches to update calendar automatically
+    const channel = supabase.channel('calendar_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => {
+        load();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   if (selected) return <MatchDetailModal match={selected} clubName={clubName} onClose={() => setSelected(null)} />;
@@ -410,139 +429,170 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
             <div className="flex items-center justify-between bg-zinc-900/60 border border-white/5 p-4 rounded-xl shadow-2xl">
               <Button variant="ghost" size="icon" className="h-10 w-10 text-primary hover:bg-primary/10"
                 onClick={() => setSelectedMatchday(m => Math.max(1, m - 1))} disabled={selectedMatchday === 1}>
-                <ChevronLeft className="h-6 w-6" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               <div className="text-center">
-                <span className="text-[10px] text-primary font-black uppercase tracking-tighter italic">{leagueName}</span>
-                <h3 className="text-xl font-black text-white italic leading-tight">RODADA {selectedMatchday}</h3>
-                <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Total de {maxMatchdays} Jornadas</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Rodada Atual</p>
+                <p className="text-2xl font-black text-white">{selectedMatchday} <span className="text-zinc-600 text-sm">/ {maxMatchdays}</span></p>
               </div>
               <Button variant="ghost" size="icon" className="h-10 w-10 text-primary hover:bg-primary/10"
                 onClick={() => setSelectedMatchday(m => Math.min(maxMatchdays, m + 1))} disabled={selectedMatchday === maxMatchdays}>
-                <ChevronRight className="h-6 w-6" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           )}
 
-          {scope === 'cup' && cupRoundMatches.length > 0 && (
-            <div className="bg-zinc-900/60 border border-amber-500/20 p-4 rounded-xl text-center">
-              <span className="text-[10px] text-amber-400 font-black uppercase tracking-tighter italic">{cupName}</span>
-              <h3 className="text-xl font-black text-white italic leading-tight uppercase">{getPhaseName(cupCurrentRound, cupMatches[0]?.total_rounds || 4)}</h3>
-            </div>
-          )}
-
-          <ScrollArea className="h-[480px] pr-4">
-            <div className="space-y-3 pb-10">
+          <ScrollArea className="h-[calc(100vh-280px)] pr-4">
+            <div className="space-y-3 pb-8">
               {filteredMatches.length === 0 ? (
-                <div className="text-center py-20 bg-black/20 border-2 border-dashed border-white/5 rounded-2xl">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-10" />
-                  <p className="text-sm font-bold uppercase tracking-widest opacity-30">Aguardando definição dos jogos</p>
+                <div className="text-center py-20 bg-zinc-900/40 rounded-2xl border border-dashed border-white/5">
+                  <Calendar className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
+                  <p className="text-sm text-zinc-500 font-medium">Nenhuma partida agendada para este período</p>
                 </div>
-              ) : filteredMatches.map(m => {
-                const isFinished = m.status === 'finished';
-                const isCup = m.competition_kind === 'cup';
-                const displayTime = m.scheduled_at
-                  ? new Date(m.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
-                  : '--:--';
-                const displayDate = m.scheduled_at
-                  ? new Date(m.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-                  : '';
+              ) : (
+                filteredMatches.map((m) => {
+                  const isFinished = m.status === 'finished';
+                  const isLive = m.status === 'live';
+                  const isHome = myTeamId === m.home_team_id;
+                  const myGoals = isHome ? m.home_goals : m.away_goals;
+                  const oppGoals = isHome ? m.away_goals : m.home_goals;
+                  const isWin = isFinished && myGoals > oppGoals;
+                  const isLoss = isFinished && myGoals < oppGoals;
+                  const isDraw = isFinished && myGoals === oppGoals;
 
-                return (
-                  <Card key={`${m.competition_kind}-${m.id}`} className={`overflow-hidden border-white/5 bg-zinc-900/40 hover:border-primary/20 transition-all ${isFinished ? 'opacity-70' : ''}`}>
-                    <CardContent className="p-4">
-                      {/* Cabeçalho competição + data */}
-                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
-                        <Badge className={`text-[8px] uppercase font-black tracking-widest border-none ${isCup ? 'bg-amber-500/20 text-amber-400' : 'bg-primary/20 text-primary'}`}>
-                          {m.competition_name}
-                        </Badge>
-                        <div className="text-[9px] font-mono text-white/50">{displayDate} • {displayTime}</div>
-                      </div>
-
-                      <div className="grid grid-cols-7 items-center gap-4">
-                        <div className="col-span-3 flex flex-col items-center gap-2">
-                          <ClubShield club={m.home_full} size={42} className="drop-shadow-[0_0_12px_rgba(0,0,0,0.5)]" />
-                          <p className="text-[11px] font-black text-white uppercase italic text-center leading-tight truncate w-full">{m.home_team?.name}</p>
+                  return (
+                    <Card 
+                      key={m.id} 
+                      className={`relative overflow-hidden border-white/5 bg-zinc-900/60 transition-all hover:bg-zinc-900/80 group
+                        ${isLive ? 'ring-1 ring-primary/50' : ''}
+                        ${isWin ? 'border-l-4 border-l-emerald-500' : isLoss ? 'border-l-4 border-l-destructive' : isDraw ? 'border-l-4 border-l-yellow-500' : ''}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[8px] bg-black/40 border-white/10 uppercase tracking-tighter">
+                              {m.competition_name}
+                            </Badge>
+                            <span className="text-[9px] text-zinc-500 font-medium flex items-center gap-1">
+                              <MapPin className="h-3 w-3" /> {m.stadium || 'Estádio Municipal'}
+                            </span>
+                          </div>
+                          <div className="text-[9px] text-zinc-400 font-bold bg-black/20 px-2 py-0.5 rounded flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> {formatTime(m.scheduled_at)}
+                          </div>
                         </div>
 
-                        <div className="col-span-1 flex flex-col items-center justify-center gap-1">
-                          {isFinished ? (
-                            <div className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg flex items-center gap-2">
-                              <span className="text-lg font-black text-white italic">{m.home_goals}</span>
-                              <span className="text-[10px] text-primary/50 font-bold">x</span>
-                              <span className="text-lg font-black text-white italic">{m.away_goals}</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex flex-col items-center gap-2 flex-1 text-center">
+                            <div className="p-1 rounded-full bg-black/20 group-hover:scale-110 transition-transform">
+                              <ClubShield club={m.home_full} size={32} />
                             </div>
-                          ) : (
-                            <div className="bg-black/60 border border-white/10 px-3 py-1 rounded text-[11px] font-black text-primary italic">
-                              {displayTime}
+                            <span className="text-xs font-black uppercase truncate w-full max-w-[80px] leading-tight">
+                              {m.home_team?.name || 'Time A'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col items-center justify-center min-w-[80px]">
+                            {isFinished ? (
+                              <div className="flex items-center gap-2">
+                                <span className={`text-2xl font-black ${isWin ? 'text-emerald-400' : isLoss ? 'text-destructive' : 'text-white'}`}>
+                                  {m.home_goals}
+                                </span>
+                                <span className="text-zinc-600 font-bold text-xs">x</span>
+                                <span className={`text-2xl font-black ${isLoss ? 'text-emerald-400' : isWin ? 'text-destructive' : 'text-white'}`}>
+                                  {m.away_goals}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center">
+                                <span className="text-zinc-600 font-black text-lg italic">VS</span>
+                                <Badge variant="secondary" className="text-[8px] bg-primary/10 text-primary border-none">
+                                  {formatDate(m.scheduled_at)}
+                                </Badge>
+                              </div>
+                            )}
+                            {isLive && (
+                              <Badge className="mt-2 bg-primary text-black text-[8px] animate-pulse font-black px-2 py-0">AO VIVO</Badge>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col items-center gap-2 flex-1 text-center">
+                            <div className="p-1 rounded-full bg-black/20 group-hover:scale-110 transition-transform">
+                              <ClubShield club={m.away_full} size={32} />
                             </div>
-                          )}
-                          {!isFinished && <Badge variant="outline" className="text-[7px] py-0 px-1 border-white/10 text-muted-foreground uppercase">Agendado</Badge>}
-                          {isFinished && <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[7px] py-0 px-1 uppercase font-black tracking-widest">Final</Badge>}
+                            <span className="text-xs font-black uppercase truncate w-full max-w-[80px] leading-tight">
+                              {m.away_team?.name || 'Time B'}
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="col-span-3 flex flex-col items-center gap-2">
-                          <ClubShield club={m.away_full} size={42} className="drop-shadow-[0_0_12px_rgba(0,0,0,0.5)]" />
-                          <p className="text-[11px] font-black text-white uppercase italic text-center leading-tight truncate w-full">{m.away_team?.name}</p>
+                        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+                          <Badge variant="outline" className={`text-[8px] font-black uppercase border-none
+                            ${isWin ? 'text-emerald-400' : isLoss ? 'text-destructive' : isDraw ? 'text-yellow-400' : 'text-blue-400'}`}>
+                            {isFinished ? (isWin ? 'Vitória' : isLoss ? 'Derrota' : 'Empate') : 'Próximo Jogo'}
+                          </Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 text-[9px] font-bold text-zinc-500 hover:text-white gap-1"
+                            onClick={() => isFinished && setSelected(m)}
+                          >
+                            VER DETALHES <ChevronRight className="h-3 w-3" />
+                          </Button>
                         </div>
-                      </div>
-
-                      <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-                         <div className="flex items-center gap-1.5 opacity-50">
-                            <MapPin className="h-3 w-3 text-primary" />
-                            <span className="text-[9px] font-bold text-white truncate max-w-[160px] uppercase">{m.stadium_name || (isCup ? 'Sede Definida' : 'Estádio Municipal')}</span>
-                         </div>
-                         <div className={`text-[9px] font-black italic uppercase tracking-tighter ${isCup ? 'text-amber-400/40' : 'text-primary/40'}`}>
-                           {isCup ? `Fase ${m.round}` : `Rodada ${m.round}`}
-                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
             </div>
           </ScrollArea>
         </div>
       ) : (
-        <ScrollArea className="h-[520px]">
-          <div className="space-y-2 pb-10">
+        <ScrollArea className="h-[calc(100vh-200px)]">
+          <div className="space-y-3 pb-8">
             {history.length === 0 ? (
-              <div className="text-center py-20 bg-black/20 border-2 border-dashed border-white/5 rounded-2xl">
-                <Trophy className="h-12 w-12 mx-auto mb-4 opacity-10" />
-                <p className="text-sm font-bold uppercase tracking-widest opacity-30">Nenhum histórico registrado</p>
+              <div className="text-center py-20 bg-zinc-900/40 rounded-2xl border border-dashed border-white/5">
+                <Trophy className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
+                <p className="text-sm text-zinc-500 font-medium">Nenhum histórico de partidas registrado</p>
               </div>
-            ) : history.map(m => {
-              const isWin = m.home_goals > m.away_goals;
-              const isDraw = m.home_goals === m.away_goals;
-              return (
-                <Card key={m.id} className="cursor-pointer border-white/5 bg-zinc-900/40 hover:border-primary/40 transition-all overflow-hidden group" onClick={() => setSelected(m)}>
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-primary italic uppercase leading-none">{m.competition}</span>
-                      <span className="text-[9px] text-muted-foreground font-bold uppercase mt-1">{formatDate(m.played_at)}</span>
-                    </div>
-                    
-                    <div className="flex-1 flex items-center justify-center gap-3 px-4">
-                      <span className="text-[10px] font-bold text-white uppercase truncate max-w-[80px] text-right">{m.home_team}</span>
-                      <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded border border-white/5">
-                        <span className="text-sm font-black text-white italic">{m.home_goals}</span>
-                        <span className="text-[9px] opacity-20">-</span>
-                        <span className="text-sm font-black text-white italic">{m.away_goals}</span>
+            ) : (
+              history.map((m) => {
+                const isWin = m.home_goals > m.away_goals ? m.is_home : (m.home_goals < m.away_goals ? !m.is_home : false);
+                const isDraw = m.home_goals === m.away_goals;
+                const resultColor = isWin ? 'bg-emerald-500/10 border-emerald-500/30' : isDraw ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-destructive/10 border-destructive/30';
+                
+                return (
+                  <Card 
+                    key={m.id} 
+                    className={`cursor-pointer border-white/5 bg-zinc-900/40 hover:bg-zinc-900/60 transition-all ${resultColor}`}
+                    onClick={() => setSelected(m)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[8px] text-zinc-500 font-black uppercase">{m.competition}</span>
+                        <span className="text-[8px] text-zinc-500">{formatDate(m.played_at)}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-white uppercase truncate max-w-[80px] text-left">{m.away_team}</span>
-                    </div>
-
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shadow-inner
-                      ${isWin ? 'bg-emerald-500 text-white' : isDraw ? 'bg-zinc-500 text-white' : 'bg-red-500 text-white'}`}>
-                      {isWin ? 'V' : isDraw ? 'E' : 'D'}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 text-right pr-2">
+                          <p className="text-xs font-bold truncate">{m.home_team}</p>
+                        </div>
+                        <div className="bg-black/40 px-3 py-1 rounded-lg text-sm font-black font-mono">
+                          {m.home_goals} <span className="text-zinc-600 mx-1">x</span> {m.away_goals}
+                        </div>
+                        <div className="flex-1 text-left pl-2">
+                          <p className="text-xs font-bold truncate">{m.away_team}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </div>
         </ScrollArea>
       )}
     </div>
   );
 }
+

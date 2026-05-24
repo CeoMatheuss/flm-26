@@ -54,60 +54,9 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
       });
       setCurrentRound(league?.current_round || 1);
 
-      // 🤖 Simulação Orgânica de Bots (Simula rodadas pendentes)
-      const simulateBotRounds = async () => {
-        const { data: matches } = await supabase
-          .from('world_matches')
-          .select('*')
-          .eq('league_id', teamData.league_id)
-          .eq('status', 'scheduled')
-          .lt('round', league?.current_round || 1);
-        
-        if (matches && matches.length > 0) {
-          console.log(`[League] Simulando ${matches.length} partidas atrasadas...`);
-          for (const m of matches) {
-            const hGoals = Math.floor(Math.random() * 4);
-            const aGoals = Math.floor(Math.random() * 3);
-            const outcome = hGoals > aGoals ? 'win' : (hGoals === aGoals ? 'draw' : 'loss');
-            
-            await supabase.from('world_matches').update({
-              home_goals: hGoals,
-              away_goals: aGoals,
-              status: 'finished'
-            }).eq('id', m.id);
-
-            // Atualiza tabela para mandante
-            const { data: hRow } = await supabase.from('world_league_table').select('*').eq('team_id', m.home_team_id).maybeSingle();
-            if (hRow) {
-              await supabase.from('world_league_table').update({
-                played: (hRow.played || 0) + 1,
-                wins: (hRow.wins || 0) + (hGoals > aGoals ? 1 : 0),
-                draws: (hRow.draws || 0) + (hGoals === aGoals ? 1 : 0),
-                losses: (hRow.losses || 0) + (hGoals < aGoals ? 1 : 0),
-                goals_for: (hRow.goals_for || 0) + hGoals,
-                goals_against: (hRow.goals_against || 0) + aGoals,
-                points: (hRow.points || 0) + (hGoals > aGoals ? 3 : (hGoals === aGoals ? 1 : 0))
-              }).eq('id', hRow.id);
-            }
-
-            // Atualiza tabela para visitante
-            const { data: aRow } = await supabase.from('world_league_table').select('*').eq('team_id', m.away_team_id).maybeSingle();
-            if (aRow) {
-              await supabase.from('world_league_table').update({
-                played: (aRow.played || 0) + 1,
-                wins: (aRow.wins || 0) + (aGoals > hGoals ? 1 : 0),
-                draws: (aRow.draws || 0) + (aGoals === hGoals ? 1 : 0),
-                losses: (aRow.losses || 0) + (aGoals < hGoals ? 1 : 0),
-                goals_for: (aRow.goals_for || 0) + aGoals,
-                goals_against: (aRow.goals_against || 0) + hGoals,
-                points: (aRow.points || 0) + (aGoals > hGoals ? 3 : (aGoals === hGoals ? 1 : 0))
-              }).eq('id', aRow.id);
-            }
-          }
-        }
-      };
-
-      await simulateBotRounds();
+      // 🤖 A simulação de bots agora é tratada centralmente via banco de dados ou worker,
+      // mas mantemos a visualização sincronizada com as partidas reais.
+      console.log(`[League] Carregando partidas e estatísticas da liga...`);
 
       const { data: standingsData } = await supabase
         .from('world_league_table')
