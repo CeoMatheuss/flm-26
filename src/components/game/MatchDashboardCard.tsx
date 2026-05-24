@@ -613,8 +613,10 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
               ) : (
                 <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
               )
+            ) : autoSimTriggered ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Simulando partida…</>
             ) : (
-              <><Eye className="h-3.5 w-3.5" /> AGUARDANDO HORÁRIO</>
+              <><Eye className="h-3.5 w-3.5" /> Aguardando horário</>
             )}
           </Button>
         </div>
