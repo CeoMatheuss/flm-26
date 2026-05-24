@@ -2323,9 +2323,9 @@ function ImprovedSubsView({
                               {p.name}
                               {lowStamina && <span title="Cansado" className="text-[8px]">🔻</span>}
                             </p>
-                            {matchState.playerRatings?.[p.id] && (
-                              <span className="text-[10px] font-black px-1.5 rounded" style={{ backgroundColor: `${matchState.playerRatings[p.id].color}22`, color: matchState.playerRatings[p.id].color }}>
-                                {matchState.playerRatings[p.id].rating.toFixed(1)}
+                            {playerRatings?.[p.id] && (
+                              <span className="text-[10px] font-black px-1.5 rounded" style={{ backgroundColor: `${playerRatings[p.id].color}22`, color: playerRatings[p.id].color }}>
+                                {playerRatings[p.id].rating.toFixed(1)}
                               </span>
                             )}
                           </div>
