@@ -38,6 +38,13 @@ Deno.serve(async (req) => {
       .order("scheduled_at", { ascending: true })
       .limit(BATCH_SIZE);
 
+    // Also simulate Tournament/Mundial matches
+    const { data: cupMatches } = await sb.from("tournament_matches")
+      .select("*, home_team:world_teams!tournament_matches_home_team_id_fkey(id,name,strength), away_team:world_teams!tournament_matches_away_team_id_fkey(id,name,strength)")
+      .eq("status", "scheduled")
+      .lte("scheduled_at", tolerance)
+      .limit(BATCH_SIZE);
+
     if (errSched) debug.push({ stage: "select_scheduled", err: errSched.message });
 
     // Stuck "live" matches (older than 15min) — failed prior simulations
@@ -49,7 +56,11 @@ Deno.serve(async (req) => {
 
     if (errStuck) debug.push({ stage: "select_stuck", err: errStuck.message });
 
-    const matches = [...(scheduledMatches || []), ...(stuckMatches || [])];
+    const matches = [
+      ...(scheduledMatches || []).map(m => ({ ...m, type: 'league' })),
+      ...(stuckMatches || []).map(m => ({ ...m, type: 'league' })),
+      ...(cupMatches || []).map(m => ({ ...m, type: 'cup' }))
+    ];
     let finalized = 0;
     let skipped = 0;
     const errors: any[] = [];
@@ -57,8 +68,10 @@ Deno.serve(async (req) => {
     for (const m of matches) {
       const simStart = Date.now();
       try {
-        // Atomic claim using allowed 'live' status (check constraint forbids 'simulating')
-        const { data: locked, error: lockErr } = await sb.from("world_matches")
+        const table = m.type === 'cup' ? 'tournament_matches' : 'world_matches';
+        
+        // Atomic claim
+        const { data: locked, error: lockErr } = await sb.from(table)
           .update({ status: "live" })
           .eq("id", m.id)
           .in("status", ["scheduled", "live"])
@@ -90,8 +103,10 @@ Deno.serve(async (req) => {
           if (p) aScorers.push({ id: p.id, name: p.name });
         }
 
+        const table = m.type === 'cup' ? 'tournament_matches' : 'world_matches';
+
         // Finalize first (most important)
-        const { error: finErr } = await sb.from("world_matches").update({
+        const { error: finErr } = await sb.from(table).update({
           home_goals: hg,
           away_goals: ag,
           status: "finished",
@@ -102,7 +117,7 @@ Deno.serve(async (req) => {
         if (finErr) {
           errors.push({ id: m.id, stage: "finalize", err: finErr.message });
           // Try to revert lock
-          await sb.from("world_matches").update({ status: "scheduled" }).eq("id", m.id);
+          await sb.from(table).update({ status: "scheduled" }).eq("id", m.id);
           skipped++;
           continue;
         }
