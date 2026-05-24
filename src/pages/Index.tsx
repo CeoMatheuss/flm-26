@@ -646,7 +646,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               competition 
             });
             // Advance league round and sync standings if needed
-            supabase.rpc('sync_league_integrity', { _user_id: userId }).then(() => {
+            supabase.rpc('sync_league_integrity', { _user_id: userId } as any).then(() => {
                window.dispatchEvent(new CustomEvent('flm:match-finalized'));
             });
           }
@@ -694,6 +694,14 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
               const reportData = fmStats.reportData;
               const reportResult = fmStats.reportResult || 'draw';
               const rankingChange = fmStats.rankingChange || 0;
+              const fansChange = fmStats.fansChange || 0;
+              const fanMessage = fmStats.fanMessage || '';
+
+              // Inserir fansChange no reportData se disponível
+              if (fansChange !== 0 && reportData.impacts) {
+                reportData.impacts.fansChange = fansChange;
+                reportData.impacts.fanMessage = fanMessage;
+              }
 
               await supabase.from('match_reports').insert({
                 user_id: userId,
@@ -722,7 +730,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
                 user_id: userId,
                 type: reportResult === 'win' ? 'success' : reportResult === 'loss' ? 'danger' : 'info',
                 title: `${resultEmoji} ${userTeam} ${userGoals} x ${oppGoals} ${oppTeam}`,
-                message: `${fm.competition || 'Amistoso'}\nPosse: ${possession}% | Finalizações: ${shots} (${shotsOnTarget} no gol)\nRanking: ${rankingChange > 0 ? '+' : ''}${rankingChange} pts`,
+                message: `${fm.competition || 'Amistoso'}\nPosse: ${possession}% | Finalizações: ${shots} (${shotsOnTarget} no gol)\nRanking: ${rankingChange > 0 ? '+' : ''}${rankingChange} pts${fansChange !== 0 ? ` | Torcida: ${fansChange > 0 ? '+' : ''}${fansChange}` : ''}`,
                 icon: resultEmoji,
                 data: { matchHistoryId: fmStats.matchHistoryId, reportData },
               });

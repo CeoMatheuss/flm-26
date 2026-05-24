@@ -9,6 +9,13 @@ import { supabase } from '@/integrations/supabase/client';
 export type RankingCompetition = 'friendly' | 'league' | 'continental' | 'world';
 export type RankingOutcome = 'win' | 'draw' | 'loss';
 
+export interface RankingUpdateResult {
+  deltaPoints: number;
+  deltaFans: number;
+  fanMessage?: string;
+}
+
+
 const WEIGHT: Record<RankingCompetition, number> = {
   friendly: 0.5,
   league: 1.0,
@@ -32,9 +39,9 @@ interface UpdateInput {
   teamStrength?: number;
 }
 
-export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
+export async function updateGlobalRanking(input: UpdateInput): Promise<RankingUpdateResult> {
   const { userId, clubName, outcome, competition, competitionLabel, opponentStrength = 65, teamStrength = 65 } = input;
-  if (!userId) return;
+  if (!userId) return { deltaPoints: 0, deltaFans: 0 };
 
   // 1. Snapshot positions BEFORE points change to track variation
   try {
@@ -105,4 +112,41 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
       })
       .eq('id', row.id);
   }
+
+  // 🏆 NOVO: Sistema de Crescimento de Torcida Realista
+  let deltaFans = 0;
+  let fanMessage = '';
+  try {
+    const { calculateFanGrowth } = await import('./fanGrowthEngine');
+    // Buscar dados atuais do clube para o cálculo
+    const { data: club } = await supabase.from('clubs').select('fans, reputation').eq('user_id', userId).single();
+    
+    if (club) {
+      const growth = calculateFanGrowth({
+        currentFans: club.fans,
+        reputation: club.reputation,
+        outcome,
+        importance: (competition === 'friendly' ? 'amistoso' : competition === 'league' ? 'liga' : competition === 'world' ? 'final' : 'liga') as any,
+        homeGoals: 0, // Simplificado, ideal seria passar via input
+        awayGoals: 0,
+        isHome: true,
+        recentForm: truncatedForm,
+        opponentStrength,
+        teamStrength
+      });
+      
+      deltaFans = growth.delta;
+      fanMessage = growth.message;
+
+      // Atualizar clube
+      await supabase.rpc('increment_club_fans' as any, { 
+        _user_id: userId, 
+        _delta: deltaFans 
+      });
+    }
+  } catch (e) {
+    console.error('Error calculating fan growth:', e);
+  }
+
+  return { deltaPoints: delta, deltaFans, fanMessage };
 }

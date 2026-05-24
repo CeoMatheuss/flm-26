@@ -350,7 +350,7 @@ export function useMatchSimulation() {
           .then(async () => {
             console.log("[MATCH] Finalizado via Cronômetro. Sincronizando persistence...");
             try {
-              const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId });
+              const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId } as any);
               const syncData = syncDataRaw as any;
 
               if (rpcError) {
@@ -358,7 +358,7 @@ export function useMatchSimulation() {
               } else if (syncData?.success) {
                 console.log("[MATCH] Persistence sync complete via RPC:", syncData);
                 
-                // 🏆 Sincronização de Ranking centralizada
+                // 🏆 Sincronização de Ranking e Torcida centralizada
                 const outcome = data.finalHomeGoals > data.finalAwayGoals ? 'win' : (data.finalHomeGoals === data.finalAwayGoals ? 'draw' : 'loss');
                 const competitionLabel = syncData.competition || 'Amistoso';
                 const compLower = competitionLabel.toLowerCase();
@@ -371,7 +371,7 @@ export function useMatchSimulation() {
                 const { updateGlobalRanking } = await import('@/match/rankingUpdater');
                 const session = await supabase.auth.getSession();
                 
-                await updateGlobalRanking({
+                const rankingResult = await updateGlobalRanking({
                   userId: session.data.session?.user?.id || '',
                   clubName: data.homeTeam,
                   outcome,
@@ -384,7 +384,10 @@ export function useMatchSimulation() {
                   detail: { 
                     matchId: data.matchDbId,
                     homeGoals: data.finalHomeGoals,
-                    awayGoals: data.finalAwayGoals
+                    awayGoals: data.finalAwayGoals,
+                    rankingChange: rankingResult.deltaPoints,
+                    fansChange: rankingResult.deltaFans,
+                    fanMessage: rankingResult.fanMessage
                   } 
                 }));
               }
@@ -450,7 +453,7 @@ export function useMatchSimulation() {
             .then(async () => {
               console.log("[MATCH] Finalizado via Apito Final. Sincronizando persistence...");
               try {
-                const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId });
+                const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId } as any);
                 const syncData = syncDataRaw as any;
                 
                 if (rpcError) {
@@ -471,7 +474,7 @@ export function useMatchSimulation() {
                   const { updateGlobalRanking } = await import('@/match/rankingUpdater');
                   const session = await supabase.auth.getSession();
                   
-                  await updateGlobalRanking({
+                  const rankingResult = await updateGlobalRanking({
                     userId: session.data.session?.user?.id || '',
                     clubName: data.homeTeam,
                     outcome,
@@ -484,7 +487,10 @@ export function useMatchSimulation() {
                     detail: { 
                       matchId: data.matchDbId,
                       homeGoals: state.homeGoals,
-                      awayGoals: state.awayGoals
+                      awayGoals: state.awayGoals,
+                      rankingChange: rankingResult.deltaPoints,
+                      fansChange: rankingResult.deltaFans,
+                      fanMessage: rankingResult.fanMessage
                     } 
                   }));
                 }
