@@ -122,7 +122,13 @@ export interface LeagueSquad {
 }
 
 // Generate round-robin schedule for members with dates and times
-function generateRoundRobin(memberIds: string[], totalRounds: number, startDate: Date, matchTime: string): { round: number; home: string; away: string; scheduled_at: string }[] {
+function generateRoundRobin(
+  memberIds: string[], 
+  totalRounds: number, 
+  startDate: Date, 
+  matchTime: string,
+  competitionType: string = 'league'
+): { round: number; home: string; away: string; scheduled_at: string }[] {
   const ids = [...memberIds];
   if (ids.length % 2 !== 0) ids.push('BOT'); // Standardized placeholder
   const n = ids.length;
@@ -130,6 +136,12 @@ function generateRoundRobin(memberIds: string[], totalRounds: number, startDate:
   
   const baseRounds = n - 1;
   
+  // Adjusted logic: If it's Mundial, it starts on day 20.
+  // The user requested: "mundial deve começar dia 20 com 2 jogos por dia um da liga e um do mundial"
+  // So league matches happen every day, and Mundial matches ALSO happen every day starting from day 20.
+  const startOffset = competitionType === 'world_cup' ? 19 : 0; 
+  const timeOffsetHours = competitionType === 'world_cup' ? 2 : 0; // World cup matches 2 hours after league
+
   for (let round = 0; round < totalRounds; round++) {
     const cycleRound = round % (baseRounds * 2);
     const isReturn = cycleRound >= baseRounds;
@@ -143,9 +155,10 @@ function generateRoundRobin(memberIds: string[], totalRounds: number, startDate:
     
     // Calculate date for this round
     const matchDate = new Date(startDate);
-    matchDate.setDate(matchDate.getDate() + round);
+    matchDate.setDate(matchDate.getDate() + round + startOffset);
     const [hours, minutes] = matchTime.split(':').map(Number);
-    matchDate.setHours(hours || 19, minutes || 0, 0, 0);
+    // League at 19:30, World Cup at 21:30 (example)
+    matchDate.setHours((hours || 19) + timeOffsetHours, minutes || 0, 0, 0);
 
     for (let i = 0; i < n / 2; i++) {
       const home = rotated[i];

@@ -7291,6 +7291,16 @@ export type Database = {
         Args: { _is_world?: boolean; _league_id: string }
         Returns: undefined
       }
+      generate_balanced_schedule: {
+        Args: {
+          _league_id: string
+          _start_date: string
+          _tournament_id: string
+          _user_id: string
+          _world_cup_start_day?: number
+        }
+        Returns: undefined
+      }
       generate_beginner_cup_fixtures: {
         Args: { _cup_id: string }
         Returns: undefined
