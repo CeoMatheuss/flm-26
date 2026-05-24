@@ -21,7 +21,7 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
   const fanEffects = stats.activeEffects.filter(e => e.category === 'fans');
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 px-1 sm:px-0">
       {/* Active Marketing Campaigns */}
       <Card className="bg-slate-900/60 border-emerald-500/20 backdrop-blur-md">
         <CardHeader className="pb-2">
