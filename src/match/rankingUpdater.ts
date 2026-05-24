@@ -36,6 +36,13 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
   const { userId, clubName, outcome, competition, competitionLabel, opponentStrength = 65, teamStrength = 65 } = input;
   if (!userId) return;
 
+  // 1. Snapshot positions BEFORE points change to track variation
+  try {
+    await supabase.rpc('snapshot_ranking_positions');
+  } catch (e) {
+    console.error('Error snapshoting positions:', e);
+  }
+
   const strengthDiff = opponentStrength - teamStrength;
   const strengthFactor = 1 + (strengthDiff / 50);
   
@@ -98,7 +105,4 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
       })
       .eq('id', row.id);
   }
-
-  // Chamar função RPC para atualizar posições e variações globalmente
-  await supabase.rpc('update_ranking_positions');
 }
