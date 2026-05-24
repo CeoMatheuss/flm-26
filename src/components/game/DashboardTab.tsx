@@ -76,6 +76,77 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
   );
 }
 
+function GlobalRankingMini({ userId }: { userId?: string }) {
+  const [me, setMe] = useState<any>(null);
+  const [pos, setPos] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    const load = async () => {
+      const { data: all } = await supabase
+        .from('global_ranking')
+        .select('*')
+        .order('ranking_points', { ascending: false });
+      
+      if (all) {
+        const index = all.findIndex(r => r.user_id === userId);
+        if (index >= 0) {
+          setMe(all[index]);
+          setPos(index + 1);
+        }
+      }
+      setLoading(false);
+    };
+    load();
+  }, [userId]);
+
+  if (loading || !me) return null;
+
+  const variation = me.prev_position ? me.prev_position - pos! : 0;
+
+  return (
+    <Card className="game-card border-primary/20 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
+      <CardHeader className="py-2 px-3 border-b border-white/5 bg-white/5">
+        <CardTitle className="text-[10px] uppercase tracking-wider text-primary flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Globe className="h-3 w-3" /> Ranking Mundial
+          </div>
+          {variation !== 0 && (
+            <div className={`flex items-center gap-0.5 text-[8px] ${variation > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {variation > 0 ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
+              {Math.abs(variation)}
+            </div>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-2xl font-black italic tracking-tighter leading-none">#{pos}</p>
+            <p className="text-[9px] text-muted-foreground uppercase mt-1">Sua posição global</p>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-bold text-primary leading-none">{me.ranking_points}</p>
+            <p className="text-[9px] text-muted-foreground uppercase mt-1">Pontos Ranking</p>
+          </div>
+        </div>
+        <div className="mt-3 flex gap-1 justify-center">
+          {me.recent_form?.slice(0, 5).map((res: string, i: number) => (
+            <div 
+              key={i}
+              className={`w-3 h-3 rounded-full flex items-center justify-center text-[7px] font-bold text-white
+                ${res === 'V' ? 'bg-emerald-500' : res === 'E' ? 'bg-amber-500' : 'bg-red-500'}`}
+            >
+              {res}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 interface Props {
   club: Club;
   events: GameEvent[];
