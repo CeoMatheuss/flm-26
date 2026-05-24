@@ -162,12 +162,6 @@ export function useMatchSimulation() {
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const persistedRef = useRef(false);
   const notifiedEventsRef = useRef<Set<string>>(new Set());
-  const dataRef = useRef<MatchData | null>(null);
-  const nextVisibleEventIdxRef = useRef(0);
-  const isAnimatingRef = useRef(false);
-  const unsubscribeRef = useRef<(() => void) | null>(null);
-  const persistedRef = useRef(false);
-  const notifiedEventsRef = useRef<Set<string>>(new Set());
 
   const computeStatsFromEvents = useCallback((events: SimEvent[]): MatchStats => {
     const s: MatchStats = { 
