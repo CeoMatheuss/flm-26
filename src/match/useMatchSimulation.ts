@@ -605,6 +605,7 @@ export function useMatchSimulation() {
       errorMsg: null,
       competition: data.competition || 'Amistoso',
       isHome: data.is_home,
+      playerRatings: data.status === 'finished' ? calculatePlayerRatings((data.home_players as any) || [], visibleEvents, currentMinute, data.is_home) : {},
     }));
     
     if (data.status !== 'finished' && progress < 1) startTick();
