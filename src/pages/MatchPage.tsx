@@ -991,52 +991,58 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
         if (a.type === 'injury') return -1;
         if (b.type === 'injury') return 1;
         return a.stamina - b.stamina;
-      }).slice(0, 1);
+      }).slice(0, 2); // Show up to 2 most critical alerts
     }, [starters, dismissedAlerts, matchState.visibleEvents, lastAlertTime, liveStaminaMap]);
 
     if (activeAlerts.length === 0) return null;
 
-    const alert = activeAlerts[0];
-    const isRed = alert.type === 'injury' || alert.type === 'extreme_fatigue';
-    
     return (
-      <Card className={`border-l-4 ${isRed ? 'border-l-red-500 bg-red-500/5' : 'border-l-yellow-500 bg-yellow-500/5'} shadow-lg relative overflow-hidden`}>
-        <div className={`absolute top-0 right-0 p-1 opacity-10 ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
-          {isRed ? <Activity className="w-12 h-12" /> : <Zap className="w-12 h-12" />}
-        </div>
-        <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-3 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${isRed ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
-              {alert.type === 'injury' ? <Activity className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
-            </div>
-            <div className="min-w-0">
-              <p className={`text-[10px] font-black uppercase tracking-widest ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
-                {alert.type === 'injury' ? '🚑 LESÃO DETECTADA' : alert.type === 'extreme_fatigue' ? '🚨 ESGOTAMENTO CRÍTICO' : '⚠️ ALERTA DE CANSAÇO'}
-              </p>
-              <h4 className="text-sm font-black truncate">{alert.player.name} — {alert.stamina}% Energia</h4>
-              <div className="space-y-0.5 mt-0.5">
-                <p className="text-[10px] font-bold text-foreground/80 leading-tight">
-                  {alert.type === 'injury' ? 'Atleta sofreu uma lesão e não tem condições de jogo.' : 'Jogador muito cansado. Recomenda-se substituição imediata.'}
-                </p>
-                <p className="text-[9px] text-muted-foreground italic">
-                   Impacto: Queda drástica de rendimento e alto risco de lesão.
-                </p>
+      <div className="flex flex-col gap-2">
+        {activeAlerts.map((alert) => {
+          const isRed = alert.type === 'injury' || alert.type === 'extreme_fatigue';
+          
+          return (
+            <Card key={alert.id} className={`border-l-4 ${isRed ? 'border-l-red-500 bg-red-500/5' : 'border-l-yellow-500 bg-yellow-500/5'} shadow-lg relative overflow-hidden`}>
+              <div className={`absolute top-0 right-0 p-1 opacity-10 ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
+                {isRed ? <Activity className="w-12 h-12" /> : <Zap className="w-12 h-12" />}
               </div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5 shrink-0">
-            <Button size="sm" className={`h-8 px-4 text-[10px] font-black uppercase tracking-wider shadow-lg ${isRed ? 'bg-red-500 hover:bg-red-600' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}`} onClick={onOpenSubs}>
-              Substituir
-            </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-muted-foreground" onClick={() => {
-              setDismissedAlerts(prev => new Set(prev).add(alert.id));
-              setLastAlertTime(Date.now());
-            }}>
-              Ignorar
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-3 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${isRed ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
+                    {alert.type === 'injury' ? <Activity className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
+                      {alert.type === 'injury' ? '🚑 LESÃO DETECTADA' : alert.type === 'extreme_fatigue' ? '🚨 ESGOTAMENTO CRÍTICO' : '⚠️ ALERTA DE CANSAÇO'}
+                    </p>
+                    <h4 className="text-sm font-black truncate">{alert.player.name} — {alert.stamina}% Energia</h4>
+                    <div className="space-y-0.5 mt-0.5">
+                      <p className="text-[10px] font-bold text-foreground/80 leading-tight">
+                        {alert.type === 'injury' ? 'Atleta sofreu uma lesão e não tem condições de jogo.' : 'Jogador muito cansado. Recomenda-se substituição imediata.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <Button size="sm" className={`h-8 px-4 text-[10px] font-black uppercase tracking-wider shadow-lg ${isRed ? 'bg-red-500 hover:bg-red-600' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}`} onClick={onOpenSubs}>
+                    Substituir
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-muted-foreground" onClick={() => {
+                    setDismissedAlerts(prev => {
+                      const next = new Set(prev);
+                      next.add(alert.id);
+                      return next;
+                    });
+                    setLastAlertTime(Date.now());
+                  }}>
+                    Ignorar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     );
   };
 
