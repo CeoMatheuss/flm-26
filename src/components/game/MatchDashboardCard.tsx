@@ -328,15 +328,29 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
   // Live countdown timer — sincronizado com o horário da liga (ScheduledAt)
   // Auto-dispara simulação quando os 5 minutos do lobby expiram sem o usuário entrar
-  // (autoSimTriggered declarado no topo)
   useEffect(() => { setAutoSimTriggered(false); }, [nextMatch?.matchId]);
+
+  // Retry de auto-sim a cada 30s enquanto a partida estiver presa no estado "simulando"
+  useEffect(() => {
+    if (!autoSimTriggered || !nextMatch?.matchId) return;
+    const retry = setInterval(async () => {
+      try {
+        console.log('[MatchDashboardCard] Retry auto-sim para', nextMatch.matchId);
+        const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
+        triggerAutoSim();
+      } catch (err) {
+        console.error('[MatchDashboardCard] Retry auto-sim falhou:', err);
+      }
+    }, 30000);
+    return () => clearInterval(retry);
+  }, [autoSimTriggered, nextMatch?.matchId]);
 
   useEffect(() => {
     if (!nextMatch?.date || nextMatch.status === 'finished') return;
     const update = async () => {
       const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
-      
+
       // Janela clássica de 5 minutos APÓS o horário agendado para o lobby
       const LOBBY_WINDOW_MS = 5 * 60 * 1000;
       const diff = scheduledTime - now;
@@ -349,7 +363,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           setIsReady(true);
         } else {
           // Passou dos 5 minutos: dispara simulação automática no servidor
-          setTimeLeft('⌛ Simulando automaticamente...');
+          // Mostra há quanto tempo está aguardando para o usuário ter feedback
+          const elapsedMin = Math.floor(Math.abs(diff) / 60000);
+          const elapsedTxt = elapsedMin >= 60
+            ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m`
+            : `${elapsedMin}m`;
+          setTimeLeft(`⌛ Processando no servidor (${elapsedTxt})`);
           setIsReady(false);
 
           if (!autoSimTriggered) {
@@ -372,7 +391,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       const h = Math.floor(totalSeconds / 3600);
       const m = Math.floor((totalSeconds % 3600) / 60);
       const s = totalSeconds % 60;
-      
+
       if (h >= 1) {
         setTimeLeft(`Inicia em ${h}h ${String(m).padStart(2, '0')}m`);
       } else {
