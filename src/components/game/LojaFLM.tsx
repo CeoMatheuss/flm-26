@@ -51,7 +51,7 @@ const CATEGORIES = [
 
 
 export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: LojaProps) {
-  const [activeCategory, setActiveCategory] = useState('uniform');
+  const [activeCategory, setActiveCategory] = useState('dashboard');
   const storeManager = useStoreManager(club, userId);
   useMarketingDelivery(club?.id, userId);
   const [loading, setLoading] = useState(false);
@@ -73,6 +73,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
   const [shopStats, setShopStats] = useState<any>(null);
   const [shopProducts, setShopProducts] = useState<any[]>([]);
   const [upgrading, setUpgrading] = useState(false);
+  const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
+  const [isOfflineModalOpen, setIsOfflineModalOpen] = useState(false);
+
 
 
   useEffect(() => {
