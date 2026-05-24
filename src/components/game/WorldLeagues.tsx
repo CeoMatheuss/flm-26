@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LeaguesOverview } from './LeaguesOverview';
 import { CopasTab } from './CopasTab';
-import { Globe, Trophy } from 'lucide-react';
+import { WorldCupTab } from './WorldCupTab';
+import { Globe, Trophy, Star } from 'lucide-react';
 
 
 interface Props {
@@ -29,6 +30,9 @@ export function WorldLeagues({ userId, rating = 0, rankingHistory = [], clubName
           <TabsTrigger value="copas" onClick={() => setActiveTab('copas')} className="text-xs px-4 flex items-center gap-1.5">
             <Trophy className="h-3 w-3" /> Copas Nacionais
           </TabsTrigger>
+          <TabsTrigger value="mundial" onClick={() => setActiveTab('mundial')} className="text-xs px-4 flex items-center gap-1.5">
+            <Star className="h-3 w-3 text-yellow-500" /> Mundial
+          </TabsTrigger>
         </TabsList>
       </div>
 
@@ -40,7 +44,9 @@ export function WorldLeagues({ userId, rating = 0, rankingHistory = [], clubName
         <TabsContent value="copas" className="mt-0">
           <CopasTab userId={userId} />
         </TabsContent>
-
+        <TabsContent value="mundial" className="mt-0">
+          <WorldCupTab userId={userId} />
+        </TabsContent>
       </Tabs>
     </div>
   );
