@@ -160,6 +160,47 @@ export function calculatePlayerRatings(
   return ratings;
 }
 
+export async function persistMatchRatings(ratings: Record<string, PlayerRating>, competition: string) {
+  try {
+    const ratingList = Object.values(ratings);
+    for (const r of ratingList) {
+      // 1. Update player season statistics
+      const { data: player } = await supabase.from('players').select('morale, reputation, market_value, overall, season_ratings').eq('id', r.playerId).single();
+      
+      if (player) {
+        // Dynamic morale change based on rating
+        let moraleDelta = r.rating >= 7.5 ? 5 : r.rating <= 5.0 ? -5 : 0;
+        const newMorale = Math.max(0, Math.min(100, (player.morale || 70) + moraleDelta));
+        
+        // Dynamic reputation change (smaller increments)
+        let repDelta = r.rating >= 8.5 ? 0.5 : r.rating <= 4.0 ? -0.3 : 0;
+        const newReputation = Math.max(0, Math.min(100, (player.reputation || 50) + repDelta));
+        
+        // Market value impact (0.1% to 1.0% increase/decrease)
+        let valueMult = 1.0;
+        if (r.rating >= 9.0) valueMult = 1.02;
+        else if (r.rating >= 8.0) valueMult = 1.01;
+        else if (r.rating <= 4.0) valueMult = 0.98;
+        
+        const newValue = Math.round((player.market_value || 100000) * valueMult);
+
+        const seasonRatings = player.season_ratings || [];
+        seasonRatings.push(r.rating);
+
+        await supabase.from('players').update({
+          morale: newMorale,
+          reputation: newReputation,
+          market_value: newValue,
+          season_ratings: seasonRatings.slice(-50) // Keep last 50 games
+        }).eq('id', r.playerId);
+      }
+    }
+    console.log("[RATINGS] Persisted ratings for", ratingList.length, "players");
+  } catch (e) {
+    console.error("[RATINGS] Failed to persist ratings:", e);
+  }
+}
+
 function getRatingColor(rating: number): string {
   if (rating >= 9.0) return '#fbbf24'; // text-amber-400 (Dourado)
   if (rating >= 7.5) return '#10b981'; // text-emerald-500 (Verde)
