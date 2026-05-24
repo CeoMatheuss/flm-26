@@ -23,6 +23,7 @@ export interface UniformKit {
   collarStyle: 'v-neck' | 'round' | 'polo' | 'henley';
   sleeveStyle: 'short' | 'long';
   sponsorTextColor?: string;
+  shirtPatternColor?: string; // Color to be used for patterns
 }
 
 export interface ShirtSale {
@@ -44,6 +45,7 @@ export interface UniformsData {
     topSellers: ShirtSale[];
   };
 }
+
 
 const defaultHome: UniformKit = {
   name: 'Titular',
@@ -432,7 +434,6 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     const newsText = `👕 O ${clubName} acaba de lançar uma nova coleção de uniformes! O Manager ${managerName} convida todos para verem o novo manto.`;
 
     await supabase.from('newspaper_entries').insert({
-      user_id: userId,
       text: newsText,
       category: 'ELENCO',
       importance: 3,
@@ -444,6 +445,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       }
     });
   };
+
 
 
 
