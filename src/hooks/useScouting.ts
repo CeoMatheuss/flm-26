@@ -43,9 +43,9 @@ export function useScouting(userId: string) {
     
     // Setup Realtime subscriptions
     const scoutsChannel = supabase.channel('scouting-updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'scouts', filter: `user_id=eq.${userId}` }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'scout_missions', filter: `user_id=eq.${userId}` }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'scout_reports', filter: `user_id=eq.${userId}` }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'scouts' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'scout_missions' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'scout_reports' }, fetchData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'scout_market_pool' }, fetchData)
       .subscribe();
 
