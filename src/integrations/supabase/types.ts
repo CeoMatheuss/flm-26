@@ -7316,6 +7316,24 @@ export type Database = {
       }
       check_beta_access: { Args: { _email: string }; Returns: Json }
       check_club_name_available: { Args: { _name: string }; Returns: Json }
+      check_duplicate_matches: {
+        Args: never
+        Returns: {
+          away_team_id: string
+          home_team_id: string
+          match_count: number
+          match_date: string
+        }[]
+      }
+      check_schedule_conflicts: {
+        Args: never
+        Returns: {
+          club_id: string
+          match_id_1: string
+          match_id_2: string
+          time_diff: string
+        }[]
+      }
       close_expired_auctions: { Args: never; Returns: Json }
       cron_generate_youth_for_all: { Args: never; Returns: Json }
       cwc_update_standings: {
