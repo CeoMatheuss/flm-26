@@ -224,10 +224,114 @@ export function useStoreManager(club: Club, userId: string) {
     }
   };
 
+  const processOfflineActivity = async () => {
+    if (!club?.id || !userId) return null;
+
+    try {
+      // 1. Obter o perfil para checar o último timestamp
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('last_online_at')
+        .eq('id', userId)
+        .single();
+
+      if (!profile?.last_online_at) return null;
+
+      const lastOnline = new Date(profile.last_online_at);
+      const now = new Date();
+      const secondsOffline = Math.floor((now.getTime() - lastOnline.getTime()) / 1000);
+
+      // Só processar se ficou mais de 5 minutos (300s) offline para evitar micro-transações
+      if (secondsOffline < 300) return null;
+
+      // 2. Chamar a RPC do banco para processar
+      const { data: result, error } = await supabase.rpc('process_offline_shop_activity', {
+        p_club_id: club.id,
+        p_seconds_offline: secondsOffline
+      });
+
+      if (error) throw error;
+
+      // 3. Atualizar o perfil com o novo timestamp online
+      await supabase
+        .from('profiles')
+        .update({ last_online_at: now.toISOString() })
+        .eq('id', userId);
+
+      return {
+        ...result,
+        time_offline_seconds: secondsOffline
+      };
+    } catch (error) {
+      console.error('Error processing offline activity:', error);
+      return null;
+    }
+  };
+
+  const createOrder = async (productId: string, shippingCompanyId: string) => {
+    if (!club?.id) return;
+
+    try {
+      setLoading(true);
+      const { data: product } = await supabase
+        .from('club_shop_products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+      
+      const { data: company } = await supabase
+        .from('shipping_companies')
+        .select('*')
+        .eq('id', shippingCompanyId)
+        .single();
+
+      if (!product || !company) return;
+
+      // Cálculo de frete e prazo (simulado baseado em distância aleatória)
+      const distance = Math.floor(Math.random() * 1000) + 50; // 50-1050km
+      const freight = Math.floor((distance * 2) * company.price_factor);
+      const risk = (distance / 2000) + company.delay_risk;
+      
+      // Base: 1 dia a cada 500km * speed_factor
+      const hoursToDeliver = (distance / 500) * 24 * company.speed_factor;
+      const estimatedDelivery = new Date();
+      estimatedDelivery.setHours(estimatedDelivery.getHours() + hoursToDeliver);
+
+      const { data: order, error } = await supabase
+        .from('club_shop_orders')
+        .insert({
+          club_id: club.id,
+          product_id: productId,
+          shipping_company_id: shippingCompanyId,
+          freight_cents: freight,
+          distance_km: distance,
+          risk_factor: risk,
+          estimated_delivery_at: estimatedDelivery.toISOString(),
+          status: 'processing'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success(`Pedido realizado! Estimativa: ${estimatedDelivery.toLocaleDateString()}`);
+      fetchStoreData();
+      return order;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Erro ao criar pedido.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     stats,
     loading,
     activateItem,
+    processOfflineActivity,
+    createOrder,
     refresh: fetchStoreData
   };
 }
+
