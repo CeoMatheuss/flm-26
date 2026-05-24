@@ -1545,6 +1545,16 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
               </div>
             )}
 
+            {/* Live Ratings Pulse (Destaque do Jogo) */}
+            {!isFinished && !activeHighlight && !goalFlash && Object.keys(matchState.playerRatings || {}).length > 0 && (
+              <div className="flex items-center justify-center gap-2 py-1 px-3 bg-amber-500/10 border border-amber-500/20 rounded-full animate-in fade-in duration-500">
+                <Star className="h-3 w-3 text-amber-500 fill-amber-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">
+                  Melhor em Campo: {Object.values(matchState.playerRatings).sort((a,b) => b.rating - a.rating)[0].stats.name} ({Object.values(matchState.playerRatings).sort((a,b) => b.rating - a.rating)[0].rating.toFixed(1)})
+                </span>
+              </div>
+            )}
+
 
             {/* 2D Canvas — highlights (fixed aspect ratio, capped width) */}
             {!isFinished && activeHighlight && (
@@ -1666,7 +1676,14 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                 className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'stats' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
               >
                 <BarChart3 className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-tight">Estat.</span>
+                <span className="text-[10px] font-black uppercase tracking-tight">Geral</span>
+              </button>
+              <button 
+                onClick={() => setExpandedWidget(expandedWidget === 'ratings' ? null : 'ratings')}
+                className={`flex-1 min-w-[70px] flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all ${expandedWidget === 'ratings' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20 scale-105' : 'bg-card/40 border border-border/20 text-muted-foreground hover:bg-card'}`}
+              >
+                <Star className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Notas</span>
               </button>
               <button 
                 onClick={() => setExpandedWidget(expandedWidget === 'lineup' ? null : 'lineup')}
@@ -1713,6 +1730,43 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                 </CardHeader>
                 <CardContent className="px-3 pb-3 pt-0">
                   <StatsView stats={stats} homeTeam={homeTeam} awayTeam={awayTeam} />
+                </CardContent>
+              </Card>
+            )}
+            
+            {expandedWidget === 'ratings' && (
+              <Card className="border-border/20 shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <Star className="h-3.5 w-3.5 text-amber-500" /> Notas dos Jogadores
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {Object.values(matchState.playerRatings || {}).sort((a, b) => b.rating - a.rating).map((rating, idx) => (
+                      <div key={rating.playerId} className="flex items-center justify-between p-2 rounded-lg bg-card/60 border border-border/10">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-muted-foreground w-4">{idx + 1}º</span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold truncate">{rating.stats.name}</p>
+                            <p className="text-[9px] text-muted-foreground">{rating.stats.position}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                             <p className="text-[9px] font-bold uppercase" style={{ color: rating.color }}>{rating.label}</p>
+                             <div className="flex gap-1 justify-end">
+                                {rating.stats.goals > 0 && <span className="text-[8px] bg-primary/20 text-primary px-1 rounded">{rating.stats.goals} G</span>}
+                                {rating.stats.assists > 0 && <span className="text-[8px] bg-emerald-500/20 text-emerald-500 px-1 rounded">{rating.stats.assists} A</span>}
+                             </div>
+                          </div>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm text-white" style={{ backgroundColor: rating.color }}>
+                            {rating.rating.toFixed(1)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -1776,6 +1830,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                     blocked={subBlocked}
                     blockedReason={subBlockedReason}
                     liveStaminaMap={liveStaminaMap}
+                    playerRatings={matchState.playerRatings}
                   />
                 </CardContent>
               </Card>
@@ -2018,7 +2073,7 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
 
 /* ── MANAGER SUBSTITUTION VIEW ──────────────────────────────── */
 
-function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap }: {
+function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers, subsUsed, maxSubs, windowsUsed, maxWindows, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub, isHalftime, isFinished, subQueue, blocked, blockedReason, liveStaminaMap, playerRatings }: {
   currentStarters: Player[];
   currentBench: Player[];
   hasAnyPlayers: boolean;
@@ -2036,6 +2091,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
   blocked?: boolean;
   blockedReason?: string;
   liveStaminaMap?: Record<string, number>;
+  playerRatings?: Record<string, any>;
 }) {
   if (!hasAnyPlayers) {
     return (
@@ -2094,12 +2150,13 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
     blocked={blocked}
     blockedReason={blockedReason}
     liveStaminaMap={liveStaminaMap}
+    playerRatings={playerRatings}
   />;
 }
 
 function ImprovedSubsView({
   starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub,
-  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason, liveStaminaMap,
+  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason, liveStaminaMap, playerRatings,
 }: {
   starters: Player[]; bench: Player[];
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
@@ -2111,6 +2168,7 @@ function ImprovedSubsView({
   isHalftime: boolean;
   blocked?: boolean; blockedReason?: string;
   liveStaminaMap?: Record<string, number>;
+  playerRatings?: Record<string, any>;
 }) {
   const [posFilter, setPosFilter] = useState<'all' | 'gk' | 'def' | 'mid' | 'atk'>('all');
 
@@ -2270,10 +2328,17 @@ function ImprovedSubsView({
                           {p.position}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-bold truncate flex items-center gap-1">
-                            {p.name}
-                            {lowStamina && <span title="Cansado" className="text-[8px]">🔻</span>}
-                          </p>
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-[11px] font-bold truncate flex items-center gap-1">
+                              {p.name}
+                              {lowStamina && <span title="Cansado" className="text-[8px]">🔻</span>}
+                            </p>
+                            {playerRatings?.[p.id] && (
+                              <span className="text-[10px] font-black px-1.5 rounded" style={{ backgroundColor: `${playerRatings[p.id].color}22`, color: playerRatings[p.id].color }}>
+                                {playerRatings[p.id].rating.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1 mt-0.5">
                             <span className="text-[9px] font-mono text-muted-foreground">OVR {p.overall}</span>
                             <div className="h-1 flex-1 max-w-[48px] rounded-full bg-muted/20 overflow-hidden">

@@ -3,6 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { isHighlightEvent } from '@/components/game/HighlightMiniCanvas';
 import { calculateTacticalModifiers } from './tacticalEngine';
 import { TacticsConfig } from '@/types/tactics';
+import { PlayerRating, calculatePlayerRatings } from './ratings/ratingEngine';
+import { Player } from '@/types/game';
+
+export type { PlayerRating };
 
 export interface SimEvent {
   minute: number;
@@ -59,6 +63,7 @@ export interface MatchState {
   isHome: boolean;
   currentMoment: string;
   playerStamina: Record<string, number>;
+  playerRatings: Record<string, PlayerRating>;
   assistantTips: SimEvent[];
   resumeFromBreak: () => void;
   onAnimationComplete?: () => void;
@@ -84,6 +89,7 @@ const INITIAL: MatchState = {
   isHome: true,
   currentMoment: 'equilíbrio',
   playerStamina: {},
+  playerRatings: {},
   assistantTips: [],
   resumeFromBreak: () => {},
 };
@@ -143,6 +149,7 @@ function subscribeToLoop(fn: Subscriber): () => void {
 
 export function useMatchSimulation() {
   const [state, setState] = useState<MatchState>(INITIAL);
+  const [homePlayers, setHomePlayers] = useState<Player[]>([]);
   const [currentTactics, setCurrentTactics] = useState<TacticsConfig | null>(null);
   
   const tacticalMods = useMemo(() => {
@@ -372,6 +379,10 @@ export function useMatchSimulation() {
               } else if (syncData?.success) {
                 console.log("[MATCH] Persistence sync complete via RPC:", syncData);
                 
+                // ⚽ NOVO: Persistir notas dos jogadores
+                const { persistMatchRatings } = await import('./ratings/ratingEngine');
+                await persistMatchRatings(state.playerRatings, syncData.competition || 'Amistoso');
+                
                 // 🏆 Sincronização de Ranking e Torcida centralizada
                 const outcome = data.finalHomeGoals > data.finalAwayGoals ? 'win' : (data.finalHomeGoals === data.finalAwayGoals ? 'draw' : 'loss');
                 const competitionLabel = syncData.competition || 'Amistoso';
@@ -399,6 +410,7 @@ export function useMatchSimulation() {
                     matchId: data.matchDbId,
                     homeGoals: data.finalHomeGoals,
                     awayGoals: data.finalAwayGoals,
+                    playerRatings: state.playerRatings,
                     rankingChange: rankingResult.deltaPoints,
                     fansChange: rankingResult.deltaFans,
                     fanMessage: rankingResult.fanMessage
@@ -446,6 +458,7 @@ export function useMatchSimulation() {
           attendance: data.attendance,
           // currentMoment already handled above
           playerStamina: stamina,
+          playerRatings: calculatePlayerRatings(homePlayers, visibleEvents, nextEvent.minute, data.isHome),
           assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
           onAnimationComplete: () => { isAnimatingRef.current = false; },
         };
@@ -475,6 +488,10 @@ export function useMatchSimulation() {
                 } else if (syncData?.success) {
                   console.log("[MATCH] Persistence sync complete via RPC:", syncData);
                   
+                  // ⚽ NOVO: Persistir notas dos jogadores
+                  const { persistMatchRatings } = await import('./ratings/ratingEngine');
+                  await persistMatchRatings(state.playerRatings, syncData.competition || 'Amistoso');
+
                   // 🏆 Agora chamamos o rankingUpdater centralizado para manter consistência
                   const outcome = state.homeGoals > state.awayGoals ? 'win' : (state.homeGoals === state.awayGoals ? 'draw' : 'loss');
                   const competitionLabel = syncData.competition || 'Amistoso';
@@ -502,6 +519,7 @@ export function useMatchSimulation() {
                       matchId: data.matchDbId,
                       homeGoals: state.homeGoals,
                       awayGoals: state.awayGoals,
+                      playerRatings: state.playerRatings,
                       rankingChange: rankingResult.deltaPoints,
                       fansChange: rankingResult.deltaFans,
                       fanMessage: rankingResult.fanMessage
@@ -597,6 +615,7 @@ export function useMatchSimulation() {
       errorMsg: null,
       competition: data.competition || 'Amistoso',
       isHome: data.is_home,
+      playerRatings: data.status === 'finished' ? calculatePlayerRatings((data.home_players as any) || [], visibleEvents, currentMinute, data.is_home) : {},
     }));
     
     if (data.status !== 'finished' && progress < 1) startTick();
@@ -652,6 +671,7 @@ export function useMatchSimulation() {
 
   const startMatch = useCallback(async (params: any) => {
     setState(s => ({ ...s, phase: 'loading' }));
+    if (params.homePlayers) setHomePlayers(params.homePlayers);
     try {
       const { data, error } = await supabase.functions.invoke('start-match', { body: params });
       if (error || !data?.success) {

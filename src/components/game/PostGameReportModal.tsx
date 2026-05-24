@@ -216,42 +216,46 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
               <CardContent className="px-3 pb-3">
                 <div className="grid grid-cols-2 gap-2">
                   {report.highlights.bestPlayer && (
-                    <div className="bg-emerald-500/10 rounded-lg p-2 text-center">
-                      <p className="text-[9px] text-muted-foreground">⭐ Melhor</p>
-                      <p className="text-xs font-bold">{report.highlights.bestPlayer.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{report.highlights.bestPlayer.position} • Nota {report.highlights.bestPlayer.rating}</p>
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-center relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-1 opacity-10"><Star className="w-8 h-8 text-amber-500" /></div>
+                      <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest">⭐ Melhor</p>
+                      <p className="text-xs font-bold truncate">{report.highlights.bestPlayer.name}</p>
+                      <p className="text-[10px] font-mono font-bold text-amber-400">Nota {report.highlights.bestPlayer.rating.toFixed(1)}</p>
                       {(report.highlights.bestPlayer.goals > 0 || report.highlights.bestPlayer.assists > 0) && (
-                        <p className="text-[9px] text-emerald-400">{report.highlights.bestPlayer.goals}⚽ {report.highlights.bestPlayer.assists}🅰️</p>
+                        <p className="text-[9px] text-emerald-400 mt-0.5">{report.highlights.bestPlayer.goals}⚽ {report.highlights.bestPlayer.assists}🅰️</p>
                       )}
                     </div>
                   )}
                   {report.highlights.worstPlayer && (
-                    <div className="bg-red-500/10 rounded-lg p-2 text-center">
-                      <p className="text-[9px] text-muted-foreground">📉 A melhorar</p>
-                      <p className="text-xs font-bold">{report.highlights.worstPlayer.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{report.highlights.worstPlayer.position} • Nota {report.highlights.worstPlayer.rating}</p>
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-2 text-center">
+                      <p className="text-[9px] text-red-400 font-black uppercase tracking-widest">📉 A melhorar</p>
+                      <p className="text-xs font-bold truncate">{report.highlights.worstPlayer.name}</p>
+                      <p className="text-[10px] font-mono text-red-400 opacity-80">Nota {report.highlights.worstPlayer.rating.toFixed(1)}</p>
                     </div>
                   )}
                   {report.highlights.topScorer && (
-                    <div className="bg-primary/10 rounded-lg p-2 text-center">
-                      <p className="text-[9px] text-muted-foreground">⚽ Artilheiro</p>
-                      <p className="text-xs font-bold">{report.highlights.topScorer.name}</p>
-                      <p className="text-[10px] text-primary">{report.highlights.topScorer.goals} gol(s)</p>
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 text-center">
+                      <p className="text-[9px] text-primary font-black uppercase tracking-widest">⚽ Artilheiro</p>
+                      <p className="text-xs font-bold truncate">{report.highlights.topScorer.name}</p>
+                      <p className="text-[10px] text-primary font-bold">{report.highlights.topScorer.goals} gol(s)</p>
                     </div>
                   )}
                   {report.highlights.topAssister && (
-                    <div className="bg-blue-500/10 rounded-lg p-2 text-center">
-                      <p className="text-[9px] text-muted-foreground">🅰️ Garçom</p>
-                      <p className="text-xs font-bold">{report.highlights.topAssister.name}</p>
-                      <p className="text-[10px] text-blue-400">{report.highlights.topAssister.assists} assist.</p>
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 text-center">
+                      <p className="text-[9px] text-blue-400 font-black uppercase tracking-widest">🅰️ Garçom</p>
+                      <p className="text-xs font-bold truncate">{report.highlights.topAssister.name}</p>
+                      <p className="text-[10px] text-blue-400 font-bold">{report.highlights.topAssister.assists} assist.</p>
                     </div>
                   )}
                 </div>
                 {report.highlights.manOfTheMatch && (
                   <div className="mt-2 text-center">
-                    <Badge variant="outline" className="text-[10px] text-yellow-400 border-yellow-400/30">
-                      🏅 Craque do Jogo: {report.highlights.manOfTheMatch}
-                    </Badge>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30">
+                      <Star className="h-3 w-3 text-amber-500 fill-amber-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 italic">
+                        Craque do Jogo: {report.highlights.manOfTheMatch}
+                      </span>
+                    </div>
                   </div>
                 )}
               </CardContent>

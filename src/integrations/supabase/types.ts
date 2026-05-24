@@ -7687,6 +7687,17 @@ export type Database = {
         Args: { _league_id: string }
         Returns: undefined
       }
+      update_player_after_match: {
+        Args: {
+          _assists: number
+          _clean_sheet: boolean
+          _competition: string
+          _goals: number
+          _player_id: string
+          _rating: number
+        }
+        Returns: Json
+      }
       update_ranking_positions: { Args: never; Returns: undefined }
       upgrade_club_shop: { Args: { p_club_id: string }; Returns: Json }
       upsert_player_stats: {
