@@ -79,16 +79,9 @@ export function useMatchState(initialState: any, userId?: string) {
       else if (isWorld) rankingComp = 'world';
       else if (isContinental || isCup) rankingComp = 'continental';
 
-      // 🏆 Sincronização Global do Ranking via motor central
-      import('@/match/rankingUpdater').then(({ updateGlobalRanking }) => {
-        updateGlobalRanking({
-          userId: userId || '',
-          clubName: prev.name,
-          outcome,
-          competition: rankingComp,
-          competitionLabel: competition
-        });
-      });
+      // 🏆 Sincronização Global movida para o motor central de persistência
+      // O ranking será atualizado no callback de finalização do simulador via sync_match_persistence.
+
 
       const teamStrength = prev.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, prev.players.length);
       const opponentStrength = match?.opponentStrength || 65;
