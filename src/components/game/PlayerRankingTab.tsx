@@ -178,12 +178,15 @@ export function PlayerRankingTab() {
 
   const filteredRankings = useMemo(() => {
     return rankings.filter(entry => {
-      const matchesSearch = entry.players.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            entry.players.clubs?.club_name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPosition = positionFilter === 'all' || entry.players.position.includes(positionFilter);
+      const name = entry.players?.name || '';
+      const clubName = entry.players?.clubs?.club_name || '';
+      const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            clubName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPosition = positionFilter === 'all' || (entry.players?.position || '').includes(positionFilter);
       return matchesSearch && matchesPosition;
     });
   }, [rankings, searchTerm, positionFilter]);
+
 
   const topPlayers = useMemo(() => filteredRankings.slice(0, 3), [filteredRankings]);
   const otherPlayers = useMemo(() => filteredRankings.slice(3), [filteredRankings]);
