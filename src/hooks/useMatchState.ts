@@ -71,7 +71,13 @@ export function useMatchState(initialState: any, userId?: string) {
       const compLower = (competition || '').toLowerCase();
       const isFriendly = !competition || compLower.includes('amistos');
       const isCup = deps.isCup || compLower.includes('copa') || compLower.includes('cup');
-      const isContinental = compLower.includes('continental') || compLower.includes('libertadores') || compLower.includes('sul-americana');
+      const isContinental = compLower.includes('continental') || 
+                            compLower.includes('libertadores') || 
+                            compLower.includes('champions league') || 
+                            compLower.includes('afc champions') || 
+                            compLower.includes('caf champions') || 
+                            compLower.includes('concacaf champions') || 
+                            compLower.includes('ofc champions');
       const isWorld = compLower.includes('mundial') || compLower.includes('world');
 
       let rankingComp: 'friendly' | 'league' | 'continental' | 'world' = 'league';
