@@ -512,7 +512,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         user_id: user.id,
         club_name: clubData?.name,
         item_name: `Lançamento: ${kits[activeKit].name}`,
-        amount_cents: 990,
+        amount_cents: 1,
         status: 'attempting',
         payment_method: 'pix',
         metadata: { uniform_id: pendingLaunchId, type: 'uniform_launch' }
