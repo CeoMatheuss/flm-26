@@ -10,7 +10,7 @@ import {
   ShoppingBag, Clock, CheckCircle2, XCircle, AlertCircle, 
   RefreshCw, History, TrendingUp, DollarSign, Activity,
   Search, Filter, MapPin, Tablet, Zap, Package, ShieldAlert,
-  ArrowUpRight, ArrowDownRight, User, Eye, Ban
+  ArrowUpRight, User, Eye, Ban
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { toast } from 'sonner';
@@ -25,11 +25,11 @@ interface ShopActivity {
   amount_cents: number;
   status: string;
   payment_method: string | null;
-  ip_address: string | null;
-  device_info: string | null;
-  region: string | null;
-  attempt_duration_ms: number | null;
-  metadata: any;
+  ip_address?: string | null;
+  device_info?: string | null;
+  region?: string | null;
+  attempt_duration_ms?: number | null;
+  metadata?: any;
   created_at: string;
 }
 
@@ -67,20 +67,20 @@ export function AdminShopMonitor() {
 
       if (error) throw error;
       if (data) {
-        setActivities(data as ShopActivity[]);
+        setActivities(data as unknown as ShopActivity[]);
         
         // Calculate stats
-        const approved = data.filter(a => ['approved', 'paid', 'delivered'].includes(a.status));
+        const approved = (data as any[]).filter(a => ['approved', 'paid', 'delivered'].includes(a.status));
         const revenue = approved.reduce((acc, curr) => acc + Number(curr.amount_cents || 0), 0);
         
         setStats(prev => ({
           ...prev,
           totalRevenue: revenue / 100,
           approvedCount: approved.length,
-          pendingCount: data.filter(a => a.status === 'pending').length,
-          rejectedCount: data.filter(a => a.status === 'rejected' || a.status === 'cancelled').length,
-          attemptingCount: data.filter(a => a.status === 'attempting').length,
-          fraudulentCount: data.filter(a => a.status === 'fraudulent').length,
+          pendingCount: (data as any[]).filter(a => a.status === 'pending').length,
+          rejectedCount: (data as any[]).filter(a => a.status === 'rejected' || a.status === 'cancelled').length,
+          attemptingCount: (data as any[]).filter(a => a.status === 'attempting').length,
+          fraudulentCount: (data as any[]).filter(a => a.status === 'fraudulent').length,
         }));
       }
     } catch (e: any) {
@@ -95,18 +95,17 @@ export function AdminShopMonitor() {
     loadData();
 
     const channel = supabase
-      .channel('admin-shop-monitor-realtime')
+      .channel('admin-shop-monitor-realtime-v2')
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'admin_shop_activity' 
       }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          const newActivity = payload.new as ShopActivity;
+          const newActivity = payload.new as unknown as ShopActivity;
           setActivities(prev => [newActivity, ...prev].slice(0, 100));
           setNewCount(prev => prev + 1);
           
-          // Audio notification for high value or important sales
           if (newActivity.amount_cents > 5000 || ['approved', 'paid'].includes(newActivity.status)) {
             const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
             audio.volume = 0.2;
@@ -118,10 +117,9 @@ export function AdminShopMonitor() {
             toast.info(`🛒 Nova atividade: ${newActivity.item_name || 'Produto'}`);
           }
           
-          // Refresh stats on new items
           loadData();
         } else if (payload.eventType === 'UPDATE') {
-          setActivities(prev => prev.map(a => a.id === payload.new.id ? { ...a, ...payload.new } : a));
+          setActivities(prev => prev.map(a => a.id === payload.new.id ? { ...a, ...(payload.new as any) } : a));
           loadData();
         }
       })
@@ -159,14 +157,10 @@ export function AdminShopMonitor() {
     a.user_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const resetCounter = () => setNewCount(0);
-
   return (
     <div className="space-y-6 pb-10">
-      {/* Header with KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-slate-900/40 border-emerald-500/20 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all" />
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-emerald-500/10 rounded-lg">
@@ -182,7 +176,6 @@ export function AdminShopMonitor() {
         </Card>
 
         <Card className="bg-slate-900/40 border-blue-500/20 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all" />
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-blue-500/10 rounded-lg">
@@ -196,7 +189,6 @@ export function AdminShopMonitor() {
         </Card>
 
         <Card className="bg-slate-900/40 border-amber-500/20 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/20 transition-all" />
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-amber-500/10 rounded-lg">
@@ -210,7 +202,6 @@ export function AdminShopMonitor() {
         </Card>
 
         <Card className="bg-slate-900/40 border-red-500/20 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-red-500/10 rounded-full blur-3xl group-hover:bg-red-500/20 transition-all" />
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-red-500/10 rounded-lg">
@@ -226,7 +217,6 @@ export function AdminShopMonitor() {
         </Card>
       </div>
 
-      {/* Main Content Area */}
       <Card className="bg-[#0a0f1a] border-white/5 shadow-2xl">
         <CardHeader className="border-b border-white/5 pb-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -242,10 +232,10 @@ export function AdminShopMonitor() {
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30 group-focus-within:text-primary transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
                 <Input 
-                  placeholder="Buscar usuário ou item..." 
-                  className="h-9 pl-9 w-[200px] sm:w-[280px] bg-white/5 border-white/10 rounded-xl text-xs"
+                  placeholder="Buscar..." 
+                  className="h-9 pl-9 w-[180px] bg-white/5 border-white/10 rounded-xl text-xs"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -253,7 +243,6 @@ export function AdminShopMonitor() {
 
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="h-9 w-[140px] bg-white/5 border-white/10 rounded-xl text-xs">
-                  <Filter className="h-3.5 w-3.5 mr-2" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0f172a] border-white/10">
@@ -267,13 +256,7 @@ export function AdminShopMonitor() {
                 </SelectContent>
               </Select>
 
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={loadData} 
-                disabled={loading}
-                className="h-9 bg-white/5 border-white/10 rounded-xl hover:bg-white/10"
-              >
+              <Button size="sm" variant="outline" onClick={loadData} disabled={loading} className="h-9 bg-white/5 border-white/10 rounded-xl">
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
@@ -281,102 +264,66 @@ export function AdminShopMonitor() {
         </CardHeader>
         
         <CardContent className="p-0">
-          <ScrollArea className="h-[650px] w-full">
+          <ScrollArea className="h-[600px] w-full">
             <div className="p-4 space-y-3">
               {filteredActivities.length === 0 ? (
-                <div className="py-20 text-center flex flex-col items-center justify-center space-y-4">
-                  <div className="p-4 bg-white/5 rounded-full">
-                    <History className="h-8 w-8 text-white/20" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-white/60">Nenhum evento encontrado</p>
-                    <p className="text-xs text-white/30">Aguardando novas interações na loja...</p>
-                  </div>
-                </div>
+                <div className="py-20 text-center text-white/20">Aguardando atividades...</div>
               ) : (
                 <AnimatePresence mode="popLayout">
                   {filteredActivities.map((item, index) => {
                     const statusConfig = getStatusConfig(item.status);
                     const StatusIcon = statusConfig.icon;
-                    
                     return (
                       <motion.div 
                         key={item.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.02 }}
-                        className={`group relative overflow-hidden p-4 rounded-2xl border transition-all ${
-                          item.status === 'fraudulent' 
-                            ? 'bg-red-500/5 border-red-500/20 hover:border-red-500/40' 
-                            : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10'
-                        }`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.01 }}
+                        className={`p-4 rounded-2xl border ${item.status === 'fraudulent' ? 'bg-red-500/5 border-red-500/20' : 'bg-white/[0.02] border-white/5'}`}
                       >
-                        {/* Status bar indication */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusConfig.color.split(' ')[0]}`} />
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                          {/* User info */}
-                          <div className="md:col-span-3 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10 shrink-0">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
                               <User className="h-5 w-5 text-white/40" />
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-black uppercase italic truncate text-white">{item.club_name || 'Usuário'}</p>
+                            <div className="truncate">
+                              <p className="text-xs font-black uppercase italic text-white truncate">{item.club_name || 'Usuário'}</p>
                               <p className="text-[10px] text-white/30 font-mono truncate">{item.user_id}</p>
                             </div>
                           </div>
 
-                          {/* Item info */}
-                          <div className="md:col-span-3">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Zap className="h-3 w-3 text-primary shrink-0" />
-                              <p className="text-[11px] font-bold text-white/90 truncate">{item.item_name || 'Transação'}</p>
+                          <div className="flex flex-wrap items-center gap-4">
+                            <div>
+                              <p className="text-[11px] font-bold text-white/90">{item.item_name || 'Transação'}</p>
+                              <div className="flex items-center gap-2 text-[10px] text-white/40 font-mono">
+                                <span className="text-emerald-400">{formatMoney(item.amount_cents / 100)}</span>
+                                <span className="uppercase">{item.payment_method}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-3 text-[10px] text-white/40">
-                              <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" /> {formatMoney(item.amount_cents / 100)}</span>
-                              <span className="px-1.5 py-0.5 bg-white/5 rounded-md font-bold uppercase">{item.payment_method || 'N/A'}</span>
-                            </div>
-                          </div>
-
-                          {/* Technical details */}
-                          <div className="md:col-span-3 flex flex-wrap gap-3">
-                            <div className="flex items-center gap-1.5 text-[10px] text-white/40 bg-white/5 px-2 py-1 rounded-lg">
-                              <MapPin className="h-3 w-3 text-emerald-400" />
-                              {item.region || 'Desconhecido'}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-white/40 bg-white/5 px-2 py-1 rounded-lg">
-                              <Tablet className="h-3 w-3 text-blue-400" />
-                              {item.device_info || 'Mobile/Web'}
+                            <div className="flex gap-2">
+                              <div className="text-[10px] text-white/30 bg-white/5 px-2 py-1 rounded flex items-center gap-1">
+                                <MapPin className="h-3 w-3" /> {item.region || 'BR'}
+                              </div>
+                              <div className="text-[10px] text-white/30 bg-white/5 px-2 py-1 rounded flex items-center gap-1">
+                                <Tablet className="h-3 w-3" /> {item.device_info || 'PC'}
+                              </div>
                             </div>
                           </div>
 
-                          {/* Status & Time */}
-                          <div className="md:col-span-3 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-2">
-                            <Badge className={`${statusConfig.color} font-black italic uppercase text-[9px] px-2 py-1 gap-1.5 border`}>
-                              <StatusIcon className="h-3 w-3" />
-                              {statusConfig.label}
+                          <div className="flex items-center gap-3">
+                            <Badge className={`${statusConfig.color} font-black italic uppercase text-[9px]`}>
+                              <StatusIcon className="h-3 w-3 mr-1" /> {statusConfig.label}
                             </Badge>
-                            <span className="text-[10px] text-white/30 font-bold">
+                            <span className="text-[10px] text-white/30 font-bold whitespace-nowrap">
                               {new Date(item.created_at).toLocaleTimeString('pt-BR')}
                             </span>
                           </div>
                         </div>
-
-                        {/* Extra Log Details (Hidden by default, shown on hover if needed) */}
-                        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-white/20">
-                          <div className="flex gap-4">
-                            <span>IP: {item.ip_address || '127.0.0.1'}</span>
-                            {item.attempt_duration_ms && (
-                              <span>Tempo: {item.attempt_duration_ms}ms</span>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <button className="hover:text-primary transition-colors flex items-center gap-1">
-                              <Eye className="h-3 w-3" /> Detalhes
-                            </button>
-                            <button className="hover:text-red-400 transition-colors flex items-center gap-1">
-                              <Ban className="h-3 w-3" /> Banir
-                            </button>
+                        <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[9px] text-white/20 uppercase font-black">
+                          <span>IP: {item.ip_address || '127.0.0.1'} | {item.attempt_duration_ms ? `${item.attempt_duration_ms}ms` : 'N/A'}</span>
+                          <div className="flex gap-3">
+                            <button className="hover:text-primary"><Eye className="h-3 w-3" /></button>
+                            <button className="hover:text-red-400"><Ban className="h-3 w-3" /></button>
                           </div>
                         </div>
                       </motion.div>
@@ -388,26 +335,6 @@ export function AdminShopMonitor() {
           </ScrollArea>
         </CardContent>
       </Card>
-
-      {/* Fraud/Security Alerts Summary */}
-      {stats.fraudulentCount > 0 && (
-        <Card className="bg-red-500/5 border-red-500/20">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-500/20 rounded-lg">
-                <ShieldAlert className="h-5 w-5 text-red-500" />
-              </div>
-              <div>
-                <p className="text-sm font-black uppercase italic text-red-400">Atividade Suspeita Detectada</p>
-                <p className="text-xs text-red-500/60">Foram registradas {stats.fraudulentCount} tentativas de fraude nas últimas 24h.</p>
-              </div>
-            </div>
-            <Button size="sm" variant="destructive" className="h-8 text-[10px] font-black uppercase italic">
-              Revisar Segurança
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
