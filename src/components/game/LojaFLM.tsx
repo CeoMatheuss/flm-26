@@ -313,13 +313,16 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
           item_id: selectedItem.id,
           item_name: selectedItem.name,
           amount_cents: selectedItem.price_cents,
-          status: 'pending',
+          status: 'attempting',
           payment_method: checkoutMethod,
-          metadata: { checkout_type: 'start_attempt', email: checkoutEmail }
+          metadata: { checkout_type: 'start_attempt', email: checkoutEmail },
+          region: 'BR', // Simulado
+          device_info: window.navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
         });
       } catch (admErr) {
         console.warn('Falha ao registrar tentativa na ADM:', admErr);
       }
+
 
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
@@ -341,10 +344,18 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
           orderId: data.order_id
         });
         setShowPixModal(true);
+        
+        // Atualizar status para pendente no monitor
+        await supabase.from('admin_shop_activity').update({ status: 'pending' }).eq('metadata->>order_id', data.order_id);
       } else if (data?.init_point) {
         setCurrentOrderId(data.order_id);
+        
+        // Atualizar status para pendente no monitor
+        await supabase.from('admin_shop_activity').update({ status: 'pending' }).eq('metadata->>order_id', data.order_id);
+        
         window.location.href = data.init_point;
       }
+
     } catch (e: any) {
       console.error(e);
       toast.error('Erro ao processar compra. Verifique sua conexão.');
