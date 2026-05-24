@@ -1053,6 +1053,17 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
   // ── DERIVED on-field state (SINGLE SOURCE OF TRUTH for lineup/bench UI) ──
   // currentStarters: 11 players currently on the field (initial 11, minus subbed-out, plus subbed-in)
   // currentBench: bench players that have NOT entered the field yet (still available)
+  // Position ordering for tactical sort (GOL → defesa → meio → ataque)
+  const POSITION_ORDER: Record<string, number> = {
+    GOL: 0, ZAG: 1, LAT: 2, LD: 2, LE: 2, VOL: 3, MEI: 4, MC: 4, ME: 5, MD: 5, ATA: 6, PE: 6, PD: 6, SA: 6,
+  };
+  const sortByPosition = (a: Player, b: Player) => {
+    const oa = POSITION_ORDER[a.position] ?? 99;
+    const ob = POSITION_ORDER[b.position] ?? 99;
+    if (oa !== ob) return oa - ob;
+    return (b.overall ?? 0) - (a.overall ?? 0);
+  };
+
   const { currentStarters, currentBench } = useMemo(() => {
     if (!homePlayers || homePlayers.length === 0) {
       return { currentStarters: [] as Player[], currentBench: [] as Player[] };
@@ -1061,14 +1072,19 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
     const initialBench = homePlayers.slice(11);
     const remainingStarters = initialStarters.filter(p => !substitutedPlayerIds.has(p.id));
     const subbedInPlayers = initialBench.filter(p => enteredInIds.has(p.id));
-    const remainingBench = initialBench.filter(p => !enteredInIds.has(p.id));
+    // Only true reservas (squad_status === 'bench'). If field is missing, fall back to all non-starters.
+    const reservasOnly = initialBench.filter(p => {
+      if (enteredInIds.has(p.id)) return false;
+      return p.squad_status ? p.squad_status === 'bench' : true;
+    });
     return {
-      currentStarters: [...remainingStarters, ...subbedInPlayers],
-      currentBench: remainingBench,
+      currentStarters: [...remainingStarters, ...subbedInPlayers].sort(sortByPosition),
+      currentBench: reservasOnly.sort(sortByPosition),
     };
     // subStateVersion forces re-derivation on every sub change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homePlayers, substitutedPlayerIds, enteredInIds, subStateVersion]);
+
 
   // ── Live stamina map (continuous fatigue during the match) ──
   const liveStaminaMap = useMemo(() => {
