@@ -29,7 +29,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        'relative w-full min-h-[280px] rounded-[1.5rem] overflow-hidden group transition-all duration-300',
+        'relative w-full min-h-[240px] sm:min-h-[280px] rounded-2xl sm:rounded-[1.5rem] overflow-hidden group transition-all duration-300',
         'border-2 shadow-2xl',
         (player as any).rarity && (player as any).rarity !== 'Comum'
           ? (player as any).rarity === 'Craque geracional' ? 'border-amber-400 shadow-amber-400/20' :
