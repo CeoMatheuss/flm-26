@@ -522,11 +522,11 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
           item_id: 'uniform_launch_token',
-          method: 'pix',
+          method: 'mercadolivre', // Usando Mercado Livre como solicitado
           email: email,
           full_name: fullName,
           cpf: cpf.replace(/\D/g, ''),
-          custom_amount: 990,
+          custom_amount: 1, // R$ 0,01
           metadata: { uniform_id: pendingLaunchId, item_type: 'uniform_launch' }
         }
       });
