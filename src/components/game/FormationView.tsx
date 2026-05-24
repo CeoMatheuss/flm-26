@@ -20,15 +20,15 @@ interface Props {
   onSlotSelect?: (id: string | null) => void;
 }
 
-type TacticalSlot = { position: string; x: number; y: number };
-
+// Grid systems (x = 0-100 horizontal, y = 0-100 vertical)
 const lineX: Record<number, number[]> = {
   1: [50],
-  2: [30, 70],
-  3: [20, 50, 80],
-  4: [15, 38, 62, 85],
+  2: [25, 75],
+  3: [15, 50, 85],
+  4: [12, 38, 62, 88],
   5: [10, 30, 50, 70, 90],
 };
+
 
 const makeLine = (y: number, positions: string[]): TacticalSlot[] => {
   const xs = lineX[positions.length] || [50];
