@@ -202,7 +202,7 @@ export function MatchCalendarTab({ userId, clubName }: { userId: string; clubNam
                         ) : (
                           <Badge variant="outline" className="text-[8px] bg-black/40 border-white/10 py-0 h-4">VS</Badge>
                         )}
-                        <Badge variant="ghost" className="text-[7px] text-zinc-500 p-0 mt-1">{m.venue || 'Estádio'}</Badge>
+                        <Badge variant="outline" className="text-[7px] text-zinc-500 p-0 mt-1 border-none">{m.venue || 'Estádio'}</Badge>
                       </div>
 
                       <div className="flex flex-col items-center gap-1 flex-1">
