@@ -17,8 +17,11 @@ export function useStoreManager(club: Club, userId: string) {
       activePlanId: null,
       monthlyRevenue: 0,
       happiness: 100
-    }
+    },
+    recentOrders: [],
+    products: []
   });
+
   const [loading, setLoading] = useState(false);
 
   const fetchStoreData = useCallback(async () => {
