@@ -62,40 +62,42 @@ export function YouthPlayerCard({ prospect, onClick }: Props) {
       onClick={() => onClick(prospect)}
       className="cursor-pointer"
     >
-      <Card className={`overflow-hidden border-2 bg-gradient-to-br ${getRarityColor(rarity)} group relative backdrop-blur-sm rounded-[1.5rem]`}>
+      <Card className={`overflow-hidden border-2 bg-gradient-to-br ${getRarityColor(rarity)} group relative backdrop-blur-sm rounded-[1.25rem] sm:rounded-[1.5rem] transition-all duration-300 active:scale-[0.98]`}>
         {isGenerational && (
           <div className="absolute top-2 right-2 z-20">
-            <Crown className="h-6 w-6 text-amber-400 fill-amber-400 animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+            <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-amber-400 fill-amber-400 animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
           </div>
         )}
         
-        <CardContent className="p-5">
-          <div className="flex items-start gap-4">
+        <CardContent className="p-3 sm:p-5">
+          <div className="flex items-center sm:items-start gap-3 sm:gap-4">
             {/* Player Avatar */}
             <div className="relative shrink-0">
-              <div className={`w-20 h-20 rounded-2xl bg-black/40 flex items-center justify-center border-2 ${getRarityColor(rarity).split(' ').pop()} transition-all overflow-hidden group-hover:scale-105 duration-500`}>
-                <span className="text-4xl grayscale group-hover:grayscale-0 transition-all duration-500">👤</span>
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1 flex justify-center">
-                  <span className="text-[10px] uppercase font-black tracking-widest">{prospect.nationality?.substring(0, 3)}</span>
+              <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-black/40 flex items-center justify-center border-2 ${getRarityColor(rarity).split(' ').pop()} transition-all overflow-hidden group-hover:scale-105 duration-500`}>
+                <span className="text-3xl sm:text-4xl grayscale group-hover:grayscale-0 transition-all duration-500">👤</span>
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-0.5 sm:p-1 flex justify-center">
+                  <span className="text-[8px] sm:text-[10px] uppercase font-black tracking-widest">{prospect.nationality?.substring(0, 3)}</span>
                 </div>
               </div>
-              <div className="absolute -top-3 -left-3 rotate-[-12deg]">
-                <Badge className={`${getRarityBadge(rarity)} text-[10px] font-black h-6 min-w-[38px] justify-center px-2 shadow-lg border-2 uppercase tracking-tighter`}>
+              <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3 rotate-[-12deg]">
+                <Badge className={`${getRarityBadge(rarity)} text-[8px] sm:text-[10px] font-black h-5 sm:h-6 min-w-[32px] sm:min-w-[38px] justify-center px-1.5 sm:px-2 shadow-lg border-2 uppercase tracking-tighter`}>
                   {prospect.position}
                 </Badge>
               </div>
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex flex-col gap-0.5 mb-1.5">
-                <h3 className="text-base font-black uppercase italic tracking-tighter truncate group-hover:text-emerald-400 transition-colors">{prospect.name}</h3>
-                <div className="flex items-center gap-2">
-                   <Badge variant="outline" className="text-[10px] font-bold bg-white/5 border-white/10 h-5 px-1.5 uppercase">OVR {prospect.overall}</Badge>
-                   <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">{prospect.age} anos</span>
+              <div className="flex flex-col gap-0.5 mb-1 sm:mb-1.5">
+                <h3 className="text-sm sm:text-base font-black uppercase italic tracking-tighter truncate group-hover:text-emerald-400 transition-colors leading-tight">
+                  {prospect.name}
+                </h3>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                   <Badge variant="outline" className="text-[8px] sm:text-[10px] font-bold bg-white/5 border-white/10 h-4 sm:h-5 px-1 sm:px-1.5 uppercase">OVR {prospect.overall}</Badge>
+                   <span className="text-[9px] sm:text-[11px] font-bold text-white/40 uppercase tracking-widest">{prospect.age} anos</span>
                 </div>
               </div>
               
-              <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="hidden sm:flex flex-wrap items-center gap-2 mb-3">
                 <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/30 border ${potInfo.border}`}>
                   <span className="text-xs">{potInfo.emoji}</span>
                   <span className={`text-[10px] font-black uppercase tracking-tight ${potInfo.color}`}>{potInfo.label}</span>
@@ -107,62 +109,77 @@ export function YouthPlayerCard({ prospect, onClick }: Props) {
                 )}
               </div>
 
-              {/* Development Status */}
-              <div className="space-y-1.5 bg-black/20 p-2 rounded-xl border border-white/5">
-                <div className="flex items-center justify-between text-[9px] uppercase font-black">
-                  <span className="text-white/40 flex items-center gap-1">
-                    {evoStatus === 'evoluindo' ? <TrendingUp className="h-3 w-3 text-emerald-400" /> : evoStatus === 'travado' ? <TrendingDown className="h-3 w-3 text-red-400" /> : <Minus className="h-3 w-3 text-amber-400" />}
-                    {evoInfo.label}
-                  </span>
-                  <span className="text-emerald-400">{prospect.trainingProgress || 0}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${prospect.trainingProgress || 0}%` }}
-                    className={`h-full ${evoStatus === 'evoluindo' ? 'bg-emerald-500' : evoStatus === 'travado' ? 'bg-red-500' : 'bg-amber-500'} shadow-[0_0_8px_rgba(16,185,129,0.4)]`}
-                  />
-                </div>
+              {/* Mobile Tags View */}
+              <div className="flex sm:hidden items-center gap-1 mb-1">
+                <span className="text-xs">{potInfo.emoji}</span>
+                <span className={`text-[9px] font-black uppercase tracking-tighter ${potInfo.color}`}>{potInfo.label}</span>
+              </div>
+            </div>
+
+            {/* Overall Badge for Mobile (Alternative View) */}
+            <div className="sm:hidden flex flex-col items-center justify-center bg-black/20 rounded-lg p-1.5 border border-white/5 min-w-[45px]">
+               <span className="text-[8px] font-black uppercase text-white/40">POT</span>
+               <span className={`text-xs font-black ${potInfo.color}`}>{prospect.potential}</span>
+            </div>
+          </div>
+
+          <div className="mt-3 sm:mt-0">
+            {/* Development Status */}
+            <div className="space-y-1.5 bg-black/20 p-2 rounded-xl border border-white/5">
+              <div className="flex items-center justify-between text-[8px] sm:text-[9px] uppercase font-black">
+                <span className="text-white/40 flex items-center gap-1 truncate max-w-[70%]">
+                  {evoStatus === 'evoluindo' ? <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-400" /> : evoStatus === 'travado' ? <TrendingDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-400" /> : <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-400" />}
+                  <span className="truncate">{evoInfo.label}</span>
+                </span>
+                <span className="text-emerald-400 shrink-0">{prospect.trainingProgress || 0}%</span>
+              </div>
+              <div className="h-1 sm:h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${prospect.trainingProgress || 0}%` }}
+                  className={`h-full ${evoStatus === 'evoluindo' ? 'bg-emerald-500' : evoStatus === 'travado' ? 'bg-red-500' : 'bg-amber-500'} shadow-[0_0_8px_rgba(16,185,129,0.4)]`}
+                />
               </div>
             </div>
           </div>
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/10">
-            <div className="flex flex-col items-center p-1.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-              <Zap className="h-3.5 w-3.5 text-amber-400 mb-1" />
-              <span className="text-[8px] uppercase font-black text-white/30 tracking-widest">Energia</span>
-              <span className="text-xs font-black italic">{prospect.energy ?? 100}%</span>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/10">
+            <div className="flex flex-col items-center p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+              <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-400 mb-0.5 sm:mb-1" />
+              <span className="text-[7px] sm:text-[8px] uppercase font-black text-white/30 tracking-widest">NRG</span>
+              <span className="text-[10px] sm:text-xs font-black italic">{prospect.energy ?? 100}%</span>
             </div>
-            <div className="flex flex-col items-center p-1.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-              <Heart className="h-3.5 w-3.5 text-red-400 mb-1" />
-              <span className="text-[8px] uppercase font-black text-white/30 tracking-widest">Moral</span>
-              <span className="text-xs font-black italic">{prospect.morale ?? 60}</span>
+            <div className="flex flex-col items-center p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+              <Heart className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-400 mb-0.5 sm:mb-1" />
+              <span className="text-[7px] sm:text-[8px] uppercase font-black text-white/30 tracking-widest">MOR</span>
+              <span className="text-[10px] sm:text-xs font-black italic">{prospect.morale ?? 60}</span>
             </div>
-            <div className="flex flex-col items-center p-1.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-              <DollarSign className="h-3.5 w-3.5 text-emerald-400 mb-1" />
-              <span className="text-[8px] uppercase font-black text-white/30 tracking-widest">Valor</span>
-              <span className="text-xs font-black italic text-emerald-400">R${(Number(prospect.marketValue || 0) / 1000).toFixed(0)}k</span>
+            <div className="flex flex-col items-center p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+              <DollarSign className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-400 mb-0.5 sm:mb-1" />
+              <span className="text-[7px] sm:text-[8px] uppercase font-black text-white/30 tracking-widest">VAL</span>
+              <span className="text-[10px] sm:text-xs font-black italic text-emerald-400">R${(Number(prospect.marketValue || 0) / 1000).toFixed(0)}k</span>
             </div>
           </div>
           
           {prospect.promotionReady && (
-            <div className="mt-4">
+            <div className="mt-3 sm:mt-4">
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="w-full h-8 text-[10px] font-black uppercase italic tracking-tighter gap-2 bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                className="w-full h-7 sm:h-8 text-[8px] sm:text-[10px] font-black uppercase italic tracking-tighter gap-1.5 sm:gap-2 bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onClick(prospect); // Open modal which has the promotion button
+                  onClick(prospect);
                 }}
               >
-                <ArrowUp className="h-3 w-3" /> Pronto p/ Profissional
+                <ArrowUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> Promover
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
+    </motion.div>
     </motion.div>
   );
 }

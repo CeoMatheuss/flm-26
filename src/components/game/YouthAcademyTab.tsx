@@ -95,24 +95,24 @@ export function YouthAcademyTab({
       />
 
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="bg-muted/50 p-2 rounded-lg flex items-center gap-2">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div className="bg-muted/50 p-2 px-3 rounded-lg flex items-center gap-2 w-full lg:w-auto">
             <GraduationCap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-bold uppercase tracking-wider">Plantel da Base</span>
+            <span className="text-xs font-black uppercase tracking-wider">Plantel da Base</span>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full lg:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input 
                 placeholder="Buscar jovem..." 
-                className="pl-9 bg-card/40 border-border/30 h-9 text-xs"
+                className="pl-9 bg-card/40 border-border/30 h-10 sm:h-9 text-xs font-bold"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <select 
-              className="bg-card/40 border border-border/30 rounded-md h-9 px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+              className="w-full sm:w-auto bg-card/40 border border-border/30 rounded-md h-10 sm:h-9 px-3 text-xs font-bold focus:ring-1 focus:ring-primary outline-none appearance-none sm:appearance-auto"
               value={filterPos}
               onChange={(e) => setFilterPos(e.target.value)}
             >
