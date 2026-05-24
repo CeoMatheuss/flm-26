@@ -2338,52 +2338,69 @@ function ImprovedSubsView({
             </div>
           )}
 
-          <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
             {!selectedPlayer && (
-              <p className="text-[10px] text-muted-foreground text-center py-3">
-                ← Selecione um titular primeiro
-              </p>
+              <div className="text-center py-6 px-3 rounded-md border border-dashed border-border/30 bg-card/30">
+                <ArrowUpDown className="h-6 w-6 text-muted-foreground/60 mx-auto mb-1.5" />
+                <p className="text-[10px] text-muted-foreground">Selecione um titular para ver os reservas</p>
+              </div>
             )}
             {selectedPlayer && filteredBench.length === 0 && (
               <p className="text-[10px] text-muted-foreground text-center py-3">Nenhum reserva nesta posição</p>
             )}
-            {selectedPlayer && filteredBench.map((p) => {
-              const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
-              const sameGroup = getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
-              const isSuggested = p.id === suggestedId;
+            {selectedPlayer && groupByPosition(filteredBench).map(({ key, players }) => {
+              const meta = GROUP_META[key];
               return (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    const min = scheduleMinute ? parseInt(scheduleMinute) : undefined;
-                    onConfirmSub(selectedSubOut!, p.id, min && min > 0 ? min : undefined);
-                    setScheduleMinute('');
-                  }}
-                  className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1 transition-all text-left ${
-                    isSuggested ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-400/40'
-                    : sameGroup ? 'bg-emerald-500/[0.05] border-emerald-500/30 hover:bg-emerald-500/10'
-                    : 'bg-card/60 border-border/30 hover:border-emerald-400/40'
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${
-                    isSuggested ? 'bg-emerald-500/25 text-emerald-300' : sameGroup ? 'bg-emerald-500/15 text-emerald-400' : 'bg-primary/10 text-primary'
-                  }`}>
-                    {p.position}
+                <div key={`entra-${key}`} className="space-y-1">
+                  <div className={`flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${meta.color}`}>
+                    <span>{meta.icon}</span>
+                    <span>{meta.label}</span>
+                    <span className="flex-1 h-px bg-gradient-to-r from-current/30 to-transparent opacity-40" />
+                    <span className="font-mono opacity-60">{players.length}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <p className="text-[11px] font-bold truncate">{p.name}</p>
-                      {isSuggested && <span className="text-[8px] text-emerald-400 font-bold shrink-0">🟢</span>}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[9px] font-bold text-emerald-400">OVR {p.overall}</span>
-                      <span className="text-[8px] text-muted-foreground">⚡{stamina}%</span>
-                    </div>
-                  </div>
-                </button>
+                  {players.map((p) => {
+                    const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
+                    const sameGroup = getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
+                    const samePos = p.position === selectedPlayer.position;
+                    const isSuggested = p.id === suggestedId;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          const min = scheduleMinute ? parseInt(scheduleMinute) : undefined;
+                          onConfirmSub(selectedSubOut!, p.id, min && min > 0 ? min : undefined);
+                          setScheduleMinute('');
+                        }}
+                        className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1.5 transition-all text-left ${
+                          isSuggested ? 'bg-emerald-500/15 border-emerald-500/60 ring-1 ring-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.18)]'
+                          : sameGroup ? 'bg-emerald-500/[0.05] border-emerald-500/30 hover:bg-emerald-500/10'
+                          : 'bg-card/60 border-border/30 hover:border-emerald-400/40'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[9px] font-black shrink-0 border ${
+                          isSuggested ? 'bg-emerald-500/25 text-emerald-300 border-emerald-400/40' : sameGroup ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-primary/10 text-primary border-primary/20'
+                        }`}>
+                          {p.position}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <p className="text-[11px] font-bold truncate">{p.name}</p>
+                            {isSuggested && <span title="Melhor opção" className="text-[8px] px-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold shrink-0">IDEAL</span>}
+                            {!isSuggested && samePos && <span title="Mesma posição" className="text-[8px] text-emerald-400/80 shrink-0">●</span>}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] font-mono font-bold text-emerald-400">OVR {p.overall}</span>
+                            <span className="text-[8px] text-muted-foreground font-mono">⚡ {stamina}%</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
+
         </div>
       </div>
 
