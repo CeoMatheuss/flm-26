@@ -2108,14 +2108,29 @@ function ImprovedSubsView({
 }) {
   const [posFilter, setPosFilter] = useState<'all' | 'gk' | 'def' | 'mid' | 'atk'>('all');
 
+  // Ordem tática por posição (GOL → defesa → meio → ataque)
+  const POS_ORDER: Record<string, number> = {
+    GOL: 0, ZAG: 1, LAT: 2, LD: 2, LE: 2, VOL: 3, MEI: 4, MC: 4, ME: 5, MD: 5,
+    ATA: 6, PE: 6, PD: 6, SA: 6,
+  };
+  const sortByPos = (a: Player, b: Player) => {
+    const oa = POS_ORDER[a.position] ?? 99;
+    const ob = POS_ORDER[b.position] ?? 99;
+    if (oa !== ob) return oa - ob;
+    return (b.overall ?? 0) - (a.overall ?? 0);
+  };
+
+  const sortedStarters = useMemo(() => [...starters].sort(sortByPos), [starters]);
+  const sortedBench = useMemo(() => [...bench].sort(sortByPos), [bench]);
+
   const queuedOutIds = new Set(subQueue.map(s => s.outId));
   const queuedInIds = new Set(subQueue.map(s => s.inId));
-  const selectedPlayer = starters.find(p => p.id === selectedSubOut);
+  const selectedPlayer = sortedStarters.find(p => p.id === selectedSubOut);
 
   // Find best suggested replacement: same position group + highest OVR + good stamina
   const suggestedId = useMemo(() => {
     if (!selectedPlayer) return null;
-    const eligible = bench
+    const eligible = sortedBench
       .filter(p => !queuedInIds.has(p.id))
       .filter(p => getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position));
     if (eligible.length === 0) return null;
@@ -2125,13 +2140,31 @@ function ImprovedSubsView({
       return score(b) - score(a);
     });
     return sorted[0].id;
-  }, [selectedPlayer, bench, queuedInIds]);
+  }, [selectedPlayer, sortedBench, queuedInIds]);
 
-  // Filter bench by position group
-  const filteredBench = bench.filter(p => !queuedInIds.has(p.id)).filter(p => {
+  // Filter bench by position group (já vem ordenado por posição)
+  const filteredBench = sortedBench.filter(p => !queuedInIds.has(p.id)).filter(p => {
     if (posFilter === 'all') return true;
     return getPositionGroup(p.position) === posFilter;
   });
+
+  // Helper: agrupar jogadores por grupo posicional para renderização com headers
+  const GROUP_META: Record<string, { label: string; icon: string; color: string }> = {
+    gk:  { label: 'Goleiro',    icon: '🥅', color: 'text-amber-400/80' },
+    def: { label: 'Defesa',     icon: '🛡️', color: 'text-blue-400/80' },
+    mid: { label: 'Meio-campo', icon: '⚙️', color: 'text-violet-400/80' },
+    atk: { label: 'Ataque',     icon: '⚔️', color: 'text-red-400/80' },
+  };
+  const groupByPosition = (list: Player[]) => {
+    const order: Array<'gk' | 'def' | 'mid' | 'atk'> = ['gk', 'def', 'mid', 'atk'];
+    const map: Record<string, Player[]> = { gk: [], def: [], mid: [], atk: [] };
+    list.forEach(p => {
+      const g = getPositionGroup(p.position) as 'gk' | 'def' | 'mid' | 'atk';
+      (map[g] || (map[g] = [])).push(p);
+    });
+    return order.filter(g => map[g].length > 0).map(g => ({ key: g, players: map[g] }));
+  };
+
 
   const [scheduleMinute, setScheduleMinute] = useState<string>('');
 
@@ -2190,49 +2223,75 @@ function ImprovedSubsView({
       {/* 2-column layout: SAI | ENTRA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {/* COL 1: SAI */}
-        <div className="space-y-1">
-          <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">⬅ Quem SAI</p>
-          <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
-            {starters.map((p) => {
-              const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
-              const staminaColor = staminaColorClass(stamina);
-              const isQueued = queuedOutIds.has(p.id);
-              const isSelected = p.id === selectedSubOut;
+        <div className="space-y-1.5 rounded-lg bg-gradient-to-b from-red-500/[0.04] to-transparent border border-red-500/15 p-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]" />
+              Quem SAI
+            </p>
+            <span className="text-[9px] text-muted-foreground font-mono">{sortedStarters.length}</span>
+          </div>
+          <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+            {groupByPosition(sortedStarters).map(({ key, players }) => {
+              const meta = GROUP_META[key];
               return (
-                <button
-                  key={p.id}
-                  onClick={() => !isQueued && !blocked && onSelectSubOut(isSelected ? null : p.id)}
-                  disabled={isQueued || blocked}
-                  className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1 transition-all text-left ${
-                    isSelected ? 'bg-red-500/15 border-red-500/50 ring-1 ring-red-400/50'
-                    : isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60'
-                    : blocked ? 'border-border/20 opacity-40 cursor-not-allowed'
-                    : 'bg-card/60 border-border/30 hover:border-red-400/40 hover:bg-red-500/5'
-                  }`}
-                >
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-black text-primary shrink-0">
-                    {p.position}
+                <div key={`sai-${key}`} className="space-y-1">
+                  <div className={`flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${meta.color}`}>
+                    <span>{meta.icon}</span>
+                    <span>{meta.label}</span>
+                    <span className="flex-1 h-px bg-gradient-to-r from-current/30 to-transparent opacity-40" />
+                    <span className="font-mono opacity-60">{players.length}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-bold truncate">{p.name}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-[9px] text-muted-foreground">OVR {p.overall}</span>
-                      <div className="h-1 flex-1 max-w-[40px] rounded-full bg-muted/20 overflow-hidden">
-                        <div className={`h-full ${staminaColor}`} style={{ width: `${stamina}%` }} />
-                      </div>
-                      <span className="text-[8px] font-mono text-muted-foreground">{stamina}%</span>
-                    </div>
-                  </div>
-                </button>
+                  {players.map((p) => {
+                    const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
+                    const staminaColor = staminaColorClass(stamina);
+                    const isQueued = queuedOutIds.has(p.id);
+                    const isSelected = p.id === selectedSubOut;
+                    const lowStamina = stamina < 60;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => !isQueued && !blocked && onSelectSubOut(isSelected ? null : p.id)}
+                        disabled={isQueued || blocked}
+                        className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1.5 transition-all text-left ${
+                          isSelected ? 'bg-red-500/15 border-red-500/60 ring-1 ring-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.15)]'
+                          : isQueued ? 'border-orange-400/30 bg-orange-500/5 opacity-60'
+                          : blocked ? 'border-border/20 opacity-40 cursor-not-allowed'
+                          : 'bg-card/60 border-border/30 hover:border-red-400/40 hover:bg-red-500/5'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-[9px] font-black text-primary shrink-0">
+                          {p.position}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-bold truncate flex items-center gap-1">
+                            {p.name}
+                            {lowStamina && <span title="Cansado" className="text-[8px]">🔻</span>}
+                          </p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[9px] font-mono text-muted-foreground">OVR {p.overall}</span>
+                            <div className="h-1 flex-1 max-w-[48px] rounded-full bg-muted/20 overflow-hidden">
+                              <div className={`h-full ${staminaColor} transition-all`} style={{ width: `${stamina}%` }} />
+                            </div>
+                            <span className="text-[8px] font-mono text-muted-foreground tabular-nums w-7 text-right">{stamina}%</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
         </div>
 
         {/* COL 2: ENTRA */}
-        <div className="space-y-1">
+        <div className="space-y-1.5 rounded-lg bg-gradient-to-b from-emerald-500/[0.05] to-transparent border border-emerald-500/15 p-2">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Quem ENTRA →</p>
+            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+              Quem ENTRA
+            </p>
             {selectedPlayer && (
               <button onClick={() => onSelectSubOut(null)} className="text-[9px] text-muted-foreground hover:text-foreground">
                 ✕ limpar
@@ -2241,23 +2300,24 @@ function ImprovedSubsView({
           </div>
 
           {/* Position filter chips */}
-          <div className="flex gap-0.5 overflow-x-auto pb-0.5">
+          <div className="flex gap-1 overflow-x-auto pb-0.5">
             {([
               { k: 'all', l: 'Todos' },
-              { k: 'gk', l: '🥅' },
-              { k: 'def', l: '🛡️' },
-              { k: 'mid', l: '⚙️' },
-              { k: 'atk', l: '⚔️' },
+              { k: 'gk', l: '🥅 GOL' },
+              { k: 'def', l: '🛡️ DEF' },
+              { k: 'mid', l: '⚙️ MEI' },
+              { k: 'atk', l: '⚔️ ATA' },
             ] as const).map(f => (
               <button
                 key={f.k}
                 onClick={() => setPosFilter(f.k)}
-                className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded transition-colors ${
-                  posFilter === f.k ? 'bg-primary text-primary-foreground' : 'bg-card/60 border border-border/30 text-muted-foreground hover:text-foreground'
+                className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded-md transition-colors font-semibold ${
+                  posFilter === f.k ? 'bg-emerald-500 text-emerald-950 shadow-[0_0_8px_rgba(52,211,153,0.4)]' : 'bg-card/60 border border-border/30 text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {f.l}
               </button>
+
             ))}
           </div>
 
@@ -2278,52 +2338,69 @@ function ImprovedSubsView({
             </div>
           )}
 
-          <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
             {!selectedPlayer && (
-              <p className="text-[10px] text-muted-foreground text-center py-3">
-                ← Selecione um titular primeiro
-              </p>
+              <div className="text-center py-6 px-3 rounded-md border border-dashed border-border/30 bg-card/30">
+                <ArrowUpDown className="h-6 w-6 text-muted-foreground/60 mx-auto mb-1.5" />
+                <p className="text-[10px] text-muted-foreground">Selecione um titular para ver os reservas</p>
+              </div>
             )}
             {selectedPlayer && filteredBench.length === 0 && (
               <p className="text-[10px] text-muted-foreground text-center py-3">Nenhum reserva nesta posição</p>
             )}
-            {selectedPlayer && filteredBench.map((p) => {
-              const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
-              const sameGroup = getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
-              const isSuggested = p.id === suggestedId;
+            {selectedPlayer && groupByPosition(filteredBench).map(({ key, players }) => {
+              const meta = GROUP_META[key];
               return (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    const min = scheduleMinute ? parseInt(scheduleMinute) : undefined;
-                    onConfirmSub(selectedSubOut!, p.id, min && min > 0 ? min : undefined);
-                    setScheduleMinute('');
-                  }}
-                  className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1 transition-all text-left ${
-                    isSuggested ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-400/40'
-                    : sameGroup ? 'bg-emerald-500/[0.05] border-emerald-500/30 hover:bg-emerald-500/10'
-                    : 'bg-card/60 border-border/30 hover:border-emerald-400/40'
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${
-                    isSuggested ? 'bg-emerald-500/25 text-emerald-300' : sameGroup ? 'bg-emerald-500/15 text-emerald-400' : 'bg-primary/10 text-primary'
-                  }`}>
-                    {p.position}
+                <div key={`entra-${key}`} className="space-y-1">
+                  <div className={`flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${meta.color}`}>
+                    <span>{meta.icon}</span>
+                    <span>{meta.label}</span>
+                    <span className="flex-1 h-px bg-gradient-to-r from-current/30 to-transparent opacity-40" />
+                    <span className="font-mono opacity-60">{players.length}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <p className="text-[11px] font-bold truncate">{p.name}</p>
-                      {isSuggested && <span className="text-[8px] text-emerald-400 font-bold shrink-0">🟢</span>}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[9px] font-bold text-emerald-400">OVR {p.overall}</span>
-                      <span className="text-[8px] text-muted-foreground">⚡{stamina}%</span>
-                    </div>
-                  </div>
-                </button>
+                  {players.map((p) => {
+                    const stamina = liveStaminaMap?.[p.id] ?? p.stamina ?? 100;
+                    const sameGroup = getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position);
+                    const samePos = p.position === selectedPlayer.position;
+                    const isSuggested = p.id === suggestedId;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          const min = scheduleMinute ? parseInt(scheduleMinute) : undefined;
+                          onConfirmSub(selectedSubOut!, p.id, min && min > 0 ? min : undefined);
+                          setScheduleMinute('');
+                        }}
+                        className={`w-full flex items-center gap-1.5 border rounded-md px-1.5 py-1.5 transition-all text-left ${
+                          isSuggested ? 'bg-emerald-500/15 border-emerald-500/60 ring-1 ring-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.18)]'
+                          : sameGroup ? 'bg-emerald-500/[0.05] border-emerald-500/30 hover:bg-emerald-500/10'
+                          : 'bg-card/60 border-border/30 hover:border-emerald-400/40'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[9px] font-black shrink-0 border ${
+                          isSuggested ? 'bg-emerald-500/25 text-emerald-300 border-emerald-400/40' : sameGroup ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-primary/10 text-primary border-primary/20'
+                        }`}>
+                          {p.position}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <p className="text-[11px] font-bold truncate">{p.name}</p>
+                            {isSuggested && <span title="Melhor opção" className="text-[8px] px-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold shrink-0">IDEAL</span>}
+                            {!isSuggested && samePos && <span title="Mesma posição" className="text-[8px] text-emerald-400/80 shrink-0">●</span>}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] font-mono font-bold text-emerald-400">OVR {p.overall}</span>
+                            <span className="text-[8px] text-muted-foreground font-mono">⚡ {stamina}%</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
+
         </div>
       </div>
 
