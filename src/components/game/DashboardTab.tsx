@@ -8,7 +8,7 @@ import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, TrendingDown, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle, Globe, RefreshCcw, Bell } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, TrendingDown, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle, Globe, RefreshCcw, Bell, Wallet } from 'lucide-react';
 import { calculateStadiumEconomy, safeNumber } from '@/match/stadiumEconomyEngine';
 
 import { ClubShield } from './ClubShield';
@@ -188,6 +188,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const [dbPlayers, setDbPlayers] = useState<Player[]>(club.players || []);
   const [liveStats, setLiveStats] = useState<{ points: number; wins: number; draws: number; losses: number; rank?: number } | null>(null);
   
+  const [membershipRevenue, setMembershipRevenue] = useState<{ amount: number; total: number } | null>(null);
+  
   const fetchLiveStats = useCallback(async () => {
     if (!userId) return;
     try {
@@ -217,6 +219,22 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
             draws: statsData.draws,
             losses: statsData.losses,
             rank: rank && rank > 0 ? rank : undefined
+          });
+        }
+
+        // Fetch Membership Revenue info
+        const { data: membershipData } = await supabase
+          .from('membership_revenue_history')
+          .select('amount, member_total')
+          .eq('club_id', teamData.id)
+          .order('month_year', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (membershipData) {
+          setMembershipRevenue({
+            amount: Number(membershipData.amount),
+            total: membershipData.member_total
           });
         }
       }
@@ -415,6 +433,31 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           animate={{ opacity: 1, y: 0 }}
           className="space-y-3 sm:space-y-4"
         >
+
+            {/* Membership Revenue Widget */}
+            {membershipRevenue && (
+              <Card className="border-emerald-500/30 bg-emerald-500/5 overflow-hidden">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                        <Wallet className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-emerald-400 uppercase">Receita de Sócios</p>
+                        <p className="text-lg font-black">{formatMoneyShort(membershipRevenue.amount)}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground uppercase">Mês Atual</p>
+                      <p className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Pago
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
       {/* Fatigue Warning */}
       {showFatigueWarning && (
