@@ -329,7 +329,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
           item_id: selectedItem.id,
-          method: checkoutMethod,
+          method: checkoutMethod === 'pix' ? 'mercadolivre' : checkoutMethod,
           email: checkoutEmail,
           full_name: checkoutFullName,
           cpf: checkoutCpf.replace(/\D/g, '')
