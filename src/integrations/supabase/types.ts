@@ -7113,6 +7113,7 @@ export type Database = {
         Returns: string
       }
       auto_fill_team_rosters: { Args: never; Returns: undefined }
+      auto_simulate_expired_matches: { Args: never; Returns: Json }
       auto_simulate_overdue_matches: { Args: never; Returns: undefined }
       award_club_world_cup_prizes: {
         Args: { _cup_id: string }
@@ -7239,6 +7240,10 @@ export type Database = {
       }
       expire_shop_effects: { Args: never; Returns: Json }
       fill_league_with_bots: { Args: { _league_id: string }; Returns: number }
+      finalize_league_match: {
+        Args: { _away_goals: number; _home_goals: number; _match_id: string }
+        Returns: Json
+      }
       finalize_stale_live_matches: { Args: never; Returns: number }
       finish_national_cup_award_continental: {
         Args: { _cup_id: string }
@@ -7638,7 +7643,7 @@ export type Database = {
       start_world_cup: { Args: { _season: number }; Returns: Json }
       sync_all_saves_to_world_system: { Args: never; Returns: undefined }
       sync_beginner_cup: { Args: { _user_id: string }; Returns: undefined }
-      sync_league_integrity: { Args: { _user_id: string }; Returns: undefined }
+      sync_league_integrity: { Args: { _user_id: string }; Returns: Json }
       sync_league_progress: {
         Args: { p_league_id: string }
         Returns: undefined
