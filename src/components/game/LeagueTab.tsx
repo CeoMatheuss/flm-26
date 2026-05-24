@@ -689,8 +689,8 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
               </CardHeader>
               <CardContent className="text-xs space-y-3 text-muted-foreground">
                 <p>• 20 clubes disputam o título em turno e returno (38 rodadas).</p>
-                <p>• <span className="text-emerald-500 font-bold">G4:</span> Classificação direta para a Libertadores Mundial.</p>
-                <p>• <span className="text-blue-500 font-bold">G8:</span> Classificação para a Copa Sul-Americana.</p>
+                <p>• <span className="text-yellow-500 font-bold">1º Lugar:</span> Vaga direta para o Mundial.</p>
+                <p>• <span className="text-emerald-500 font-bold">G2 ao G8:</span> Classificação para a Libertadores.</p>
                 <p>• <span className="text-red-500 font-bold">Z4:</span> Rebaixamento para a divisão inferior.</p>
                 <div className="p-3 bg-background/50 rounded-lg border border-dashed mt-4">
                   <p className="font-bold text-foreground mb-1">Critérios de Desempate:</p>
