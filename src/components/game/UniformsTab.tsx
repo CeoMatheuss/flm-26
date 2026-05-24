@@ -701,31 +701,32 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-primary/10">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="p-1.5 rounded-lg bg-primary/10 shrink-0">
             <Shirt className="h-4 w-4 text-primary" />
           </div>
-          <div>
-            <p className="text-sm font-bold">Uniformes</p>
-            <p className="text-[10px] text-muted-foreground">Personalize seus 4 kits</p>
+          <div className="min-w-0">
+            <p className="text-sm font-bold truncate">Uniformes</p>
+            <p className="text-[10px] text-muted-foreground truncate">Personalize seus 4 kits</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="h-8 px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="h-9 flex-1 sm:flex-initial sm:px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
             <Save className="h-3 w-3" /> Salvar
           </Button>
           <Button 
             size="sm" 
-            className="h-8 px-4 text-xs gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500" 
+            className="h-9 flex-1 sm:flex-initial sm:px-4 text-xs gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500" 
             onClick={handleLaunch}
             disabled={isLaunching}
           >
             {isLaunching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
-            Lançar Coleção
+            <span className="truncate">Lançar Coleção</span>
           </Button>
         </div>
       </div>
+
 
       {/* Kit Selector Tabs */}
       <div className="flex gap-1 bg-muted/40 rounded-xl p-1">
