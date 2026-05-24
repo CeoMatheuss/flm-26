@@ -525,7 +525,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           method: 'pix', // Garantindo o método correto para gerar QR Code
           email: email,
           full_name: fullName,
-          cpf: cpf.replace(/\D/g, ''),
+          cpf: cpf.replace(/\D/g, '') || '00000000000', // CPF fallback para garantir geração do QR Code
           custom_amount: 1, // R$ 0,01
           metadata: { uniform_id: pendingLaunchId, item_type: 'uniform_launch' }
         }
