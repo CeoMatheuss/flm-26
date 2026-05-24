@@ -2158,6 +2158,7 @@ function ImprovedSubsView({
   isHalftime: boolean;
   blocked?: boolean; blockedReason?: string;
   liveStaminaMap?: Record<string, number>;
+  playerRatings?: Record<string, any>;
 }) {
   const [posFilter, setPosFilter] = useState<'all' | 'gk' | 'def' | 'mid' | 'atk'>('all');
 
