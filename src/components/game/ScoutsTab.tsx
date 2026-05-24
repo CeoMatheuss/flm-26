@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/tabs-scout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ScoutV3, 
   ScoutMissionV3, 
@@ -112,7 +112,7 @@ export function ScoutsTab({ userId, budget }: { userId: string, budget: number }
       user_id: userId,
       name: scout.name,
       country: scout.country,
-      level: scout.level,
+      level: scout.level as any,
       specialization: scout.specialization,
       potential_evaluation: scout.potential_evaluation,
       technical_evaluation: scout.technical_evaluation,
