@@ -328,7 +328,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
   // Live countdown timer — sincronizado com o horário da liga (ScheduledAt)
   // Auto-dispara simulação quando os 5 minutos do lobby expiram sem o usuário entrar
-  const [autoSimTriggered, setAutoSimTriggered] = useState(false);
+  // (autoSimTriggered declarado no topo)
   useEffect(() => { setAutoSimTriggered(false); }, [nextMatch?.matchId]);
 
   useEffect(() => {
