@@ -379,6 +379,10 @@ export function useMatchSimulation() {
               } else if (syncData?.success) {
                 console.log("[MATCH] Persistence sync complete via RPC:", syncData);
                 
+                // ⚽ NOVO: Persistir notas dos jogadores
+                const { persistMatchRatings } = await import('./ratings/ratingEngine');
+                await persistMatchRatings(state.playerRatings, syncData.competition || 'Amistoso');
+                
                 // 🏆 Sincronização de Ranking e Torcida centralizada
                 const outcome = data.finalHomeGoals > data.finalAwayGoals ? 'win' : (data.finalHomeGoals === data.finalAwayGoals ? 'draw' : 'loss');
                 const competitionLabel = syncData.competition || 'Amistoso';
