@@ -136,6 +136,19 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
     }
   }, [userId, currentOrderId, pixData]);
 
+  // Processar atividade offline na primeira montagem
+  useEffect(() => {
+    const initOffline = async () => {
+      const summary = await storeManager.processOfflineActivity();
+      if (summary && summary.products_sold > 0) {
+        setOfflineSummary(summary);
+        setIsOfflineModalOpen(true);
+      }
+    };
+    initOffline();
+  }, []);
+
+
   // Polling de 5s enquanto o modal do PIX está aberto: verifica status do pagamento
   // e redireciona o jogador para o início assim que for aprovado.
   useEffect(() => {
