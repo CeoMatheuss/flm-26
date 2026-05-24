@@ -440,7 +440,18 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
             </ScrollArea>
           </div>
 
-          {/* Dashboard removido conforme solicitado */}
+          <TabsContent value="dashboard" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="space-y-6">
+               <StoreDashboard stats={storeManager.stats} />
+               <OrderTracker orders={storeManager.stats.recentOrders} />
+               <PainelFLM clubId={club.id} stats={shopStats} products={shopProducts} onUpgrade={handleUpgrade} upgrading={upgrading} />
+             </div>
+          </TabsContent>
+
+          <TabsContent value="entregas" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <OrderTracker orders={storeManager.stats.recentOrders} />
+          </TabsContent>
+
 
           <TabsContent value="stickers" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <PacotinhosTab 
