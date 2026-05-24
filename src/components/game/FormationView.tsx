@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { validateLineup } from '@/utils/lineupManager';
 import { getDynamicOverall, positionCompatibility } from '@/utils/positionUtils';
-import { Crown, AlertTriangle, ArrowRightLeft, Heart } from 'lucide-react';
+import { Crown, AlertTriangle, ArrowRightLeft, User, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -15,25 +15,23 @@ interface Props {
   onPlayerClick?: (player: Player) => void;
   onSwapPlayers?: (playerAId: string, playerBId: string) => void;
   isInteractive?: boolean;
-  /** portrait = gol em baixo, ataque em cima (mobile). landscape = gol à esquerda (desktop). */
   orientation?: 'portrait' | 'landscape';
-  /** id do jogador selecionado externamente (ex: para trocar com o banco) */
   selectedId?: string | null;
-  /** notifica componente pai quando um slot é tocado */
   onSlotSelect?: (id: string | null) => void;
 }
 
-// Coordenadas em sistema "portrait" (x = horizontal 0-100, y = profundidade 0=ataque..100=gol).
-// O grid abaixo impede deslocamentos tortos: cada linha tem Y fixo e X simétrico/centralizado.
 type TacticalSlot = { position: string; x: number; y: number };
 
+// Grid systems (x = 0-100 horizontal, y = 0-100 vertical)
 const lineX: Record<number, number[]> = {
   1: [50],
-  2: [36, 64],
-  3: [22, 50, 78],
-  4: [10, 36, 64, 90],
-  5: [7, 28, 50, 72, 93],
+  2: [25, 75],
+  3: [15, 50, 85],
+  4: [12, 38, 62, 88],
+  5: [10, 30, 50, 70, 90],
 };
+
+
 
 const makeLine = (y: number, positions: string[]): TacticalSlot[] => {
   const xs = lineX[positions.length] || [50];
@@ -44,128 +42,129 @@ const makeLayout = (lines: TacticalSlot[][]): TacticalSlot[] => lines.flat();
 
 const formationLayouts: Record<Formation, TacticalSlot[]> = {
   '4-4-2': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(50, ['MEI', 'VOL', 'VOL', 'MEI']),
-    makeLine(18, ['ATA', 'ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(45, ['MEI', 'VOL', 'VOL', 'MEI']),
+    makeLine(15, ['ATA', 'ATA']),
   ]),
   '4-3-3': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(48, ['MEI', 'VOL', 'MEI']),
-    makeLine(18, ['ATA', 'ATA', 'ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(45, ['MEI', 'VOL', 'MEI']),
+    makeLine(15, ['ATA', 'ATA', 'ATA']),
   ]),
   '4-2-3-1': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(58, ['VOL', 'VOL']),
-    makeLine(38, ['MEI', 'MEI', 'MEI']),
-    makeLine(16, ['ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(55, ['VOL', 'VOL']),
+    makeLine(35, ['MEI', 'MEI', 'MEI']),
+    makeLine(12, ['ATA']),
   ]),
   '3-5-2': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['ZAG', 'ZAG', 'ZAG']),
-    makeLine(48, ['VOL', 'MEI', 'MEI', 'MEI', 'VOL']),
-    makeLine(18, ['ATA', 'ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['ZAG', 'ZAG', 'ZAG']),
+    makeLine(45, ['VOL', 'MEI', 'MEI', 'MEI', 'VOL']),
+    makeLine(15, ['ATA', 'ATA']),
   ]),
   '5-3-2': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(48, ['VOL', 'MEI', 'VOL']),
-    makeLine(18, ['ATA', 'ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(45, ['VOL', 'MEI', 'VOL']),
+    makeLine(15, ['ATA', 'ATA']),
   ]),
   '4-1-4-1': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(60, ['VOL']),
-    makeLine(40, ['MEI', 'MEI', 'MEI', 'MEI']),
-    makeLine(16, ['ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(55, ['VOL']),
+    makeLine(35, ['MEI', 'MEI', 'MEI', 'MEI']),
+    makeLine(12, ['ATA']),
   ]),
   '4-4-1-1': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(52, ['MEI', 'VOL', 'VOL', 'MEI']),
-    makeLine(32, ['MEI']),
-    makeLine(16, ['ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(48, ['MEI', 'VOL', 'VOL', 'MEI']),
+    makeLine(28, ['MEI']),
+    makeLine(12, ['ATA']),
   ]),
   '3-4-3': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['ZAG', 'ZAG', 'ZAG']),
-    makeLine(50, ['VOL', 'MEI', 'MEI', 'VOL']),
-    makeLine(18, ['ATA', 'ATA', 'ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['ZAG', 'ZAG', 'ZAG']),
+    makeLine(45, ['VOL', 'MEI', 'MEI', 'VOL']),
+    makeLine(15, ['ATA', 'ATA', 'ATA']),
   ]),
   '5-4-1': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(50, ['MEI', 'VOL', 'VOL', 'MEI']),
-    makeLine(16, ['ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(45, ['MEI', 'VOL', 'VOL', 'MEI']),
+    makeLine(12, ['ATA']),
   ]),
   '4-5-1': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(48, ['MEI', 'VOL', 'MEI', 'VOL', 'MEI']),
-    makeLine(16, ['ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(45, ['MEI', 'VOL', 'MEI', 'VOL', 'MEI']),
+    makeLine(12, ['ATA']),
   ]),
   '4-3-2-1': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(58, ['VOL', 'MEI', 'VOL']),
-    makeLine(36, ['MEI', 'MEI']),
-    makeLine(16, ['ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(55, ['VOL', 'MEI', 'VOL']),
+    makeLine(32, ['MEI', 'MEI']),
+    makeLine(12, ['ATA']),
   ]),
   '4-2-4-0': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(58, ['VOL', 'VOL']),
-    makeLine(28, ['MEI', 'MEI', 'MEI', 'MEI']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(55, ['VOL', 'VOL']),
+    makeLine(25, ['MEI', 'MEI', 'MEI', 'MEI']),
   ]),
   '3-4-1-2': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['ZAG', 'ZAG', 'ZAG']),
-    makeLine(54, ['VOL', 'MEI', 'MEI', 'VOL']),
-    makeLine(34, ['MEI']),
-    makeLine(16, ['ATA', 'ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['ZAG', 'ZAG', 'ZAG']),
+    makeLine(50, ['VOL', 'MEI', 'MEI', 'VOL']),
+    makeLine(30, ['MEI']),
+    makeLine(12, ['ATA', 'ATA']),
   ]),
   '4-1-2-1-2': makeLayout([
-    makeLine(93, ['GOL']),
-    makeLine(75, ['LAT', 'ZAG', 'ZAG', 'LAT']),
-    makeLine(60, ['VOL']),
-    makeLine(46, ['MEI', 'MEI']),
-    makeLine(32, ['MEI']),
-    makeLine(16, ['ATA', 'ATA']),
+    makeLine(90, ['GOL']),
+    makeLine(72, ['LAT', 'ZAG', 'ZAG', 'LAT']),
+    makeLine(58, ['VOL']),
+    makeLine(42, ['MEI', 'MEI']),
+    makeLine(28, ['MEI']),
+    makeLine(12, ['ATA', 'ATA']),
   ]),
 };
 
 function assignPlayersToSlots(players: Player[], formation: Formation) {
-  const starters = players.slice(0, 11);
-  if (starters.length < 11) return new Array(11).fill(null);
+  const starters = players.filter(p => p.squad_status === 'starter').slice(0, 11);
+  if (starters.length < 11) {
+    // Fallback: fill with any players if not enough starters
+    const allAvailable = [...players].slice(0, 11);
+    if (allAvailable.length < 11) return new Array(11).fill(null);
+  }
 
   const layout = formationLayouts[formation] || formationLayouts['4-4-2'];
   const assigned: (Player | null)[] = new Array(11).fill(null);
   const available = new Set(starters.map(p => p.id));
 
-  // Score: compat real + bônus se a posição natural bate exatamente, + bônus secundária
   const score = (p: Player, slotPos: string) => {
     const compat = positionCompatibility[p.position]?.[slotPos] ?? 0.3;
-    let s = compat;
-    if (p.position === slotPos) s += 1.0;            // posição natural bate
-    if (p.secondaryPosition === slotPos) s += 0.25;  // posição secundária bate
-    return s;
+    let s = compat * 10;
+    if (p.position === slotPos) s += 5;
+    if (p.secondaryPosition === slotPos) s += 2;
+    return s + p.overall / 100;
   };
 
-  // Ordem de prioridade: posições mais específicas primeiro (GOL > LAT > ZAG > ATA > VOL > MEI)
-  const priority: Record<string, number> = { GOL: 6, LAT: 5, ZAG: 4, ATA: 3, VOL: 2, MEI: 1 };
+  const priority: Record<string, number> = { GOL: 10, LAT: 9, ZAG: 8, ATA: 7, VOL: 6, MEI: 5 };
   const slotOrder = layout
     .map((slot, idx) => ({ slot, idx }))
     .sort((a, b) => (priority[b.slot.position] ?? 0) - (priority[a.slot.position] ?? 0));
 
-  // 1ª passada: atribui cada slot ao melhor jogador disponível
   for (const { slot, idx } of slotOrder) {
     let best: Player | null = null;
     let bestScore = -Infinity;
     for (const p of starters) {
       if (!available.has(p.id)) continue;
-      const sc = score(p, slot.position) + p.overall / 1000; // desempate por OVR
+      const sc = score(p, slot.position);
       if (sc > bestScore) { bestScore = sc; best = p; }
     }
     if (best) {
@@ -173,49 +172,6 @@ function assignPlayersToSlots(players: Player[], formation: Formation) {
       available.delete(best.id);
     }
   }
-
-  // Preenche slots vazios com qualquer jogador restante
-  const rest = starters.filter(p => available.has(p.id));
-  for (let k = 0; k < 11; k++) if (!assigned[k] && rest.length) assigned[k] = rest.shift()!;
-
-  // 2ª passada: dentro de slots que compartilham a MESMA posição (ex: 2 ZAG, 2 LAT, 3 MEI),
-  // reordena os jogadores atribuídos por x do slot (esquerda → direita) usando OVR
-  // (OVR maior tende ao centro para ZAG/MEI; para LAT/ATA mantém por OVR esquerda → direita).
-  const groups = new Map<string, number[]>();
-  layout.forEach((slot, idx) => {
-    const key = slot.position;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(idx);
-  });
-
-  groups.forEach((indices, pos) => {
-    if (indices.length < 2) return;
-    const slotsSorted = [...indices].sort((a, b) => layout[a].x - layout[b].x);
-    const playersInGroup = indices
-      .map(i => assigned[i])
-      .filter((p): p is Player => !!p);
-    if (playersInGroup.length !== slotsSorted.length) return;
-
-    // ZAG e MEI: melhor OVR no centro. LAT/ATA/VOL: ordena por OVR esquerda → direita (estável).
-    let ordered: Player[];
-    if (pos === 'ZAG' || pos === 'MEI') {
-      const byOvr = [...playersInGroup].sort((a, b) => b.overall - a.overall);
-      // distribui: melhores ao centro, piores nas pontas
-      ordered = new Array(slotsSorted.length);
-      let l = 0, r = slotsSorted.length - 1, take = 0;
-      // preenche das pontas para o centro com os piores; melhores ficam no meio
-      const reversed = [...byOvr].reverse(); // piores primeiro
-      while (l <= r) {
-        if (l === r) { ordered[l] = reversed[take++]; break; }
-        ordered[l++] = reversed[take++];
-        ordered[r--] = reversed[take++];
-      }
-    } else {
-      ordered = [...playersInGroup].sort((a, b) => b.overall - a.overall);
-    }
-
-    slotsSorted.forEach((slotIdx, i) => { assigned[slotIdx] = ordered[i]; });
-  });
 
   return assigned;
 }
@@ -228,16 +184,6 @@ const posColor: Record<string, string> = {
   MEI: 'bg-orange-500 text-orange-950',
   ATA: 'bg-rose-600 text-white',
 };
-
-function adaptationRing(player: Player, slotPos: string) {
-  const compat = positionCompatibility[player.position]?.[slotPos] ?? 0.3;
-  const isSecondary = player.secondaryPosition === slotPos;
-  const eff = isSecondary ? Math.max(0.9, compat) : compat;
-  if (eff >= 1.0) return { ring: 'ring-emerald-400/0', border: 'border-white/60', label: 'natural' as const };
-  if (eff >= 0.85) return { ring: 'ring-amber-300/60', border: 'border-amber-300', label: 'adaptado' as const };
-  if (eff >= 0.7) return { ring: 'ring-orange-400/70', border: 'border-orange-400', label: 'improvisado' as const };
-  return { ring: 'ring-red-500/80', border: 'border-red-500', label: 'fora' as const };
-}
 
 export function FormationView({
   formation,
@@ -253,171 +199,129 @@ export function FormationView({
   const [internalSelected, setInternalSelected] = useState<string | null>(null);
   const selected = selectedId ?? internalSelected;
 
-  useEffect(() => {
-    if (!Array.isArray(players) || players.length < 11) return;
-    const validation = validateLineup(players);
-    if (!validation.valid && validation.message) {
-      toast.error(validation.message, { id: 'lineup-validation' });
-    }
-  }, [players]);
-
   const layout = formationLayouts[formation] || formationLayouts['4-4-2'];
   const assigned = useMemo(() => assignPlayersToSlots(players, formation), [players, formation]);
 
   const handleSlotClick = (player: Player | null) => {
     if (!player || !isInteractive) return;
+    
     if (selected && selected !== player.id) {
       if (onSwapPlayers) onSwapPlayers(selected, player.id);
       if (onSlotSelect) onSlotSelect(null); else setInternalSelected(null);
     } else {
       const next = selected === player.id ? null : player.id;
       if (onSlotSelect) onSlotSelect(next); else setInternalSelected(next);
+      if (onPlayerClick) onPlayerClick(player);
     }
-    if (onPlayerClick) onPlayerClick(player);
   };
 
   const isPortrait = orientation === 'portrait';
 
-  // Fallback: se a formação for inválida, usa 4-4-2
-  const safeLayout = formationLayouts[formation] ? layout : formationLayouts['4-4-2'];
-
   return (
-    <div
-      className={cn(
-        'relative w-full mx-auto bg-[#0a1f0f] overflow-visible shadow-xl select-none',
-        'rounded-xl sm:rounded-2xl border-2 sm:border-[5px] border-emerald-900/40',
-        isPortrait ? 'aspect-[4/5] max-w-[440px]' : 'aspect-[16/9] max-w-[1100px]'
-      )}
-    >
-      {/* Grama */}
-      <div className="absolute inset-0 flex pointer-events-none">
-        {[...Array(10)].map((_, i) => (
-          <div key={i} className={`flex-1 ${i % 2 === 0 ? 'bg-emerald-500/[0.05]' : 'bg-transparent'}`} />
-        ))}
+    <div className={cn(
+      "relative w-full mx-auto bg-[#0a2e0f] rounded-2xl overflow-hidden border-4 border-emerald-900/60 shadow-2xl transition-all duration-500",
+      isPortrait ? "aspect-[3/4] max-w-[400px]" : "aspect-[16/10] max-w-[900px]"
+    )}>
+      {/* Pitch Graphics */}
+      <div className="absolute inset-0 pointer-events-none opacity-40">
+        <div className="absolute inset-0 flex flex-col">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className={cn("flex-1", i % 2 === 0 ? "bg-emerald-400/10" : "bg-transparent")} />
+          ))}
+        </div>
+        <div className="absolute inset-0 border-2 border-white/30 m-4 rounded-sm" />
+        <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-white/30" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-white/30 rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-[15%] border-2 border-t-0 border-white/30" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[15%] border-2 border-b-0 border-white/30" />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-950/40 via-transparent to-emerald-950/40 pointer-events-none" />
-      <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.6)] pointer-events-none" />
 
-      {/* Linhas do campo (portrait: vertical) */}
-      {isPortrait ? (
-        <div className="absolute inset-2 border-2 border-white/20 rounded-lg pointer-events-none">
-          <div className="absolute left-0 right-0 top-1/2 h-[2px] bg-white/20" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[28%] aspect-square border-2 border-white/20 rounded-full" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/40 rounded-full" />
-          {/* Grande área inferior (gol mandante) */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[18%] border-2 border-b-0 border-white/20" />
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[28%] h-[7%] border-2 border-b-0 border-white/20" />
-          {/* Grande área superior */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-[18%] border-2 border-t-0 border-white/20" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[28%] h-[7%] border-2 border-t-0 border-white/20" />
-        </div>
-      ) : (
-        <div className="absolute inset-2 border-2 border-white/20 rounded-lg pointer-events-none">
-          <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/20" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[20%] aspect-square border-2 border-white/20 rounded-full" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white/40 rounded-full" />
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[18%] h-[44%] border-2 border-r-0 border-white/20" />
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[7%] h-[22%] border-2 border-r-0 border-white/20" />
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[18%] h-[44%] border-2 border-l-0 border-white/20" />
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[7%] h-[22%] border-2 border-l-0 border-white/20" />
-        </div>
-      )}
-
-      <AnimatePresence mode="popLayout">
-        {safeLayout.map((slot, i) => {
+      {/* Players */}
+      <div className="absolute inset-0 p-8 sm:p-12">
+        {layout.map((slot, i) => {
           const player = assigned[i];
+          if (!player) return null;
 
-          // Insets adaptativos: garante margem suficiente para os chips e labels não cortarem nas bordas
-          const INSET_X = isPortrait ? 11 : 7;
-          const INSET_Y = isPortrait ? 7 : 9;
-          const sx = INSET_X + (slot.x * (100 - 2 * INSET_X)) / 100;
-          const sy = INSET_Y + (slot.y * (100 - 2 * INSET_Y)) / 100;
-          // Em landscape: gol à esquerda (y=92 → left baixo). x do campo vira eixo vertical.
-          const left = isPortrait ? sx : 100 - sy;
-          const top = isPortrait ? sy : sx;
-
-          const isCaptain = player && captainId === player.id;
-          const isInjured = player?.injury;
-          const isSelected = player && selected === player.id;
-          const adapt = player ? adaptationRing(player, slot.position) : null;
-
+          const isSelected = selected === player.id;
+          const isCaptain = captainId === player.id;
+          const dynamicOvr = getDynamicOverall(player, slot.position as Player['position']);
+          
           return (
-            <motion.button
-              key={player?.id || `empty-${i}`}
-              type="button"
+            <motion.div
+              key={player.id}
               layout
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1, left: `${left}%`, top: `${top}%` }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 28, layout: { duration: 0.25 } }}
-              onClick={() => handleSlotClick(player)}
-              className={cn(
-                'absolute -translate-x-1/2 -translate-y-3 sm:-translate-y-4 lg:-translate-y-[18px] flex flex-col items-center z-10 outline-none',
-                player ? 'cursor-pointer' : 'opacity-25 pointer-events-none'
-              )}
-              style={{ touchAction: 'manipulation' }}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
+                left: `${slot.x}%`,
+                top: `${slot.y}%`
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10"
+              style={{ width: '60px' }}
             >
-              <div
+              <button
+                onClick={() => handleSlotClick(player)}
                 className={cn(
-                  'relative rounded-full flex flex-col items-center justify-center border-2 sm:border-[3px] shadow-lg transition-all',
-                  'w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9',
-                  isInjured ? 'bg-slate-800 grayscale border-slate-700' : posColor[slot.position] || 'bg-slate-900 text-white',
-                  adapt?.border || 'border-white/60',
-                  isSelected ? 'scale-110 ring-4 ring-primary shadow-[0_0_25px_rgba(16,185,129,0.6)]' : adapt ? `ring-2 ${adapt.ring}` : ''
+                  "relative group transition-all duration-300 transform",
+                  isSelected ? "scale-125 z-20" : "hover:scale-110"
                 )}
               >
-                <span className="text-[11px] sm:text-sm font-black tracking-tighter leading-none">
-                  {player ? getDynamicOverall(player, slot.position as Player['position']) : '-'}
-                </span>
-                <span className="text-[6px] sm:text-[8px] font-bold uppercase opacity-80 leading-none mt-0.5">
-                  {slot.position}
-                </span>
+                {/* Player Chip */}
+                <div className={cn(
+                  "w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all",
+                  posColor[slot.position] || "bg-zinc-800 text-white",
+                  isSelected ? "border-white ring-4 ring-emerald-400" : "border-white/40",
+                  player.stamina < 30 ? "grayscale-50" : ""
+                )}>
+                  <span className="text-xs sm:text-sm font-black tracking-tighter">
+                    {dynamicOvr}
+                  </span>
 
-                {/* Badges */}
-                {isCaptain && (
-                  <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-yellow-400 border border-zinc-900 flex items-center justify-center">
-                    <Crown className="w-2 h-2 sm:w-3 sm:h-3 text-yellow-950" />
-                  </div>
-                )}
-                {adapt?.label === 'fora' && (
-                  <div className="absolute -top-0.5 -left-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-red-500 border border-zinc-900 flex items-center justify-center" title="Fora de posição">
-                    <AlertTriangle className="w-2 h-2 sm:w-3 sm:h-3 text-white" />
-                  </div>
-                )}
-                {isSelected && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-primary border border-zinc-900 flex items-center justify-center animate-pulse">
-                    <ArrowRightLeft className="w-2 h-2 sm:w-3 sm:h-3 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-
-              {player && (
-                <>
-                  {/* Barra de stamina */}
-                  <div className="mt-0.5 sm:mt-1 w-8 sm:w-12 h-[3px] sm:h-1 bg-black/50 rounded-full overflow-hidden border border-white/10">
-                    <div
-                      className={cn(
-                        'h-full transition-all duration-500',
-                        player.stamina < 30 ? 'bg-red-500' : player.stamina < 70 ? 'bg-yellow-500' : 'bg-emerald-500'
-                      )}
-                      style={{ width: `${player.stamina}%` }}
-                    />
-                  </div>
-                  {/* Nome compacto */}
-                  <div className="mt-0.5 sm:mt-1 px-1 sm:px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/10 max-w-[60px] sm:max-w-[110px]">
-                    <p className="text-[8px] sm:text-[10px] text-white font-bold text-center leading-tight truncate">
-                      {player.name.split(' ').pop()}
-                    </p>
-                  </div>
-                  {player.morale < 40 && (
-                    <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-400 mt-0.5 fill-current" />
+                  {/* Badges */}
+                  {isCaptain && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 border border-zinc-900 flex items-center justify-center">
+                      <Crown className="w-2.5 h-2.5 text-amber-950" />
+                    </div>
                   )}
-                </>
-              )}
-            </motion.button>
+                  {isSelected && (
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border border-zinc-900 flex items-center justify-center animate-pulse">
+                      <ArrowRightLeft className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Name Label */}
+                <div className={cn(
+                  "mt-1.5 px-2 py-0.5 rounded-full bg-black/80 backdrop-blur-md border border-white/10 shadow-xl",
+                  "transition-all duration-300 flex flex-col items-center",
+                  isSelected ? "bg-emerald-950/90 border-emerald-500/50" : ""
+                )}>
+                  <span className="text-[7px] sm:text-[9px] font-black text-white uppercase truncate max-w-[60px] leading-tight">
+                    {player.name.split(' ').pop()}
+                  </span>
+                  <span className="text-[6px] font-bold text-white/40 uppercase tracking-tighter">
+                    {slot.position}
+                  </span>
+                </div>
+
+                {/* Stamina Bar */}
+                <div className="mt-1 w-full h-[2px] bg-black/30 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${player.stamina}%` }}
+                    className={cn(
+                      "h-full",
+                      player.stamina > 70 ? "bg-emerald-400" : player.stamina > 40 ? "bg-amber-400" : "bg-rose-500"
+                    )}
+                  />
+                </div>
+              </button>
+            </motion.div>
           );
         })}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

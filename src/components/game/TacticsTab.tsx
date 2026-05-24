@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormationView } from './FormationView';
+import { PlayerTacticsPanel } from './Tactics/PlayerTacticsPanel';
 import { TacticsConfig, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES, playStyleEffects, type PlayStyle } from '@/types/tactics';
 import { Player } from '@/types/game';
-import { ArrowLeft, Zap, Target, Shield, X, Sparkles, Users } from 'lucide-react';
+import { ArrowLeft, Zap, Target, Shield, X, Sparkles, Users, User } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -28,6 +29,9 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
   const isMobile = useIsMobile();
   const [benchOpen, setBenchOpen] = useState(false);
   const [pendingFieldId, setPendingFieldId] = useState<string | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+
 
   // Guardas defensivas: evita crash (tela preta) quando players/tactics ainda não carregaram
   const safePlayers: Player[] = Array.isArray(players) ? players : [];
@@ -116,6 +120,26 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
     setPendingFieldId(null);
     setBenchOpen(false);
   };
+
+  const handlePlayerClick = (player: Player) => {
+    setSelectedPlayer(player);
+    setPanelOpen(true);
+  };
+
+  const handleSetCaptain = (id: string) => {
+    onUpdate({ ...safeTactics, captainId: id });
+    toast.success("Novo capitão definido!");
+  };
+
+  const handleSwapRequest = () => {
+    if (selectedPlayer) {
+      setPendingFieldId(selectedPlayer.id);
+      setPanelOpen(false);
+      setBenchOpen(true);
+      toast.info(`Selecione um reserva para entrar no lugar de ${selectedPlayer.name.split(' ').pop()}`);
+    }
+  };
+
 
   return (
     <div className={cn(
@@ -218,7 +242,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
       <div className="flex-1 overflow-y-auto lg:overflow-hidden">
         <div className="h-full flex flex-col lg:flex-row gap-3 sm:gap-4 p-2 sm:p-4">
           {/* Campo */}
-          <div className="lg:flex-1 bg-zinc-900/40 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center min-h-0">
+          <div className="lg:flex-1 bg-zinc-900/20 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center min-h-0 relative">
             {safePlayers.length < 11 ? (
               <div className="w-full aspect-[4/5] sm:aspect-[16/10] flex flex-col items-center justify-center text-white/40 gap-2">
                 <div className="w-10 h-10 rounded-full border-2 border-emerald-500/40 border-t-emerald-500 animate-spin" />
@@ -229,13 +253,45 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
                 formation={safeTactics.formation}
                 players={safePlayers}
                 captainId={safeTactics.captainId}
-                orientation="portrait"
+                orientation={isMobile ? "portrait" : "landscape"}
                 selectedId={pendingFieldId}
                 onSlotSelect={(id) => setPendingFieldId(prev => (prev === id ? null : id))}
                 onSwapPlayers={onUpdatePlayers ? swapInLineup : undefined}
+                onPlayerClick={handlePlayerClick}
               />
             )}
+
+            {/* Floating Player Panel (Desktop) */}
+            {!isMobile && selectedPlayer && panelOpen && (
+              <div className="absolute top-4 right-4 w-80 z-50">
+                <PlayerTacticsPanel 
+                  player={selectedPlayer}
+                  position={selectedPlayer.position}
+                  isCaptain={safeTactics.captainId === selectedPlayer.id}
+                  onClose={() => setPanelOpen(false)}
+                  onSetCaptain={handleSetCaptain}
+                  onSwap={handleSwapRequest}
+                />
+              </div>
+            )}
           </div>
+
+          {/* Mobile Player Panel */}
+          <Sheet open={isMobile && panelOpen} onOpenChange={setPanelOpen}>
+            <SheetContent side="bottom" className="p-0 bg-transparent border-none">
+              {selectedPlayer && (
+                <PlayerTacticsPanel 
+                  player={selectedPlayer}
+                  position={selectedPlayer.position}
+                  isCaptain={safeTactics.captainId === selectedPlayer.id}
+                  onClose={() => setPanelOpen(false)}
+                  onSetCaptain={handleSetCaptain}
+                  onSwap={handleSwapRequest}
+                />
+              )}
+            </SheetContent>
+          </Sheet>
+
 
           {/* Painel de ajustes */}
           <aside className="lg:w-[340px] xl:w-[380px] shrink-0 flex flex-col gap-3 lg:overflow-y-auto lg:pr-1">
