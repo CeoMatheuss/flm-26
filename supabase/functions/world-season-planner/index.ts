@@ -88,6 +88,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const onlyLeagueId: string | undefined = body?.league_id;
     const force: boolean = body?.force === true;
+    const roundsPerDay: number = body?.rounds_per_day || 1;
 
     // 1. Buscar ligas ativas
     let q = supabase
