@@ -293,17 +293,23 @@ export function WorldCupTab({ userId }: Props) {
         <TabsContent value="groups" className="mt-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {groups.map((group) => (
-              <Card key={group.id} className="bg-card/40 border-border/50 rounded-3xl overflow-hidden backdrop-blur-sm">
-                <CardHeader className="bg-muted/30 py-3 border-b border-border/50 text-center">
-                  <CardTitle className="text-sm font-black uppercase tracking-widest text-primary italic">
+              <Card key={group.id} className="bg-card/40 border-border/50 rounded-3xl overflow-hidden backdrop-blur-sm group/card hover:border-primary/30 transition-all duration-500">
+                <CardHeader className="bg-muted/30 py-3 border-b border-border/50 text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover/card:translate-x-full transition-transform duration-1000" />
+                  <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-primary italic relative z-10">
                     {group.name}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="divide-y divide-border/20">
-                    {group.tournament_group_standings.sort((a: any, b: any) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against)).map((standing: any, idx: number) => (
-                      <div key={standing.id} className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors">
-                        <span className={`text-[10px] font-black w-4 text-center ${idx < 2 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                  <div className="divide-y divide-border/10">
+                    {group.tournament_group_standings?.sort((a: any, b: any) => 
+                      b.points - a.points || 
+                      (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against) ||
+                      b.goals_for - a.goals_for
+                    ).map((standing: any, idx: number) => (
+                      <div key={standing.id} className="flex items-center gap-3 p-3 hover:bg-primary/5 transition-colors relative group/row">
+                        {idx < 2 && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]" />}
+                        <span className={`text-[10px] font-black w-4 text-center ${idx < 2 ? 'text-emerald-400' : 'text-muted-foreground/50'}`}>
                           {idx + 1}
                         </span>
                         <ClubShield 
@@ -316,9 +322,19 @@ export function WorldCupTab({ userId }: Props) {
                           size={24} 
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-bold truncate uppercase">{standing.world_teams?.name || 'Vaga aberta'}</p>
+                          <p className="text-[10px] font-bold truncate uppercase tracking-tight group-hover/row:text-primary transition-colors">
+                            {standing.world_teams?.club_name || 'Vaga aberta'}
+                          </p>
                         </div>
-                        <span className="text-xs font-black text-white">{standing.points} <span className="text-[8px] font-normal text-muted-foreground">PTS</span></span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col items-end mr-2">
+                             <span className="text-[7px] text-muted-foreground uppercase font-bold leading-none">SG</span>
+                             <span className="text-[9px] font-black text-white/70">{(standing.goals_for || 0) - (standing.goals_against || 0)}</span>
+                          </div>
+                          <span className="text-xs font-black text-white bg-primary/20 px-2 py-1 rounded-md min-w-[2.5rem] text-center border border-primary/10">
+                            {standing.points} <span className="text-[8px] font-normal text-primary/70">PTS</span>
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
