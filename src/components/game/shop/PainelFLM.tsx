@@ -228,7 +228,7 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
     { name: 'Loja',        value: Math.max(0, Math.round(shopDaily * 30)),     color: CATEGORIES.shop.dot },
   ].filter(d => d.value > 0)), [sponsorshipMonthly, membersMonthly, marketingMonthly, shopDaily]);
 
-  const fmt = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const fmt = (v: number) => `FL$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
   // ──────────────────────────────────────────────────────────────────────────
   return (
