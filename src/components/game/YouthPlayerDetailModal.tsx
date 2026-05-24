@@ -10,7 +10,7 @@ import {
   User, Calendar, Ruler, Weight, Footprints, Flag, 
   TrendingUp, BarChart3, GraduationCap, Coins, 
   Zap, Heart, Award, Newspaper, Target, Dumbbell,
-  ShieldCheck, ArrowUpCircle, Info, Star, Crown
+  ShieldCheck, ArrowUpCircle, Info, Star, Crown, Clock
 } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { 
