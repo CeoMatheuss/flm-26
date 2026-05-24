@@ -922,62 +922,103 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       )}
       {/* Modal de Pagamento de Uniforme */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <Card className="w-full max-w-md bg-[#0a0f1a] border-primary/20 shadow-2xl animate-in zoom-in-95 duration-300">
-            <CardHeader className="text-center pb-2">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Shirt className="h-8 w-8 text-primary" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-md bg-[#1A1F2C] border-primary/20 shadow-2xl overflow-hidden">
+            <div className="relative h-24 bg-gradient-to-r from-primary/20 to-emerald-500/20 flex items-center justify-center">
+               <div className="absolute top-4 right-4">
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 hover:bg-white/10" onClick={() => setShowPaymentModal(false)}>
+                  <Label className="text-white cursor-pointer">✕</Label>
+                </Button>
               </div>
-              <CardTitle className="text-xl font-black italic uppercase tracking-tighter">Oficializar Lançamento</CardTitle>
-              <p className="text-xs text-muted-foreground">O novo manto do seu clube está quase pronto!</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {paymentStep === 'checkout' ? (
+              <Shirt className="h-10 w-10 text-white animate-bounce" />
+            </div>
+
+            <CardContent className="p-6">
+              {paymentStep === 'checkout' && (
                 <div className="space-y-4">
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] uppercase font-black text-muted-foreground">Valor do Lançamento</span>
-                      <Badge className="bg-emerald-500/20 text-emerald-400 border-none font-bold">R$ 10,00</Badge>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">O uniforme será desbloqueado permanentemente, iniciará vendas na loja e gerará hype imediato.</p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Input placeholder="Nome Completo" value={fullName} onChange={e => setFullName(e.target.value)} className="bg-white/5 border-white/10" />
-                    <Input placeholder="E-mail" type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-white/5 border-white/10" />
-                    <Input placeholder="CPF" value={cpf} onChange={e => setCpf(e.target.value)} className="bg-white/5 border-white/10" />
+                  <div className="text-center">
+                    <h2 className="text-xl font-black italic text-white uppercase tracking-tighter">Lançamento Premium</h2>
+                    <p className="text-sm text-muted-foreground">Oficialize seu novo uniforme e comece a vender para sua torcida agora mesmo.</p>
                   </div>
 
-                  <Button onClick={executeKitPayment} className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-black italic uppercase tracking-wider" disabled={loading}>
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Zap className="h-5 w-5 mr-2" />}
-                    Pagar com PIX
+                  <div className="bg-muted/30 rounded-xl p-4 border border-white/5 space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Taxa de Lançamento</span>
+                      <span className="font-bold text-white">R$ 9,90</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Benefícios</span>
+                      <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-0">Vendas Ativas</Badge>
+                    </div>
+                    <div className="pt-2 border-t border-white/5 flex justify-between items-center font-bold">
+                      <span className="text-white">Total</span>
+                      <span className="text-xl text-primary font-black">R$ 9,90</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Input placeholder="Nome Completo" value={fullName} onChange={e => setFullName(e.target.value)} className="bg-muted/50 border-0" />
+                    <Input placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} className="bg-muted/50 border-0" />
+                    <Input placeholder="CPF" value={cpf} onChange={e => setCpf(e.target.value)} className="bg-muted/50 border-0" />
+                  </div>
+
+                  <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-black uppercase italic rounded-xl gap-2 shadow-lg shadow-primary/20" 
+                    onClick={executeKitPayment} disabled={loading || !email || !fullName || !cpf}>
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
+                    Gerar PIX de Lançamento
                   </Button>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center text-center space-y-4 py-4">
-                  <div className="p-4 bg-white rounded-2xl shadow-inner">
-                    <img src={pixInfo?.pix_qr_code_base64} alt="QR Code PIX" className="w-48 h-48" />
+              )}
+
+              {paymentStep === 'pix' && (
+                <div className="text-center space-y-6">
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Aguardando Pagamento</h2>
+                    <p className="text-sm text-muted-foreground">Escaneie o QR Code abaixo para confirmar o lançamento.</p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-white">Escaneie o QR Code</p>
-                    <p className="text-[10px] text-muted-foreground">Aguardando aprovação em tempo real...</p>
+
+                  <div className="flex justify-center p-4 bg-white rounded-2xl mx-auto w-48 h-48 shadow-xl">
+                    <img src={`data:image/png;base64,${pixInfo.pix_qr_code}`} alt="PIX QR Code" className="w-full h-full" />
                   </div>
-                  <Button variant="outline" className="w-full text-[10px] h-8 bg-white/5" onClick={() => {
-                    navigator.clipboard.writeText(pixInfo?.pix_qr_code);
-                    toast.success('Copiado!');
-                  }}>Copiar Código PIX</Button>
-                  <div className="flex items-center gap-2 text-[10px] text-primary animate-pulse font-bold">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Aguardando pagamento...
+
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full border-white/10 text-xs gap-2" 
+                      onClick={() => {
+                        navigator.clipboard.writeText(pixInfo.pix_copy_paste);
+                        toast.success('Copiado para a área de transferência!');
+                      }}>
+                      Copiar Código PIX
+                    </Button>
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-xs font-bold uppercase tracking-widest animate-pulse">Detectando pagamento...</span>
+                    </div>
                   </div>
                 </div>
               )}
+
+              {paymentStep === 'success' && (
+                <div className="text-center space-y-6 animate-in zoom-in duration-500">
+                  <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
+                    <Label className="text-white text-3xl">✓</Label>
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Sucesso Total!</h2>
+                    <p className="text-sm text-muted-foreground">Seu uniforme foi lançado oficialmente. As vendas começaram a todo vapor!</p>
+                  </div>
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold" onClick={() => setShowPaymentModal(false)}>
+                    Ir para Dashboard de Vendas
+                  </Button>
+                </div>
+              )}
             </CardContent>
-            <CardFooter>
-              <Button variant="ghost" className="w-full text-xs text-white/40" onClick={() => setShowPaymentModal(false)}>Cancelar Lançamento</Button>
-            </CardFooter>
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
     </div>
   );
 }
