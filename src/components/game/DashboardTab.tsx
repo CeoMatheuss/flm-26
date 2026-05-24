@@ -450,10 +450,16 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         <Card className="game-card border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all group">
           <CardContent className="p-4 flex flex-col items-center justify-center text-center">
             <Trophy className="h-5 w-5 text-primary mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-2xl font-black italic tracking-tighter">{club.stats.points}</p>
+            <p className="text-2xl font-black italic tracking-tighter">{liveStats?.points ?? club.stats.points}</p>
             <p className="text-[9px] uppercase font-bold text-muted-foreground">Pontos na Liga</p>
+            {liveStats?.rank && (
+              <Badge variant="outline" className="text-[8px] h-3 px-1 mt-1 border-primary/30 text-primary">
+                {liveStats.rank}º Lugar
+              </Badge>
+            )}
           </CardContent>
         </Card>
+
 
         <Card className="game-card border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all group">
           <CardContent className="p-4 flex flex-col items-center justify-center text-center">
