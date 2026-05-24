@@ -56,7 +56,11 @@ Deno.serve(async (req) => {
 
     if (errStuck) debug.push({ stage: "select_stuck", err: errStuck.message });
 
-    const matches = [...(scheduledMatches || []), ...(stuckMatches || [])];
+    const matches = [
+      ...(scheduledMatches || []).map(m => ({ ...m, type: 'league' })),
+      ...(stuckMatches || []).map(m => ({ ...m, type: 'league' })),
+      ...(cupMatches || []).map(m => ({ ...m, type: 'cup' }))
+    ];
     let finalized = 0;
     let skipped = 0;
     const errors: any[] = [];
