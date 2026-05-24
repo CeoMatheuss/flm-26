@@ -296,7 +296,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
 
 
           {/* Painel de ajustes */}
-          <aside className="lg:w-[340px] xl:w-[380px] shrink-0 flex flex-col gap-3 lg:overflow-y-auto lg:pr-1">
+          <aside className="w-full flex flex-col gap-3">
             {/* Formação */}
             <Card className="bg-zinc-900/60 border-white/5 rounded-2xl">
               <CardContent className="p-4 space-y-3">
