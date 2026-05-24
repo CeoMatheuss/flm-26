@@ -295,7 +295,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     window.addEventListener('league_match_updated', handleSync);
     window.addEventListener('flm:match-finalized', handleSync);
 
-    const interval = setInterval(loadNextMatch, 60000);
+    const interval = setInterval(loadNextMatch, autoSimTriggered ? 5000 : 60000);
     return () => { 
       cancelled = true; 
       clearInterval(interval); 
