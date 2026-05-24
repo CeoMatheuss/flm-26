@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { ScoutsTabProps } from '@/types/game'; // Assuming this exists, if not I'll just use any
 import { useScouting } from '@/hooks/useScouting';
+import { toast } from 'sonner';
 import { ScoutCard } from './scouting/ScoutCard';
 import { MarketScoutCard } from './scouting/MarketScoutCard';
 import { Card, CardContent } from '@/components/ui/card';
