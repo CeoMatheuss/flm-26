@@ -4,13 +4,16 @@ import { Badge } from '@/components/ui/badge';
 import { 
   TrendingUp, TrendingDown, Minus, Trophy, Swords, Star, 
   Flame, BarChart3, RefreshCw, Globe, Users, Shield,
-  History, Target, Award, ArrowUpRight, ArrowDownRight
+  History, Target, Award, ArrowUpRight, ArrowDownRight, User
 } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PlayerRankingTab } from './PlayerRankingTab';
+
 
 interface RankingEntry {
   id: string;
@@ -157,6 +160,20 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
 
   return (
     <div className="space-y-6 pb-20 sm:pb-10">
+      <Tabs defaultValue="clubs" className="w-full">
+        <TabsList className="w-full max-w-md mx-auto grid grid-cols-2 mb-8 bg-card border border-white/5">
+          <TabsTrigger value="clubs" className="flex items-center gap-2 py-2">
+            <Shield className="h-4 w-4" />
+            <span className="font-bold">Ranking de Clubes</span>
+          </TabsTrigger>
+          <TabsTrigger value="players" className="flex items-center gap-2 py-2">
+            <User className="h-4 w-4" />
+            <span className="font-bold">Ranking de Jogadores</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="clubs" className="space-y-6 animate-in fade-in duration-500">
+
       {/* Dynamic Header / My Stats Bento */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Main Card: Rank & Points */}
@@ -471,6 +488,12 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="players" className="animate-in fade-in duration-500">
+          <PlayerRankingTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
