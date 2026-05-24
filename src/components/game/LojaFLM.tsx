@@ -462,8 +462,13 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
              </div>
           </TabsContent>
 
+          <TabsContent value="scouting" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <ScoutPackTab clubId={club.id} budget={club.budget} />
+          </TabsContent>
+
 
           <TabsContent value="entregas" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+
              <OrderTracker orders={storeManager.stats.recentOrders} />
           </TabsContent>
 
