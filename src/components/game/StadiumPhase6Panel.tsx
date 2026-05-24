@@ -36,7 +36,7 @@ export function StadiumPhase6Panel({
             </span>
             {billing.totalMembers > 0 && (
               <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/40">
-                {billing.totalMembers.toLocaleString()} sócios • R$ {(billing.totalRevenue/1000).toFixed(0)}k/mês
+                {billing.totalMembers.toLocaleString()} sócios • FL$ {(billing.totalRevenue/1000).toFixed(0)}k/mês
               </Badge>
             )}
           </CardTitle>
