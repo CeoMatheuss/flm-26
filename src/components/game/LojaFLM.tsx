@@ -834,9 +834,16 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
           </motion.div>
         )}
       </AnimatePresence>
+      {isOfflineModalOpen && offlineSummary && (
+        <OfflineSummaryModal 
+          summary={offlineSummary} 
+          onClose={() => setIsOfflineModalOpen(false)} 
+        />
+      )}
     </div>
   );
 }
+
 
 function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDetails }: any) {
   const isBlocked = (clubFans || 0) < (item.min_fans || 0);
