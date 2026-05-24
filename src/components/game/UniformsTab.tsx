@@ -974,15 +974,20 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
                   </div>
 
                   <div className="space-y-3">
-                    <Input placeholder="Nome Completo" value={fullName} onChange={e => setFullName(e.target.value)} className="bg-muted/50 border-0" />
-                    <Input placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} className="bg-muted/50 border-0" />
-                    <Input placeholder="CPF" value={cpf} onChange={e => setCpf(e.target.value)} className="bg-muted/50 border-0" />
+                    <div className="space-y-1">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Nome Completo</Label>
+                      <Input placeholder="Seu nome" value={fullName} onChange={e => setFullName(e.target.value)} className="bg-muted/50 border-0 h-11" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">E-mail</Label>
+                      <Input placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} className="bg-muted/50 border-0 h-11" />
+                    </div>
                   </div>
 
                   <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-black uppercase italic rounded-xl gap-2 shadow-lg shadow-primary/20" 
-                    onClick={executeKitPayment} disabled={loading || !email || !fullName || !cpf}>
+                    onClick={executeKitPayment} disabled={loading || !email || !fullName}>
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
-                    Pagar via Mercado Livre (R$ 0,01)
+                    ADQUIRIR AGORA (R$ 0,01)
                   </Button>
                 </div>
               )}
@@ -995,14 +1000,25 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
                   </div>
 
                   <div className="flex justify-center p-4 bg-white rounded-2xl mx-auto w-48 h-48 shadow-xl">
-                    <img src={`data:image/png;base64,${pixInfo.pix_qr_code}`} alt="PIX QR Code" className="w-full h-full" />
+                    {pixInfo?.pix_qr_code_base64 ? (
+                      <img src={`data:image/png;base64,${pixInfo.pix_qr_code_base64}`} alt="PIX QR Code" className="w-full h-full" />
+                    ) : pixInfo?.pix_qr_code ? (
+                      <img src={`data:image/png;base64,${pixInfo.pix_qr_code}`} alt="PIX QR Code" className="w-full h-full" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400">
+                        <Loader2 className="animate-spin" />
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-3">
-                    <Button variant="outline" className="w-full border-white/10 text-xs gap-2" 
+                    <Button variant="outline" className="w-full border-white/10 text-xs gap-2 py-5" 
                       onClick={() => {
-                        navigator.clipboard.writeText(pixInfo.pix_copy_paste);
-                        toast.success('Copiado para a área de transferência!');
+                        const code = pixInfo?.pix_qr_code || pixInfo?.pix_copy_paste;
+                        if (code) {
+                          navigator.clipboard.writeText(code);
+                          toast.success('Copiado para a área de transferência!');
+                        }
                       }}>
                       Copiar Código PIX
                     </Button>
@@ -1017,13 +1033,13 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
               {paymentStep === 'success' && (
                 <div className="text-center space-y-6 animate-in zoom-in duration-500">
                   <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
-                    <Label className="text-white text-3xl">✓</Label>
+                    <span className="text-white text-3xl">✓</span>
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Sucesso Total!</h2>
                     <p className="text-sm text-muted-foreground">Seu uniforme foi lançado oficialmente. As vendas começaram a todo vapor!</p>
                   </div>
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold" onClick={() => setShowPaymentModal(false)}>
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-11" onClick={() => setShowPaymentModal(false)}>
                     Ir para Dashboard de Vendas
                   </Button>
                 </div>
