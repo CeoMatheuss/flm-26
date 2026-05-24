@@ -127,8 +127,8 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<RankingUp
         reputation: club.reputation,
         outcome,
         importance: (competition === 'friendly' ? 'amistoso' : competition === 'league' ? 'liga' : competition === 'world' ? 'final' : 'liga') as any,
-        homeGoals: 0, // Simplificado, ideal seria passar via input
-        awayGoals: 0,
+        homeGoals: input.outcome === 'win' ? 1 : 0, // Fallback simplificado
+        awayGoals: input.outcome === 'loss' ? 1 : 0,
         isHome: true,
         recentForm: truncatedForm,
         opponentStrength,

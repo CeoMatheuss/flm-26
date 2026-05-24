@@ -143,15 +143,17 @@ export function useMatchState(initialState: any, userId?: string) {
       const repBonus = prev.reputation >= 70 ? 10 : prev.reputation <= 30 ? -10 : 0;
 
       let fanChange: number;
+      // Import inline is not allowed in sync setState, using base logic with improved randoms
       if (isWin) {
-        fanChange = 50 + Math.floor(Math.random() * 51);
+        fanChange = 80 + Math.floor(Math.random() * 120); // Amistosos agora dão mais torcida
       } else if (isDraw) {
-        fanChange = 20 + Math.floor(Math.random() * 31);
+        fanChange = 30 + Math.floor(Math.random() * 40);
       } else {
-        fanChange = Math.floor(Math.random() * 21);
+        fanChange = Math.floor(Math.random() * 20) - 10;
       }
+      
       fanChange += stadiumFanBonus + repBonus;
-      fanChange = Math.max(-50, Math.min(fanChange, 100));
+      fanChange = Math.max(-50, Math.min(fanChange, 300));
 
       const isRout = isHome ? (homeGoals - awayGoals) >= 3 : (awayGoals - homeGoals) >= 3;
       const isBigLoss = isHome ? (homeGoals - awayGoals) <= -3 : (awayGoals - homeGoals) <= -3;
