@@ -2314,10 +2314,17 @@ function ImprovedSubsView({
                           {p.position}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-bold truncate flex items-center gap-1">
-                            {p.name}
-                            {lowStamina && <span title="Cansado" className="text-[8px]">🔻</span>}
-                          </p>
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-[11px] font-bold truncate flex items-center gap-1">
+                              {p.name}
+                              {lowStamina && <span title="Cansado" className="text-[8px]">🔻</span>}
+                            </p>
+                            {matchState.playerRatings?.[p.id] && (
+                              <span className="text-[10px] font-black px-1.5 rounded" style={{ backgroundColor: `${matchState.playerRatings[p.id].color}22`, color: matchState.playerRatings[p.id].color }}>
+                                {matchState.playerRatings[p.id].rating.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1 mt-0.5">
                             <span className="text-[9px] font-mono text-muted-foreground">OVR {p.overall}</span>
                             <div className="h-1 flex-1 max-w-[48px] rounded-full bg-muted/20 overflow-hidden">
