@@ -28,9 +28,15 @@ interface RankingEntry {
   titles_count?: number;
   winning_streak?: number;
   points_history?: any[];
+  goals_for: number;
+  goals_against: number;
+  division?: string;
+  coach_name?: string;
+  country?: string;
   clubs?: {
     shield_config: any;
     logo_url: string | null;
+    reputation: number;
   };
 }
 
@@ -42,12 +48,14 @@ interface Props {
   season: number;
 }
 
+type RankingCategory = 'global' | 'national' | 'seasonal' | 'offensive' | 'defensive';
+
 export function RankingTab({ rating, rankingHistory, clubName, stats, season }: Props) {
   const [userId, setUserId] = useState<string | null>(null);
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [myPosition, setMyPosition] = useState<number | null>(null);
-  const [view, setView] = useState<'global' | 'history'>('global');
+  const [category, setCategory] = useState<RankingCategory>('global');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -57,17 +65,33 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
 
   const fetchRankings = async () => {
     setLoading(true);
-    const { data: rankingData, error } = await supabase
+    
+    let query = supabase
       .from('global_ranking')
-      .select('*')
-      .order('ranking_points', { ascending: false })
-      .limit(200);
+      .select('*');
+
+    // Aplicar filtros e ordenação baseados na categoria
+    switch (category) {
+      case 'offensive':
+        query = query.order('goals_for', { ascending: false });
+        break;
+      case 'defensive':
+        query = query.order('goals_against', { ascending: true });
+        break;
+      case 'seasonal':
+        query = query.order('season_points', { ascending: false });
+        break;
+      default:
+        query = query.order('ranking_points', { ascending: false });
+    }
+
+    const { data: rankingData, error } = await query.limit(100);
 
     if (!error && rankingData) {
       const userIds = rankingData.map(r => r.user_id);
       const { data: clubsData } = await (supabase
         .from('clubs')
-        .select('user_id, shield_config, logo_url') as any)
+        .select('user_id, shield_config, logo_url, reputation') as any)
         .in('user_id', userIds);
 
       const enhanced = rankingData.map(r => ({
@@ -86,7 +110,7 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
 
   useEffect(() => {
     if (userId) fetchRankings();
-  }, [userId]);
+  }, [userId, category]);
 
   // Realtime subscription
   useEffect(() => {
@@ -242,14 +266,53 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
         </div>
       </div>
 
+      {/* Category Selectors */}
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant={category === 'global' ? "default" : "outline"} 
+          size="sm" 
+          onClick={() => setCategory('global')}
+          className="rounded-full px-4 h-8 text-[10px] font-bold uppercase tracking-widest"
+        >
+          Mundial
+        </Button>
+        <Button 
+          variant={category === 'seasonal' ? "default" : "outline"} 
+          size="sm" 
+          onClick={() => setCategory('seasonal')}
+          className="rounded-full px-4 h-8 text-[10px] font-bold uppercase tracking-widest"
+        >
+          Temporada
+        </Button>
+        <Button 
+          variant={category === 'offensive' ? "default" : "outline"} 
+          size="sm" 
+          onClick={() => setCategory('offensive')}
+          className="rounded-full px-4 h-8 text-[10px] font-bold uppercase tracking-widest"
+        >
+          Ataque
+        </Button>
+        <Button 
+          variant={category === 'defensive' ? "default" : "outline"} 
+          size="sm" 
+          onClick={() => setCategory('defensive')}
+          className="rounded-full px-4 h-8 text-[10px] font-bold uppercase tracking-widest"
+        >
+          Defesa
+        </Button>
+      </div>
+
       {/* Global Ranking Table */}
       <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-sm">
         <CardHeader className="pb-4 px-6 pt-6 flex flex-row items-center justify-between border-b border-white/5">
           <div>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
-              <Star className="h-5 w-5 text-amber-500" /> Elite Mundial de Clubes
+              <Star className="h-5 w-5 text-amber-500" /> 
+              {category === 'global' ? 'Elite Mundial de Clubes' : 
+               category === 'seasonal' ? 'Performance da Temporada' :
+               category === 'offensive' ? 'Poder Ofensivo' : 'Solidez Defensiva'}
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Ranking atualizado em tempo real baseado em performance global</p>
+            <p className="text-xs text-muted-foreground mt-1">Ranking atualizado em tempo real baseado em clubes reais de jogadores</p>
           </div>
           <div className="flex items-center gap-2">
             <Button 
@@ -270,9 +333,12 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
               <thead>
                 <tr className="bg-muted/30 text-[10px] uppercase tracking-widest text-muted-foreground">
                   <th className="py-3 px-6 text-left font-bold w-16">Pos</th>
-                  <th className="py-3 px-2 text-left font-bold">Clube</th>
+                  <th className="py-3 px-2 text-left font-bold">Clube / Treinador</th>
+                  <th className="py-3 px-4 text-center font-bold hidden md:table-cell">Reputação</th>
                   <th className="py-3 px-4 text-center font-bold hidden md:table-cell">Forma</th>
-                  <th className="py-3 px-4 text-right font-bold">Pts</th>
+                  <th className="py-3 px-4 text-right font-bold">
+                    {category === 'offensive' ? 'Gols M.' : category === 'defensive' ? 'Gols S.' : 'Pontos'}
+                  </th>
                   <th className="py-3 px-4 text-center font-bold hidden sm:table-cell">V/E/D</th>
                   <th className="py-3 px-6 text-right font-bold w-20">Var</th>
                 </tr>
@@ -323,11 +389,19 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                               <span className={`text-sm font-bold truncate max-w-[120px] sm:max-w-[200px] ${isMe ? 'text-primary' : ''}`}>
                                 {entry.club_name}
                               </span>
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <Target className="h-2.5 w-2.5" /> {entry.current_competition}
-                              </span>
+                              <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground uppercase tracking-tight">
+                                <Users className="h-2 w-2" /> 
+                                <span className="truncate max-w-[80px]">{entry.coach_name || 'Desconhecido'}</span>
+                                <span className="opacity-40">•</span>
+                                <span>{entry.country || 'Inter.'}</span>
+                              </div>
                             </div>
                           </div>
+                        </td>
+                        <td className="py-4 px-4 text-center hidden md:table-cell">
+                          <Badge variant="outline" className="text-[10px] font-bold border-amber-500/20 text-amber-500">
+                            ★ {entry.clubs?.reputation || 0}
+                          </Badge>
                         </td>
                         <td className="py-4 px-4 text-center hidden md:table-cell">
                           <div className="flex justify-center">
@@ -335,7 +409,9 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                           </div>
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <span className="text-sm font-black italic text-primary">{entry.ranking_points}</span>
+                          <span className="text-sm font-black italic text-primary">
+                            {category === 'offensive' ? entry.goals_for : category === 'defensive' ? entry.goals_against : entry.ranking_points}
+                          </span>
                         </td>
                         <td className="py-4 px-4 text-center hidden sm:table-cell">
                           <div className="flex items-center justify-center gap-2 text-[10px] font-mono opacity-60">
