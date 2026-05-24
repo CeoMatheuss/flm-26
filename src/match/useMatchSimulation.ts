@@ -349,19 +349,48 @@ export function useMatchSimulation() {
           .eq('id', data.matchDbId)
           .then(async () => {
             console.log("[MATCH] Finalizado via Cronômetro. Sincronizando persistence...");
-            const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
-            if (rpcError) console.error("[MATCH] Erro ao sincronizar persistence:", rpcError);
-            
-            // Emit custom event to refresh widgets globally and clear caches
-            window.dispatchEvent(new CustomEvent('flm:match-finalized', { 
-              detail: { 
-                matchId: data.matchDbId,
-                homeGoals: data.finalHomeGoals,
-                awayGoals: data.finalAwayGoals
-              } 
-            }));
-            
-            console.log("[MATCH] Persistence sync complete.");
+            try {
+              const { data: syncDataRaw, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId });
+              const syncData = syncDataRaw as any;
+
+              if (rpcError) {
+                console.error("[MATCH] Erro ao sincronizar persistence:", rpcError);
+              } else if (syncData?.success) {
+                console.log("[MATCH] Persistence sync complete via RPC:", syncData);
+                
+                // 🏆 Sincronização de Ranking centralizada
+                const outcome = data.finalHomeGoals > data.finalAwayGoals ? 'win' : (data.finalHomeGoals === data.finalAwayGoals ? 'draw' : 'loss');
+                const competitionLabel = syncData.competition || 'Amistoso';
+                const compLower = competitionLabel.toLowerCase();
+                
+                let rankingComp: 'friendly' | 'league' | 'continental' | 'world' = 'league';
+                if (compLower.includes('amist')) rankingComp = 'friendly';
+                else if (compLower.includes('mundial')) rankingComp = 'world';
+                else if (compLower.includes('continental') || compLower.includes('copa')) rankingComp = 'continental';
+
+                const { updateGlobalRanking } = await import('@/match/rankingUpdater');
+                const session = await supabase.auth.getSession();
+                
+                await updateGlobalRanking({
+                  userId: session.data.session?.user?.id || '',
+                  clubName: data.homeTeam,
+                  outcome,
+                  competition: rankingComp,
+                  competitionLabel: competitionLabel
+                });
+
+                // Emit custom event to refresh widgets globally
+                window.dispatchEvent(new CustomEvent('flm:match-finalized', { 
+                  detail: { 
+                    matchId: data.matchDbId,
+                    homeGoals: data.finalHomeGoals,
+                    awayGoals: data.finalAwayGoals
+                  } 
+                }));
+              }
+            } catch (err) {
+              console.error("[MATCH] Exceção ao sincronizar persistence:", err);
+            }
           });
       }
       return;
