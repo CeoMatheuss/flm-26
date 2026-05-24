@@ -29,11 +29,13 @@ export function useStoreManager(club: Club, userId: string) {
     
     try {
       const client = supabase as any;
-      const [effectsRes, launchesRes, statsRes, membersRes] = await Promise.all([
+      const [effectsRes, launchesRes, statsRes, membersRes, ordersRes, productsRes] = await Promise.all([
         client.from('club_active_effects').select('*').eq('club_id', club.id),
         client.from('club_uniform_launches').select('*').eq('club_id', club.id).eq('is_active', true),
         client.from('club_shop_stats').select('*').eq('club_id', club.id).maybeSingle(),
-        client.from('club_memberships').select('*').eq('club_id', club.id).maybeSingle()
+        client.from('club_memberships').select('*').eq('club_id', club.id).maybeSingle(),
+        client.from('club_shop_orders').select('*, shipping_companies(*), club_shop_products(*)').eq('club_id', club.id).order('created_at', { ascending: false }).limit(10),
+        client.from('club_shop_products').select('*').eq('club_id', club.id)
       ]);
 
       if (effectsRes.data) {
@@ -90,10 +92,39 @@ export function useStoreManager(club: Club, userId: string) {
           }
         }));
       }
+
+      if (ordersRes.data) {
+        setStats(prev => ({
+          ...prev,
+          recentOrders: ordersRes.data.map((o: any) => ({
+            id: o.id,
+            product_id: o.product_id,
+            shipping_company_id: o.shipping_company_id,
+            status: o.status,
+            customer_satisfaction: o.customer_satisfaction,
+            freight_cents: o.freight_cents,
+            distance_km: o.distance_km,
+            risk_factor: o.risk_factor,
+            estimated_delivery_at: o.estimated_delivery_at,
+            actual_delivery_at: o.actual_delivery_at,
+            created_at: o.created_at,
+            product: o.club_shop_products,
+            shipping_company: o.shipping_companies
+          }))
+        }));
+      }
+
+      if (productsRes.data) {
+        setStats(prev => ({
+          ...prev,
+          products: productsRes.data
+        }));
+      }
     } catch (error) {
       console.error('Error fetching store data:', error);
     }
   }, [club?.id]);
+
 
   useEffect(() => {
     fetchStoreData();
