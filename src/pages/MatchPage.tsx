@@ -101,6 +101,22 @@ export default function MatchPage() {
   const [preMatchDone, setPreMatchDone] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [resolvedHomePlayers, setResolvedHomePlayers] = useState<Player[] | null>(null);
+  
+  const validateMatchSquad = (players: Player[]) => {
+    const starters = players.filter(p => p.squad_status === 'starter');
+    const bench = players.filter(p => p.squad_status === 'bench');
+    const gks = starters.filter(p => p.position === 'GOL');
+    
+    if (starters.length < 11) {
+      toast.error(`Escalação incompleta (${starters.length}/11).`);
+      return false;
+    }
+    if (gks.length !== 1) {
+      toast.error("O time precisa de exatamente 1 goleiro titular.");
+      return false;
+    }
+    return true;
+  };
 
   const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, resumeFromBreak, destroy } = useMatchSimulation();
 
@@ -278,7 +294,11 @@ export default function MatchPage() {
         }
         setInitDone(true);
       } else if (locState && !locState.liveMatchDbId && locState.homePlayers?.length > 0) {
-        doStartMatch(locState.homePlayers, locState.tactics);
+        if (validateMatchSquad(locState.homePlayers)) {
+          doStartMatch(locState.homePlayers, locState.tactics);
+        } else {
+          navigate('/', { replace: true });
+        }
       } else if (!locState) {
         setLoadingMsg('Buscando partida ativa');
         setPreMatchDone(true);

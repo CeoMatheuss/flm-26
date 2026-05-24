@@ -38,7 +38,8 @@ function seedRng(matchId: string) {
 function rng() { return _rng(); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
-const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Alves', 'Pereira', 'Lima', 'Gomes', 'Costa', 'Ribeiro', 'Martins', 'Carvalho', 'Almeida', 'Lopes', 'Soares', 'Fernandes'];
+const awayNames = []; // Eliminated random names to avoid "phantom" players
+
 
 // ── TYPES ──────────────────────────────────────────────────────
 
@@ -1060,8 +1061,10 @@ function simulateFullMatch(
   let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
 
   function buildupDesc(team: 'home' | 'away', tName: string, type: string = 'normal'): string {
-    const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
+    const starters = allPlayers.filter(p => p.team === team && p.squadStatus === 'starter');
+    const pool = starters.length > 0 ? starters : allPlayers.filter(p => p.team === team && p.isOnPitch);
+    const oppStarters = allPlayers.filter(p => p.team !== team && p.squadStatus === 'starter');
+    const oppPool = oppStarters.length > 0 ? oppStarters : allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
     const p3 = pool.filter(p => p.name !== p1 && p.name !== p2).length > 0 ? pick(pool.filter(p => p.name !== p1 && p.name !== p2)).name : p2;
@@ -1114,7 +1117,8 @@ function simulateFullMatch(
   // ── HOME GOALS ──────────────────────────────────────────────
   for (const m of homeGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
-    const scorer = pickByRole(home.filter(p => p.isOnPitch && p.position !== 'GOL'), 'finishing', rng() > 0.55 ? 'ATA' : undefined);
+    const homeStarters = home.filter(p => p.squadStatus === 'starter');
+    const scorer = pickByRole(homeStarters.length > 0 ? homeStarters : home, 'finishing', rng() > 0.55 ? 'ATA' : undefined);
     const goalTypes = ['chute rasteiro no canto', 'chute colocado no ângulo', 'voleio de primeira', 'toque na saída do goleiro', 'cabeçada certeira', 'chute de longe'];
     const goalType = pick(goalTypes);
     let assistName: string | undefined;
@@ -1144,7 +1148,8 @@ function simulateFullMatch(
   // ── AWAY GOALS ──────────────────────────────────────────────
   for (const m of awayGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
-    const scorer = pickByRole(away.filter(p => p.isOnPitch && p.position !== 'GOL'), 'finishing', rng() > 0.55 ? 'ATA' : undefined);
+    const awayStarters = away.filter(p => p.squadStatus === 'starter');
+    const scorer = pickByRole(awayStarters.length > 0 ? awayStarters : away, 'finishing', rng() > 0.55 ? 'ATA' : undefined);
     const goalType = pick(['chute rasteiro cruzado', 'cabeceio no segundo pau', 'contra-ataque com toque na saída do goleiro', 'finalização de primeira']);
     let assistName: string | undefined;
     if (scorer) {
@@ -2341,23 +2346,30 @@ Deno.serve(async (req) => {
     
     // ── AUTOMATIC STATS SYNC ──────────────────────────────────
     try {
-      const statsPayload = result.allPlayers.map(p => ({
-        player_id: p.id,
-        team_id: (p.team === 'home' ? (effHomeTeamId || p.team_id) : (effAwayTeamId || p.team_id)),
-        goals: p.goals || 0,
-        assists: p.assists || 0,
-        rating: p.rating || 6.0,
-        yellow_card: (p.yellowCards || 0) > 0,
-        red_card: p.redCards || 0,
-        is_gk: p.position === 'GOL',
-        clean_sheet: (p.team === 'home' ? result.awayGoals === 0 : result.homeGoals === 0)
-      })).filter(p => !p.player_id.includes('-')); // filter out temp bot IDs like 'away-1'
+      const seenIds = new Set();
+      const statsPayload = result.allPlayers
+        .filter(p => {
+          if (!p.id || seenIds.has(p.id) || p.id.includes('-')) return false;
+          seenIds.add(p.id);
+          return true;
+        })
+        .map(p => ({
+          player_id: p.id,
+          team_id: (p.team === 'home' ? (effHomeTeamId || p.team_id) : (effAwayTeamId || p.team_id)),
+          goals: p.goals || 0,
+          assists: p.assists || 0,
+          rating: p.rating || 6.0,
+          yellow_card: (p.yellowCards || 0) > 0,
+          red_card: p.redCards || 0,
+          is_gk: p.position === 'GOL',
+          clean_sheet: (p.team === 'home' ? result.awayGoals === 0 : result.homeGoals === 0)
+        }));
 
       if (statsPayload.length > 0) {
         const { error: syncErr } = await adminClient.rpc('sync_player_match_stats', {
           _match_id: String(matchId),
           _competition_id: competition || 'Amistoso',
-          _season: 1, // TODO: resolve current season
+          _season: 1,
           _player_stats: statsPayload
         });
         if (syncErr) console.error('[StatsSync] RPC Error:', syncErr);
