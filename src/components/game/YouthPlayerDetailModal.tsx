@@ -74,56 +74,56 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
         onClose();
       }
     }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-primary/20 bg-background/95 backdrop-blur-xl">
+      <DialogContent className="w-[100vw] max-w-4xl h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-y-auto p-0 border-primary/20 bg-background/95 backdrop-blur-xl rounded-none sm:rounded-2xl gap-0">
         {isConfirmingPromotion ? (
-          <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
-                <ShieldCheck className="h-10 w-10 text-primary" />
+          <div className="p-4 sm:p-8 space-y-5 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                <ShieldCheck className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
               </div>
               <div>
-                <h3 className="text-2xl font-black uppercase tracking-tight">Confirmar Promoção</h3>
-                <p className="text-sm text-muted-foreground">Você está prestes a oferecer o primeiro contrato profissional para {prospect.name}.</p>
+                <h3 className="text-lg sm:text-2xl font-black uppercase tracking-tight">Confirmar Promoção</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Você está prestes a oferecer o primeiro contrato profissional para {prospect.name}.</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-6 rounded-2xl bg-card border border-border/50 space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="p-4 sm:p-6 rounded-2xl bg-card border border-border/50 space-y-3 sm:space-y-4">
+                <h4 className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                   <Coins className="h-3.5 w-3.5" /> Detalhes Financeiros
                 </h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/30">
-                    <span className="text-xs font-bold text-muted-foreground uppercase">Salário Mensal</span>
-                    <span className="text-sm font-black text-emerald-400">{formatMoney(prospect.salary || 500)}</span>
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between items-center p-2.5 sm:p-3 rounded-xl bg-muted/30">
+                    <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase">Salário Mensal</span>
+                    <span className="text-xs sm:text-sm font-black text-emerald-400">{formatMoney(prospect.salary || 500)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/30">
-                    <span className="text-xs font-bold text-muted-foreground uppercase">Bônus de Assinatura</span>
-                    <span className="text-sm font-black text-white">{formatMoney(0)}</span>
+                  <div className="flex justify-between items-center p-2.5 sm:p-3 rounded-xl bg-muted/30">
+                    <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase">Bônus de Assinatura</span>
+                    <span className="text-xs sm:text-sm font-black text-white">{formatMoney(0)}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 rounded-2xl bg-card border border-border/50 space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+              <div className="p-4 sm:p-6 rounded-2xl bg-card border border-border/50 space-y-3 sm:space-y-4">
+                <h4 className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" /> Vínculo Contratual
                 </h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/30">
-                    <span className="text-xs font-bold text-muted-foreground uppercase">Duração</span>
-                    <span className="text-sm font-black text-white">3 Temporadas</span>
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between items-center p-2.5 sm:p-3 rounded-xl bg-muted/30">
+                    <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase">Duração</span>
+                    <span className="text-xs sm:text-sm font-black text-white">3 Temporadas</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 rounded-xl bg-muted/30">
-                    <span className="text-xs font-bold text-muted-foreground uppercase">Status no Elenco</span>
+                  <div className="flex justify-between items-center p-2.5 sm:p-3 rounded-xl bg-muted/30">
+                    <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase">Status no Elenco</span>
                     <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">Reserva</Badge>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-3 items-start">
-              <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-200/80 leading-relaxed">
+            <div className="p-3 sm:p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-2 sm:gap-3 items-start">
+              <Info className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] sm:text-xs text-amber-200/80 leading-relaxed">
                 Ao subir para o profissional, o jogador ocupará uma vaga no elenco principal e seu salário será debitado mensalmente do seu orçamento. 
                 {prospect.age < 18 && (
                   <strong> Atenção: O jogador tem menos de 18 anos e pode ter dificuldades físicas inicialmente.</strong>
@@ -131,11 +131,11 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
               </p>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
               <Button 
                 variant="outline" 
                 onClick={() => setIsConfirmingPromotion(false)}
-                className="flex-1 h-12 font-bold uppercase tracking-wider text-xs border-border/50"
+                className="w-full sm:flex-1 h-11 sm:h-12 font-bold uppercase tracking-wider text-xs border-border/50"
               >
                 Voltar
               </Button>
@@ -144,7 +144,7 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
                   onPromote(prospect.id);
                   setIsConfirmingPromotion(false);
                 }}
-                className="flex-[2] h-12 bg-primary hover:bg-primary/90 font-black uppercase tracking-wider text-xs shadow-lg shadow-primary/20"
+                className="w-full sm:flex-[2] h-11 sm:h-12 bg-primary hover:bg-primary/90 font-black uppercase tracking-wider text-xs shadow-lg shadow-primary/20"
               >
                 Confirmar e Contratar
               </Button>
@@ -152,66 +152,88 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
           </div>
         ) : (
           <>
-            {/* Banner Section */}
-        <div className="relative h-48 w-full bg-gradient-to-br from-primary/20 via-background to-accent/20 overflow-hidden border-b border-border/50">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(37,99,235,0.1),transparent)]" />
-          
-          <div className="absolute bottom-0 left-0 w-full p-6 flex items-end gap-6">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-3xl bg-card border-2 border-primary/30 flex items-center justify-center text-6xl shadow-2xl">
-                👤
-              </div>
-              <div className="absolute -top-3 -left-3">
-                <Badge className="bg-primary text-primary-foreground font-black text-lg px-3 py-1 rounded-xl shadow-lg">
-                  {prospect.position}
-                </Badge>
-              </div>
-              {prospect.rarity === 'Craque geracional' && (
-                <div className="absolute -top-3 -right-3 animate-pulse">
-                  <Crown className="h-8 w-8 text-amber-400 fill-amber-400" />
+            {/* Banner Section - Mobile-first */}
+            <div className="relative w-full bg-gradient-to-br from-primary/20 via-background to-accent/20 overflow-hidden border-b border-border/50">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(37,99,235,0.1),transparent)]" />
+
+              <div className="relative p-4 sm:p-6 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+                {/* Avatar + name block */}
+                <div className="flex items-center sm:items-end gap-4 sm:gap-6 flex-1 min-w-0">
+                  <div className="relative shrink-0">
+                    <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-2xl sm:rounded-3xl bg-card border-2 border-primary/30 flex items-center justify-center text-4xl sm:text-6xl shadow-2xl">
+                      👤
+                    </div>
+                    <div className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3">
+                      <Badge className="bg-primary text-primary-foreground font-black text-xs sm:text-lg px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-lg">
+                        {prospect.position}
+                      </Badge>
+                    </div>
+                    {prospect.rarity === 'Craque geracional' && (
+                      <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 animate-pulse">
+                        <Crown className="h-5 w-5 sm:h-8 sm:w-8 text-amber-400 fill-amber-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0 pb-1 sm:pb-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      <h2 className="text-xl sm:text-3xl font-black tracking-tight truncate max-w-full">{prospect.name}</h2>
+                      {prospect.rarity !== 'Comum' && (
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 uppercase font-black text-[9px] sm:text-[10px] px-1.5 py-0">
+                          {prospect.rarity}
+                        </Badge>
+                      )}
+                    </div>
+                    {/* Mobile: stat chips grid */}
+                    <div className="grid grid-cols-2 sm:hidden gap-1.5 mt-2">
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card/70 border border-border/50 text-[11px] font-semibold text-muted-foreground">
+                        <Flag className="h-3 w-3" /> <span className="truncate">{prospect.nationality}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card/70 border border-border/50 text-[11px] font-semibold text-muted-foreground">
+                        <Calendar className="h-3 w-3" /> {prospect.age} anos
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card/70 border border-border/50 text-[11px] font-bold">
+                        <Star className="h-3 w-3 text-amber-400" /> OVR <span className="text-foreground">{prospect.overall}</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card/70 border border-border/50 text-[11px] font-bold ${potInfo.color}`}>
+                        <span>{potInfo.emoji}</span> POT {prospect.potential}
+                      </div>
+                    </div>
+                    {/* Desktop inline */}
+                    <div className="hidden sm:flex items-center gap-4 text-sm font-medium text-muted-foreground">
+                      <span className="flex items-center gap-1.5"><Flag className="h-4 w-4" /> {prospect.nationality}</span>
+                      <span className="text-muted-foreground/30">•</span>
+                      <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {prospect.age} anos</span>
+                      <span className="text-muted-foreground/30">•</span>
+                      <span className="flex items-center gap-1.5"><Star className="h-4 w-4 text-amber-400" /> OVR {prospect.overall}</span>
+                      <span className="text-muted-foreground/30">•</span>
+                      <span className={`flex items-center gap-1.5 ${potInfo.color}`}>{potInfo.emoji} Potencial {prospect.potential}</span>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="flex-1 pb-2">
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-3xl font-black tracking-tight">{prospect.name}</h2>
-                {prospect.rarity !== 'Comum' && (
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 uppercase font-black text-[10px]">
-                    {prospect.rarity}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
-                <span className="flex items-center gap-1.5"><Flag className="h-4 w-4" /> {prospect.nationality}</span>
-                <span className="text-muted-foreground/30">•</span>
-                <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {prospect.age} anos</span>
-                <span className="text-muted-foreground/30">•</span>
-                <span className="flex items-center gap-1.5"><Star className="h-4 w-4 text-amber-400" /> OVR {prospect.overall}</span>
-                <span className="text-muted-foreground/30">•</span>
-                <span className={`flex items-center gap-1.5 ${potInfo.color}`}>{potInfo.emoji} Potencial {prospect.potential}</span>
+                {/* Actions */}
+                <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
+                  <Button onClick={() => setIsConfirmingPromotion(true)} className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90 font-bold px-3 sm:px-6 h-11 text-xs sm:text-sm">
+                    <ArrowUpCircle className="h-4 w-4" /> <span className="truncate">Subir Profissional</span>
+                  </Button>
+                  <Button variant="outline" onClick={() => onSell(prospect.id)} className="flex-1 sm:flex-none gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 font-bold h-11 text-xs sm:text-sm">
+                    <span className="truncate">Dispensar</span>
+                  </Button>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Button onClick={() => setIsConfirmingPromotion(true)} className="gap-2 bg-primary hover:bg-primary/90 font-bold px-6">
-                <ArrowUpCircle className="h-4 w-4" /> Subir Profissional
-              </Button>
-              <Button variant="outline" onClick={() => onSell(prospect.id)} className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 font-bold">
-                Dispensar / Vender
-              </Button>
+        <div className="p-3 sm:p-6">
+          <Tabs defaultValue="info" className="space-y-4 sm:space-y-6">
+            <div className="-mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scrollbar-none">
+              <TabsList className="bg-muted/50 p-1 inline-flex w-max sm:w-full sm:justify-start min-w-full">
+                <TabsTrigger value="info" className="gap-1.5 px-3 sm:px-4 py-2 text-[11px] sm:text-sm whitespace-nowrap"><User className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Atributos</TabsTrigger>
+                <TabsTrigger value="development" className="gap-1.5 px-3 sm:px-4 py-2 text-[11px] sm:text-sm whitespace-nowrap"><TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Desenvolvimento</TabsTrigger>
+                <TabsTrigger value="training" className="gap-1.5 px-3 sm:px-4 py-2 text-[11px] sm:text-sm whitespace-nowrap"><Dumbbell className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Treinamento</TabsTrigger>
+                <TabsTrigger value="contract" className="gap-1.5 px-3 sm:px-4 py-2 text-[11px] sm:text-sm whitespace-nowrap"><ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Contrato</TabsTrigger>
+              </TabsList>
             </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <Tabs defaultValue="info" className="space-y-6">
-            <TabsList className="bg-muted/50 p-1 w-full justify-start overflow-x-auto">
-              <TabsTrigger value="info" className="gap-2 px-4 py-2"><User className="h-4 w-4" /> Info & Atributos</TabsTrigger>
-              <TabsTrigger value="development" className="gap-2 px-4 py-2"><TrendingUp className="h-4 w-4" /> Desenvolvimento</TabsTrigger>
-              <TabsTrigger value="training" className="gap-2 px-4 py-2"><Dumbbell className="h-4 w-4" /> Treinamento</TabsTrigger>
-              <TabsTrigger value="contract" className="gap-2 px-4 py-2"><ShieldCheck className="h-4 w-4" /> Contrato & Moral</TabsTrigger>
-            </TabsList>
 
             <TabsContent value="info" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
