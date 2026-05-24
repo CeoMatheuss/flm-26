@@ -146,11 +146,13 @@ export type Marking = 'individual' | 'zona' | 'misto';
 export type PassingStyle = 'curto' | 'misto' | 'longo' | 'direto';
 export type DefenseLine = 'alta' | 'media' | 'baixa';
 export type Width = 'estreita' | 'normal' | 'larga';
+export type Intensity = 'baixa' | 'equilibrada' | 'agressiva' | 'pressao-maxima';
 
 export interface PlayerInstruction {
   playerId: string;
   role: 'titular' | 'reserva';
-  instruction?: 'livre' | 'manter-posicao' | 'avançar' | 'recuar' | 'marcar-homem';
+  instruction?: 'livre' | 'manter-posicao' | 'avançar' | 'recuar' | 'marcar-homem' | 'economizar-stamina' | 'infiltrar';
+  behavior?: 'atacar-mais' | 'defender-mais' | 'ficar-aberto' | 'ficar-na-defesa' | 'subir-ao-ataque';
 }
 
 export interface TacticsConfig {
@@ -158,6 +160,7 @@ export interface TacticsConfig {
   playStyle: PlayStyle;
   pressing: Pressing;
   tempo: Tempo;
+  intensity: Intensity;
   marking: Marking;
   passingStyle: PassingStyle;
   defenseLine: DefenseLine;
@@ -168,6 +171,8 @@ export interface TacticsConfig {
   freeKickTakerId?: string;
   penaltyTakerId?: string;
   cornerTakerId?: string;
+  // Goleiro specific
+  gkInstruction?: 'sair-jogando' | 'chutao' | 'goleiro-linha' | 'reposicao-rapida';
 }
 
 export const defaultTactics: TacticsConfig = {
@@ -175,12 +180,14 @@ export const defaultTactics: TacticsConfig = {
   playStyle: 'equilibrado',
   pressing: 'medio',
   tempo: 'normal',
+  intensity: 'equilibrada',
   marking: 'zona',
   passingStyle: 'misto',
   defenseLine: 'media',
   width: 'normal',
   playerInstructions: [],
   autoUpdateLineup: true,
+  gkInstruction: 'sair-jogando',
 };
 
 export const formationPositions: Record<Formation, Record<string, number>> = {

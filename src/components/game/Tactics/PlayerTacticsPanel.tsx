@@ -120,9 +120,29 @@ export function PlayerTacticsPanel({
 
           <div className="space-y-4 pt-2">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-white/30 flex items-center gap-2">
-              <Shield className="w-3 h-3" /> Ações Rápidas
+              <Shield className="w-3 h-3" /> Instruções Táticas
             </h3>
-            <div className="grid grid-cols-1 gap-2">
+            
+            <div className="grid grid-cols-2 gap-2">
+              {['atacar-mais', 'defender-mais', 'ficar-aberto', 'infiltrar', 'economizar-stamina'].map((instr) => (
+                <Button
+                  key={instr}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-8 text-[9px] font-bold uppercase tracking-tight bg-white/5 border-white/10 hover:bg-emerald-500/20",
+                    // Aqui viria a lógica de marcar se a instrução está ativa
+                  )}
+                  onClick={() => {
+                    toast.success(`Instrução: ${instr} definida para ${player.name}`);
+                  }}
+                >
+                  {instr.replace('-', ' ')}
+                </Button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 pt-2 border-t border-white/5">
               <Button 
                 variant="outline" 
                 className="w-full justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold h-12"
