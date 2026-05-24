@@ -143,6 +143,10 @@ export function calculatePlayerRatings(
       if (stats.goals === 0 && currentMinute > 75) score -= 0.5; // Pressure on strikers
     }
 
+    // Special bonuses for decisiveness (V2)
+    if (stats.goals >= 3) score += 1.0; // Hat-trick bonus
+    if (stats.goals >= 1 && currentMinute > 85) score += 0.5; // Late goal bonus
+
     // Cap rating
     score = Math.min(10.0, Math.max(0.0, score));
     // Round to 1 decimal
