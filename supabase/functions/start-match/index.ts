@@ -38,6 +38,8 @@ function seedRng(matchId: string) {
 function rng() { return _rng(); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
+const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Alves', 'Pereira', 'Lima', 'Gomes', 'Costa', 'Ribeiro', 'Martins', 'Carvalho', 'Almeida', 'Lopes', 'Soares', 'Fernandes'];
+
 // ── TYPES ──────────────────────────────────────────────────────
 
 interface SimPlayer {
