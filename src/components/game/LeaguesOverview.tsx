@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { WorldCupTeaser } from './WorldCupTeaser';
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -154,6 +156,9 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
           <Globe className="h-5 w-5 text-primary" /> Ligas do Mundo
         </h2>
       </div>
+
+      <WorldCupTeaser onOpenWorldCup={() => (window as any).dispatchEvent(new CustomEvent('flm:change-tab', { detail: 'worldcup' }))} />
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {loading ? (
