@@ -42,6 +42,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
     formation: rawTactics.formation || '4-4-2',
     playStyle: validStyle,
     tempo: rawTactics.tempo || 'normal',
+    intensity: rawTactics.intensity || 'equilibrada',
     pressing: rawTactics.pressing || 'medio',
     marking: rawTactics.marking || 'zona',
     passingStyle: rawTactics.passingStyle || 'misto',
@@ -53,6 +54,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
     freeKickTakerId: rawTactics.freeKickTakerId,
     penaltyTakerId: rawTactics.penaltyTakerId,
     cornerTakerId: rawTactics.cornerTakerId,
+    gkInstruction: rawTactics.gkInstruction || 'sair-jogando',
   };
   const canUseInMatch = (player: Player) => {
     const raw = player as any;
@@ -321,34 +323,48 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
             {/* Estilo & ritmo */}
             <Card className="bg-zinc-900/60 border-white/5 rounded-2xl">
               <CardContent className="p-4 space-y-4">
-                <SectionTitle icon={<Zap className="w-4 h-4 text-amber-400" />} label="Dinâmica" />
+                <SectionTitle icon={<Zap className="w-4 h-4 text-amber-400" />} label="Dinâmica & Estilo" />
                 <Group label="Estilo de Jogo">
                   <StylePicker
                     value={safeTactics.playStyle as PlayStyle}
                     onPick={(v) => setField('playStyle', v as any)}
                   />
                 </Group>
-                <Group label="Ritmo">
-                  <Grid items={['lento','normal','rapido','muito-rapido'] as const}
-                        value={safeTactics.tempo} onPick={(v) => setField('tempo', v as any)}
-                        activeClass="bg-amber-500 border-amber-400 text-zinc-950" />
-                </Group>
-                <Group label="Linha Defensiva">
-                  <Grid items={['baixa','media','alta'] as const}
-                        value={(safeTactics as any).defenseLine || 'media'} onPick={(v) => setField('defenseLine' as any, v as any)}
-                        activeClass="bg-sky-500 border-sky-400 text-zinc-950" />
-                </Group>
+                <div className="grid grid-cols-2 gap-3">
+                  <Group label="Ritmo">
+                    <Grid items={['lento','normal','rapido','muito-rapido'] as const}
+                          value={safeTactics.tempo} onPick={(v) => setField('tempo', v as any)}
+                          activeClass="bg-amber-500 border-amber-400 text-zinc-950" />
+                  </Group>
+                  <Group label="Intensidade">
+                    <Grid items={['baixa','equilibrada','agressiva','pressao-maxima'] as const}
+                          value={safeTactics.intensity} onPick={(v) => setField('intensity', v as any)}
+                          activeClass="bg-orange-500 border-orange-400 text-zinc-950" />
+                  </Group>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Defesa */}
+            {/* Ataque & Defesa */}
             <Card className="bg-zinc-900/60 border-white/5 rounded-2xl">
-              <CardContent className="p-4 space-y-3">
-                <SectionTitle icon={<Target className="w-4 h-4 text-red-400" />} label="Defesa" />
-                <Group label="Pressão">
-                  <Grid items={['baixo','medio','alto','ultra-alto'] as const}
-                        value={safeTactics.pressing} onPick={(v) => setField('pressing', v as any)}
-                        activeClass="bg-red-500 border-red-400 text-zinc-950" />
+              <CardContent className="p-4 space-y-4">
+                <SectionTitle icon={<Target className="w-4 h-4 text-red-400" />} label="Postura Tática" />
+                <div className="grid grid-cols-2 gap-3">
+                  <Group label="Linha Defensiva">
+                    <Grid items={['baixa','media','alta'] as const}
+                          value={safeTactics.defenseLine} onPick={(v) => setField('defenseLine', v as any)}
+                          activeClass="bg-sky-500 border-sky-400 text-zinc-950" />
+                  </Group>
+                  <Group label="Pressão">
+                    <Grid items={['baixo','medio','alto','ultra-alto'] as const}
+                          value={safeTactics.pressing} onPick={(v) => setField('pressing', v as any)}
+                          activeClass="bg-red-500 border-red-400 text-zinc-950" />
+                  </Group>
+                </div>
+                <Group label="Instrução Goleiro">
+                  <Grid items={['sair-jogando','chutao','goleiro-linha','reposicao-rapida'] as const}
+                        value={safeTactics.gkInstruction || 'sair-jogando'} onPick={(v) => setField('gkInstruction', v as any)}
+                        activeClass="bg-amber-400 border-amber-300 text-zinc-950" />
                 </Group>
               </CardContent>
             </Card>

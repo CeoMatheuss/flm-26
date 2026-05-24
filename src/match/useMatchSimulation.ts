@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { isHighlightEvent } from '@/components/game/HighlightMiniCanvas';
+import { calculateTacticalModifiers } from './tacticalEngine';
+import { TacticsConfig } from '@/types/tactics';
 
 export interface SimEvent {
   minute: number;
@@ -141,7 +143,19 @@ function subscribeToLoop(fn: Subscriber): () => void {
 
 export function useMatchSimulation() {
   const [state, setState] = useState<MatchState>(INITIAL);
+  const [currentTactics, setCurrentTactics] = useState<TacticsConfig | null>(null);
   
+  const tacticalMods = useMemo(() => {
+    if (!currentTactics) return null;
+    return calculateTacticalModifiers(currentTactics);
+  }, [currentTactics]);
+
+  const updateTactics = useCallback((newTactics: TacticsConfig) => {
+    setCurrentTactics(newTactics);
+    // Em uma implementação real, aqui poderíamos enviar os novos dados para o servidor
+    // se for uma partida simulada em nuvem, ou ajustar as probabilidades locais.
+    console.log("[TACTICS] Atualização em tempo real:", newTactics);
+  }, []);
   const dataRef = useRef<MatchData | null>(null);
   const nextVisibleEventIdxRef = useRef(0);
   const isAnimatingRef = useRef(false);
