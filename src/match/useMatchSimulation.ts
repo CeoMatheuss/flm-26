@@ -156,8 +156,12 @@ export function useMatchSimulation() {
     // se for uma partida simulada em nuvem, ou ajustar as probabilidades locais.
     console.log("[TACTICS] Atualização em tempo real:", newTactics);
   }, []);
-
-  
+  const dataRef = useRef<MatchData | null>(null);
+  const nextVisibleEventIdxRef = useRef(0);
+  const isAnimatingRef = useRef(false);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const persistedRef = useRef(false);
+  const notifiedEventsRef = useRef<Set<string>>(new Set());
   const dataRef = useRef<MatchData | null>(null);
   const nextVisibleEventIdxRef = useRef(0);
   const isAnimatingRef = useRef(false);
