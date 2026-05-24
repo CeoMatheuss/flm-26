@@ -907,6 +907,65 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           </CardContent>
         </Card>
       )}
+      {/* Modal de Pagamento de Uniforme */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <Card className="w-full max-w-md bg-[#0a0f1a] border-primary/20 shadow-2xl animate-in zoom-in-95 duration-300">
+            <CardHeader className="text-center pb-2">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Shirt className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle className="text-xl font-black italic uppercase tracking-tighter">Oficializar Lançamento</CardTitle>
+              <p className="text-xs text-muted-foreground">O novo manto do seu clube está quase pronto!</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {paymentStep === 'checkout' ? (
+                <div className="space-y-4">
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] uppercase font-black text-muted-foreground">Valor do Lançamento</span>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-none font-bold">R$ 10,00</Badge>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">O uniforme será desbloqueado permanentemente, iniciará vendas na loja e gerará hype imediato.</p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Input placeholder="Nome Completo" value={fullName} onChange={e => setFullName(e.target.value)} className="bg-white/5 border-white/10" />
+                    <Input placeholder="E-mail" type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-white/5 border-white/10" />
+                    <Input placeholder="CPF" value={cpf} onChange={e => setCpf(e.target.value)} className="bg-white/5 border-white/10" />
+                  </div>
+
+                  <Button onClick={executeKitPayment} className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-black italic uppercase tracking-wider" disabled={loading}>
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Zap className="h-5 w-5 mr-2" />}
+                    Pagar com PIX
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-center space-y-4 py-4">
+                  <div className="p-4 bg-white rounded-2xl shadow-inner">
+                    <img src={pixInfo?.pix_qr_code_base64} alt="QR Code PIX" className="w-48 h-48" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-white">Escaneie o QR Code</p>
+                    <p className="text-[10px] text-muted-foreground">Aguardando aprovação em tempo real...</p>
+                  </div>
+                  <Button variant="outline" className="w-full text-[10px] h-8 bg-white/5" onClick={() => {
+                    navigator.clipboard.writeText(pixInfo?.pix_qr_code);
+                    toast.success('Copiado!');
+                  }}>Copiar Código PIX</Button>
+                  <div className="flex items-center gap-2 text-[10px] text-primary animate-pulse font-bold">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Aguardando pagamento...
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button variant="ghost" className="w-full text-xs text-white/40" onClick={() => setShowPaymentModal(false)}>Cancelar Lançamento</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
+
