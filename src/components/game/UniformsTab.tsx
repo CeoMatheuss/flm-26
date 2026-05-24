@@ -476,7 +476,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           initial_reputation: clubData.reputation,
           hype_score: 100,
           status: 'pending_payment',
-          price_cents: 990 // R$ 9,90
+          price_cents: 1 // R$ 0,01
         })
         .select()
         .single();
@@ -512,7 +512,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         user_id: user.id,
         club_name: clubData?.name,
         item_name: `Lançamento: ${kits[activeKit].name}`,
-        amount_cents: 990,
+        amount_cents: 1,
         status: 'attempting',
         payment_method: 'pix',
         metadata: { uniform_id: pendingLaunchId, type: 'uniform_launch' }
@@ -522,11 +522,11 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
           item_id: 'uniform_launch_token',
-          method: 'pix',
+          method: 'mercadolivre', // Usando Mercado Livre como solicitado
           email: email,
           full_name: fullName,
           cpf: cpf.replace(/\D/g, ''),
-          custom_amount: 990,
+          custom_amount: 1, // R$ 0,01
           metadata: { uniform_id: pendingLaunchId, item_type: 'uniform_launch' }
         }
       });
@@ -961,7 +961,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
                   <div className="bg-muted/30 rounded-xl p-4 border border-white/5 space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Taxa de Lançamento</span>
-                      <span className="font-bold text-white">R$ 9,90</span>
+                      <span className="font-bold text-white">R$ 0,01</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Benefícios</span>
@@ -969,7 +969,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
                     </div>
                     <div className="pt-2 border-t border-white/5 flex justify-between items-center font-bold">
                       <span className="text-white">Total</span>
-                      <span className="text-xl text-primary font-black">R$ 9,90</span>
+                      <span className="text-xl text-primary font-black">R$ 0,01</span>
                     </div>
                   </div>
 
@@ -982,7 +982,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
                   <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-black uppercase italic rounded-xl gap-2 shadow-lg shadow-primary/20" 
                     onClick={executeKitPayment} disabled={loading || !email || !fullName || !cpf}>
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
-                    Gerar PIX de Lançamento
+                    Pagar via Mercado Livre (R$ 0,01)
                   </Button>
                 </div>
               )}

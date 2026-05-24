@@ -329,7 +329,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
           item_id: selectedItem.id,
-          method: checkoutMethod,
+          method: checkoutMethod === 'pix' ? 'mercadolivre' : checkoutMethod,
           email: checkoutEmail,
           full_name: checkoutFullName,
           cpf: checkoutCpf.replace(/\D/g, '')
@@ -742,7 +742,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
                       }`}
                     >
                       <QrCode className="h-4 w-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest italic">PIX</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest italic">Mercado Livre</span>
                     </button>
                     <button 
                       onClick={() => setCheckoutMethod('card')}
@@ -774,7 +774,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
                       </>
                     ) : (
                       <>
-                        {checkoutMethod === 'pix' ? 'GERAR PIX PARA PAGAMENTO' : 'REALIZAR PAGAMENTO'}
+                        {checkoutMethod === 'pix' ? 'Pagar via Mercado Livre (R$ 0,01)' : 'REALIZAR PAGAMENTO (R$ 0,01)'}
                         <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
