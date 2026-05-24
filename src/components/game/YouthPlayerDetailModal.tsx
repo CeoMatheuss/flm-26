@@ -28,6 +28,8 @@ interface Props {
 }
 
 export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, onSell }: Props) {
+  const [isConfirmingPromotion, setIsConfirmingPromotion] = useState(false);
+  
   if (!prospect) return null;
 
   const potTier = prospect.potentialTier ?? 'comum';
