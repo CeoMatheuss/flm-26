@@ -525,6 +525,75 @@ export type Database = {
         }
         Relationships: []
       }
+      club_shop_orders: {
+        Row: {
+          actual_delivery_at: string | null
+          club_id: string | null
+          created_at: string | null
+          customer_satisfaction: number | null
+          distance_km: number
+          estimated_delivery_at: string
+          freight_cents: number
+          id: string
+          is_offline_processed: boolean | null
+          metadata: Json | null
+          product_id: string | null
+          risk_factor: number
+          shipping_company_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_delivery_at?: string | null
+          club_id?: string | null
+          created_at?: string | null
+          customer_satisfaction?: number | null
+          distance_km?: number
+          estimated_delivery_at: string
+          freight_cents?: number
+          id?: string
+          is_offline_processed?: boolean | null
+          metadata?: Json | null
+          product_id?: string | null
+          risk_factor?: number
+          shipping_company_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_delivery_at?: string | null
+          club_id?: string | null
+          created_at?: string | null
+          customer_satisfaction?: number | null
+          distance_km?: number
+          estimated_delivery_at?: string
+          freight_cents?: number
+          id?: string
+          is_offline_processed?: boolean | null
+          metadata?: Json | null
+          product_id?: string | null
+          risk_factor?: number
+          shipping_company_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shop_orders_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_shop_orders_shipping_company_id_fkey"
+            columns: ["shipping_company_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_shop_products: {
         Row: {
           base_price_cents: number
@@ -532,8 +601,14 @@ export type Database = {
           created_at: string | null
           id: string
           image_url: string | null
+          is_limited_edition: boolean | null
+          max_stock: number
           min_level: number
           name: string
+          popularity_score: number
+          rarity: string | null
+          stock_quantity: number
+          updated_at: string | null
         }
         Insert: {
           base_price_cents: number
@@ -541,8 +616,14 @@ export type Database = {
           created_at?: string | null
           id: string
           image_url?: string | null
+          is_limited_edition?: boolean | null
+          max_stock?: number
           min_level?: number
           name: string
+          popularity_score?: number
+          rarity?: string | null
+          stock_quantity?: number
+          updated_at?: string | null
         }
         Update: {
           base_price_cents?: number
@@ -550,10 +631,51 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url?: string | null
+          is_limited_edition?: boolean | null
+          max_stock?: number
           min_level?: number
           name?: string
+          popularity_score?: number
+          rarity?: string | null
+          stock_quantity?: number
+          updated_at?: string | null
         }
         Relationships: []
+      }
+      club_shop_sales_history: {
+        Row: {
+          club_id: string | null
+          id: string
+          product_id: string | null
+          quantity: number
+          sale_date: string | null
+          total_revenue_cents: number
+        }
+        Insert: {
+          club_id?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          sale_date?: string | null
+          total_revenue_cents: number
+        }
+        Update: {
+          club_id?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          sale_date?: string | null
+          total_revenue_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shop_sales_history_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       club_shop_stats: {
         Row: {
@@ -2660,6 +2782,39 @@ export type Database = {
           },
         ]
       }
+      logistic_events: {
+        Row: {
+          active_until: string | null
+          created_at: string | null
+          id: string
+          impact_factor: number
+          is_global: boolean | null
+          name: string
+          probability: number
+          type: string
+        }
+        Insert: {
+          active_until?: string | null
+          created_at?: string | null
+          id?: string
+          impact_factor: number
+          is_global?: boolean | null
+          name: string
+          probability: number
+          type: string
+        }
+        Update: {
+          active_until?: string | null
+          created_at?: string | null
+          id?: string
+          impact_factor?: number
+          is_global?: boolean | null
+          name?: string
+          probability?: number
+          type?: string
+        }
+        Relationships: []
+      }
       match_history: {
         Row: {
           away_goals: number
@@ -3901,6 +4056,8 @@ export type Database = {
           display_name: string | null
           id: string
           last_daily_shop_bonus_at: string | null
+          last_offline_processed_at: string | null
+          last_online_at: string | null
           last_training_processed_at: string | null
           tutorial_completed: boolean
           user_id: string
@@ -3911,6 +4068,8 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_daily_shop_bonus_at?: string | null
+          last_offline_processed_at?: string | null
+          last_online_at?: string | null
           last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id: string
@@ -3921,6 +4080,8 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_daily_shop_bonus_at?: string | null
+          last_offline_processed_at?: string | null
+          last_online_at?: string | null
           last_training_processed_at?: string | null
           tutorial_completed?: boolean
           user_id?: string
@@ -4362,6 +4523,36 @@ export type Database = {
           id?: string
           last_attempt?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      shipping_companies: {
+        Row: {
+          created_at: string | null
+          delay_risk: number
+          id: string
+          name: string
+          price_factor: number
+          quality_score: number
+          speed_factor: number
+        }
+        Insert: {
+          created_at?: string | null
+          delay_risk?: number
+          id?: string
+          name: string
+          price_factor?: number
+          quality_score?: number
+          speed_factor?: number
+        }
+        Update: {
+          created_at?: string | null
+          delay_risk?: number
+          id?: string
+          name?: string
+          price_factor?: number
+          quality_score?: number
+          speed_factor?: number
         }
         Relationships: []
       }
@@ -6636,6 +6827,10 @@ export type Database = {
       process_match_suspensions: {
         Args: { _competition_type: string; _player_ids: string[] }
         Returns: undefined
+      }
+      process_offline_shop_activity: {
+        Args: { p_club_id: string; p_seconds_offline: number }
+        Returns: Json
       }
       process_season_transition:
         | { Args: never; Returns: undefined }

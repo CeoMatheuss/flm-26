@@ -17,8 +17,11 @@ export function useStoreManager(club: Club, userId: string) {
       activePlanId: null,
       monthlyRevenue: 0,
       happiness: 100
-    }
+    },
+    recentOrders: [],
+    products: []
   });
+
   const [loading, setLoading] = useState(false);
 
   const fetchStoreData = useCallback(async () => {
@@ -26,11 +29,13 @@ export function useStoreManager(club: Club, userId: string) {
     
     try {
       const client = supabase as any;
-      const [effectsRes, launchesRes, statsRes, membersRes] = await Promise.all([
+      const [effectsRes, launchesRes, statsRes, membersRes, ordersRes, productsRes] = await Promise.all([
         client.from('club_active_effects').select('*').eq('club_id', club.id),
         client.from('club_uniform_launches').select('*').eq('club_id', club.id).eq('is_active', true),
         client.from('club_shop_stats').select('*').eq('club_id', club.id).maybeSingle(),
-        client.from('club_memberships').select('*').eq('club_id', club.id).maybeSingle()
+        client.from('club_memberships').select('*').eq('club_id', club.id).maybeSingle(),
+        client.from('club_shop_orders').select('*, shipping_companies(*), club_shop_products(*)').eq('club_id', club.id).order('created_at', { ascending: false }).limit(10),
+        client.from('club_shop_products').select('*').eq('club_id', club.id)
       ]);
 
       if (effectsRes.data) {
@@ -87,10 +92,39 @@ export function useStoreManager(club: Club, userId: string) {
           }
         }));
       }
+
+      if (ordersRes.data) {
+        setStats(prev => ({
+          ...prev,
+          recentOrders: ordersRes.data.map((o: any) => ({
+            id: o.id,
+            product_id: o.product_id,
+            shipping_company_id: o.shipping_company_id,
+            status: o.status,
+            customer_satisfaction: o.customer_satisfaction,
+            freight_cents: o.freight_cents,
+            distance_km: o.distance_km,
+            risk_factor: o.risk_factor,
+            estimated_delivery_at: o.estimated_delivery_at,
+            actual_delivery_at: o.actual_delivery_at,
+            created_at: o.created_at,
+            product: o.club_shop_products,
+            shipping_company: o.shipping_companies
+          }))
+        }));
+      }
+
+      if (productsRes.data) {
+        setStats(prev => ({
+          ...prev,
+          products: productsRes.data
+        }));
+      }
     } catch (error) {
       console.error('Error fetching store data:', error);
     }
   }, [club?.id]);
+
 
   useEffect(() => {
     fetchStoreData();
@@ -190,10 +224,115 @@ export function useStoreManager(club: Club, userId: string) {
     }
   };
 
+  const processOfflineActivity = async () => {
+    if (!club?.id || !userId) return null;
+
+    try {
+      // 1. Obter o perfil para checar o último timestamp
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('last_online_at')
+        .eq('id', userId)
+        .single();
+
+      if (!profile?.last_online_at) return null;
+
+      const lastOnline = new Date(profile.last_online_at);
+      const now = new Date();
+      const secondsOffline = Math.floor((now.getTime() - lastOnline.getTime()) / 1000);
+
+      // Só processar se ficou mais de 5 minutos (300s) offline para evitar micro-transações
+      if (secondsOffline < 300) return null;
+
+      // 2. Chamar a RPC do banco para processar
+      const { data: result, error } = await supabase.rpc('process_offline_shop_activity', {
+        p_club_id: club.id,
+        p_seconds_offline: secondsOffline
+      });
+
+      if (error) throw error;
+
+      // 3. Atualizar o perfil com o novo timestamp online
+      await supabase
+        .from('profiles')
+        .update({ last_online_at: now.toISOString() })
+        .eq('id', userId);
+
+      return {
+        ...(result as any),
+        time_offline_seconds: secondsOffline
+      };
+
+    } catch (error) {
+      console.error('Error processing offline activity:', error);
+      return null;
+    }
+  };
+
+  const createOrder = async (productId: string, shippingCompanyId: string) => {
+    if (!club?.id) return;
+
+    try {
+      setLoading(true);
+      const { data: product } = await supabase
+        .from('club_shop_products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+      
+      const { data: company } = await supabase
+        .from('shipping_companies')
+        .select('*')
+        .eq('id', shippingCompanyId)
+        .single();
+
+      if (!product || !company) return;
+
+      // Cálculo de frete e prazo (simulado baseado em distância aleatória)
+      const distance = Math.floor(Math.random() * 1000) + 50; // 50-1050km
+      const freight = Math.floor((distance * 2) * company.price_factor);
+      const risk = (distance / 2000) + company.delay_risk;
+      
+      // Base: 1 dia a cada 500km * speed_factor
+      const hoursToDeliver = (distance / 500) * 24 * company.speed_factor;
+      const estimatedDelivery = new Date();
+      estimatedDelivery.setHours(estimatedDelivery.getHours() + hoursToDeliver);
+
+      const { data: order, error } = await supabase
+        .from('club_shop_orders')
+        .insert({
+          club_id: club.id,
+          product_id: productId,
+          shipping_company_id: shippingCompanyId,
+          freight_cents: freight,
+          distance_km: distance,
+          risk_factor: risk,
+          estimated_delivery_at: estimatedDelivery.toISOString(),
+          status: 'processing'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success(`Pedido realizado! Estimativa: ${estimatedDelivery.toLocaleDateString()}`);
+      fetchStoreData();
+      return order;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Erro ao criar pedido.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     stats,
     loading,
     activateItem,
+    processOfflineActivity,
+    createOrder,
     refresh: fetchStoreData
   };
 }
+

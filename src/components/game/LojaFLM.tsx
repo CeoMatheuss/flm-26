@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import {
   Loader2, History, Info, TrendingUp, Building2, 
   UserCog, AlertCircle, RefreshCw, Star, Shirt,
   LayoutDashboard, ArrowUpRight, X, Mail, QrCode, CreditCard,
-  Check, Copy, Eye
+  Check, Copy, Eye, Truck, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,10 +18,13 @@ import { toast } from 'sonner';
 import { ShopItemDetails } from './ShopItemDetails';
 import { StoreDashboard } from './shop/StoreDashboard';
 import { PainelFLM } from './shop/PainelFLM';
+import { OrderTracker } from './shop/OrderTracker';
+import { OfflineSummaryModal } from './shop/OfflineSummaryModal';
 import { useStoreManager } from '@/hooks/useStoreManager';
 import { useMarketingDelivery } from '@/hooks/useMarketingDelivery';
 import { formatMoney } from '@/lib/formatMoney';
 import { PacotinhosTab } from './PacotinhosTab';
+import { OfflineSummary } from '@/types/store';
 
 interface LojaProps {
   club: any;
@@ -34,6 +37,8 @@ interface LojaProps {
 }
 
 const CATEGORIES = [
+  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, db: 'painel' },
+  { id: 'entregas', name: 'Entregas', icon: Truck, db: 'delivery' },
   { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
@@ -41,13 +46,12 @@ const CATEGORIES = [
   { id: 'fans', name: 'Torcida', icon: Users, db: 'fans' },
   { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
   { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
-  { id: 'all', name: 'Todos', icon: ShoppingBag, db: 'all' },
-  { id: 'painel', name: 'Painel', icon: LayoutDashboard, db: 'painel' },
 ];
 
 
+
 export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: LojaProps) {
-  const [activeCategory, setActiveCategory] = useState('uniform');
+  const [activeCategory, setActiveCategory] = useState('dashboard');
   const storeManager = useStoreManager(club, userId);
   useMarketingDelivery(club?.id, userId);
   const [loading, setLoading] = useState(false);
@@ -69,6 +73,9 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
   const [shopStats, setShopStats] = useState<any>(null);
   const [shopProducts, setShopProducts] = useState<any[]>([]);
   const [upgrading, setUpgrading] = useState(false);
+  const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
+  const [isOfflineModalOpen, setIsOfflineModalOpen] = useState(false);
+
 
 
   useEffect(() => {
@@ -128,6 +135,19 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
     };
     }
   }, [userId, currentOrderId, pixData]);
+
+  // Processar atividade offline na primeira montagem
+  useEffect(() => {
+    const initOffline = async () => {
+      const summary = await storeManager.processOfflineActivity();
+      if (summary && summary.products_sold > 0) {
+        setOfflineSummary(summary);
+        setIsOfflineModalOpen(true);
+      }
+    };
+    initOffline();
+  }, []);
+
 
   // Polling de 5s enquanto o modal do PIX está aberto: verifica status do pagamento
   // e redireciona o jogador para o início assim que for aprovado.
@@ -420,7 +440,19 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
             </ScrollArea>
           </div>
 
-          {/* Dashboard removido conforme solicitado */}
+          <TabsContent value="dashboard" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="space-y-6">
+               <StoreDashboard stats={storeManager.stats} />
+               <OrderTracker orders={storeManager.stats.recentOrders} />
+               <PainelFLM club={club} userId={userId} />
+             </div>
+          </TabsContent>
+
+
+          <TabsContent value="entregas" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <OrderTracker orders={storeManager.stats.recentOrders} />
+          </TabsContent>
+
 
           <TabsContent value="stickers" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <PacotinhosTab 
@@ -802,9 +834,16 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
           </motion.div>
         )}
       </AnimatePresence>
+      {isOfflineModalOpen && offlineSummary && (
+        <OfflineSummaryModal 
+          summary={offlineSummary} 
+          onClose={() => setIsOfflineModalOpen(false)} 
+        />
+      )}
     </div>
   );
 }
+
 
 function StoreCard({ item, clubFans, isPremium, isActive, onPurchase, onViewDetails }: any) {
   const isBlocked = (clubFans || 0) < (item.min_fans || 0);
