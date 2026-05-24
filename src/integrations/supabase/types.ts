@@ -5351,11 +5351,14 @@ export type Database = {
       }
       world_cup_matches: {
         Row: {
+          away_extra_goals: number | null
           away_goals: number | null
           away_penalty_goals: number | null
           away_team_id: string | null
           created_at: string | null
           cup_id: string | null
+          has_extra_time: boolean | null
+          home_extra_goals: number | null
           home_goals: number | null
           home_penalty_goals: number | null
           home_team_id: string | null
@@ -5367,11 +5370,14 @@ export type Database = {
           winner_team_id: string | null
         }
         Insert: {
+          away_extra_goals?: number | null
           away_goals?: number | null
           away_penalty_goals?: number | null
           away_team_id?: string | null
           created_at?: string | null
           cup_id?: string | null
+          has_extra_time?: boolean | null
+          home_extra_goals?: number | null
           home_goals?: number | null
           home_penalty_goals?: number | null
           home_team_id?: string | null
@@ -5383,11 +5389,14 @@ export type Database = {
           winner_team_id?: string | null
         }
         Update: {
+          away_extra_goals?: number | null
           away_goals?: number | null
           away_penalty_goals?: number | null
           away_team_id?: string | null
           created_at?: string | null
           cup_id?: string | null
+          has_extra_time?: boolean | null
+          home_extra_goals?: number | null
           home_goals?: number | null
           home_penalty_goals?: number | null
           home_team_id?: string | null
