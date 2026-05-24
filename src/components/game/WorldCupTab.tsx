@@ -4,11 +4,14 @@ import useSound from 'use-sound';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Globe, Loader2, Sparkles, Star, History, Target, Users, Zap, TrendingUp, Info } from 'lucide-react';
+import { Trophy, Globe, Loader2, Sparkles, Star, History, Target, Users, Zap, TrendingUp, Info, Music } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { ClubShield } from './ClubShield';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+
 
 interface Props {
   userId: string;
@@ -20,6 +23,33 @@ export function WorldCupTab({ userId }: Props) {
   const [groups, setGroups] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const toggleMusic = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+    }
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(console.error);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
 
   useEffect(() => {
     const fetchWorldCupData = async () => {
@@ -118,10 +148,20 @@ export function WorldCupTab({ userId }: Props) {
               <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-black">
                 {tournament.status === 'scheduled' ? 'AGUARDANDO SORTEIO' : tournament.status.toUpperCase()}
               </Badge>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`h-8 rounded-full border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 ${isPlaying ? 'animate-pulse ring-2 ring-primary/50' : ''}`}
+                onClick={toggleMusic}
+              >
+                <Music className="h-4 w-4 mr-2" />
+                {isPlaying ? 'Desligar Hino' : 'Ouvir Hino'}
+              </Button>
               <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
                 <Globe className="h-4 w-4" /> Sede: {tournament.host_country || 'A definir'}
               </div>
             </div>
+
           </div>
 
           {/* Trophy Display */}
