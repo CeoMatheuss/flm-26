@@ -26,17 +26,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 function LeagueStandingsMini({ userId }: { userId?: string }) {
   const [standings, setStandings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
       const { data: teamData } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
       if (teamData && teamData.league_id) {
+        setMyTeamId(teamData.id);
         const { data: table } = await supabase
           .from('world_league_table')
           .select('*, world_teams(name)')
           .eq('league_id', teamData.league_id)
           .order('points', { ascending: false })
+          .order('wins', { ascending: false })
+          .order('goals_for', { ascending: false })
           .limit(5);
         if (table) setStandings(table);
       }
@@ -60,14 +64,16 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
           {standings.map((s, i) => (
             <div 
               key={s.id} 
-              className="flex items-center justify-between px-3 py-1.5 text-[10px] cursor-pointer hover:bg-accent/30 transition-colors group"
+              className={`flex items-center justify-between px-3 py-1.5 text-[10px] cursor-pointer hover:bg-accent/30 transition-colors group ${s.team_id === myTeamId ? 'bg-primary/5' : ''}`}
               onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.world_teams?.name } }))}
             >
               <div className="flex items-center gap-2">
-                <span className="font-bold text-muted-foreground w-3">{i + 1}</span>
-                <span className="truncate max-w-[100px] group-hover:text-primary transition-colors">{s.team_id === userId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}</span>
+                <span className={`font-bold w-3 ${s.team_id === myTeamId ? 'text-primary' : 'text-muted-foreground'}`}>{i + 1}</span>
+                <span className={`truncate max-w-[100px] group-hover:text-primary transition-colors ${s.team_id === myTeamId ? 'font-black text-primary' : ''}`}>
+                  {s.team_id === myTeamId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}
+                </span>
               </div>
-              <span className="font-bold text-primary">{s.points} pts</span>
+              <span className={`font-bold ${s.team_id === myTeamId ? 'text-primary' : 'text-muted-foreground'}`}>{s.points} pts</span>
             </div>
           ))}
         </div>
@@ -75,6 +81,7 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
     </Card>
   );
 }
+
 
 function GlobalRankingMini({ userId }: { userId?: string }) {
   const [me, setMe] = useState<any>(null);
@@ -169,7 +176,54 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date>(new Date());
   const [dbPlayers, setDbPlayers] = useState<Player[]>(club.players || []);
+  const [liveStats, setLiveStats] = useState<{ points: number; wins: number; draws: number; losses: number; rank?: number } | null>(null);
   
+  const fetchLiveStats = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { data: teamData } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
+      if (teamData) {
+        const { data: statsData } = await supabase
+          .from('world_league_table')
+          .select('points, wins, draws, losses')
+          .eq('team_id', teamData.id)
+          .maybeSingle();
+        
+        if (statsData) {
+          // Também busca a posição na tabela
+          const { data: fullTable } = await supabase
+            .from('world_league_table')
+            .select('team_id')
+            .eq('league_id', teamData.league_id)
+            .order('points', { ascending: false })
+            .order('wins', { ascending: false })
+            .order('goals_for', { ascending: false });
+          
+          const rank = fullTable ? fullTable.findIndex(t => t.team_id === teamData.id) + 1 : undefined;
+          
+          setLiveStats({
+            points: statsData.points,
+            wins: statsData.wins,
+            draws: statsData.draws,
+            losses: statsData.losses,
+            rank: rank && rank > 0 ? rank : undefined
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar stats da liga:', error);
+    }
+  }, [userId]);
+
+  const refreshDashboard = useCallback(async () => {
+    setIsSyncing(true);
+    // Dispara evento global para forçar hooks (useGame, etc) a recarregarem se necessário
+    window.dispatchEvent(new CustomEvent('flm:refresh-game-state'));
+    await fetchLiveStats();
+    setLastSync(new Date());
+    setTimeout(() => setIsSyncing(false), 1000);
+  }, [fetchLiveStats]);
+
   // 🔄 Sincronização automática do elenco via Realtime
   useEffect(() => {
     if (!userId) return;
@@ -192,6 +246,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     };
 
     loadPlayers();
+    fetchLiveStats();
 
     const channel = supabase.channel(`dashboard-players-${userId}`)
       .on('postgres_changes', { 
@@ -206,10 +261,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, fetchLiveStats]);
 
   // Sincronização automática via Realtime
-
   useEffect(() => {
     if (!userId) return;
 
@@ -231,22 +285,19 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
     return () => {
       channels.forEach(ch => supabase.removeChannel(ch));
     };
-  }, [userId]);
+  }, [userId, refreshDashboard]);
 
-  const refreshDashboard = useCallback(async () => {
-    setIsSyncing(true);
-    // Dispara evento global para forçar hooks (useGame, etc) a recarregarem se necessário
-    window.dispatchEvent(new CustomEvent('flm:refresh-game-state'));
-    setLastSync(new Date());
-    setTimeout(() => setIsSyncing(false), 1000);
-  }, []);
 
 
   const tiredPlayers = club.players.filter(p => p.stamina < 45);
   const showFatigueWarning = tiredPlayers.length >= 3;
 
-  const playedMatchesCount = club.stats.wins + club.stats.draws + club.stats.losses;
-  const winRate = playedMatchesCount > 0 ? Math.round(((club.stats.wins * 3 + club.stats.draws) / (playedMatchesCount * 3)) * 100) : 0;
+  const liveWins = liveStats?.wins ?? club.stats.wins;
+  const liveDraws = liveStats?.draws ?? club.stats.draws;
+  const liveLosses = liveStats?.losses ?? club.stats.losses;
+  const playedMatchesCount = liveWins + liveDraws + liveLosses;
+  const winRate = playedMatchesCount > 0 ? Math.round(((liveWins * 3 + liveDraws) / (playedMatchesCount * 3)) * 100) : 0;
+
 
   const last5 = club.matches.filter(m => m.played).slice(-5);
   const recentWins = last5.filter(m => m.result && (m.isHome ? m.result.home > m.result.away : m.result.away > m.result.home) && !(m as any).isFriendly).length;
@@ -410,10 +461,16 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         <Card className="game-card border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all group">
           <CardContent className="p-4 flex flex-col items-center justify-center text-center">
             <Trophy className="h-5 w-5 text-primary mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-2xl font-black italic tracking-tighter">{club.stats.points}</p>
+            <p className="text-2xl font-black italic tracking-tighter">{liveStats?.points ?? club.stats.points}</p>
             <p className="text-[9px] uppercase font-bold text-muted-foreground">Pontos na Liga</p>
+            {liveStats?.rank && (
+              <Badge variant="outline" className="text-[8px] h-3 px-1 mt-1 border-primary/30 text-primary">
+                {liveStats.rank}º Lugar
+              </Badge>
+            )}
           </CardContent>
         </Card>
+
 
         <Card className="game-card border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all group">
           <CardContent className="p-4 flex flex-col items-center justify-center text-center">
@@ -452,16 +509,17 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           </CardHeader>
           <CardContent className="px-4 pb-4">
             {useMemo(() => {
+              const currentPoints = liveStats?.points ?? club.stats.points;
               let boardGoal = 45; let goalLabel = "Top 10";
               if (avgOvr >= 80) { boardGoal = 85; goalLabel = "Título"; }
               else if (avgOvr >= 75) { boardGoal = 70; goalLabel = "G4"; }
               else if (avgOvr >= 70) { boardGoal = 60; goalLabel = "G6"; }
-              const progress = Math.min(100, Math.max(0, (club.stats.points / boardGoal) * 100));
+              const progress = Math.min(100, Math.max(0, (currentPoints / boardGoal) * 100));
               return (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-3xl font-black">{club.stats.points}<span className="text-sm ml-1 text-muted-foreground">pts</span></p>
+                      <p className="text-3xl font-black">{currentPoints}<span className="text-sm ml-1 text-muted-foreground">pts</span></p>
                       <Badge variant="outline" className="text-[10px] mt-1">Meta: {goalLabel}</Badge>
                     </div>
                     <Trophy className="h-8 w-8 text-primary animate-pulse" />
@@ -469,7 +527,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                   <Progress value={progress} className="h-1.5" />
                 </div>
               );
-            }, [club.stats.points, avgOvr])}
+            }, [club.stats.points, liveStats?.points, avgOvr])}
+
           </CardContent>
         </Card>
 
