@@ -2108,14 +2108,29 @@ function ImprovedSubsView({
 }) {
   const [posFilter, setPosFilter] = useState<'all' | 'gk' | 'def' | 'mid' | 'atk'>('all');
 
+  // Ordem tática por posição (GOL → defesa → meio → ataque)
+  const POS_ORDER: Record<string, number> = {
+    GOL: 0, ZAG: 1, LAT: 2, LD: 2, LE: 2, VOL: 3, MEI: 4, MC: 4, ME: 5, MD: 5,
+    ATA: 6, PE: 6, PD: 6, SA: 6,
+  };
+  const sortByPos = (a: Player, b: Player) => {
+    const oa = POS_ORDER[a.position] ?? 99;
+    const ob = POS_ORDER[b.position] ?? 99;
+    if (oa !== ob) return oa - ob;
+    return (b.overall ?? 0) - (a.overall ?? 0);
+  };
+
+  const sortedStarters = useMemo(() => [...starters].sort(sortByPos), [starters]);
+  const sortedBench = useMemo(() => [...bench].sort(sortByPos), [bench]);
+
   const queuedOutIds = new Set(subQueue.map(s => s.outId));
   const queuedInIds = new Set(subQueue.map(s => s.inId));
-  const selectedPlayer = starters.find(p => p.id === selectedSubOut);
+  const selectedPlayer = sortedStarters.find(p => p.id === selectedSubOut);
 
   // Find best suggested replacement: same position group + highest OVR + good stamina
   const suggestedId = useMemo(() => {
     if (!selectedPlayer) return null;
-    const eligible = bench
+    const eligible = sortedBench
       .filter(p => !queuedInIds.has(p.id))
       .filter(p => getPositionGroup(p.position) === getPositionGroup(selectedPlayer.position));
     if (eligible.length === 0) return null;
@@ -2125,13 +2140,31 @@ function ImprovedSubsView({
       return score(b) - score(a);
     });
     return sorted[0].id;
-  }, [selectedPlayer, bench, queuedInIds]);
+  }, [selectedPlayer, sortedBench, queuedInIds]);
 
-  // Filter bench by position group
-  const filteredBench = bench.filter(p => !queuedInIds.has(p.id)).filter(p => {
+  // Filter bench by position group (já vem ordenado por posição)
+  const filteredBench = sortedBench.filter(p => !queuedInIds.has(p.id)).filter(p => {
     if (posFilter === 'all') return true;
     return getPositionGroup(p.position) === posFilter;
   });
+
+  // Helper: agrupar jogadores por grupo posicional para renderização com headers
+  const GROUP_META: Record<string, { label: string; icon: string; color: string }> = {
+    gk:  { label: 'Goleiro',    icon: '🥅', color: 'text-amber-400/80' },
+    def: { label: 'Defesa',     icon: '🛡️', color: 'text-blue-400/80' },
+    mid: { label: 'Meio-campo', icon: '⚙️', color: 'text-violet-400/80' },
+    atk: { label: 'Ataque',     icon: '⚔️', color: 'text-red-400/80' },
+  };
+  const groupByPosition = (list: Player[]) => {
+    const order: Array<'gk' | 'def' | 'mid' | 'atk'> = ['gk', 'def', 'mid', 'atk'];
+    const map: Record<string, Player[]> = { gk: [], def: [], mid: [], atk: [] };
+    list.forEach(p => {
+      const g = getPositionGroup(p.position) as 'gk' | 'def' | 'mid' | 'atk';
+      (map[g] || (map[g] = [])).push(p);
+    });
+    return order.filter(g => map[g].length > 0).map(g => ({ key: g, players: map[g] }));
+  };
+
 
   const [scheduleMinute, setScheduleMinute] = useState<string>('');
 
