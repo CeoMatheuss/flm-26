@@ -6450,6 +6450,7 @@ export type Database = {
         Args: { p_match_id: string }
         Returns: undefined
       }
+      snapshot_ranking_positions: { Args: never; Returns: undefined }
       start_club_world_cup: { Args: { _season_year: number }; Returns: string }
       start_continental_tournament: {
         Args: {
