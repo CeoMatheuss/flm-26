@@ -436,12 +436,12 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     let newsText = '';
 
     if (fans < 50000) {
-      newsText = `👕 ${clubName} apresenta novo uniforme para a temporada. O design busca aumentar a conexão com a torcida e renovar as esperanças dos fãs.`;
+      const { data: userProfile } = await supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle();
+      newsText = `👕 O ${clubName} acaba de lançar uma nova coleção de uniformes! O Manager ${userProfile?.display_name || 'do clube'} convida todos para verem o novo manto.`;
     } else if (fans < 500000) {
-    } else if (reputation > 80) {
-      newsText = `👕 IMPACTO GLOBAL! O novo uniforme do ${clubName} é aclamado por especialistas e gera filas nas lojas oficiais. Um marco na identidade visual do clube.`;
-    } else {
-      newsText = `👕 O novo manto do ${clubName} já está disponível! A torcida comparece em peso ao lançamento oficial e as primeiras unidades já estão esgotadas.`;
+
+      const { data: userProfile } = await supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle();
+      newsText = `👕 O ${clubName} (Manager: ${userProfile?.display_name || 'Desconhecido'}) acaba de lançar um novo uniforme! Venha ver o novo design que promete conquistar a torcida.`;
     }
 
     await supabase.from('newspaper_entries').insert({
@@ -451,6 +451,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       importance: 2
     });
   };
+
 
 
   const handleLaunch = async () => {
