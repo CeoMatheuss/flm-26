@@ -259,9 +259,10 @@ export function useStoreManager(club: Club, userId: string) {
         .eq('id', userId);
 
       return {
-        ...result,
+        ...(result as any),
         time_offline_seconds: secondsOffline
       };
+
     } catch (error) {
       console.error('Error processing offline activity:', error);
       return null;
