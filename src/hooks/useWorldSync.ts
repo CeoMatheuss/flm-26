@@ -113,7 +113,20 @@ export class WorldSyncEngine {
     
     this.syncInterval = setInterval(() => {
       this.validateIntegrity();
-    }, 60000); // Check a cada minuto
+      this.syncRealtimeData();
+    }, 30000); // Check a cada 30 segundos para maior precisão
+  }
+
+  /**
+   * Sincronização em tempo real de dados voláteis (fadiga, moral, mercado)
+   */
+  private async syncRealtimeData() {
+    if (!this.userId) return;
+    
+    // Dispara evento global para hooks locais atualizarem dados voláteis
+    window.dispatchEvent(new CustomEvent('flm:realtime-sync', {
+      detail: { timestamp: new Date().toISOString() }
+    }));
   }
 
   /**
