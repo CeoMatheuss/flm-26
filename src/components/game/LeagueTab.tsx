@@ -285,14 +285,10 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
           <Badge variant="outline" className="bg-yellow-500/5 text-yellow-500 border-yellow-500/20 px-3 py-1">
-            Super Mundial
+            Mundial
           </Badge>
           <Badge variant="outline" className="bg-emerald-500/5 text-emerald-500 border-emerald-500/20 px-3 py-1">
             Libertadores
-          </Badge>
-
-          <Badge variant="outline" className="bg-blue-500/5 text-blue-500 border-blue-500/20 px-3 py-1">
-            Sul-Americana
           </Badge>
           <Badge variant="outline" className="bg-red-500/5 text-red-500 border-red-500/20 px-3 py-1">
             Rebaixamento
