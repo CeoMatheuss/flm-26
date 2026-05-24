@@ -17,50 +17,64 @@ export function SeasonTab({ season, leagueTeams, clubName }: Props) {
   const sorted = [...leagueTeams].sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst));
   const clubPos = sorted.findIndex(t => t.name === clubName) + 1;
 
+  const isLeaguePhase = season.currentWeek <= 19;
+  const isMundialPhase = season.currentWeek >= 20;
+
   return (
     <div className="space-y-4">
-      {/* Banner temporada de testes */}
-      {season.currentSeason === 1 && (
-        <Card className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent">
-          <CardContent className="p-3">
-            <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-cyan-500/20 shrink-0">
-                <span className="text-lg">🧪</span>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-foreground">Temporada de Testes</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Esta é a <span className="font-semibold text-cyan-500">primeira temporada</span> do jogo. Início oficial: <span className="font-bold text-foreground">01/05/2026</span>.
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Durante este período, dados podem ser resetados. Aproveite para testar e aprender as mecânicas!
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
       {/* Status da temporada */}
-      <Card className="border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-transparent">
+      <Card className="border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-transparent overflow-hidden">
+        <div className="absolute top-0 right-0 p-2 opacity-10">
+          <Globe className="h-20 w-20" />
+        </div>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-yellow-400" />
-            Temporada {season.currentSeason}
+          <CardTitle className="text-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-yellow-400" />
+              Temporada {season.currentSeason}
+            </div>
+            <Badge variant="outline" className="border-yellow-500/30 text-yellow-400">
+              Dia {season.currentWeek}/30
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold">{season.currentWeek - 1}</p>
-              <p className="text-xs text-muted-foreground">Rodadas jogadas</p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-2 rounded-lg bg-black/20">
+                <p className="text-2xl font-bold">{season.currentWeek}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Dia Atual</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-black/20">
+                <p className="text-2xl font-bold">{30 - season.currentWeek}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Dias Restantes</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-black/20 border border-yellow-500/20">
+                <p className="text-2xl font-bold text-yellow-400">{clubPos > 0 ? `${clubPos}º` : '-'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Posição Liga</p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold">{season.totalWeeks - season.currentWeek + 1}</p>
-              <p className="text-xs text-muted-foreground">Rodadas restantes</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold">{clubPos > 0 ? `${clubPos}º` : '-'}</p>
-              <p className="text-xs text-muted-foreground">Posição atual</p>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-bold px-1">
+                <span className={isLeaguePhase ? "text-green-400" : "text-muted-foreground"}>FASE DE LIGA</span>
+                <span className={isMundialPhase ? "text-yellow-400" : "text-muted-foreground"}>MUNDIAL DE CLUBES</span>
+              </div>
+              <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden flex">
+                <div 
+                  className={`h-full transition-all duration-500 ${isLeaguePhase ? "bg-green-500" : "bg-green-900"}`} 
+                  style={{ width: '63.3%' }} // 19/30
+                />
+                <div 
+                  className={`h-full transition-all duration-500 ${isMundialPhase ? "bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]" : "bg-yellow-900"}`} 
+                  style={{ width: '36.7%' }} // 11/30
+                />
+              </div>
+              <p className="text-[10px] text-center text-muted-foreground italic">
+                {isLeaguePhase 
+                  ? "A Liga está em andamento. Os campeões garantem vaga no Mundial no Dia 20." 
+                  : "O Mundial de Clubes começou! Somente os melhores da temporada disputam o topo do mundo."}
+              </p>
             </div>
           </div>
         </CardContent>
