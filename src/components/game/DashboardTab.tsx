@@ -296,7 +296,7 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           disabled={isSyncing}
         >
           <RefreshCcw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-          Atualizado às {lastSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          Sincronizar
         </Button>
       </div>
 
