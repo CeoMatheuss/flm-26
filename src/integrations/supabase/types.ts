@@ -5516,6 +5516,41 @@ export type Database = {
           },
         ]
       }
+      tournament_rounds: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          order_index: number
+          status: string
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          order_index: number
+          status?: string
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          status?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_rounds_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_stats: {
         Row: {
           assists: number | null
@@ -5575,6 +5610,7 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          continent: string | null
           created_at: string | null
           host_country: string | null
           id: string
@@ -5586,6 +5622,7 @@ export type Database = {
           winner_id: string | null
         }
         Insert: {
+          continent?: string | null
           created_at?: string | null
           host_country?: string | null
           id?: string
@@ -5597,6 +5634,7 @@ export type Database = {
           winner_id?: string | null
         }
         Update: {
+          continent?: string | null
           created_at?: string | null
           host_country?: string | null
           id?: string
