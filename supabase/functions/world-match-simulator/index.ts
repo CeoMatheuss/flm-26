@@ -103,8 +103,10 @@ Deno.serve(async (req) => {
           if (p) aScorers.push({ id: p.id, name: p.name });
         }
 
+        const table = m.type === 'cup' ? 'world_cup_matches' : 'world_matches';
+
         // Finalize first (most important)
-        const { error: finErr } = await sb.from("world_matches").update({
+        const { error: finErr } = await sb.from(table).update({
           home_goals: hg,
           away_goals: ag,
           status: "finished",
