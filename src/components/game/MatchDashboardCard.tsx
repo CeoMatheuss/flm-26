@@ -45,6 +45,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState('');
   const [isReady, setIsReady] = useState(false);
+  const [autoSimTriggered, setAutoSimTriggered] = useState(false);
 
   // Após a partida terminar, exibir imediatamente os dados do próximo jogo.
   // Mantemos `recentFinished` apenas para sinalizar avanço/refresh em background,
@@ -295,7 +296,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     window.addEventListener('league_match_updated', handleSync);
     window.addEventListener('flm:match-finalized', handleSync);
 
-    const interval = setInterval(loadNextMatch, 60000);
+    const interval = setInterval(loadNextMatch, autoSimTriggered ? 5000 : 60000);
     return () => { 
       cancelled = true; 
       clearInterval(interval); 
@@ -326,9 +327,13 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
 
   // Live countdown timer — sincronizado com o horário da liga (ScheduledAt)
+  // Auto-dispara simulação quando os 5 minutos do lobby expiram sem o usuário entrar
+  // (autoSimTriggered declarado no topo)
+  useEffect(() => { setAutoSimTriggered(false); }, [nextMatch?.matchId]);
+
   useEffect(() => {
     if (!nextMatch?.date || nextMatch.status === 'finished') return;
-    const update = () => {
+    const update = async () => {
       const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
       
@@ -343,9 +348,20 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           setTimeLeft('🔴 AO VIVO');
           setIsReady(true);
         } else {
-          // Se passou dos 5 minutos e não iniciou, está sendo simulado pelo servidor
-          setTimeLeft('⌛ SIMULANDO');
+          // Passou dos 5 minutos: dispara simulação automática no servidor
+          setTimeLeft('⌛ Simulando automaticamente...');
           setIsReady(false);
+
+          if (!autoSimTriggered) {
+            setAutoSimTriggered(true);
+            console.log('[MatchDashboardCard] Janela de 5min expirada — disparando auto-simulação para', nextMatch.matchId);
+            try {
+              const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
+              triggerAutoSim();
+            } catch (err) {
+              console.error('[MatchDashboardCard] Falha ao disparar auto-sim:', err);
+            }
+          }
         }
         return;
       }
@@ -366,7 +382,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [nextMatch?.date, nextMatch?.status]);
+  }, [nextMatch?.date, nextMatch?.status, nextMatch?.matchId, autoSimTriggered]);
 
   const resolvedStadium = useMemo(() => {
     if (!nextMatch) return { name: '', isShifted: false };
@@ -598,8 +614,10 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
               ) : (
                 <><Play className="h-3.5 w-3.5" /> ⚽ JOGAR PARTIDA</>
               )
+            ) : autoSimTriggered ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Simulando partida…</>
             ) : (
-              <><Eye className="h-3.5 w-3.5" /> AGUARDANDO HORÁRIO</>
+              <><Eye className="h-3.5 w-3.5" /> Aguardando horário</>
             )}
           </Button>
         </div>
