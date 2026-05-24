@@ -63,6 +63,7 @@ export interface MatchState {
   isHome: boolean;
   currentMoment: string;
   playerStamina: Record<string, number>;
+  playerRatings: Record<string, PlayerRating>;
   assistantTips: SimEvent[];
   resumeFromBreak: () => void;
   onAnimationComplete?: () => void;
