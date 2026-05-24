@@ -26,17 +26,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 function LeagueStandingsMini({ userId }: { userId?: string }) {
   const [standings, setStandings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
       const { data: teamData } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
       if (teamData && teamData.league_id) {
+        setMyTeamId(teamData.id);
         const { data: table } = await supabase
           .from('world_league_table')
           .select('*, world_teams(name)')
           .eq('league_id', teamData.league_id)
           .order('points', { ascending: false })
+          .order('wins', { ascending: false })
+          .order('goals_for', { ascending: false })
           .limit(5);
         if (table) setStandings(table);
       }
@@ -60,14 +64,16 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
           {standings.map((s, i) => (
             <div 
               key={s.id} 
-              className="flex items-center justify-between px-3 py-1.5 text-[10px] cursor-pointer hover:bg-accent/30 transition-colors group"
+              className={`flex items-center justify-between px-3 py-1.5 text-[10px] cursor-pointer hover:bg-accent/30 transition-colors group ${s.team_id === myTeamId ? 'bg-primary/5' : ''}`}
               onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.world_teams?.name } }))}
             >
               <div className="flex items-center gap-2">
-                <span className="font-bold text-muted-foreground w-3">{i + 1}</span>
-                <span className="truncate max-w-[100px] group-hover:text-primary transition-colors">{s.team_id === userId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}</span>
+                <span className={`font-bold w-3 ${s.team_id === myTeamId ? 'text-primary' : 'text-muted-foreground'}`}>{i + 1}</span>
+                <span className={`truncate max-w-[100px] group-hover:text-primary transition-colors ${s.team_id === myTeamId ? 'font-black text-primary' : ''}`}>
+                  {s.team_id === myTeamId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}
+                </span>
               </div>
-              <span className="font-bold text-primary">{s.points} pts</span>
+              <span className={`font-bold ${s.team_id === myTeamId ? 'text-primary' : 'text-muted-foreground'}`}>{s.points} pts</span>
             </div>
           ))}
         </div>
@@ -75,6 +81,7 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
     </Card>
   );
 }
+
 
 function GlobalRankingMini({ userId }: { userId?: string }) {
   const [me, setMe] = useState<any>(null);
