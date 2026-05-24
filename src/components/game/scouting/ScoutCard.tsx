@@ -5,6 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { 
   User, 
   MapPin, 
   TrendingUp, 
@@ -154,16 +165,34 @@ export function ScoutCard({ scout, onFire, onStartMission }: ScoutCardProps) {
                   >
                     <Play className="h-3 w-3" /> {scout.is_busy ? 'Ocupado' : 'Iniciar Missão'}
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onFire?.(scout.id);
-                    }}
-                    className="h-11 w-11 rounded-xl text-zinc-600 hover:text-red-500 hover:bg-red-500/10 border border-white/5"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-11 w-11 rounded-xl text-zinc-600 hover:text-red-500 hover:bg-red-500/10 border border-white/5"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-zinc-950 border-white/10">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-white uppercase font-black italic">Confirmar Demissão</AlertDialogTitle>
+                        <AlertDialogDescription className="text-zinc-400 font-medium">
+                          Tem certeza que deseja demitir {scout.name}? Esta ação não pode ser desfeita e você perderá o investimento feito no contrato.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10 uppercase font-black text-[10px] tracking-widest">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => onFire?.(scout.id)}
+                          className="bg-red-600 text-white hover:bg-red-700 uppercase font-black text-[10px] tracking-widest"
+                        >
+                          Demitir Profissional
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </motion.div>

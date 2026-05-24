@@ -120,7 +120,6 @@ export function ScoutsTab({ userId, budget }: { userId: string, budget: number }
         </div>
       </div>
 
-      {/* Main Content Area */}
       <AnimatePresence mode="wait">
         {activeTab === 'scouts' && (
           <motion.div
@@ -143,7 +142,7 @@ export function ScoutsTab({ userId, budget }: { userId: string, budget: number }
               <motion.div
                 whileHover={{ scale: 1.02, borderColor: 'rgba(255,255,255,0.2)' }}
                 onClick={() => setActiveTab('market')}
-                className="group border-2 border-dashed border-white/5 bg-zinc-900/20 rounded-3xl flex flex-col items-center justify-center p-12 cursor-pointer transition-all duration-500"
+                className="group border-2 border-dashed border-white/5 bg-zinc-900/20 rounded-3xl flex flex-col items-center justify-center p-12 cursor-pointer transition-all duration-500 min-h-[220px]"
               >
                 <div className="w-20 h-20 rounded-full bg-zinc-900 border border-white/5 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:border-primary transition-all duration-500">
                   <UserPlus className="h-8 w-8 text-zinc-600 group-hover:text-black transition-colors" />
@@ -163,35 +162,38 @@ export function ScoutsTab({ userId, budget }: { userId: string, budget: number }
             exit={{ opacity: 0, x: -20 }}
             className="space-y-8"
           >
-            {/* Filters Bar */}
-            <div className="flex flex-col md:flex-row gap-4 bg-zinc-950/60 p-4 rounded-2xl border border-white/5">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                <Input 
-                  placeholder="BUSCAR OLHEIRO PELO NOME..." 
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="bg-black/40 border-white/5 h-12 pl-12 font-black uppercase text-[10px] tracking-widest focus-visible:ring-primary/20"
-                />
+            {/* Market Info Bar */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-zinc-950/60 p-6 rounded-2xl border border-white/5">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="text-white font-black uppercase italic text-sm">Mercado Rotativo</h4>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Renovação global a cada 15 dias</p>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="h-12 px-6 border-white/5 bg-black/40 font-black uppercase text-[10px] tracking-widest gap-2">
-                  <Filter className="h-4 w-4" /> Região
-                </Button>
-                <Button variant="outline" className="h-12 px-6 border-white/5 bg-black/40 font-black uppercase text-[10px] tracking-widest gap-2">
-                  <Filter className="h-4 w-4" /> Nível
-                </Button>
+
+              <div className="flex items-center gap-2">
+                <div className="text-right hidden sm:block">
+                  <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest">Status da Rede</p>
+                  <p className="text-[10px] text-emerald-400 font-bold uppercase">2 Profissionais Disponíveis</p>
+                </div>
+                <div className="w-px h-8 bg-white/10 mx-4 hidden sm:block" />
+                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black uppercase py-1.5 px-4 tracking-tighter italic">
+                  Habilidades Aleatórias
+                </Badge>
               </div>
             </div>
 
-            {filteredMarket.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredMarket.map((scout) => (
+            {marketPool.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                {marketPool.map((scout) => (
                   <MarketScoutCard 
                     key={scout.id} 
                     scout={scout} 
                     onHire={handleHire}
-                    canAfford={true}
+                    canAfford={budget >= scout.salary}
                   />
                 ))}
               </div>
