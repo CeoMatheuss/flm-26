@@ -937,14 +937,6 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
       <div className="bg-background/40 backdrop-blur-md border border-primary/30 rounded-xl px-4 py-3 flex flex-col items-center gap-1">
         <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Segundo tempo começa em</p>
         <p className="text-3xl font-black font-mono text-foreground tracking-tighter">{formatTime(timeLeft)}</p>
-        <Button 
-          variant="secondary" 
-          size="sm" 
-          className="mt-2 h-8 px-6 font-bold"
-          onClick={onComplete}
-        >
-          Voltar Agora
-        </Button>
       </div>
     );
   };
