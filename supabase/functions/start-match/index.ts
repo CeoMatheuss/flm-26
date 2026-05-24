@@ -2342,7 +2342,6 @@ Deno.serve(async (req) => {
     
     // ── AUTOMATIC STATS SYNC ──────────────────────────────────
     try {
-      // Filter out invalid/duplicate players before syncing
       const seenIds = new Set();
       const statsPayload = result.allPlayers
         .filter(p => {
@@ -2366,7 +2365,7 @@ Deno.serve(async (req) => {
         const { error: syncErr } = await adminClient.rpc('sync_player_match_stats', {
           _match_id: String(matchId),
           _competition_id: competition || 'Amistoso',
-          _season: 1, // TODO: resolve current season
+          _season: 1,
           _player_stats: statsPayload
         });
         if (syncErr) console.error('[StatsSync] RPC Error:', syncErr);
