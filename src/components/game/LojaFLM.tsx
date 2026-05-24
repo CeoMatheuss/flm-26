@@ -41,7 +41,6 @@ interface LojaProps {
 const CATEGORIES = [
   { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, db: 'painel' },
   { id: 'entregas', name: 'Entregas', icon: Truck, db: 'delivery' },
-  { id: 'uniform', name: 'Uniformes', icon: Shirt, db: 'uniform' },
   { id: 'patrocinios', name: 'Patrocínios', icon: DollarSign, db: 'sponsorship' },
   { id: 'marketing', name: 'Marketing', icon: Rocket, db: 'marketing' },
   { id: 'scouting', name: 'Olheiros', icon: UserCog, db: 'scouting' },
@@ -49,6 +48,7 @@ const CATEGORIES = [
   { id: 'stickers', name: 'Pacotinhos', icon: Package, db: 'stickers' },
   { id: 'socio', name: 'Sócios', icon: Crown, db: 'members' },
 ];
+
 
 
 

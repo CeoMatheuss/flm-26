@@ -127,7 +127,7 @@ interface Props {
 }
 
 function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; sponsorName?: string; size?: 'sm' | 'md' | 'lg' }) {
-  const dim = size === 'sm' ? 44 : size === 'lg' ? 72 : 56;
+  const dim = size === 'sm' ? 64 : size === 'lg' ? 120 : 80;
   const scale = dim / 100;
   const uid = useMemo(() => Math.random().toString(36).slice(2, 8), []);
   const patternId = `p-${uid}`;
@@ -189,8 +189,9 @@ function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; spon
   const sponsorFontSize = size === 'lg' ? 5 : 4;
 
   return (
-    <div style={{ width: dim, height: dim * 1.2 }} className="flex-shrink-0">
-      <svg viewBox="0 0 100 120" className="w-full h-full">
+    <div style={{ width: dim, height: dim * 1.3 }} className="flex-shrink-0 transition-all duration-300 hover:scale-105">
+      <svg viewBox="0 0 100 130" className="w-full h-full drop-shadow-2xl">
+
         {/* Left sleeve */}
         <rect x="6" y="8" width="14" height={slvH} rx="2" fill={slvColor} />
         {/* Right sleeve */}
@@ -744,13 +745,16 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
       {/* Main Content: Preview + Editor */}
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-         <Card className="sm:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10">
-          <CardContent className="p-3 flex flex-col items-center justify-center min-h-[140px]">
+         <Card className="sm:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10 shadow-inner">
+          <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px]">
             <ShirtPreview kit={currentKit} sponsorName={shirtSponsor?.name} size="lg" />
-            <p className="text-xs font-semibold mt-2">{currentKit.name}</p>
-            <p className="text-[10px] text-muted-foreground">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
+            <div className="mt-6 text-center">
+              <p className="text-lg font-black uppercase italic text-white tracking-tighter">{currentKit.name}</p>
+              <p className="text-xs text-muted-foreground font-bold uppercase">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
+            </div>
           </CardContent>
         </Card>
+
 
         <Card className="sm:col-span-3 border-0 bg-muted/10">
           <CardHeader className="pb-2 pt-3 px-3">
