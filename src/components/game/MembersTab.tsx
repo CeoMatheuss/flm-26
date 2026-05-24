@@ -4,7 +4,7 @@
  * Planos totalmente personalizáveis (nome, preço, benefícios).
  * Sincronizado em tempo real com o banco de dados e loja.
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +12,13 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Crown, Users, TrendingUp, Star, DollarSign, Pencil, Sparkles, Heart, Trophy, Gem, Award, Medal } from 'lucide-react';
+import { Crown, Users, TrendingUp, TrendingDown, Star, DollarSign, Pencil, Sparkles, Heart, Trophy, Gem, Award, Medal, Calendar, CheckCircle2, History } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { calculateTotalMembers, MEMBER_TIER_RATIOS } from '@/lib/membersCalc';
 import { toast } from 'sonner';
 import { safeNumber } from '@/match/stadiumEconomyEngine';
+import { supabase } from '@/integrations/supabase/client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 interface MemberPlan {
@@ -59,6 +61,11 @@ const muralNames = [
 ];
 
 export function MembersTab({ totalFans, reputation, totalMembersFromDB = 0, wins = 0, draws = 0, losses = 0 }: Props) {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // Use DB members as priority if available
   const initialTotalMembers = useMemo(() => {
     const sTotalFans = safeNumber(totalFans);
@@ -79,6 +86,41 @@ export function MembersTab({ totalFans, reputation, totalMembersFromDB = 0, wins
       subscribers: Math.max(0, Math.floor(initialTotalMembers * (MEMBER_TIER_RATIOS[i] ?? 0))),
     }));
   });
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setLoadingHistory(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: club } = await supabase.from('clubs').select('id').eq('user_id', user.id).maybeSingle();
+        if (club) {
+          const { data } = await supabase
+            .from('membership_revenue_history')
+            .select('*')
+            .eq('club_id', club.id)
+            .order('month_year', { ascending: false });
+          if (data) setHistory(data);
+        }
+      }
+      setLoadingHistory(false);
+    };
+
+    if (activeTab === 'history') fetchHistory();
+  }, [activeTab]);
+
+  const processRevenue = async () => {
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase.rpc('process_monthly_membership_revenue');
+      if (error) throw error;
+      toast.success('Receita mensal processada com sucesso!');
+      window.dispatchEvent(new CustomEvent('flm:refresh-game-state'));
+    } catch (err: any) {
+      toast.error('Erro ao processar receita: ' + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Update plans when total members sync from DB
   useMemo(() => {
@@ -127,10 +169,18 @@ export function MembersTab({ totalFans, reputation, totalMembersFromDB = 0, wins
         <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-b from-yellow-300 to-yellow-600 bg-clip-text text-transparent">
           Sócios Torcedores
         </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground italic max-w-md mx-auto px-2">
-          Mais torcedores. Mais receita. Mais força para o seu clube.
-        </p>
+        <div className="flex justify-center gap-2 mt-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-xs">
+            <TabsList className="grid w-full grid-cols-2 h-8">
+              <TabsTrigger value="overview" className="text-[10px] uppercase">Geral</TabsTrigger>
+              <TabsTrigger value="history" className="text-[10px] uppercase">Financeiro</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
+
+      <Tabs value={activeTab} className="space-y-3">
+        <TabsContent value="overview" className="space-y-3 mt-0">
 
       {/* O QUE É */}
       <Card className="border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 via-card to-card">
@@ -302,6 +352,96 @@ export function MembersTab({ totalFans, reputation, totalMembersFromDB = 0, wins
           </div>
         </CardContent>
       </Card>
+
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-3 mt-0">
+          <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-bold flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-emerald-400" /> Histórico de Receitas
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground">Arrecadação mensal garantida</p>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-8 text-[10px] gap-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                  onClick={processRevenue}
+                  disabled={isProcessing}
+                >
+                  <History className={`h-3 w-3 ${isProcessing ? 'animate-spin' : ''}`} />
+                  {isProcessing ? 'Processando...' : 'Coletar Dia 01'}
+                </Button>
+              </div>
+
+              {loadingHistory ? (
+                <div className="py-10 text-center text-muted-foreground text-xs">Carregando histórico...</div>
+              ) : history.length === 0 ? (
+                <div className="py-10 text-center space-y-2">
+                  <Calendar className="h-10 w-10 text-muted-foreground/20 mx-auto" />
+                  <p className="text-xs text-muted-foreground">Nenhuma receita registrada ainda.</p>
+                  <p className="text-[10px] text-muted-foreground/60">As receitas são geradas automaticamente todo dia 01.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {history.map((item, idx) => {
+                    const prevItem = history[idx + 1];
+                    const growth = prevItem ? ((item.amount - prevItem.amount) / prevItem.amount) * 100 : 0;
+                    const date = new Date(item.month_year);
+                    const monthName = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                    
+                    return (
+                      <div key={item.id} className="p-3 rounded-xl bg-muted/20 border border-border/30 flex items-center justify-between group hover:bg-muted/40 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                            <CheckCircle2 className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold capitalize">{monthName}</p>
+                            <p className="text-[10px] text-muted-foreground">{item.member_total.toLocaleString()} sócios ativos</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-emerald-400">{formatMoney(item.amount)}</p>
+                          {prevItem && (
+                            <p className={`text-[9px] font-bold flex items-center justify-end gap-0.5 ${growth >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {growth >= 0 ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
+                              {Math.abs(growth).toFixed(1)}% vs anterior
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Projeção de Metas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px]">
+                  <span>Meta de Sócios: 50k</span>
+                  <span className="text-yellow-400 font-bold">{Math.round((totalSubscribers / 50000) * 100)}%</span>
+                </div>
+                <Progress value={(totalSubscribers / 50000) * 100} className="h-1.5" />
+              </div>
+              <div className="p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <p className="text-[10px] leading-relaxed">
+                  <span className="text-yellow-400 font-bold">Dica:</span> Vitórias consecutivas e contratações de jogadores com 80+ de overall impulsionam as adesões no próximo dia 01.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* MODAL EDITAR PLANO */}
       <EditPlanDialog plan={editingPlan} onClose={() => setEditingPlan(null)} onSave={savePlan} />
