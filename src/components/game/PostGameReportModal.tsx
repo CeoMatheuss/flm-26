@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, TrendingUp, TrendingDown, Star, Target, Shield, Zap, DollarSign, Heart } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Star, Target, Shield, Zap, DollarSign, Heart, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
