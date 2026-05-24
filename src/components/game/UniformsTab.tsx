@@ -362,12 +362,13 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   const [isLaunching, setIsLaunching] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingLaunchId, setPendingLaunchId] = useState<string | null>(null);
-  const [checkoutData, setCheckoutData] = useState<any>(null);
-  const [paymentStep, setPaymentStep] = useState<'checkout' | 'pix' | 'processing'>('checkout');
+  const [paymentStep, setPaymentStep] = useState<'checkout' | 'pix' | 'processing' | 'success'>('checkout');
   const [pixInfo, setPixInfo] = useState<any>(null);
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [cpf, setCpf] = useState('');
+  const [salesHistory, setSalesHistory] = useState<any[]>([]);
+
 
 
   useEffect(() => {
@@ -390,34 +391,27 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
       if (error) throw error;
       setLaunches(launchData || []);
-      if (launchData && launchData.length > 0) {
-        setActiveLaunch(launchData[0]);
-        // Trigger low sales notification if hype is low
-        const stats = calculateCurrentSales(launchData[0], clubReputation || 50, clubReputation || 50);
-        if (stats.hype < 20 && stats.daysSinceLaunch > 30) {
-          const { data: existingNotif } = await supabase
-            .from('user_notifications')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('title', 'Vendas de Uniforme em Queda')
-            .maybeSingle();
-            
-          if (!existingNotif) {
-             await supabase.from('user_notifications').insert({
-              user_id: user.id,
-              type: 'info',
-              category: 'Marketing',
-              title: 'Vendas de Uniforme em Queda',
-              message: 'As vendas do uniforme atual começaram a cair drasticamente. Que tal lançar um novo modelo para reacender o interesse da torcida?',
-              icon: '📩'
-            });
-          }
-        }
+      
+      const approvedLaunch = launchData?.find(l => l.status === 'approved' || l.status === 'active');
+      if (approvedLaunch) {
+        setActiveLaunch(approvedLaunch);
+        fetchSalesHistory(approvedLaunch.id);
       }
     } catch (error) {
       console.error('Error fetching launches:', error);
     }
   };
+
+  const fetchSalesHistory = async (launchId: string) => {
+    const { data } = await supabase
+      .from('uniform_sales_history')
+      .select('*')
+      .eq('launch_id', launchId)
+      .order('sale_date', { ascending: false })
+      .limit(7);
+    setSalesHistory(data || []);
+  };
+
 
   const currentKit = kits[activeKit];
   const shirtSponsor = sponsors?.find(s => s.type === 'camisa');
@@ -455,14 +449,6 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
 
   const handleLaunch = async () => {
-    // Free for all players
-    /*
-    if (!uniformsUnlocked) {
-      toast.error('Você precisa do slot premium de uniformes para salvar e lançar permanentemente.');
-      return;
-    }
-    */
-
     setIsLaunching(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -474,7 +460,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         .single();
       if (!clubData) return;
 
-      // 1. Criar rascunho temporário do lançamento
+      // 1. Criar lançamento pendente
       const { data: launch, error: launchError } = await supabase
         .from('club_uniform_launches')
         .insert({
@@ -483,23 +469,20 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           config: kits[activeKit] as any,
           initial_fans: clubData.fans,
           initial_reputation: clubData.reputation,
-          hype_score: 1.0,
-          status: 'draft',
-          price_cents: 0 // Free launch
+          hype_score: 100,
+          status: 'pending_payment',
+          price_cents: 990 // R$ 9,90
         })
         .select()
         .single();
 
-        if (launchError) throw launchError;
+      if (launchError) throw launchError;
 
-        // Skip payment modal and go straight to success
-        await handlePaymentSuccessInternal(launch.id, clubData.name, clubData.fans, clubData.reputation);
-        
-        // setPendingLaunchId(launch.id);
-        // setShowPaymentModal(true);
-        // setPaymentStep('checkout');
+      setPendingLaunchId(launch.id);
+      setShowPaymentModal(true);
+      setPaymentStep('checkout');
       
-      toast.info('Design validado! Prossiga com o pagamento para oficializar o lançamento.');
+      toast.info('Design validado! Prossiga para o lançamento premium.');
     } catch (error: any) {
       console.error('Launch error:', error);
       toast.error('Erro ao preparar lançamento: ' + (error.message || 'Erro desconhecido'));
@@ -507,6 +490,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       setIsLaunching(false);
     }
   };
+
 
   const executeKitPayment = async () => {
     if (!pendingLaunchId) return;
@@ -523,7 +507,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         user_id: user.id,
         club_name: clubData?.name,
         item_name: `Lançamento: ${kits[activeKit].name}`,
-        amount_cents: 1000,
+        amount_cents: 990,
         status: 'attempting',
         payment_method: 'pix',
         metadata: { uniform_id: pendingLaunchId, type: 'uniform_launch' }
@@ -537,7 +521,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           email: email,
           full_name: fullName,
           cpf: cpf.replace(/\D/g, ''),
-          custom_amount: 1000,
+          custom_amount: 990,
           metadata: { uniform_id: pendingLaunchId, item_type: 'uniform_launch' }
         }
       });
@@ -580,14 +564,31 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   }, [paymentStep, pixInfo]);
 
   const handlePaymentSuccessInternal = async (launchId: string, clubName: string, fans: number, reputation: number) => {
-    toast.success('Uniforme lançado com sucesso!');
+    toast.success('Pagamento aprovado! Lançando uniforme...');
+    setPaymentStep('success');
     
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
-      // Mark launch as approved/active since it's free now
-      await supabase.from('club_uniform_launches').update({ status: 'approved' }).eq('id', launchId);
+      // Ativar lançamento
+      await supabase.from('club_uniform_launches').update({ 
+        status: 'approved',
+        launched_at: new Date().toISOString(),
+        hype_score: 100
+      }).eq('id', launchId);
+
+      // Gerar notícia
       await generateLaunchNews(user.id, clubName, fans, reputation);
+      
+      // Notificação de sucesso
+      await supabase.from('user_notifications').insert({
+        user_id: user.id,
+        type: 'success',
+        category: 'Marketing',
+        title: 'Uniforme Lançado!',
+        message: `O novo uniforme do ${clubName} já está disponível na loja e as vendas começaram!`,
+        icon: '👕'
+      });
     }
     
     fetchLaunches();
@@ -595,6 +596,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     const audio = new Audio('https://www.myinstants.com/media/sounds/level-up-6.mp3');
     audio.play().catch(() => {});
   };
+
 
   const handlePaymentSuccess = async () => {
     setShowPaymentModal(false);
@@ -607,15 +609,16 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   const calculateCurrentSales = (launch: any, clubFans: number, clubRep: number) => {
     if (!launch) return { daily: 0, total: 0, hype: 0, daysSinceLaunch: 0, revenue: 0 };
     
-    const daysSinceLaunch = Math.max(0, (Date.now() - new Date(launch.launched_at).getTime()) / (24 * 3600 * 1000));
+    const launchedAt = launch.launched_at ? new Date(launch.launched_at) : new Date();
+    const daysSinceLaunch = Math.max(0, (Date.now() - launchedAt.getTime()) / (24 * 3600 * 1000));
     
-    const baseDaily = (clubFans * 0.005) * (clubRep / 100);
+    // Vendas baseadas em torcida e reputação
+    const baseDaily = (clubFans * 0.008) * (clubRep / 100);
     
-    let hype = 1.0;
-    if (daysSinceLaunch <= 15) {
-      hype = 1.5 - (daysSinceLaunch / 15) * 0.5;
-    } else {
-      hype = Math.max(0.1, 1.0 - ((daysSinceLaunch - 15) / 45));
+    // Hype cai com o tempo
+    let hype = launch.hype_score / 100;
+    if (daysSinceLaunch > 7) {
+      hype = Math.max(0.1, hype - ((daysSinceLaunch - 7) * 0.02));
     }
     
     const dailySales = Math.floor(baseDaily * hype);
@@ -627,6 +630,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       daysSinceLaunch: Math.floor(daysSinceLaunch)
     };
   };
+
 
   const salesStats = useMemo(() => calculateCurrentSales(activeLaunch, clubReputation || 50, clubReputation || 50), [activeLaunch, clubReputation]);
 
