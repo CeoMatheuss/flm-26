@@ -23,6 +23,7 @@ export interface UniformKit {
   collarStyle: 'v-neck' | 'round' | 'polo' | 'henley';
   sleeveStyle: 'short' | 'long';
   sponsorTextColor?: string;
+  shirtPatternColor?: string; // Color to be used for patterns
 }
 
 export interface ShirtSale {
@@ -44,6 +45,7 @@ export interface UniformsData {
     topSellers: ShirtSale[];
   };
 }
+
 
 const defaultHome: UniformKit = {
   name: 'Titular',
@@ -427,24 +429,27 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   };
 
   const generateLaunchNews = async (userId: string, clubName: string, fans: number, reputation: number) => {
-    let newsText = '';
+    const { data: userProfile } = await supabase.from('profiles').select('display_name').eq('user_id', userId).maybeSingle();
+    const managerName = userProfile?.display_name || 'do clube';
+    const newsText = `👕 O ${clubName} acaba de lançar uma nova coleção de uniformes! O Manager ${managerName} convida todos para verem o novo manto.`;
 
-    if (fans < 50000) {
-      const { data: userProfile } = await supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle();
-      newsText = `👕 O ${clubName} acaba de lançar uma nova coleção de uniformes! O Manager ${userProfile?.display_name || 'do clube'} convida todos para verem o novo manto.`;
-    } else if (fans < 500000) {
-
-      const { data: userProfile } = await supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle();
-      newsText = `👕 O ${clubName} (Manager: ${userProfile?.display_name || 'Desconhecido'}) acaba de lançar um novo uniforme! Venha ver o novo design que promete conquistar a torcida.`;
-    }
-
-    await supabase.from('newspaper_entries').insert({
+    await supabase.from('newspaper_entries').insert([{
       user_id: userId,
       text: newsText,
-      category: 'club',
-      importance: 2
-    });
+      category: 'ELENCO',
+      importance: 3,
+      template_key: 'kit_launch',
+      metadata: {
+        clubName: clubName,
+        kit: kits[activeKit],
+        managerName: managerName
+      }
+    }] as any);
+
+
   };
+
+
 
 
 

@@ -12,7 +12,8 @@ import stadiumBg from '@/assets/stadium-management-hero.jpg';
 export type TemplateKey = 
   | 'league_win' | 'league_loss' | 'league_draw' | 'league_champion' 
   | 'cup_advance' | 'cup_eliminated' | 'cup_champion' 
-  | 'mvp' | 'top_scorer' | 'derby' | 'win_streak' | 'crisis' | 'transfer' | 'default';
+  | 'mvp' | 'top_scorer' | 'derby' | 'win_streak' | 'crisis' | 'transfer' | 'kit_launch' | 'default';
+
 
 interface NewsVisualProps {
   templateKey?: TemplateKey;
@@ -25,7 +26,10 @@ interface NewsVisualProps {
   importance?: number;
   club?: any; // For shield
   className?: string;
+  kit?: any; // For kit launch
+  managerName?: string;
 }
+
 
 const TEMPLATES: Record<string, { bg: string; icon: any; color: string; label: string }> = {
   league_win: { bg: leagueBg, icon: TrendingUp, color: 'from-emerald-600/90', label: 'VITÓRIA NA LIGA' },
@@ -41,7 +45,9 @@ const TEMPLATES: Record<string, { bg: string; icon: any; color: string; label: s
   win_streak: { bg: stadiumBg, icon: TrendingUp, color: 'from-emerald-400/90', label: 'SEQUÊNCIA POSITIVA' },
   crisis: { bg: stadiumBg, icon: Activity, color: 'from-red-700/90', label: 'CRISE NO CLUBE' },
   transfer: { bg: transferBg, icon: Star, color: 'from-blue-500/90', label: 'NOVO REFORÇO' },
+  kit_launch: { bg: stadiumBg, icon: Zap, color: 'from-emerald-500/90', label: 'NOVO MANTO' },
   default: { bg: stadiumBg, icon: Newspaper, color: 'from-slate-700/90', label: 'NOTÍCIA' },
+
 };
 
 export function NewsVisualTemplate({ 
@@ -53,8 +59,11 @@ export function NewsVisualTemplate({
   phase, 
   playerName, 
   club,
+  kit,
+  managerName,
   className = "" 
 }: NewsVisualProps) {
+
   const config = TEMPLATES[templateKey] || TEMPLATES.default;
   const Icon = config.icon;
 
@@ -127,7 +136,34 @@ export function NewsVisualTemplate({
               <span className="text-[8px] sm:text-[10px] font-black text-white/80 uppercase truncate max-w-[60px] sm:max-w-[100px]">{opponentName}</span>
             </div>
           </div>
+        ) : templateKey === 'kit_launch' && kit ? (
+          <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-1">LANÇAMENTO OFICIAL</span>
+              <h2 className="text-xl sm:text-2xl font-black text-white italic leading-none tracking-tighter uppercase mb-2">
+                O NOVO MANTO DO {teamName || 'CLUBE'}
+              </h2>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="border-white/20 text-white text-[8px] bg-white/5 uppercase">
+                  MANAGER: {managerName || 'FLM'}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-white/5 backdrop-blur-md p-2 rounded-lg border border-white/10 shadow-2xl rotate-3">
+                 <div className="w-16 h-20 flex items-center justify-center bg-white/5 rounded">
+                    <span className="text-3xl">👕</span>
+                 </div>
+              </div>
+              {club && (
+                <div className="p-1.5 bg-white/5 backdrop-blur-md rounded-lg border border-white/10 shadow-2xl -rotate-3">
+                  <ClubShield club={club} size={window.innerWidth < 640 ? 32 : 48} />
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
+
           <div className="flex items-end justify-between gap-4">
             <div className="flex-1">
               {playerName ? (
