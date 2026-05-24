@@ -476,7 +476,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           initial_reputation: clubData.reputation,
           hype_score: 100,
           status: 'pending_payment',
-          price_cents: 990 // R$ 9,90
+          price_cents: 1 // R$ 0,01
         })
         .select()
         .single();
