@@ -19,7 +19,8 @@ import {
   Compass,
   FileText,
   X,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
