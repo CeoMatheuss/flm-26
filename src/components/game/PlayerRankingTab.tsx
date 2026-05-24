@@ -20,13 +20,16 @@ interface PlayerRankingEntry {
   reputation_level: string;
   current_position: number;
   prev_position: number;
-  position_rank: number;
+  position_rank?: number;
   total_goals: number;
   total_assists: number;
-  total_clean_sheets: number;
+  total_clean_sheets?: number;
   avg_rating: number;
-  mvp_count: number;
+  mvp_count?: number;
+  seasonal_points?: number;
+  last_update?: string;
   players: {
+    id: string;
     name: string;
     position: string;
     overall: number;
@@ -34,16 +37,28 @@ interface PlayerRankingEntry {
     age: number;
     market_value: number;
     nationality: string;
-    clubs: {
+    squad_status: string;
+    clubs?: {
       club_name: string;
       logo_url: string | null;
       shield_config: any;
-    };
+    } | null;
   };
 }
 
+
+
+
+
+
+
+
+
+
+
+
 export function PlayerRankingTab() {
-  const [rankings, setRankings] = useState<PlayerRankingEntry[]>([]);
+  const [rankings, setRankings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('global');
@@ -52,11 +67,13 @@ export function PlayerRankingTab() {
   const fetchPlayerRankings = async () => {
     setLoading(true);
     try {
+      // Primeiro, tentamos buscar no ranking global persistido
       let query = supabase
         .from('global_player_ranking')
         .select(`
           *,
           players:world_players (
+            id,
             name,
             position,
             overall,
@@ -64,8 +81,9 @@ export function PlayerRankingTab() {
             age,
             market_value,
             nationality,
-            clubs (
-              club_name,
+            squad_status,
+            clubs:world_teams (
+              name,
               logo_url,
               shield_config
             )
@@ -74,16 +92,77 @@ export function PlayerRankingTab() {
 
       if (category === 'promising') {
         query = query.order('ranking_points', { ascending: false }).filter('players.age', 'lte', 21);
-      } else if (category === 'valuable') {
-        query = query.order('ranking_points', { ascending: false }); // Logic handled by ordering below if needed, but the view can help
       } else {
         query = query.order('ranking_points', { ascending: false });
       }
 
-      const { data, error } = await query.limit(100);
+      const { data: rankingData, error: rankingError } = await query.limit(100);
 
-      if (error) throw error;
-      setRankings(data as any[]);
+      // Se houver erro ou poucos dados, complementamos com jogadores reais do world_players
+      // para garantir que "todos os jogadores reais" apareçam
+      let finalData: any[] = rankingData || [];
+
+      if (rankingError || finalData.length < 50) {
+        // Busca jogadores com maior overall que podem ainda não estar no ranking persistido
+        const { data: allPlayers } = await supabase
+          .from('world_players')
+          .select(`
+            id,
+            name,
+            position,
+            overall,
+            potential,
+            age,
+            market_value,
+            nationality,
+            squad_status,
+            reputation,
+            clubs:world_teams (
+              name,
+              logo_url,
+              shield_config
+            )
+          `)
+          .order('overall', { ascending: false })
+          .limit(100);
+
+        if (allPlayers) {
+          // Mapeia para o formato do ranking se não existir no rankingData
+          const existingPlayerIds = new Set(finalData.map(r => r.player_id || r.id));
+          
+          const missingPlayers = allPlayers
+            .filter(p => !existingPlayerIds.has(p.id))
+            .map(p => ({
+              id: p.id,
+              player_id: p.id,
+              ranking_points: p.overall * 10, // Pontuação baseada em overall como fallback
+              reputation_score: p.reputation || 50,
+              reputation_level: p.reputation >= 90 ? 'Mundial' : p.reputation >= 75 ? 'Continental' : 'Nacional',
+              current_position: 0,
+              prev_position: 0,
+              total_goals: 0,
+              total_assists: 0,
+              total_clean_sheets: 0,
+              mvp_count: 0,
+              position_rank: 0,
+              seasonal_points: 0,
+              last_update: new Date().toISOString(),
+              avg_rating: 6.0,
+              players: {
+                ...p,
+                clubs: p.clubs ? { 
+                  club_name: (p.clubs as any).name, 
+                  logo_url: (p.clubs as any).logo_url, 
+                  shield_config: (p.clubs as any).shield_config 
+                } : null
+              }
+            }));
+          
+          finalData = [...finalData, ...missingPlayers].sort((a, b) => b.ranking_points - a.ranking_points);
+        }
+      }
+
+      setRankings(finalData);
     } catch (error) {
       console.error('Error fetching player rankings:', error);
     } finally {
@@ -91,18 +170,23 @@ export function PlayerRankingTab() {
     }
   };
 
+
+
   useEffect(() => {
     fetchPlayerRankings();
   }, [category]);
 
   const filteredRankings = useMemo(() => {
     return rankings.filter(entry => {
-      const matchesSearch = entry.players.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            entry.players.clubs?.club_name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPosition = positionFilter === 'all' || entry.players.position.includes(positionFilter);
+      const name = entry.players?.name || '';
+      const clubName = entry.players?.clubs?.club_name || '';
+      const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            clubName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPosition = positionFilter === 'all' || (entry.players?.position || '').includes(positionFilter);
       return matchesSearch && matchesPosition;
     });
   }, [rankings, searchTerm, positionFilter]);
+
 
   const topPlayers = useMemo(() => filteredRankings.slice(0, 3), [filteredRankings]);
   const otherPlayers = useMemo(() => filteredRankings.slice(3), [filteredRankings]);
@@ -288,16 +372,19 @@ export function PlayerRankingTab() {
                               <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent" />
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-sm font-bold">{entry.players.name}</span>
+                              <span className="text-sm font-bold">{entry.players?.name || 'Jogador'}</span>
                               <span className="text-[10px] text-muted-foreground uppercase flex items-center gap-1">
-                                {entry.players.position} • {entry.players.age} anos
+                                {entry.players?.position || 'POS'} • {entry.players?.age || '--'} anos
+                                {entry.players?.squad_status === 'youth' && (
+                                  <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[8px] h-3 px-1 ml-1">BASE</Badge>
+                                )}
                               </span>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-4 text-center">
                           <Badge variant="outline" className="font-bold border-primary/20 text-primary bg-primary/5">
-                            {entry.players.overall}
+                            {entry.players?.overall || 0}
                           </Badge>
                         </td>
                         <td className="py-4 px-4 text-center hidden md:table-cell">
@@ -319,7 +406,7 @@ export function PlayerRankingTab() {
                             <span className={`text-sm font-black ${entry.avg_rating >= 7 ? 'text-emerald-500' : 'text-amber-500'}`}>
                               {Number(entry.avg_rating).toFixed(2)}
                             </span>
-                            {entry.mvp_count > 0 && (
+                            {(entry.mvp_count || 0) > 0 && (
                               <Badge className="bg-amber-500/20 text-amber-500 text-[8px] px-1 py-0 h-4" variant="outline">
                                 <Zap className="w-2 h-2 mr-0.5 fill-amber-500" /> {entry.mvp_count}
                               </Badge>
@@ -329,9 +416,10 @@ export function PlayerRankingTab() {
                         <td className="py-4 px-4 text-right">
                           <div className="flex flex-col items-end">
                             <span className="text-sm font-black italic">{Math.round(entry.ranking_points)}</span>
-                            <span className="text-[9px] text-muted-foreground uppercase">{formatCurrency(entry.players.market_value)}</span>
+                            <span className="text-[9px] text-muted-foreground uppercase">{formatCurrency(entry.players?.market_value || 0)}</span>
                           </div>
                         </td>
+
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end">
                             {variation > 0 ? (
