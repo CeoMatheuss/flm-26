@@ -108,11 +108,11 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
   const resultBg = result === 'win' ? 'bg-emerald-500/10 border-emerald-500/30' : result === 'loss' ? 'bg-red-500/10 border-red-500/30' : 'bg-yellow-500/10 border-yellow-500/30';
 
   const tieBreakerLabel = aggregate
-    ? aggregate.tieBreaker === 'penalties' ? `Pênaltis ${(rd as any).shootoutHome || aggregate.shootoutHome}x${(rd as any).shootoutAway || aggregate.shootoutAway}`
+    ? aggregate.tieBreaker === 'penalties' ? `Pênaltis ${aggregate.shootoutHome}x${aggregate.shootoutAway}`
     : aggregate.tieBreaker === 'extra_time' ? 'Prorrogação'
     : 'Placar agregado'
-
     : '';
+
   const advancedName = aggregate
     ? (aggregate.advanced === 'home' ? aggregate.homeTeam : aggregate.awayTeam)
     : '';
