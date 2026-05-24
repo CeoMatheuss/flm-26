@@ -1820,6 +1820,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                     blocked={subBlocked}
                     blockedReason={subBlockedReason}
                     liveStaminaMap={liveStaminaMap}
+                    playerRatings={matchState.playerRatings}
                   />
                 </CardContent>
               </Card>
