@@ -202,7 +202,7 @@ export function UpgradesTab({ infrastructure, budget, isPremium, onUpgradeFacili
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm">
                 <div><b>{confirming?.title}</b> — Nível {confirming ? infrastructure[confirming.key].level : 0} → {confirming ? infrastructure[confirming.key].level + 1 : 0}</div>
-                <div>Custo: <b>{confirming ? formatMoney(confirming.cost) : '—'}</b></div>
+                <div>Custo: <b>{confirming ? `FL$ ${confirming.cost.toLocaleString()}` : '—'}</b></div>
                 <div>Duração: <b>{isPremium ? 'Instantâneo (Premium)' : '24 horas'}</b></div>
                 <div className="pt-1 text-muted-foreground">Benefícios:</div>
                 <ul className="text-xs pl-3 space-y-0.5">
