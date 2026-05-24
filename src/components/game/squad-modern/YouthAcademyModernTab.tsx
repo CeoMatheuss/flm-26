@@ -6,7 +6,7 @@ import {
 import { Player } from '@/types/game';
 import { PremiumPlayerCard } from './cards/PremiumPlayerCard';
 import { Button } from '@/components/ui/button';
-import { GraduationCap, TrendingUp, Star, ArrowUpRight, Trophy, Info, Sparkles, Coins, Search, Newspaper, Clock, Hammer, Check, Lock } from 'lucide-react';
+import { GraduationCap, TrendingUp, Star, ArrowUpRight, Trophy, Info, Sparkles, Coins, Search, Newspaper, Clock, Hammer, Check, Lock, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatMoney } from '@/lib/formatMoney';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,7 @@ export function YouthAcademyModernTab({
   lastYouthGenAt, isPremium, onSelect
 }: YouthAcademyModernTabProps & { onSelect?: (p: YouthProspect) => void }) {
   const [selectedProspect, setSelectedProspect] = useState<YouthProspect | null>(null);
+  const [isConfirmingPromotion, setIsConfirmingPromotion] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPos, setFilterPos] = useState('ALL');
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -269,6 +270,7 @@ export function YouthAcademyModernTab({
                 selected={selectedProspect?.id === p.id}
                 onClick={() => {
                   setSelectedProspect(p);
+                  setIsConfirmingPromotion(false);
                   if (onSelect) onSelect(p);
                 }} 
               />
@@ -290,12 +292,76 @@ export function YouthAcademyModernTab({
           <AnimatePresence mode="wait">
             {selectedProspect ? (
               <motion.div
-                key={selectedProspect.id}
+                key={selectedProspect.id + (isConfirmingPromotion ? '-confirm' : '-detail')}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 className="xl:sticky xl:top-28 p-5 sm:p-6 rounded-[2rem] bg-zinc-900/60 border border-emerald-500/20 backdrop-blur-2xl flex flex-col gap-6 shadow-2xl"
               >
+                {isConfirmingPromotion ? (
+                  <div className="space-y-6 py-4">
+                    <div className="text-center space-y-3">
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 mx-auto shadow-lg shadow-emerald-500/10">
+                        <Check className="w-8 h-8 text-emerald-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-black italic uppercase tracking-tight text-white">Contrato Profissional</h4>
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-relaxed">Confirme os termos do vínculo com o clube</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                        <span className="text-[9px] font-black text-white/30 uppercase tracking-widest flex items-center gap-2">
+                          <Coins className="w-3 h-3 text-emerald-400" /> Salário
+                        </span>
+                        <span className="text-xs font-black text-emerald-400 italic">{formatMoney(selectedProspect.salary || 500)}</span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                        <span className="text-[9px] font-black text-white/30 uppercase tracking-widest flex items-center gap-2">
+                          <Clock className="w-3 h-3 text-white" /> Duração
+                        </span>
+                        <span className="text-xs font-black text-white italic uppercase">3 Temporadas</span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex justify-between items-center">
+                        <span className="text-[9px] font-black text-white/30 uppercase tracking-widest flex items-center gap-2">
+                          <Shield className="w-3 h-3 text-white" /> Função
+                        </span>
+                        <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-lg">Reserva</span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex gap-3 items-start">
+                      <Info className="w-4 h-4 text-amber-400 shrink-0" />
+                      <p className="text-[9px] font-bold text-amber-200/70 uppercase tracking-wider leading-relaxed">
+                        Ao subir para o profissional, o jogador ocupará vaga no elenco e seu salário será debitado mensalmente.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => setIsConfirmingPromotion(false)}
+                        className="h-12 rounded-xl text-white/40 hover:text-white hover:bg-white/5 font-black uppercase tracking-widest text-[10px]"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          onPromote(selectedProspect.id);
+                          setSelectedProspect(null);
+                          setIsConfirmingPromotion(false);
+                        }}
+                        className="h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/20"
+                      >
+                        Confirmar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
                 <div className="text-center">
                   <div className="relative inline-block mx-auto mb-6">
                     <div className={cn(
@@ -396,8 +462,7 @@ export function YouthAcademyModernTab({
                 <div className="mt-2">
                   <Button 
                     onClick={() => {
-                      onPromote(selectedProspect.id);
-                      setSelectedProspect(null);
+                      setIsConfirmingPromotion(true);
                     }}
                     className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black italic uppercase tracking-wider text-xs sm:text-sm shadow-[0_10px_30px_rgba(16,185,129,0.3)] transition-all active:scale-95 group whitespace-normal text-center px-3"
                   >
@@ -405,8 +470,10 @@ export function YouthAcademyModernTab({
                     <span className="leading-tight">Promover ao Profissional</span>
                   </Button>
                 </div>
-              </motion.div>
-            ) : (
+              </>
+            )}
+          </motion.div>
+        ) : (
               <div className="sticky top-28 p-10 rounded-[2.5rem] bg-zinc-900/20 border-2 border-dashed border-white/5 flex flex-col items-center justify-center text-center opacity-40">
                 <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mb-8">
                   <Info className="w-10 h-10 text-white/20" />
