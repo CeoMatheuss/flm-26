@@ -61,9 +61,9 @@ export function ScoutPackTab({ clubId, budget }: { clubId: string; budget: numbe
     setPurchasing(true);
     try {
       // 1. Deduct money (simulated here, in prod use RPC/Trigger)
-      const { error: budgetErr } = await supabase.rpc('adjust_club_budget', { 
+      const { error: budgetErr } = await supabase.rpc('add_club_cash', { 
         p_club_id: clubId, 
-        p_amount_cents: -pack.price_cents 
+        p_amount: -(pack.price_cents / 100) 
       });
       if (budgetErr) throw budgetErr;
 
