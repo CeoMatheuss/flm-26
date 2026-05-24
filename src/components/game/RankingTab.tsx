@@ -494,6 +494,7 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
           <PlayerRankingTab />
         </TabsContent>
       </Tabs>
+
     </div>
   );
 }
