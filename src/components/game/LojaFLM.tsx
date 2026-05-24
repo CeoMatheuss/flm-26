@@ -313,13 +313,16 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
           item_id: selectedItem.id,
           item_name: selectedItem.name,
           amount_cents: selectedItem.price_cents,
-          status: 'pending',
+          status: 'attempting',
           payment_method: checkoutMethod,
-          metadata: { checkout_type: 'start_attempt', email: checkoutEmail }
+          metadata: { checkout_type: 'start_attempt', email: checkoutEmail },
+          region: 'BR', // Simulado
+          device_info: window.navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
         });
       } catch (admErr) {
         console.warn('Falha ao registrar tentativa na ADM:', admErr);
       }
+
 
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
