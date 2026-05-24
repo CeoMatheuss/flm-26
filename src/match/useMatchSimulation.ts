@@ -474,7 +474,7 @@ export function useMatchSimulation() {
                   const { updateGlobalRanking } = await import('@/match/rankingUpdater');
                   const session = await supabase.auth.getSession();
                   
-                  await updateGlobalRanking({
+                  const rankingResult = await updateGlobalRanking({
                     userId: session.data.session?.user?.id || '',
                     clubName: data.homeTeam,
                     outcome,
@@ -487,7 +487,10 @@ export function useMatchSimulation() {
                     detail: { 
                       matchId: data.matchDbId,
                       homeGoals: state.homeGoals,
-                      awayGoals: state.awayGoals
+                      awayGoals: state.awayGoals,
+                      rankingChange: rankingResult.deltaPoints,
+                      fansChange: rankingResult.deltaFans,
+                      fanMessage: rankingResult.fanMessage
                     } 
                   }));
                 }
