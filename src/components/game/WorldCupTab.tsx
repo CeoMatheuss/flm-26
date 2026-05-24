@@ -154,8 +154,9 @@ export function WorldCupTab({ userId }: { userId: string }) {
             {cup.name}
           </h1>
           <p className="text-muted-foreground text-sm max-w-md">
-            Os melhores clubes online do mundo disputam a glória eterna em formato eliminatório.
+            Os melhores clubes online do mundo disputam a glória eterna. Início oficial em 20/06 com times reais e bots de elite.
           </p>
+
 
           {myMatch && (
             <Card className="bg-white/5 border-white/10 backdrop-blur-md max-w-sm mt-6">
