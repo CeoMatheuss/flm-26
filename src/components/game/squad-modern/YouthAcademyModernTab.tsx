@@ -97,25 +97,25 @@ export function YouthAcademyModernTab({
   return (
     <div className="space-y-8 pb-20 sm:pb-0">
       {/* Academy Overview */}
-      <section className="relative p-6 sm:p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/5 backdrop-blur-xl overflow-hidden">
-        <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+      <section className="relative p-4 sm:p-6 lg:p-10 rounded-2xl sm:rounded-[2.5rem] bg-zinc-900/40 border border-white/5 backdrop-blur-xl overflow-hidden">
+        <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none hidden sm:block">
           <GraduationCap className="w-48 h-48 text-emerald-500" />
         </div>
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
-              <GraduationCap className="w-10 h-10 text-emerald-400" />
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-8">
+          <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-[2rem] bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.1)] shrink-0">
+              <GraduationCap className="w-7 h-7 sm:w-10 sm:h-10 text-emerald-400" />
             </div>
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter uppercase text-white">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-2xl lg:text-3xl font-black italic tracking-tighter uppercase text-white truncate">
                 Centro de Formação
               </h2>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Nível {academyLevel}/30</span>
                 <span className="w-1 h-1 rounded-full bg-white/20" />
                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em]">
-                  {prospects.length} Talentos em Observação
+                  {prospects.length} Talentos
                 </span>
                 {academyLevel < 30 && (
                   <>
@@ -125,7 +125,7 @@ export function YouthAcademyModernTab({
                       disabled={isConstructing}
                       className="text-[10px] font-black text-emerald-400 hover:text-emerald-300 uppercase tracking-widest flex items-center gap-1 transition-colors disabled:opacity-50"
                     >
-                      <ArrowUpRight className="w-3 h-3" /> Melhorar Base
+                      <ArrowUpRight className="w-3 h-3" /> Melhorar
                     </button>
                   </>
                 )}
