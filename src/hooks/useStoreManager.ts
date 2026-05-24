@@ -140,7 +140,7 @@ export function useStoreManager(club: Club, userId: string) {
         if (result.cash_added > 0) toast.success(`Bônus financeiro recebido: R$ ${result.cash_added.toLocaleString()}`);
       }
 
-      // 3. Handle additional logic for specific categories
+      // 3. Handle additional notifications/UI logic based on category
       if (item.category === 'scouting') {
         toast.success('Departamento de scout atualizado!');
       }
@@ -149,7 +149,11 @@ export function useStoreManager(club: Club, userId: string) {
         toast.success('Sua torcida está mais engajada do que nunca!');
       }
 
-      // Se for um plano premium SmartPit (do SponsorsTab)
+      if (item.category === 'uniform') {
+        toast.success('Editor de uniforme desbloqueado!');
+      }
+
+      // Logic for SmartPit premium plans (these are not standard shop items)
       if (item.bonus_data?.planId) {
         const totalValue = item.bonus_data.totalValue || 0;
         const payoutDays = item.bonus_data.payoutDays || 30;
@@ -165,32 +169,15 @@ export function useStoreManager(club: Club, userId: string) {
           daily_value: daily,
           active: true
         });
-      } else if (item.category === 'sponsorship') {
-        const durationDays = item.duration_days || 30;
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + durationDays);
-
-        await client.from('club_sponsorships').insert({
-          club_id: club.id,
-          sponsor_name: item.name,
-          contract_value_cents: (item.bonus_data?.dinheiroSemanal || 0) * 100,
-          payment_type: 'weekly',
-          bonus_data: item.bonus_data,
-          expires_at: expiresAt.toISOString()
-        });
       }
 
-      if (item.category === 'uniform') {
-        toast.success('Editor de uniforme desbloqueado!');
-      }
+      // Note: Sponsorships and Memberships are now handled by deliver_shop_item RPC
+      // so we don't need manual insertions here anymore for those categories.
 
-      // 4. Generate News
-      await client.from('newspaper_entries').insert({
-        user_id: userId,
-        text: `O ${club.name} oficializou hoje a parceria com ${item.name}. O acordo trará grandes benefícios para o marketing e finanças do clube.`,
-        category: 'finance',
-        importance: 2
-      });
+      toast.success(`${item.name} ativado com sucesso!`);
+      fetchStoreData();
+      window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+
 
       toast.success(`${item.name} ativado com sucesso!`);
       fetchStoreData();

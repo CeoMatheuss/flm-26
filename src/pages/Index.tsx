@@ -473,12 +473,21 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
       }
     };
     initCompetitions();
-    // Process shop bonuses daily
+    // Process shop bonuses daily (now with catch-up logic for offline days)
     supabase.rpc('process_daily_shop_bonuses', { p_user_id: userId }).then(({ data }) => {
-      if (data && (data as any).success) {
-        console.log('[Shop] Daily bonuses processed:', data);
+      const result = data as any;
+      if (result && result.success) {
+        console.log('[Shop] Daily bonuses processed:', result);
+        if (result.days_processed > 0) {
+          // If we caught up multiple days, show a nice toast and refresh UI
+          if (result.days_processed > 1) {
+            toast.info(`📅 Bem-vindo de volta! Recebemos seus bônus de ${result.days_processed} dias offline.`);
+          }
+          window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+        }
       }
     });
+
     // Process monthly finance on the first of the month
     if (day === 1) {
       const lastMonthProcessed = localStorage.getItem(`finance_month_${today.getMonth()}_${today.getFullYear()}`);
