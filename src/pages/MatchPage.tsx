@@ -2081,6 +2081,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
   blocked?: boolean;
   blockedReason?: string;
   liveStaminaMap?: Record<string, number>;
+  playerRatings?: Record<string, any>;
 }) {
   if (!hasAnyPlayers) {
     return (
