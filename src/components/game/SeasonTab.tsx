@@ -91,15 +91,15 @@ export function SeasonTab({ season, leagueTeams, clubName }: Props) {
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <div className="flex gap-3 items-start">
             <Users className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-            <p>Cada liga é composta por <span className="text-foreground font-semibold">30 clubes</span> que competem ao longo de <span className="text-foreground font-semibold">30 rodadas</span> por temporada.</p>
+            <p>Cada liga é composta por <span className="text-foreground font-semibold">20 clubes</span> que competem ao longo de <span className="text-foreground font-semibold">38 rodadas</span> por temporada.</p>
           </div>
           <div className="flex gap-3 items-start">
             <Clock className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-            <p>Cada rodada corresponde a <span className="text-foreground font-semibold">1 dia real</span>. A temporada dura 30 dias, de fevereiro a fevereiro (ciclo contínuo).</p>
+            <p>A fase de liga ocorre do <span className="text-foreground font-semibold">Dia 01 ao Dia 19</span>, com <span className="text-foreground font-semibold text-emerald-400">2 partidas por dia</span>.</p>
           </div>
           <div className="flex gap-3 items-start">
             <ArrowUpDown className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-            <p>No fim da temporada, os <span className="text-foreground font-semibold text-green-400">4 primeiros sobem</span> de divisão e os <span className="text-foreground font-semibold text-red-400">4 últimos caem</span>. As ligas se redistribuem automaticamente.</p>
+            <p>No fim da temporada, os campeões e melhores ranqueados garantem vaga no <span className="text-foreground font-semibold text-yellow-400">Mundial de Clubes</span>.</p>
           </div>
           <div className="flex gap-3 items-start">
             <Star className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
