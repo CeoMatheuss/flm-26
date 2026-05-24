@@ -335,9 +335,13 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+          <Badge variant="outline" className="bg-yellow-500/5 text-yellow-500 border-yellow-500/20 px-3 py-1">
+            Super Mundial
+          </Badge>
           <Badge variant="outline" className="bg-emerald-500/5 text-emerald-500 border-emerald-500/20 px-3 py-1">
             Libertadores
           </Badge>
+
           <Badge variant="outline" className="bg-blue-500/5 text-blue-500 border-blue-500/20 px-3 py-1">
             Sul-Americana
           </Badge>
@@ -394,8 +398,10 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       let posColor = "text-muted-foreground";
                       let rowBg = isPlayerTeam ? "bg-primary/10 hover:bg-primary/20" : "hover:bg-accent/50";
                       
-                      if (i < 4) posColor = "text-emerald-500 font-black"; // Libertadores
+                      if (i < 1) posColor = "text-yellow-500 font-black"; // Super Mundial
+                      else if (i < 4) posColor = "text-emerald-500 font-black"; // Libertadores
                       else if (i < 7) posColor = "text-blue-500 font-bold"; // Libertadores (G7)
+
                       else if (i < 9) posColor = "text-blue-400 font-bold"; // Sul-Americana
                       else if (i >= 13) posColor = "text-red-500 font-bold"; // Rebaixamento (Z3)
 
