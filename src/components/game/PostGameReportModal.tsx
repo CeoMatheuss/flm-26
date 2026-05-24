@@ -32,6 +32,8 @@ interface ReportData {
     attendance: number;
     revenue: number;
     fatigue: number;
+    fansChange?: number;
+    fanMessage?: string;
   };
 }
 
@@ -296,6 +298,16 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
                   <div className="flex items-center gap-1">
                     <span>😓 Desgaste: -{report.impacts.fatigue}%</span>
                   </div>
+                  {report.impacts.fansChange !== undefined && (
+                    <div className="flex items-center gap-1 col-span-2 pt-1 border-t border-white/5">
+                      <Users className="h-3 w-3 text-primary" />
+                      <span className="font-bold">Torcida: </span>
+                      <span className={report.impacts.fansChange >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                        {report.impacts.fansChange > 0 ? '+' : ''}{report.impacts.fansChange.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground italic ml-1">— {report.impacts.fanMessage}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
