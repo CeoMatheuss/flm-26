@@ -16,10 +16,14 @@ interface WorldCupMatch {
   away_goals: number;
   home_penalty_goals: number;
   away_penalty_goals: number;
+  has_extra_time?: boolean;
+  home_extra_goals?: number;
+  away_extra_goals?: number;
   status: string;
   scheduled_at: string;
   cup_id: string;
 }
+
 
 const toShieldClub = (t: any) => {
   if (!t) return null;
