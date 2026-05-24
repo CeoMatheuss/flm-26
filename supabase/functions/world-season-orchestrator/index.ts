@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
     // --- DAY 20: GENERATE MUNDIAL ---
     if (currentDay === 20 && state.phase === 'transition') {
-      logs.push("Generating Mundial de Clubes (Day 20)");
+      logs.push("Generating Super Mundial (Day 20)");
       
       const { data: qualified } = await sb.from("world_league_table")
         .select("team_id, team:world_teams(name, logo, strength)")
@@ -60,41 +60,47 @@ Deno.serve(async (req) => {
         .limit(32);
 
       if (qualified && qualified.length >= 8) {
-        const { data: cup } = await sb.from("world_cup_competitions").insert({
-          name: `Mundial de Clubes - Temp ${state.current_season}`,
-          season_year: state.current_season,
-          status: 'active'
+        const { data: cup } = await sb.from("tournaments").insert({
+          name: `Super Mundial de Clubes - Temp ${state.current_season}`,
+          type: 'world_cup',
+          season: state.current_season,
+          status: 'active',
+          host_country: 'Suíça'
         }).select().single();
 
         if (cup) {
           const teams = qualified.map(q => q.team_id);
           const numGroups = Math.min(8, Math.floor(teams.length / 4));
-          const matchInserts = [];
-
-          // Simple Round Robin for groups
+          
           for (let g = 0; g < numGroups; g++) {
-            const groupTeams = teams.slice(g * 4, (g + 1) * 4);
-            for (let i = 0; i < groupTeams.length; i++) {
-              for (let j = i + 1; j < groupTeams.length; j++) {
-                // Schedule matches for Day 20-24
-                const dayOffset = i + j - 1; // Simplistic
-                const kickoff = new Date(start.getTime() + (19 + dayOffset) * 24 * 60 * 60 * 1000);
-                kickoff.setUTCHours(18, 0, 0, 0);
+            const groupName = `Grupo ${String.fromCharCode(65 + g)}`;
+            const { data: group } = await sb.from("tournament_groups").insert({
+              tournament_id: cup.id,
+              name: groupName
+            }).select().single();
 
-                matchInserts.push({
-                  cup_id: cup.id,
-                  home_team_id: groupTeams[i],
-                  away_team_id: groupTeams[j],
-                  round: 1, // Group stage
-                  status: 'scheduled',
-                  scheduled_at: kickoff.toISOString(),
-                  match_data: { group: String.fromCharCode(65 + g) }
-                });
+            if (group) {
+              const groupTeams = teams.slice(g * 4, (g + 1) * 4);
+              const matchInserts = [];
+              for (let i = 0; i < groupTeams.length; i++) {
+                for (let j = i + 1; j < groupTeams.length; j++) {
+                  const dayOffset = i + j - 1;
+                  const kickoff = new Date(start.getTime() + (19 + dayOffset) * 24 * 60 * 60 * 1000);
+                  kickoff.setUTCHours(19, 30, 0, 0);
+
+                  matchInserts.push({
+                    tournament_id: cup.id,
+                    group_id: group.id,
+                    home_team_id: groupTeams[i],
+                    away_team_id: groupTeams[j],
+                    stage: 'group',
+                    status: 'scheduled',
+                    scheduled_at: kickoff.toISOString()
+                  });
+                }
               }
+              await sb.from("tournament_matches").insert(matchInserts);
             }
-          }
-          if (matchInserts.length > 0) {
-            await sb.from("world_cup_matches").insert(matchInserts);
           }
         }
       }
@@ -110,7 +116,6 @@ Deno.serve(async (req) => {
         current_day: 1,
         phase: 'league'
       }).eq("id", state.id);
-      // Recurse to handle Day 1
       return await sb.functions.invoke('world-season-orchestrator');
     }
 
