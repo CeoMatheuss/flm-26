@@ -960,13 +960,7 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
                   })}
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <Input 
-                    placeholder="Busca..." 
-                    className="h-7 w-24 bg-white/5 border-white/10 text-[9px] rounded-lg"
-                    onChange={(e) => setFilterPos(e.target.value.toUpperCase())}
-                  />
-                </div>
+                {/* Search removed as requested */}
               </div>
 
               <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
