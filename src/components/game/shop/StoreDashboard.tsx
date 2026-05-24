@@ -138,16 +138,15 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
         </CardContent>
       </Card>
 
-      {/* Uniform Sales */}
+      {/* Inventory & Stock */}
       <Card className="bg-slate-900/60 border-purple-500/20 backdrop-blur-md lg:col-span-2">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2 text-purple-400">
-            <Shirt className="h-4 w-4" /> Vendas de Uniformes & Produtos
+            <Package className="h-4 w-4" /> Gestão de Estoque & Produtos
           </CardTitle>
         </CardHeader>
         <CardContent>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
               <p className="text-[10px] text-white/40 uppercase font-black">Hype do Uniforme</p>
               <div className="flex items-center gap-2 mt-1">
@@ -158,36 +157,42 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
               </div>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <p className="text-[10px] text-white/40 uppercase font-black">Receita Diária (Estimada)</p>
+              <p className="text-[10px] text-white/40 uppercase font-black">Receita Diária</p>
               <p className="text-lg font-black italic text-emerald-400">{formatMoney(stats.dailyRevenue)}</p>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <p className="text-[10px] text-white/40 uppercase font-black">Lançamentos</p>
-              <div className="flex gap-1 mt-1 overflow-x-auto pb-1 scrollbar-hide">
-                {stats.uniformLaunches.length > 0 ? (
-                  stats.uniformLaunches.map(l => (
-                    <Badge key={l.id} variant="outline" className="text-[8px] bg-purple-500/10 text-purple-400 border-purple-500/30 shrink-0">
-                      {l.type.toUpperCase()}
-                    </Badge>
-                  ))
-                ) : (
-                  <span className="text-[10px] text-white/20 italic">Nenhum</span>
-                )}
-              </div>
+              <p className="text-[10px] text-white/40 uppercase font-black">Produtos em Alta</p>
+              <p className="text-lg font-black italic text-purple-400">Camisas</p>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <p className="text-[10px] text-white/40 uppercase font-black">Vendas Totais (Lançamento)</p>
-              <p className="text-lg font-black italic">
-                {stats.uniformLaunches.length > 0 
-                  ? stats.uniformLaunches[0].totalSales.toLocaleString()
-                  : '0'}
-              </p>
+              <p className="text-[10px] text-white/40 uppercase font-black">Eficiência Entrega</p>
+              <p className="text-lg font-black italic text-blue-400">98%</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-[10px] font-black uppercase italic text-white/40">Níveis de Estoque Críticos</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {stats.products.length > 0 ? (
+                stats.products.slice(0, 4).map(p => (
+                  <div key={p.id} className="bg-black/20 p-2 rounded-lg border border-white/5 flex flex-col gap-1">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="font-bold truncate max-w-[120px]">{p.name}</span>
+                      <span className={p.stock_quantity < 20 ? 'text-red-400' : 'text-emerald-400'}>
+                        {p.stock_quantity}/{p.max_stock}
+                      </span>
+                    </div>
+                    <Progress value={(p.stock_quantity / p.max_stock) * 100} className="h-1 bg-white/5" />
+                  </div>
+                ))
+              ) : (
+                <p className="text-[10px] text-white/20 italic">Aguardando dados de estoque...</p>
+              )}
             </div>
           </div>
         </CardContent>
-
-        </CardContent>
       </Card>
+
     </div>
   );
 }
