@@ -1061,8 +1061,10 @@ function simulateFullMatch(
   let penaltyHomeGoals = 0, penaltyAwayGoals = 0;
 
   function buildupDesc(team: 'home' | 'away', tName: string, type: string = 'normal'): string {
-    const pool = allPlayers.filter(p => p.team === team && p.isOnPitch);
-    const oppPool = allPlayers.filter(p => p.team !== team && p.isOnPitch);
+    const starters = allPlayers.filter(p => p.team === team && p.squadStatus === 'starter');
+    const pool = starters.length > 0 ? starters : allPlayers.filter(p => p.team === team && p.isOnPitch);
+    const oppStarters = allPlayers.filter(p => p.team !== team && p.squadStatus === 'starter');
+    const oppPool = oppStarters.length > 0 ? oppStarters : allPlayers.filter(p => p.team !== team && p.isOnPitch);
     const p1 = pool.length > 0 ? pick(pool).name : 'Jogador';
     const p2 = pool.filter(p => p.name !== p1).length > 0 ? pick(pool.filter(p => p.name !== p1)).name : p1;
     const p3 = pool.filter(p => p.name !== p1 && p.name !== p2).length > 0 ? pick(pool.filter(p => p.name !== p1 && p.name !== p2)).name : p2;
@@ -1115,7 +1117,8 @@ function simulateFullMatch(
   // ── HOME GOALS ──────────────────────────────────────────────
   for (const m of homeGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
-    const scorer = pickByRole(home.filter(p => p.isOnPitch && p.position !== 'GOL'), 'finishing', rng() > 0.55 ? 'ATA' : undefined);
+    const homeStarters = home.filter(p => p.squadStatus === 'starter');
+    const scorer = pickByRole(homeStarters.length > 0 ? homeStarters : home, 'finishing', rng() > 0.55 ? 'ATA' : undefined);
     const goalTypes = ['chute rasteiro no canto', 'chute colocado no ângulo', 'voleio de primeira', 'toque na saída do goleiro', 'cabeçada certeira', 'chute de longe'];
     const goalType = pick(goalTypes);
     let assistName: string | undefined;
@@ -1145,7 +1148,8 @@ function simulateFullMatch(
   // ── AWAY GOALS ──────────────────────────────────────────────
   for (const m of awayGoalMins) {
     const [scoreH, scoreA] = getScoreAtMinute(m, true);
-    const scorer = pickByRole(away.filter(p => p.isOnPitch && p.position !== 'GOL'), 'finishing', rng() > 0.55 ? 'ATA' : undefined);
+    const awayStarters = away.filter(p => p.squadStatus === 'starter');
+    const scorer = pickByRole(awayStarters.length > 0 ? awayStarters : away, 'finishing', rng() > 0.55 ? 'ATA' : undefined);
     const goalType = pick(['chute rasteiro cruzado', 'cabeceio no segundo pau', 'contra-ataque com toque na saída do goleiro', 'finalização de primeira']);
     let assistName: string | undefined;
     if (scorer) {
