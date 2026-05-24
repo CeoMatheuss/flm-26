@@ -646,7 +646,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       {/* Removal of locked warning as it's now free */}
       {/* Launch Dashboard */}
       {activeLaunch && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
           <Card className="bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20">
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-1">
@@ -701,31 +701,32 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-primary/10">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="p-1.5 rounded-lg bg-primary/10 shrink-0">
             <Shirt className="h-4 w-4 text-primary" />
           </div>
-          <div>
-            <p className="text-sm font-bold">Uniformes</p>
-            <p className="text-[10px] text-muted-foreground">Personalize seus 4 kits</p>
+          <div className="min-w-0">
+            <p className="text-sm font-bold truncate">Uniformes</p>
+            <p className="text-[10px] text-muted-foreground truncate">Personalize seus 4 kits</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="h-8 px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="h-9 flex-1 sm:flex-initial sm:px-4 text-xs gap-1.5 rounded-full" onClick={handleSave}>
             <Save className="h-3 w-3" /> Salvar
           </Button>
           <Button 
             size="sm" 
-            className="h-8 px-4 text-xs gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500" 
+            className="h-9 flex-1 sm:flex-initial sm:px-4 text-xs gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500" 
             onClick={handleLaunch}
             disabled={isLaunching}
           >
             {isLaunching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
-            Lançar Coleção
+            <span className="truncate">Lançar Coleção</span>
           </Button>
         </div>
       </div>
+
 
       {/* Kit Selector Tabs */}
       <div className="flex gap-1 bg-muted/40 rounded-xl p-1">
@@ -746,19 +747,19 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       </div>
 
       {/* Main Content: Preview + Editor */}
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-         <Card className="sm:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10 shadow-inner">
-          <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px]">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+         <Card className="lg:col-span-2 overflow-hidden border-0 bg-gradient-to-b from-muted/30 to-muted/10 shadow-inner">
+          <CardContent className="p-4 sm:p-6 flex flex-col items-center justify-center min-h-[240px] sm:min-h-[300px]">
             <ShirtPreview kit={currentKit} sponsorName={shirtSponsor?.name} size="lg" />
-            <div className="mt-6 text-center">
-              <p className="text-lg font-black uppercase italic text-white tracking-tighter">{currentKit.name}</p>
-              <p className="text-xs text-muted-foreground font-bold uppercase">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
+            <div className="mt-4 sm:mt-6 text-center">
+              <p className="text-base sm:text-lg font-black uppercase italic text-white tracking-tighter">{currentKit.name}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase">{patternLabels[currentKit.shirtPattern]} • {collarLabels[currentKit.collarStyle]}</p>
             </div>
           </CardContent>
         </Card>
 
 
-        <Card className="sm:col-span-3 border-0 bg-muted/10">
+        <Card className="lg:col-span-3 border-0 bg-muted/10">
           <CardHeader className="pb-2 pt-3 px-3">
             <CardTitle className="text-xs flex items-center gap-1.5">
               <Palette className="h-3.5 w-3.5 text-primary" /> Personalizar
@@ -769,6 +770,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           </CardContent>
         </Card>
       </div>
+
 
       {/* Quick Templates */}
       <Card className="border-0 bg-muted/10">
