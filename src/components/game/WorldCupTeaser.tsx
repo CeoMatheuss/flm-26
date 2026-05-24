@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Trophy, Globe, Loader2, Sparkles, ChevronRight } from 'lucide-react';
+import { Trophy, Globe, Loader2, Sparkles, ChevronRight, Music } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
@@ -36,7 +36,36 @@ export function WorldCupTeaser({ userId, onOpenWorldCup }: Props) {
     fetchActiveWorldCup();
   }, []);
 
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const toggleMusic = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) {
+      audioRef.current = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+    }
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(console.error);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
   if (loading) return null;
+
   if (!tournament) return null;
 
   return (
@@ -63,9 +92,18 @@ export function WorldCupTeaser({ userId, onOpenWorldCup }: Props) {
                 <Badge className="bg-primary/20 text-primary border-none text-[8px] font-black tracking-widest uppercase">
                   Mundial de Clubes
                 </Badge>
-                <span className="flex items-center gap-1 text-[8px] font-bold text-muted-foreground uppercase">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={`h-6 w-6 rounded-full ${isPlaying ? 'text-primary animate-pulse' : 'text-muted-foreground'}`}
+                  onClick={toggleMusic}
+                >
+                  <Music className="h-3 w-3" />
+                </Button>
+                <span className="flex items-center gap-1 text-[8px] font-bold text-muted-foreground uppercase ml-auto">
                   <Globe className="h-2 w-2" /> {tournament.host_country || 'Global'}
                 </span>
+
               </div>
               <h3 className="text-lg md:text-xl font-black italic uppercase tracking-tighter text-white leading-none">
                 Super Mundial <span className="text-primary italic font-black">FLM</span>
