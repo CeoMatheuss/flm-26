@@ -2140,6 +2140,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
     blocked={blocked}
     blockedReason={blockedReason}
     liveStaminaMap={liveStaminaMap}
+    playerRatings={playerRatings}
   />;
 }
 
