@@ -52,11 +52,13 @@ export function PlayerRankingTab() {
   const fetchPlayerRankings = async () => {
     setLoading(true);
     try {
+      // Primeiro, tentamos buscar no ranking global persistido
       let query = supabase
         .from('global_player_ranking')
         .select(`
           *,
           players:world_players (
+            id,
             name,
             position,
             overall,
@@ -64,8 +66,9 @@ export function PlayerRankingTab() {
             age,
             market_value,
             nationality,
-            clubs (
-              club_name,
+            squad_status,
+            clubs:world_teams (
+              name,
               logo_url,
               shield_config
             )
@@ -74,22 +77,79 @@ export function PlayerRankingTab() {
 
       if (category === 'promising') {
         query = query.order('ranking_points', { ascending: false }).filter('players.age', 'lte', 21);
-      } else if (category === 'valuable') {
-        query = query.order('ranking_points', { ascending: false }); // Logic handled by ordering below if needed, but the view can help
       } else {
         query = query.order('ranking_points', { ascending: false });
       }
 
-      const { data, error } = await query.limit(100);
+      const { data: rankingData, error: rankingError } = await query.limit(100);
 
-      if (error) throw error;
-      setRankings(data as any[]);
+      // Se houver erro ou poucos dados, complementamos com jogadores reais do world_players
+      // para garantir que "todos os jogadores reais" apareçam
+      let finalData = rankingData || [];
+
+      if (rankingError || finalData.length < 50) {
+        // Busca jogadores com maior overall que podem ainda não estar no ranking persistido
+        const { data: allPlayers } = await supabase
+          .from('world_players')
+          .select(`
+            id,
+            name,
+            position,
+            overall,
+            potential,
+            age,
+            market_value,
+            nationality,
+            squad_status,
+            reputation,
+            clubs:world_teams (
+              name,
+              logo_url,
+              shield_config
+            )
+          `)
+          .order('overall', { ascending: false })
+          .limit(100);
+
+        if (allPlayers) {
+          // Mapeia para o formato do ranking se não existir no rankingData
+          const existingPlayerIds = new Set(finalData.map(r => r.player_id || r.id));
+          
+          const missingPlayers = allPlayers
+            .filter(p => !existingPlayerIds.has(p.id))
+            .map(p => ({
+              id: p.id,
+              player_id: p.id,
+              ranking_points: p.overall * 10, // Pontuação baseada em overall como fallback
+              reputation_score: p.reputation || 50,
+              reputation_level: p.reputation >= 90 ? 'Mundial' : p.reputation >= 75 ? 'Continental' : 'Nacional',
+              current_position: 0,
+              prev_position: 0,
+              total_goals: 0,
+              total_assists: 0,
+              avg_rating: 6.0,
+              players: {
+                ...p,
+                clubs: p.clubs ? { 
+                  club_name: (p.clubs as any).name, 
+                  logo_url: (p.clubs as any).logo_url, 
+                  shield_config: (p.clubs as any).shield_config 
+                } : null
+              }
+            }));
+          
+          finalData = [...finalData, ...missingPlayers].sort((a, b) => b.ranking_points - a.ranking_points);
+        }
+      }
+
+      setRankings(finalData as any[]);
     } catch (error) {
       console.error('Error fetching player rankings:', error);
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchPlayerRankings();
