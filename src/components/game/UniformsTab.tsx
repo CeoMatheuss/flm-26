@@ -433,7 +433,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     const managerName = userProfile?.display_name || 'do clube';
     const newsText = `👕 O ${clubName} acaba de lançar uma nova coleção de uniformes! O Manager ${managerName} convida todos para verem o novo manto.`;
 
-    await supabase.from('newspaper_entries').insert({
+    await supabase.from('newspaper_entries').insert([{
       user_id: userId,
       text: newsText,
       category: 'ELENCO',
@@ -444,7 +444,8 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         kit: kits[activeKit],
         managerName: managerName
       }
-    });
+    }] as any);
+
 
   };
 
