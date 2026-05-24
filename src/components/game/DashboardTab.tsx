@@ -113,7 +113,21 @@ function GlobalRankingMini({ userId }: { userId?: string }) {
     load();
   }, [userId]);
 
+  const { winStreak } = useMemo(() => {
+    const playedMatches = club.matches.filter(m => m.played);
+    let ws = 0;
+    for (let i = playedMatches.length - 1; i >= 0; i--) {
+      const r = playedMatches[i].result;
+      if (!r) break;
+      const isWin = playedMatches[i].isHome ? r.home > r.away : r.away > r.home;
+      if (isWin) { ws++; }
+      else break;
+    }
+    return { winStreak: ws };
+  }, [club.matches]);
+
   if (loading || !me) return null;
+
 
 
   const variation = me.prev_position ? me.prev_position - pos! : 0;
