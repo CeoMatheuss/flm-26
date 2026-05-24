@@ -51,7 +51,7 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
       <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all" />
 
       {/* Card Content */}
-      <div className="relative h-full flex flex-col p-4 z-10">
+      <div className="relative h-full flex flex-col p-2.5 sm:p-4 z-10">
         {/* Top Section: OVR & Position */}
         <div className="flex justify-between items-start">
           <div className="flex flex-col items-center">
