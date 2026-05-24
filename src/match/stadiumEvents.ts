@@ -10,6 +10,7 @@
  */
 
 import type { StadiumModules } from './stadiumEconomics';
+import { getStadiumCapacity } from '@/types/infrastructure';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────
 export type EventCategory =

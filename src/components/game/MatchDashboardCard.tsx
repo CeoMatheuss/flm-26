@@ -552,7 +552,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
                     <Info className="h-3 w-3 text-amber-500 cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-[10px] max-w-[200px]">{resolvedStadium.shiftReason}</p>
+                    <p className="text-[10px] max-w-[200px]">{(resolvedStadium as any).shiftReason || 'Partida transferida devido a evento.'}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
