@@ -23,13 +23,16 @@ interface WorldCupMatch {
 
 const toShieldClub = (t: any) => {
   if (!t) return null;
-  const club = t.clubs || {};
+  const club = t?.clubs || {};
   return {
     ...club,
-    shield_config: club.shield_config,
-    name: club.name
+    shield_config: club?.shield_config,
+    name: club?.name || 'Time'
   };
 };
+
+const getClubName = (t: any) => t?.clubs?.name || 'Time';
+
 
 export function WorldCupTab({ userId }: { userId: string }) {
   const [cup, setCup] = useState<any>(null);
