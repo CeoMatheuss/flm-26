@@ -1,4 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+// @ts-ignore
+import useSound from 'use-sound';
+
 import { Club, Player } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
@@ -16,6 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
+import { WorldCupTeaser } from './WorldCupTeaser';
+
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { WaitingListPanel } from './WaitingListPanel';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
@@ -108,7 +113,10 @@ function GlobalRankingMini({ userId }: { userId?: string }) {
     load();
   }, [userId]);
 
+
   if (loading || !me) return null;
+
+
 
   const variation = me.prev_position ? me.prev_position - pos! : 0;
 
@@ -162,7 +170,9 @@ interface Props {
   onGoToFriendly?: () => void;
   userId?: string;
   onOpenTournament?: (tournamentId: string) => void;
+  onOpenWorldCup?: () => void;
   onExploreOtherModes?: () => void;
+
   clubProfile?: ClubProfile;
   season?: number;
   currentWeek?: number;
@@ -172,7 +182,7 @@ interface Props {
   onRestAll?: () => void;
 }
 
-export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, onExploreOtherModes, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
+export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, onOpenWorldCup, onExploreOtherModes, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date>(new Date());
   const [dbPlayers, setDbPlayers] = useState<Player[]>(club.players || []);
@@ -214,6 +224,19 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       console.error('Erro ao buscar stats da liga:', error);
     }
   }, [userId]);
+
+  const { winStreak } = useMemo(() => {
+    const playedMatches = club.matches.filter(m => m.played);
+    let ws = 0;
+    for (let i = playedMatches.length - 1; i >= 0; i--) {
+      const r = playedMatches[i].result;
+      if (!r) break;
+      const isWin = playedMatches[i].isHome ? r.home > r.away : r.away > r.home;
+      if (isWin) { ws++; }
+      else break;
+    }
+    return { winStreak: ws };
+  }, [club.matches]);
 
   const refreshDashboard = useCallback(async () => {
     setIsSyncing(true);
@@ -561,6 +584,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         <LeagueStandingsMini userId={userId} />
         <GlobalRankingMini userId={userId} />
       </div>
+      
+      <WorldCupTeaser userId={userId} onOpenWorldCup={onOpenWorldCup} />
+
 
       <NewspaperCard onOpenFullPage={onOpenNewspaper} userId={userId} />
 

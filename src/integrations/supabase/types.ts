@@ -5074,6 +5074,230 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_group_standings: {
+        Row: {
+          drawn: number | null
+          goals_against: number | null
+          goals_for: number | null
+          group_id: string | null
+          id: string
+          lost: number | null
+          played: number | null
+          points: number | null
+          team_id: string | null
+          updated_at: string | null
+          won: number | null
+        }
+        Insert: {
+          drawn?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          group_id?: string | null
+          id?: string
+          lost?: number | null
+          played?: number | null
+          points?: number | null
+          team_id?: string | null
+          updated_at?: string | null
+          won?: number | null
+        }
+        Update: {
+          drawn?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          group_id?: string | null
+          id?: string
+          lost?: number | null
+          played?: number | null
+          points?: number | null
+          team_id?: string | null
+          updated_at?: string | null
+          won?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_group_standings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_group_standings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_groups: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          tournament_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          tournament_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          tournament_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_groups_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_history: {
+        Row: {
+          created_at: string | null
+          host_country: string | null
+          id: string
+          runner_up_id: string | null
+          score: string | null
+          season: number
+          tournament_name: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          host_country?: string | null
+          id?: string
+          runner_up_id?: string | null
+          score?: string | null
+          season: number
+          tournament_name: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          host_country?: string | null
+          id?: string
+          runner_up_id?: string | null
+          score?: string | null
+          season?: number
+          tournament_name?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_history_runner_up_id_fkey"
+            columns: ["runner_up_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_history_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_matches: {
+        Row: {
+          away_goals: number | null
+          away_penalty_goals: number | null
+          away_team_id: string | null
+          created_at: string | null
+          group_id: string | null
+          home_goals: number | null
+          home_penalty_goals: number | null
+          home_team_id: string | null
+          id: string
+          is_penalty_shootout: boolean | null
+          scheduled_at: string | null
+          stage: string
+          status: string | null
+          tournament_id: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          away_goals?: number | null
+          away_penalty_goals?: number | null
+          away_team_id?: string | null
+          created_at?: string | null
+          group_id?: string | null
+          home_goals?: number | null
+          home_penalty_goals?: number | null
+          home_team_id?: string | null
+          id?: string
+          is_penalty_shootout?: boolean | null
+          scheduled_at?: string | null
+          stage: string
+          status?: string | null
+          tournament_id?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          away_goals?: number | null
+          away_penalty_goals?: number | null
+          away_team_id?: string | null
+          created_at?: string | null
+          group_id?: string | null
+          home_goals?: number | null
+          home_penalty_goals?: number | null
+          home_team_id?: string | null
+          id?: string
+          is_penalty_shootout?: boolean | null
+          scheduled_at?: string | null
+          stage?: string
+          status?: string | null
+          tournament_id?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_prizes_history: {
         Row: {
           amount: number
@@ -5120,6 +5344,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tournament_stats: {
+        Row: {
+          assists: number | null
+          created_at: string | null
+          goals: number | null
+          id: string
+          is_best_gk: boolean | null
+          is_mvp: boolean | null
+          player_id: string | null
+          rating: number | null
+          red_cards: number | null
+          tournament_id: string | null
+          yellow_cards: number | null
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string | null
+          goals?: number | null
+          id?: string
+          is_best_gk?: boolean | null
+          is_mvp?: boolean | null
+          player_id?: string | null
+          rating?: number | null
+          red_cards?: number | null
+          tournament_id?: string | null
+          yellow_cards?: number | null
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string | null
+          goals?: number | null
+          id?: string
+          is_best_gk?: boolean | null
+          is_mvp?: boolean | null
+          player_id?: string | null
+          rating?: number | null
+          red_cards?: number | null
+          tournament_id?: string | null
+          yellow_cards?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "world_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_stats_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string | null
+          host_country: string | null
+          id: string
+          name: string
+          season: number
+          status: string | null
+          type: Database["public"]["Enums"]["tournament_type"]
+          updated_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          host_country?: string | null
+          id?: string
+          name: string
+          season: number
+          status?: string | null
+          type: Database["public"]["Enums"]["tournament_type"]
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          host_country?: string | null
+          id?: string
+          name?: string
+          season?: number
+          status?: string | null
+          type?: Database["public"]["Enums"]["tournament_type"]
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Relationships: []
       }
       trade_proposals: {
         Row: {
@@ -7310,6 +7627,7 @@ export type Database = {
         | "reserve"
         | "injured"
         | "suspended"
+      tournament_type: "world_cup" | "continental" | "national"
       world_competition_status:
         | "locked"
         | "pending"
@@ -7457,6 +7775,7 @@ export const Constants = {
         "injured",
         "suspended",
       ],
+      tournament_type: ["world_cup", "continental", "national"],
       world_competition_status: [
         "locked",
         "pending",

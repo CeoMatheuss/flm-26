@@ -1,237 +1,381 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Trophy, Globe, Star, Play, Clock, MapPin, Loader2, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { ClubShield } from './ClubShield';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+// @ts-ignore
+import useSound from 'use-sound';
 
-interface WorldCupMatch {
-  id: string;
-  stage: string;
-  home_team: any;
-  away_team: any;
-  home_goals: number;
-  away_goals: number;
-  home_penalty_goals: number;
-  away_penalty_goals: number;
-  has_extra_time?: boolean;
-  home_extra_goals?: number;
-  away_extra_goals?: number;
-  status: string;
-  scheduled_at: string;
-  cup_id: string;
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Trophy, Globe, Loader2, Sparkles, Star, History, Target, Users, Zap, TrendingUp, Info, Music } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { ClubShield } from './ClubShield';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+
+
+interface Props {
+  userId: string;
 }
 
-
-const toShieldClub = (t: any) => {
-  if (!t) return null;
-  const club = t?.clubs || {};
-  return {
-    ...club,
-    shield_config: club?.shield_config,
-    name: club?.name || 'Time'
-  };
-};
-
-const getClubName = (t: any) => t?.clubs?.name || 'Time';
-
-
-export function WorldCupTab({ userId }: { userId: string }) {
-  const [cup, setCup] = useState<any>(null);
-  const [matches, setMatches] = useState<WorldCupMatch[]>([]);
+export function WorldCupTab({ userId }: Props) {
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [tournament, setTournament] = useState<any>(null);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const { data: cupData, error: cupErr } = await supabase
-        .from('world_cup_competitions')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (cupErr) console.error('[WorldCup] cup error:', cupErr);
-
-      if (cupData) {
-        setCup(cupData);
-        
-        // 1. Buscar matches
-        const { data: matchData, error: matchErr } = await supabase
-          .from('world_cup_matches')
-          .select('*')
-          .eq('cup_id', cupData.id)
-          .order('scheduled_at', { ascending: true });
-
-        if (matchErr) console.error('[WorldCup] match error:', matchErr);
-
-        if (matchData && matchData.length > 0) {
-          // 2. Buscar teams
-          const teamIds = [...new Set([
-            ...matchData.map(m => m.home_team_id),
-            ...matchData.map(m => m.away_team_id)
-          ])].filter(Boolean);
-
-          const { data: teamsData } = await supabase
-            .from('world_cup_teams')
-            .select('*')
-            .in('id', teamIds);
-
-          // 3. Buscar clubes
-          const clubIds = [...new Set((teamsData || []).map(t => t.club_id))].filter(Boolean);
-          const { data: clubsData } = await supabase
-            .from('clubs')
-            .select('id, name, shield_config, logo_url, user_id, primary_color, secondary_color')
-            .in('id', clubIds);
-
-          const teamMap = new Map((teamsData || []).map(t => {
-            const club = (clubsData || []).find(c => c.id === t.club_id);
-            return [t.id, { ...t, clubs: club || { name: 'Time' } }];
-          }));
-
-          const enriched = matchData.map(m => ({
-            ...m,
-            home_team: teamMap.get(m.home_team_id),
-            away_team: teamMap.get(m.away_team_id)
-          }));
-
-          setMatches(enriched as any);
-        } else {
-          setMatches([]);
-        }
-      }
-    } catch (e) {
-      console.error('[WorldCup] load error:', e);
-    } finally {
-      setLoading(false);
+  const toggleMusic = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
     }
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(console.error);
+    }
+    setIsPlaying(!isPlaying);
   };
 
-
-  useEffect(() => { loadData(); }, [userId]);
-
-  const myMatch = matches.find(m => (m.status === 'scheduled' || m.status === 'live') && (m.home_team?.user_id === userId || m.away_team?.user_id === userId));
-
-  const handlePlayMatch = () => {
-    if (!myMatch) return;
-    navigate('/match', {
-      state: {
-        matchId: myMatch.id,
-        competition: 'Mundial de Clubes',
-        isWorldCup: true,
-        homeTeam: myMatch.home_team.clubs.name,
-        awayTeam: myMatch.away_team.clubs.name,
-        isHome: myMatch.home_team.user_id === userId
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
-    });
-  };
+    };
+  }, []);
 
-  if (loading && !cup) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
-  if (!cup) return (
-    <div className="py-20 text-center space-y-4">
-      <Globe className="h-12 w-12 text-muted-foreground/20 mx-auto" />
-      <h3 className="text-lg font-bold">Nenhum Mundial Ativo</h3>
-      <p className="text-sm text-muted-foreground">O Mundial de Clubes acontece em janelas específicas da temporada.</p>
-    </div>
-  );
+
+  useEffect(() => {
+    const fetchWorldCupData = async () => {
+      setLoading(true);
+      try {
+        // Busca o torneio mundial mais recente/ativo
+        const { data: tournaments } = await supabase
+          .from('tournaments')
+          .select('*')
+          .eq('type', 'world_cup')
+          .order('season', { ascending: false })
+          .limit(1);
+
+        if (tournaments && tournaments.length > 0) {
+          const t = tournaments[0];
+          setTournament(t);
+
+          // Busca grupos e classificações
+          const { data: groupData } = await supabase
+            .from('tournament_groups')
+            .select('*, tournament_group_standings(*, world_teams(*))')
+            .eq('tournament_id', t.id)
+            .order('name', { ascending: true });
+          
+          setGroups(groupData || []);
+
+          // Busca partidas do torneio
+          const { data: matchData } = await supabase
+            .from('tournament_matches')
+            .select('*, home:world_teams!home_team_id(*), away:world_teams!away_team_id(*)')
+            .eq('tournament_id', t.id)
+            .order('scheduled_at', { ascending: true });
+          
+          setMatches(matchData || []);
+        }
+
+        // Busca histórico de campeões
+        const { data: historyData } = await supabase
+          .from('tournament_history')
+          .select('*, winner:world_teams!winner_id(*)')
+          .eq('tournament_name', 'Super Mundial de Clubes')
+          .order('season', { ascending: false });
+        
+        setHistory(historyData || []);
+
+      } catch (err) {
+        console.error('Error fetching world cup data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWorldCupData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-sm font-bold text-muted-foreground animate-pulse uppercase tracking-widest">Sincronizando Mundial...</p>
+      </div>
+    );
+  }
+
+  if (!tournament) {
+    return (
+      <div className="py-20 text-center space-y-4 max-w-md mx-auto px-4">
+        <div className="h-20 w-20 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Globe className="h-10 w-10 text-muted-foreground opacity-20" />
+        </div>
+        <h3 className="text-xl font-black italic uppercase tracking-tighter">Nenhum Mundial em andamento</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          O Super Mundial de Clubes ocorre a cada 4 temporadas. Continue evoluindo seu clube e subindo no ranking para garantir sua vaga na próxima edição!
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0a0a1a] via-[#1a1a3a] to-[#0a0a1a] border border-yellow-500/30 p-6 shadow-2xl">
-        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-          <Globe className="h-32 w-32 text-yellow-500" />
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0a0a1a] via-[#1a1a3a] to-[#0a0a1a] border border-primary/30 p-8 shadow-2xl">
+        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+          <Trophy className="h-64 w-64 text-primary rotate-12" />
         </div>
         
-        <div className="relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-500 text-[10px] font-black uppercase tracking-widest border border-yellow-500/30">
-            <Star className="h-3 w-3" /> Competição Mundial de Elite
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-4 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] border border-primary/30">
+              <Sparkles className="h-3 w-3" /> Temporada {tournament.season}
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white uppercase italic">
+              Super Mundial <span className="text-primary">FLM</span>
+            </h1>
+            <div className="flex items-center gap-4 justify-center md:justify-start">
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-black">
+                {tournament.status === 'scheduled' ? 'AGUARDANDO SORTEIO' : tournament.status.toUpperCase()}
+              </Badge>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`h-8 rounded-full border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 ${isPlaying ? 'animate-pulse ring-2 ring-primary/50' : ''}`}
+                onClick={toggleMusic}
+              >
+                <Music className="h-4 w-4 mr-2" />
+                {isPlaying ? 'Desligar Hino' : 'Ouvir Hino'}
+              </Button>
+              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                <Globe className="h-4 w-4" /> Sede: {tournament.host_country || 'A definir'}
+              </div>
+            </div>
+
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter">
-            {cup.name}
-          </h1>
-          <p className="text-muted-foreground text-sm max-w-md">
-            Os melhores clubes online do mundo disputam a glória eterna. Início oficial em 20/06 com times reais e bots de elite.
-          </p>
+
+          {/* User's Next Match Widget */}
+          {(() => {
+            const myMatch = matches.find(m => (m.status === 'scheduled' || m.status === 'live') && (m.home?.user_id === userId || m.away?.user_id === userId));
+            if (!myMatch) return null;
+            
+            const isHome = myMatch.home?.user_id === userId;
+            const opp = isHome ? myMatch.away : myMatch.home;
+            
+            return (
+              <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[280px] shadow-2xl overflow-hidden group/match shrink-0 animate-in slide-in-from-right duration-500">
+                <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
+                  <span className="text-[9px] font-black text-primary uppercase tracking-widest">PRÓXIMO JOGO</span>
+                  <Badge variant="outline" className="text-[8px] h-4 bg-background/50">{myMatch.stage.toUpperCase()}</Badge>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      <ClubShield club={{
+                        primaryColor: myMatch.home?.primary_color,
+                        secondaryColor: myMatch.home?.secondary_color,
+                        shieldPattern: myMatch.home?.shield_pattern,
+                        shieldShape: myMatch.home?.shield_shape
+                      } as any} size={32} />
+                      <span className="text-[10px] font-bold truncate w-full text-center">{myMatch.home?.name}</span>
+                    </div>
+                    <span className="text-xs font-black text-white/40 italic">VS</span>
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      <ClubShield club={{
+                        primaryColor: myMatch.away?.primary_color,
+                        secondaryColor: myMatch.away?.secondary_color,
+                        shieldPattern: myMatch.away?.shield_pattern,
+                        shieldShape: myMatch.away?.shield_shape
+                      } as any} size={32} />
+                      <span className="text-[10px] font-bold truncate w-full text-center">{myMatch.away?.name}</span>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full h-8 text-[10px] font-black uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-500 group-hover/match:scale-105 transition-all"
+                    onClick={() => {
+                      (window as any).dispatchEvent(new CustomEvent('flm:navigate-to-match', { 
+                        detail: { 
+                          matchId: myMatch.id,
+                          competition: 'Super Mundial',
+                          opponentName: opp?.name,
+                          opponentStrength: opp?.strength,
+                          isHome: isHome
+                        } 
+                      }));
+                    }}
+                  >
+                    Entrar em Campo
+                  </Button>
+                </div>
+              </Card>
+            );
+          })()}
+
+          {(() => {
+            const myMatch = matches.find(m => (m.status === 'scheduled' || m.status === 'live') && (m.home?.user_id === userId || m.away?.user_id === userId));
+            if (!myMatch) return null;
+            
+            const isHome = myMatch.home?.user_id === userId;
+            const opp = isHome ? myMatch.away : myMatch.home;
+            
+            return (
+              <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[280px] shadow-2xl overflow-hidden group/match shrink-0 animate-in slide-in-from-right duration-500">
+                <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
+                  <span className="text-[9px] font-black text-primary uppercase tracking-widest">PRÓXIMO JOGO</span>
+                  <Badge variant="outline" className="text-[8px] h-4 bg-background/50">{myMatch.stage.toUpperCase()}</Badge>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      <ClubShield club={{
+                        primaryColor: myMatch.home?.primary_color,
+                        secondaryColor: myMatch.home?.secondary_color,
+                        shieldPattern: myMatch.home?.shield_pattern,
+                        shieldShape: myMatch.home?.shield_shape
+                      } as any} size={32} />
+                      <span className="text-[10px] font-bold truncate w-full text-center">{myMatch.home?.name}</span>
+                    </div>
+                    <span className="text-xs font-black text-white/40 italic">VS</span>
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      <ClubShield club={{
+                        primaryColor: myMatch.away?.primary_color,
+                        secondaryColor: myMatch.away?.secondary_color,
+                        shieldPattern: myMatch.away?.shield_pattern,
+                        shieldShape: myMatch.away?.shield_shape
+                      } as any} size={32} />
+                      <span className="text-[10px] font-bold truncate w-full text-center">{myMatch.away?.name}</span>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full h-8 text-[10px] font-black uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-500 group-hover/match:scale-105 transition-all"
+                  >
+                    Entrar em Campo
+                  </Button>
+                </div>
+              </Card>
+            );
+          })()}
 
 
-          {myMatch && (
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md max-w-sm mt-6">
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase text-yellow-500">
-                  <span>Próximo Desafio</span>
-                  <Badge variant="outline" className="text-[8px] border-yellow-500/30">{myMatch.stage}</Badge>
-                </div>
-                <div className="flex items-center justify-around gap-4">
-                  <div className="flex flex-col items-center gap-2">
-                    <ClubShield club={toShieldClub(myMatch.home_team) as any} size={48} />
-                    <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.home_team.clubs.name}</span>
-                  </div>
-                  <span className="text-xs font-black text-white/40 italic">VS</span>
-                  <div className="flex flex-col items-center gap-2">
-                    <ClubShield club={toShieldClub(myMatch.away_team) as any} size={48} />
-                    <span className="text-[10px] font-bold text-white/80 truncate w-20 text-center">{myMatch.away_team.clubs.name}</span>
-                  </div>
-                </div>
-                <Button onClick={handlePlayMatch} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-black text-xs uppercase tracking-widest">
-                  <Play className="h-3 w-3 mr-2 fill-current" /> Começar Partida
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          {/* Trophy Display */}
+          <div className="relative group">
+            <div className="absolute -inset-4 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/30 transition-all duration-700" />
+            <div className="relative h-40 w-40 md:h-52 md:w-52 flex items-center justify-center transform group-hover:scale-105 transition-transform duration-500">
+               <Trophy className="h-32 w-32 md:h-44 md:w-44 text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {matches.map(m => (
-          <Card key={m.id} className={`bg-card/40 border-border/50 hover:border-yellow-500/30 transition-colors ${m.home_team?.user_id === userId || m.away_team?.user_id === userId ? 'ring-1 ring-yellow-500/40' : ''}`}>
-            <CardContent className="p-4 flex flex-col gap-2">
-              <div className="flex items-center justify-between text-[8px] font-black uppercase text-yellow-500/60 mb-1">
-                <span>{m.stage === 'quarter-finals' ? 'Quartas' : m.stage === 'semi-finals' ? 'Semi' : 'Final'}</span>
-                <span className="flex items-center gap-1"><Clock className="h-2 w-2" /> {new Date(m.scheduled_at).toLocaleDateString('pt-BR')}</span>
-              </div>
-              
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <ClubShield club={toShieldClub(m.home_team) as any} size={32} />
-                  <span className="text-xs font-black truncate">{m.home_team.clubs.name}</span>
-                </div>
+      <Tabs defaultValue="groups" className="w-full">
+        <TabsList className="grid grid-cols-3 h-14 bg-muted/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5">
+          <TabsTrigger value="groups" className="rounded-xl font-black text-xs uppercase tracking-widest gap-2">
+            <Users className="h-4 w-4" /> Grupos
+          </TabsTrigger>
+          <TabsTrigger value="matches" className="rounded-xl font-black text-xs uppercase tracking-widest gap-2">
+            <Zap className="h-4 w-4" /> Mata-Mata
+          </TabsTrigger>
+          <TabsTrigger value="history" className="rounded-xl font-black text-xs uppercase tracking-widest gap-2">
+            <History className="h-4 w-4" /> História
+          </TabsTrigger>
+        </TabsList>
 
-                <div className="flex flex-col items-center justify-center min-w-[70px]">
-                  {m.status === 'finished' ? (
-                    <div className="flex flex-col items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-black tabular-nums">{m.home_goals + (m.home_extra_goals || 0)}</span>
-                        <span className="text-[10px] text-white/20">-</span>
-                        <span className="text-sm font-black tabular-nums">{m.away_goals + (m.away_extra_goals || 0)}</span>
-                      </div>
-                      {m.has_extra_time && (
-                        <span className="text-[7px] font-bold text-yellow-500 uppercase tracking-widest mt-0.5">Prorrogação</span>
-                      )}
-                      {(m.home_penalty_goals > 0 || m.away_penalty_goals > 0) && (
-                        <span className="text-[8px] font-black text-emerald-400 mt-1">
-                          ({m.home_penalty_goals} - {m.away_penalty_goals}) PÊNALTIS
+        <TabsContent value="groups" className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {groups.map((group) => (
+              <Card key={group.id} className="bg-card/40 border-border/50 rounded-3xl overflow-hidden backdrop-blur-sm">
+                <CardHeader className="bg-muted/30 py-3 border-b border-border/50 text-center">
+                  <CardTitle className="text-sm font-black uppercase tracking-widest text-primary italic">
+                    {group.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border/20">
+                    {group.tournament_group_standings.sort((a: any, b: any) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against)).map((standing: any, idx: number) => (
+                      <div key={standing.id} className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors">
+                        <span className={`text-[10px] font-black w-4 text-center ${idx < 2 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                          {idx + 1}
                         </span>
-                      )}
+                        <ClubShield 
+                          club={{
+                            primaryColor: standing.world_teams?.primary_color || '#444',
+                            secondaryColor: standing.world_teams?.secondary_color || '#fff',
+                            shieldPattern: standing.world_teams?.shield_pattern || 'solid',
+                            shieldShape: standing.world_teams?.shield_shape || 'classic',
+                          } as any} 
+                          size={24} 
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-bold truncate uppercase">{standing.world_teams?.name || 'Vaga aberta'}</p>
+                        </div>
+                        <span className="text-xs font-black text-white">{standing.points} <span className="text-[8px] font-normal text-muted-foreground">PTS</span></span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="matches" className="mt-6">
+           {/* Knockout Bracket View */}
+           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground space-y-4 bg-muted/10 rounded-[2.5rem] border-2 border-dashed border-white/5">
+              <Zap className="h-10 w-10 opacity-20" />
+              <p className="text-sm font-black uppercase tracking-widest italic">Aguardando definição dos grupos</p>
+              <p className="text-[10px] max-w-xs text-center opacity-60">
+                Os 16 melhores clubes da fase de grupos avançarão para o mata-mata em jogo único até a grande final.
+              </p>
+           </div>
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {history.length > 0 ? history.map((h) => (
+              <Card key={h.id} className="bg-gradient-to-br from-card/80 to-background border-border/50 rounded-3xl overflow-hidden p-6 relative group hover:border-yellow-500/30 transition-all">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Trophy className="h-12 w-12 text-yellow-500" />
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="h-20 w-20 rounded-full border-4 border-yellow-500/20 bg-yellow-500/5 flex items-center justify-center p-3">
+                    <ClubShield 
+                      club={{
+                        primaryColor: h.winner?.primary_color || '#444',
+                        secondaryColor: h.winner?.secondary_color || '#fff',
+                        shieldPattern: h.winner?.shield_pattern || 'solid',
+                        shieldShape: h.winner?.shield_shape || 'classic',
+                      } as any} 
+                      size={50} 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-yellow-500 uppercase tracking-widest">CAMPEÃO TEMPORADA {h.season}</p>
+                    <h3 className="text-xl font-black text-white italic tracking-tighter uppercase">{h.winner?.name || 'Desconhecido'}</h3>
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold">
+                       <span className="flex items-center gap-1"><Target className="h-3 w-3" /> Placar: {h.score}</span>
+                       <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> Sede: {h.host_country}</span>
                     </div>
-                  ) : (
-                    <Badge variant="outline" className="text-[8px] uppercase border-yellow-500/20 text-yellow-500/80">AGENDADO</Badge>
-                  )}
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                  <span className="text-xs font-black truncate text-right">{m.away_team.clubs.name}</span>
-                  <ClubShield club={toShieldClub(m.away_team) as any} size={32} />
-                </div>
+              </Card>
+            )) : (
+              <div className="col-span-full py-20 text-center text-muted-foreground italic text-sm">
+                Nenhum campeão registrado ainda. O primeiro Super Mundial aguarda o seu legado.
               </div>
-            </CardContent>
-          </Card>
-        ))}
-
-      </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

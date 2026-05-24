@@ -599,6 +599,35 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   }, [handleSetViewedClubName]);
 
   useEffect(() => {
+    const handleNavigateToMatch = (e: any) => {
+      const match = e.detail;
+      if (!match?.matchId) return;
+      
+      navigate('/match', {
+        replace: true,
+        state: {
+          homeTeam: match.isHome ? game.club.name : match.opponentName,
+          awayTeam: match.isHome ? match.opponentName : game.club.name,
+          homePlayers: game.club.players,
+          homeStrength: Math.round(game.club.players.reduce((s, p) => s + p.overall, 0) / Math.max(1, game.club.players.length)),
+          awayStrength: match.opponentStrength || 70,
+          matchId: match.matchId,
+          tactics: game.tactics || defaultTactics,
+          stadiumName: match.isHome ? game.club.stadiumName : 'Estádio do Mundial',
+          stadiumCapacity: 50000, // Mundial stadium
+          isHome: match.isHome,
+          competition: match.competition || 'Super Mundial',
+          tieBreaker: 'both',
+        },
+      });
+    };
+
+    window.addEventListener('flm:navigate-to-match', handleNavigateToMatch);
+    return () => window.removeEventListener('flm:navigate-to-match', handleNavigateToMatch);
+  }, [game.club.name, game.club.players, game.tactics, game.club.stadiumName, navigate]);
+
+  useEffect(() => {
+
     const st = location.state as {
       serverMatchResult?: { matchDbId: string; homeGoals: number; awayGoals: number; competition?: string };
       playTournamentMatch?: { matchId: string; tournamentMatchId: string; opponentName: string; opponentStrength: number; isHome: boolean; competition: string; tieBreaker?: 'none' | 'extra_time' | 'penalties' | 'both' };
