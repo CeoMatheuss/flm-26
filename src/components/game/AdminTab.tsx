@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AdminTournamentTab } from './AdminTournamentTab';
 import { AdminUpdatesPanel } from './AdminUpdatesPanel';
 import { SystemPanel } from './admin/SystemPanel';
+import { AutoTestSystem } from './admin/AutoTestSystem';
 import { AdminSupportPanel } from './admin/AdminSupportPanel';
 import { FinancePanel } from './admin/FinancePanel';
 import { CustomizationPanel } from './admin/CustomizationPanel';
@@ -131,7 +132,7 @@ export function AdminTab({ userId, isFounder }: Props) {
       customization: ['customization_panel'],
       system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
       maintenance:   ['maintenance', 'direct_msg'],
-      simulation:    ['simulation_panel'],
+      simulation:    ['simulation_panel', 'auto_test'],
     };
     const list = map[activeCategory] || ['users'];
     setActiveTab(prev => list.includes(prev) ? prev : list[0]);
@@ -844,6 +845,10 @@ export function AdminTab({ userId, isFounder }: Props) {
 
           <TabsContent value="simulation_panel" className="space-y-3 mt-3">
             <SystemPanel adminUserId={userId} sections={['sim']} defaultSection="sim" />
+          </TabsContent>
+
+          <TabsContent value="auto_test" className="space-y-3 mt-3">
+            <AutoTestSystem />
           </TabsContent>
 
           <TabsContent value="beta_access" className="space-y-3 mt-3">
