@@ -194,7 +194,7 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
             </div>
 
             <div className="flex flex-col gap-2">
-              <Button onClick={() => onPromote(prospect.id)} className="gap-2 bg-primary hover:bg-primary/90 font-bold px-6">
+              <Button onClick={() => setIsConfirmingPromotion(true)} className="gap-2 bg-primary hover:bg-primary/90 font-bold px-6">
                 <ArrowUpCircle className="h-4 w-4" /> Subir Profissional
               </Button>
               <Button variant="outline" onClick={() => onSell(prospect.id)} className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 font-bold">
