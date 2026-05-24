@@ -64,7 +64,7 @@ export function useMatchState(initialState: any, userId?: string) {
     const isDraw = homeGoals === awayGoals;
     const outcome = isWin ? 'win' : isDraw ? 'draw' : 'loss';
 
-    deps.setClub(prev => {
+    deps.setClub(async prev => {
       const match = prev.matches.find(m => m.id === matchId);
       if (match?.played) return prev; 
       
