@@ -36,9 +36,9 @@ export function calculateFanGrowth(input: FanGrowthInput): FanGrowthResult {
   // Valores base para times pequenos (reputação < 30)
   const baseGains: Record<MatchImportance, Record<RankingOutcome, [number, number]>> = {
     amistoso: {
-      win: [10, 50],
-      draw: [0, 10],
-      loss: [-10, -5]
+      win: [150, 450],
+      draw: [40, 100],
+      loss: [-50, -10]
     },
     liga: {
       win: [100, 300],
