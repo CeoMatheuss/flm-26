@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, Users, DollarSign, Clock, Package, 
   CheckCircle2, AlertCircle, ShoppingBag, Truck,
-  Calendar, ShoppingCart, Activity, LayoutDashboard
+  Calendar, ShoppingCart, Activity, LayoutDashboard,
+  Info, ArrowRight
 } from 'lucide-react';
+
 import { OfflineSummary } from '@/types/store';
 import { formatMoney } from '@/lib/formatMoney';
 import { motion, AnimatePresence } from 'framer-motion';
