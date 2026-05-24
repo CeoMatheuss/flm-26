@@ -84,10 +84,10 @@ export function ScoutsTab({ userId, budget }: { userId: string, budget: number }
         supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       ]);
 
-      if (scoutsRes.data) setMyScouts(scoutsRes.data as ScoutV3[]);
-      if (marketRes.data) setMarketPool(marketRes.data as ScoutMarketPool[]);
-      if (missionsRes.data) setMissions(missionsRes.data as ScoutMissionV3[]);
-      if (reportsRes.data) setReports(reportsRes.data as ScoutReportV3[]);
+      if (scoutsRes.data) setMyScouts(scoutsRes.data as unknown as ScoutV3[]);
+      if (marketRes.data) setMarketPool(marketRes.data as unknown as ScoutMarketPool[]);
+      if (missionsRes.data) setMissions(missionsRes.data as unknown as ScoutMissionV3[]);
+      if (reportsRes.data) setReports(reportsRes.data as unknown as ScoutReportV3[]);
     } catch (err) {
       console.error(err);
       toast.error('Erro ao carregar dados do scouting');
@@ -144,7 +144,7 @@ export function ScoutsTab({ userId, budget }: { userId: string, budget: number }
         <span className="flex items-center gap-1">{icon} {label}</span>
         <span className={value > 80 ? 'text-emerald-400' : value > 60 ? 'text-amber-400' : 'text-red-400'}>{value}</span>
       </div>
-      <Progress value={value} className="h-1 bg-white/5" indicatorClassName={value > 80 ? 'bg-emerald-500' : value > 60 ? 'bg-amber-500' : 'bg-red-500'} />
+      <Progress value={value} className="h-1 bg-white/5" />
     </div>
   );
 
@@ -224,7 +224,7 @@ export function ScoutsTab({ userId, budget }: { userId: string, budget: number }
                     <div className="pt-2">
                       <h3 className="font-black text-white uppercase italic text-lg leading-tight group-hover:text-primary transition-colors">{scout.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className={`text-[8px] font-black uppercase ${LEVEL_CONFIG[scout.level]?.color || ''}`}>
+                        <Badge variant="outline" className={`text-[8px] font-black uppercase ${LEVEL_CONFIG[scout.level as ScoutLevel]?.color || ''}`}>
                           {scout.level}
                         </Badge>
                         <span className="text-[10px] text-zinc-500 font-bold flex items-center gap-1">
