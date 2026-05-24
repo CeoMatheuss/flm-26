@@ -185,7 +185,7 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
                         onChange={(e) => setTerms(p => ({ ...p, optionalPurchasePrice: Number(e.target.value) }))}
                         className="h-8 bg-zinc-950 border-zinc-800 pl-7 text-xs"
                       />
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] font-bold">R$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] font-bold">FL$</span>
                     </div>
                   )}
                   <Switch 
