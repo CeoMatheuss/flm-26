@@ -370,25 +370,20 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
   const resolvedStadium = useMemo(() => {
     if (!nextMatch) return { name: '', isShifted: false };
+    const stadiumInfo = { 
+      stadiumName: club.stadiumName, 
+      stadiumOps: club.stadiumOps,
+      stadiumLevel: stadiumLevel || 1 
+    };
     return resolveMatchStadium(
       nextMatch.date,
-      { stadiumName: club.stadiumName, stadiumOps: club.stadiumOps },
+      stadiumInfo,
       nextMatch.isHome ? nextMatch.away : nextMatch.home,
       nextMatch.isHome
     );
-  }, [nextMatch, club.stadiumName, club.stadiumOps]);
+  }, [nextMatch, club.stadiumName, club.stadiumOps, stadiumLevel]);
 
-  const stadiumCapacity = useMemo(() => {
-    // Busca a capacidade base pelo nível do estádio
-    const baseCap = getStadiumCapacity(stadiumLevel || 1);
-    
-    // Se tivermos as operações do estádio (danos), aplicamos a redução
-    if (club.stadiumOps?.damages) {
-      return getEffectiveCapacity(baseCap, club.stadiumOps.damages);
-    }
-    
-    return baseCap;
-  }, [stadiumLevel, club.stadiumOps?.damages]);
+  const stadiumCapacity = resolvedStadium.capacity;
 
   const handleGoToMatch = () => {
     if (!nextMatch) return;

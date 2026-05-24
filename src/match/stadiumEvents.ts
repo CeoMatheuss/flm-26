@@ -440,12 +440,33 @@ export function isDateBlockedByEvents(matchDate: string, acceptedEvents: Stadium
  */
 export function resolveMatchStadium(
   matchDate: string,
-  homeClub: { stadiumName: string; stadiumOps?: StadiumOpsState },
-  awayClubName: string, // Idealmente teríamos o awayClub completo, mas vamos simplificar
+  homeClub: { stadiumName: string; stadiumOps?: StadiumOpsState; stadiumLevel?: number },
+  awayClubName: string,
   isHome: boolean
-): { name: string; isShifted: boolean; shiftReason?: string } {
+): { name: string; isShifted: boolean; shiftReason?: string; capacity: number } {
+  const baseCapacity = getStadiumCapacity(homeClub.stadiumLevel || 1);
+  const effectiveCapacity = getEffectiveCapacity(baseCapacity, homeClub.stadiumOps?.damages || []);
+
   if (!isHome) {
-    // Se somos visitantes, o estádio já é "Estádio do Oponente" (fixo por enquanto no Dashboard)
+    return { name: `Arena ${awayClubName}`, isShifted: false, capacity: 20000 }; // Fallback para fora
+  }
+
+  const blocked = isDateBlockedByEvents(matchDate, homeClub.stadiumOps?.acceptedEvents || []);
+  if (blocked.blocked) {
+    return {
+      name: 'Estádio Municipal (Neutro)',
+      isShifted: true,
+      shiftReason: `O ${homeClub.stadiumName} está reservado para: ${blocked.eventLabel}`,
+      capacity: 15000
+    };
+  }
+
+  return { 
+    name: homeClub.stadiumName || 'Estádio Municipal', 
+    isShifted: false,
+    capacity: effectiveCapacity
+  };
+}
     // Mas se quisermos ser precisos, precisaríamos das stadiumOps do oponente (não disponível aqui)
     return { name: `Estádio ${awayClubName}`, isShifted: false };
   }
