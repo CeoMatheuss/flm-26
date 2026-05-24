@@ -174,7 +174,7 @@ export function UpgradesTab({ infrastructure, budget, isPremium, onUpgradeFacili
                   <div>
                     <div className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Custo</div>
                     <div className={cn('text-sm font-black', canAfford ? 'text-foreground' : 'text-red-400')}>
-                      {maxed ? '—' : formatMoney(c.cost)}
+                      {maxed ? '—' : `FL$ ${c.cost.toLocaleString()}`}
                     </div>
                     <div className="text-[9px] text-muted-foreground mt-0.5">
                       {isPremium ? 'Premium: instantâneo' : 'Duração: 24h'}
