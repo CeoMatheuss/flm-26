@@ -285,8 +285,12 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const tiredPlayers = club.players.filter(p => p.stamina < 45);
   const showFatigueWarning = tiredPlayers.length >= 3;
 
-  const playedMatchesCount = club.stats.wins + club.stats.draws + club.stats.losses;
-  const winRate = playedMatchesCount > 0 ? Math.round(((club.stats.wins * 3 + club.stats.draws) / (playedMatchesCount * 3)) * 100) : 0;
+  const liveWins = liveStats?.wins ?? club.stats.wins;
+  const liveDraws = liveStats?.draws ?? club.stats.draws;
+  const liveLosses = liveStats?.losses ?? club.stats.losses;
+  const playedMatchesCount = liveWins + liveDraws + liveLosses;
+  const winRate = playedMatchesCount > 0 ? Math.round(((liveWins * 3 + liveDraws) / (playedMatchesCount * 3)) * 100) : 0;
+
 
   const last5 = club.matches.filter(m => m.played).slice(-5);
   const recentWins = last5.filter(m => m.result && (m.isHome ? m.result.home > m.result.away : m.result.away > m.result.home) && !(m as any).isFriendly).length;
