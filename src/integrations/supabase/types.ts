@@ -6999,6 +6999,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_club_fans: {
+        Args: { _delta: number; _user_id: string }
+        Returns: undefined
+      }
       increment_cup_goals: {
         Args: { p_cup_id: string; p_player_id: string; p_team_id: string }
         Returns: undefined
