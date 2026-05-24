@@ -120,9 +120,9 @@ export function WorldCupTab({ userId }: Props) {
         <div className="h-20 w-20 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-6">
           <Globe className="h-10 w-10 text-muted-foreground opacity-20" />
         </div>
-        <h3 className="text-xl font-black italic uppercase tracking-tighter">Nenhum Mundial em andamento</h3>
+        <h3 className="text-xl font-black italic uppercase tracking-tighter">Mundial em Preparação</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          O Super Mundial de Clubes ocorre a cada 4 temporadas. Continue evoluindo seu clube e subindo no ranking para garantir sua vaga na próxima edição!
+          O Super Mundial de Clubes começa no dia 20 da temporada. Prepare seu elenco para o maior desafio do planeta!
         </p>
       </div>
     );
