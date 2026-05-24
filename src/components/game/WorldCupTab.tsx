@@ -164,6 +164,53 @@ export function WorldCupTab({ userId }: Props) {
 
           </div>
 
+          {/* User's Next Match Widget */}
+          {(() => {
+            const myMatch = matches.find(m => (m.status === 'scheduled' || m.status === 'live') && (m.home?.user_id === userId || m.away?.user_id === userId));
+            if (!myMatch) return null;
+            
+            const isHome = myMatch.home?.user_id === userId;
+            const opp = isHome ? myMatch.away : myMatch.home;
+            
+            return (
+              <Card className="bg-white/5 border-white/10 backdrop-blur-md w-full md:w-[280px] shadow-2xl overflow-hidden group/match shrink-0 animate-in slide-in-from-right duration-500">
+                <div className="bg-primary/20 py-2 px-4 border-b border-white/10 flex items-center justify-between">
+                  <span className="text-[9px] font-black text-primary uppercase tracking-widest">PRÓXIMO JOGO</span>
+                  <Badge variant="outline" className="text-[8px] h-4 bg-background/50">{myMatch.stage.toUpperCase()}</Badge>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      <ClubShield club={{
+                        primaryColor: myMatch.home?.primary_color,
+                        secondaryColor: myMatch.home?.secondary_color,
+                        shieldPattern: myMatch.home?.shield_pattern,
+                        shieldShape: myMatch.home?.shield_shape
+                      } as any} size={32} />
+                      <span className="text-[10px] font-bold truncate w-full text-center">{myMatch.home?.name}</span>
+                    </div>
+                    <span className="text-xs font-black text-white/40 italic">VS</span>
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      <ClubShield club={{
+                        primaryColor: myMatch.away?.primary_color,
+                        secondaryColor: myMatch.away?.secondary_color,
+                        shieldPattern: myMatch.away?.shield_pattern,
+                        shieldShape: myMatch.away?.shield_shape
+                      } as any} size={32} />
+                      <span className="text-[10px] font-bold truncate w-full text-center">{myMatch.away?.name}</span>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full h-8 text-[10px] font-black uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-500 group-hover/match:scale-105 transition-all"
+                  >
+                    Entrar em Campo
+                  </Button>
+                </div>
+              </Card>
+            );
+          })()}
+
+
           {/* Trophy Display */}
           <div className="relative group">
             <div className="absolute -inset-4 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/30 transition-all duration-700" />
