@@ -31,7 +31,7 @@ export function useMatchState(initialState: any, userId?: string) {
 
   const alreadyPlayedToday = false; // Unlimited friendlies
 
-  const applyServerResult = useCallback(async ({
+  const applyServerResult = useCallback(({
     matchId, homeGoals, awayGoals, isHome = true, competition,
   }: {
     matchId: string; homeGoals: number; awayGoals: number; isHome?: boolean; competition?: string;
@@ -64,7 +64,7 @@ export function useMatchState(initialState: any, userId?: string) {
     const isDraw = homeGoals === awayGoals;
     const outcome = isWin ? 'win' : isDraw ? 'draw' : 'loss';
 
-    deps.setClub(async prev => {
+    deps.setClub(prev => {
       const match = prev.matches.find(m => m.id === matchId);
       if (match?.played) return prev; 
       
@@ -143,20 +143,17 @@ export function useMatchState(initialState: any, userId?: string) {
       const repBonus = prev.reputation >= 70 ? 10 : prev.reputation <= 30 ? -10 : 0;
 
       let fanChange: number;
-      const { calculateFanGrowth } = await import('@/match/fanGrowthEngine');
-      const growthResult = calculateFanGrowth({
-        currentFans: prev.fans,
-        reputation: prev.reputation,
-        outcome,
-        importance: isFriendly ? 'amistoso' : (isCup ? 'final' : 'liga'),
-        homeGoals,
-        awayGoals,
-        isHome,
-        recentForm: [], // Pode ser expandido se houver histórico disponível
-        opponentStrength,
-        teamStrength
-      });
-      fanChange = growthResult.delta;
+      // Import inline is not allowed in sync setState, using base logic with improved randoms
+      if (isWin) {
+        fanChange = 80 + Math.floor(Math.random() * 120); // Amistosos agora dão mais torcida
+      } else if (isDraw) {
+        fanChange = 30 + Math.floor(Math.random() * 40);
+      } else {
+        fanChange = Math.floor(Math.random() * 20) - 10;
+      }
+      
+      fanChange += stadiumFanBonus + repBonus;
+      fanChange = Math.max(-50, Math.min(fanChange, 300));
 
       const isRout = isHome ? (homeGoals - awayGoals) >= 3 : (awayGoals - homeGoals) >= 3;
       const isBigLoss = isHome ? (homeGoals - awayGoals) <= -3 : (awayGoals - homeGoals) <= -3;
