@@ -401,7 +401,7 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
             </div>
             <div>
               <p className={`text-[8px] sm:text-[10px] font-black uppercase tracking-wider ${club.budget >= 0 ? 'text-emerald-400/60' : 'text-red-400/60'}`}>Orçamento</p>
-              <p className={`font-black text-sm sm:text-lg italic ${club.budget >= 0 ? 'text-white' : 'text-red-400'}`}>R$ {(club.budget || 0).toLocaleString()}</p>
+              <p className={`font-black text-sm sm:text-lg italic ${club.budget >= 0 ? 'text-white' : 'text-red-400'}`}>FL$ {(club.budget || 0).toLocaleString()}</p>
             </div>
           </div>
           <div className="bg-black/40 backdrop-blur-md p-2 sm:p-3 px-4 sm:px-5 rounded-2xl border border-white/5 flex items-center gap-2 sm:gap-3 shadow-inner flex-1 min-w-[140px]">
