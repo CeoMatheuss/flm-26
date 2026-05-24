@@ -444,9 +444,10 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
              <div className="space-y-6">
                <StoreDashboard stats={storeManager.stats} />
                <OrderTracker orders={storeManager.stats.recentOrders} />
-               <PainelFLM clubId={club.id} stats={shopStats} products={shopProducts} onUpgrade={handleUpgrade} upgrading={upgrading} />
+               <PainelFLM club={club} userId={userId} />
              </div>
           </TabsContent>
+
 
           <TabsContent value="entregas" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
              <OrderTracker orders={storeManager.stats.recentOrders} />
