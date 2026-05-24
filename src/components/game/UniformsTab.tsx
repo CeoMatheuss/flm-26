@@ -500,7 +500,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Não autenticado');
 
-      const { data: clubData } = await supabase.from('clubs').select('name').eq('user_id', user.id).single();
+      const { data: clubData } = await supabase.from('clubs').select('id, name, fans, reputation').eq('user_id', user.id).single();
 
       // Registrar tentativa no monitor ADM
       await supabase.from('admin_shop_activity').insert({
@@ -516,7 +516,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       // Chamar function de checkout
       const { data, error } = await supabase.functions.invoke('mercadopago-checkout', {
         body: { 
-          item_id: 'uniform_launch_token', // ID virtual ou mapeado
+          item_id: 'uniform_launch_token',
           method: 'pix',
           email: email,
           full_name: fullName,
@@ -534,6 +534,11 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         
         // Atualizar monitor
         await supabase.from('admin_shop_activity').update({ status: 'pending' }).eq('metadata->>uniform_id', pendingLaunchId);
+
+        // Se o clubData existir, passar os parâmetros para o sucesso interno caso precise monitorar
+        if (clubData) {
+          // O monitoramento do canal de pagamento chamará o handlePaymentSuccessInternal
+        }
       }
     } catch (e: any) {
       toast.error('Erro ao processar pagamento.');
@@ -544,7 +549,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
   // Monitorar pagamento
   useEffect(() => {
-    if (paymentStep !== 'pix' || !pixInfo?.order_id) return;
+    if (paymentStep !== 'pix' || !pixInfo?.order_id || !pendingLaunchId) return;
 
     const channel = supabase
       .channel('uniform-payment')
@@ -553,15 +558,22 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         schema: 'public', 
         table: 'payment_orders',
         filter: `id=eq.${pixInfo.order_id}`
-      }, (payload: any) => {
+      }, async (payload: any) => {
         if (payload.new.status === 'approved') {
-          handlePaymentSuccess();
+          const { data: clubData } = await supabase.from('clubs')
+            .select('name, fans, reputation')
+            .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+            .single();
+            
+          if (clubData) {
+            handlePaymentSuccessInternal(pendingLaunchId, clubData.name, clubData.fans || 0, clubData.reputation || 50);
+          }
         }
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [paymentStep, pixInfo]);
+  }, [paymentStep, pixInfo, pendingLaunchId]);
 
   const handlePaymentSuccessInternal = async (launchId: string, clubName: string, fans: number, reputation: number) => {
     toast.success('Pagamento aprovado! Lançando uniforme...');
