@@ -141,7 +141,7 @@ export function StadiumPhase6Panel({
                       </Button>
                     )}
                     <p className="text-[9px] text-muted-foreground mt-1">
-                      Manut. R$ {(cfg.monthlyCost/1000).toFixed(0)}k/mês
+                      Manut. FL$ {(cfg.monthlyCost/1000).toFixed(0)}k/mês
                     </p>
                   </div>
                 </div>
