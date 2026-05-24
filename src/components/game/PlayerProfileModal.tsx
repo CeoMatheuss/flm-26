@@ -311,7 +311,7 @@ export function PlayerProfileModal({ player, children, isFreeAgent, scoutReport,
           </div>
           <div className="bg-muted/30 rounded p-2">
             <p className="text-[10px] text-muted-foreground">💰 Salário</p>
-            <p className="font-semibold text-primary">R$ {(player.salary / 1000).toFixed(0)}k/mês</p>
+            <p className="font-semibold text-primary">{isFreeAgent ? 'A combinar' : `R$ ${(player.salary / 1000).toFixed(0)}k/mês`}</p>
           </div>
         </div>
 
