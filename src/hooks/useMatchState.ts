@@ -212,7 +212,8 @@ export function useMatchState(initialState: any, userId?: string) {
           if (deps.isFriendly) return p;
           const physical = p.attributes?.physical || 60;
           const resistanceBonus = (physical - 50) * 0.15;
-          const drain = Math.max(10, Math.floor(Math.random() * 10 + 18 - resistanceBonus));
+          // Calendário Extremo: Aumento do desgaste base (era 18, agora 25 base + aleatório)
+          const drain = Math.max(15, Math.floor(Math.random() * 15 + 25 - resistanceBonus));
           const newStamina = Math.max(0, p.stamina - drain);
           return {
             ...p,

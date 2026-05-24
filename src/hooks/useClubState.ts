@@ -577,8 +577,9 @@ export function useClubState(initialState: any, userId?: string) {
 
   const rotateSquad = useCallback(() => {
     setClub(prev => {
+      // Prioridade extrema para Stamina no rodízio automático
       const nextPlayers = autoLineup(prev.players, (prev as any).tactics?.formation || '4-4-2');
-      toast.success('Escalação otimizada automaticamente!');
+      toast.success('Escalação otimizada automaticamente com foco em vigor físico!');
       return { ...prev, players: nextPlayers };
     });
   }, []);
@@ -597,7 +598,9 @@ export function useClubState(initialState: any, userId?: string) {
       return {
         ...prev,
         players: prev.players.map(p => {
-          const newStamina = Math.min(100, p.stamina + 15);
+          // Bônus de recuperação baseado no nível financeiro/CT (estimado aqui)
+          const recoveryBonus = 20; 
+          const newStamina = Math.min(100, p.stamina + recoveryBonus);
           return {
             ...p,
             stamina: newStamina,
@@ -607,7 +610,7 @@ export function useClubState(initialState: any, userId?: string) {
         })
       };
     });
-    toast.success('Todo o elenco foi colocado em descanso moderado.');
+    toast.success('Todo o elenco foi colocado em descanso intensivo (+20% Stamina).');
   }, []);
 
 
