@@ -127,7 +127,7 @@ interface Props {
 }
 
 function ShirtPreview({ kit, sponsorName, size = 'md' }: { kit: UniformKit; sponsorName?: string; size?: 'sm' | 'md' | 'lg' }) {
-  const dim = size === 'sm' ? 44 : size === 'lg' ? 72 : 56;
+  const dim = size === 'sm' ? 64 : size === 'lg' ? 120 : 80;
   const scale = dim / 100;
   const uid = useMemo(() => Math.random().toString(36).slice(2, 8), []);
   const patternId = `p-${uid}`;
