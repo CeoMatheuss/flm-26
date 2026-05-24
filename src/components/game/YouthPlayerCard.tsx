@@ -180,6 +180,5 @@ export function YouthPlayerCard({ prospect, onClick }: Props) {
         </CardContent>
       </Card>
     </motion.div>
-    </motion.div>
   );
 }
