@@ -94,7 +94,7 @@ export function StadiumPhase6Panel({
             </span>
             {upgEff.totalMonthlyCost > 0 && (
               <Badge variant="outline" className="text-[10px]">
-                <Wrench className="h-3 w-3 mr-1" /> R$ {(upgEff.totalMonthlyCost/1000).toFixed(0)}k/mês
+                <Wrench className="h-3 w-3 mr-1" /> FL$ {(upgEff.totalMonthlyCost/1000).toFixed(0)}k/mês
               </Badge>
             )}
           </CardTitle>
