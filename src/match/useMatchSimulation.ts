@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { isHighlightEvent } from '@/components/game/HighlightMiniCanvas';
 import { calculateTacticalModifiers } from './tacticalEngine';
