@@ -165,7 +165,7 @@ export async function persistMatchRatings(ratings: Record<string, PlayerRating>,
     const ratingList = Object.values(ratings);
     for (const r of ratingList) {
       // 1. Update player stats via RPC to avoid TS depth issues and handle logic on server
-      await supabase.rpc('update_player_after_match', {
+      await supabase.rpc('update_player_after_match' as any, {
         _player_id: r.playerId,
         _rating: r.rating,
         _goals: r.stats.goals,
