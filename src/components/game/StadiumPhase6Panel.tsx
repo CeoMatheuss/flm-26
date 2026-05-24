@@ -56,7 +56,7 @@ export function StadiumPhase6Panel({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-2xl">{cfg.emoji}</span>
                     <div className="min-w-0">
-                      <p className={`text-sm font-bold ${cfg.color}`}>{cfg.label} • R$ {cfg.monthlyPrice}/mês</p>
+                      <p className={`text-sm font-bold ${cfg.color}`}>{cfg.label} • FL$ {cfg.monthlyPrice}/mês</p>
                       <p className="text-[10px] text-muted-foreground">{cfg.description}</p>
                       {!unlocked ? (
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
