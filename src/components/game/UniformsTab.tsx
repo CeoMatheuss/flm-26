@@ -961,7 +961,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
                   <div className="bg-muted/30 rounded-xl p-4 border border-white/5 space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Taxa de Lançamento</span>
-                      <span className="font-bold text-white">R$ 9,90</span>
+                      <span className="font-bold text-white">R$ 0,01</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Benefícios</span>
@@ -969,7 +969,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
                     </div>
                     <div className="pt-2 border-t border-white/5 flex justify-between items-center font-bold">
                       <span className="text-white">Total</span>
-                      <span className="text-xl text-primary font-black">R$ 9,90</span>
+                      <span className="text-xl text-primary font-black">R$ 0,01</span>
                     </div>
                   </div>
 
