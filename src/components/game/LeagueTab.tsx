@@ -285,10 +285,14 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
           <Badge variant="outline" className="bg-yellow-500/5 text-yellow-500 border-yellow-500/20 px-3 py-1">
-            Mundial (1º)
+            Super Mundial
           </Badge>
           <Badge variant="outline" className="bg-emerald-500/5 text-emerald-500 border-emerald-500/20 px-3 py-1">
-            Libertadores (2º-8º)
+            Libertadores
+          </Badge>
+
+          <Badge variant="outline" className="bg-blue-500/5 text-blue-500 border-blue-500/20 px-3 py-1">
+            Sul-Americana
           </Badge>
           <Badge variant="outline" className="bg-red-500/5 text-red-500 border-red-500/20 px-3 py-1">
             Rebaixamento
@@ -343,8 +347,11 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       let posColor = "text-muted-foreground";
                       let rowBg = isPlayerTeam ? "bg-primary/10 hover:bg-primary/20" : "hover:bg-accent/50";
                       
-                      if (i < 1) posColor = "text-yellow-500 font-black"; // Super Mundial (1º)
-                      else if (i < 8) posColor = "text-emerald-500 font-black"; // Libertadores (2º ao 8º)
+                      if (i < 1) posColor = "text-yellow-500 font-black"; // Super Mundial
+                      else if (i < 4) posColor = "text-emerald-500 font-black"; // Libertadores
+                      else if (i < 7) posColor = "text-blue-500 font-bold"; // Libertadores (G7)
+
+                      else if (i < 9) posColor = "text-blue-400 font-bold"; // Sul-Americana
                       else if (i >= 12) posColor = "text-red-500 font-bold"; // Rebaixamento (Z4: 13º, 14º, 15º, 16º)
 
                       return (
@@ -644,11 +651,11 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       { pos: 2, label: "Vice-Campeão", prize: 15000000, color: "text-emerald-400 font-bold bg-emerald-400/5" },
                       { pos: 3, label: "3º Lugar", prize: 13000000, color: "text-emerald-400 bg-emerald-400/5" },
                       { pos: 4, label: "4º Lugar", prize: 11000000, color: "text-emerald-400 bg-emerald-400/5" },
-                      { pos: 5, label: "Libertadores", prize: 9000000, color: "text-emerald-500 bg-emerald-500/5" },
-                      { pos: 6, label: "Libertadores", prize: 8000000, color: "text-emerald-500 bg-emerald-500/5" },
-                      { pos: 7, label: "Libertadores", prize: 7000000, color: "text-emerald-500 bg-emerald-500/5" },
-                      { pos: 8, label: "Libertadores", prize: 6000000, color: "text-emerald-500 bg-emerald-500/5" },
-                      { pos: 9, label: "Meio de Tabela", prize: 5000000, color: "" },
+                      { pos: 5, label: "Libertadores", prize: 9000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 6, label: "Libertadores", prize: 8000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 7, label: "Libertadores", prize: 7000000, color: "text-blue-500 bg-blue-500/5" },
+                      { pos: 8, label: "Sul-Americana", prize: 6000000, color: "text-blue-400 bg-blue-400/5" },
+                      { pos: 9, label: "Sul-Americana", prize: 5000000, color: "text-blue-400 bg-blue-400/5" },
                       { pos: 10, label: "Meio de Tabela", prize: 4500000, color: "" },
                       { pos: 11, label: "Meio de Tabela", prize: 4000000, color: "" },
                       { pos: 12, label: "Meio de Tabela", prize: 3500000, color: "" },
@@ -689,8 +696,8 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
               </CardHeader>
               <CardContent className="text-xs space-y-3 text-muted-foreground">
                 <p>• 20 clubes disputam o título em turno e returno (38 rodadas).</p>
-                <p>• <span className="text-yellow-500 font-bold">1º Lugar:</span> Vaga direta para o Mundial de Clubes.</p>
-                <p>• <span className="text-emerald-500 font-bold">G2-G8:</span> Classificação para a Libertadores.</p>
+                <p>• <span className="text-emerald-500 font-bold">G4:</span> Classificação direta para a Libertadores Mundial.</p>
+                <p>• <span className="text-blue-500 font-bold">G8:</span> Classificação para a Copa Sul-Americana.</p>
                 <p>• <span className="text-red-500 font-bold">Z4:</span> Rebaixamento para a divisão inferior.</p>
                 <div className="p-3 bg-background/50 rounded-lg border border-dashed mt-4">
                   <p className="font-bold text-foreground mb-1">Critérios de Desempate:</p>

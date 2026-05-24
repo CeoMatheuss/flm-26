@@ -4750,33 +4750,6 @@ export type Database = {
           },
         ]
       }
-      season_system_state: {
-        Row: {
-          current_day: number
-          current_season: number
-          id: string
-          phase: string
-          season_start_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          current_day?: number
-          current_season?: number
-          id?: string
-          phase?: string
-          season_start_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          current_day?: number
-          current_season?: number
-          id?: string
-          phase?: string
-          season_start_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       security_rate_limits: {
         Row: {
           action_type: string
@@ -6335,7 +6308,6 @@ export type Database = {
           losses: number | null
           played: number | null
           points: number | null
-          qualified_for_mundial: boolean | null
           season_month: number
           season_year: number
           sequence: string | null
@@ -6355,7 +6327,6 @@ export type Database = {
           losses?: number | null
           played?: number | null
           points?: number | null
-          qualified_for_mundial?: boolean | null
           season_month: number
           season_year: number
           sequence?: string | null
@@ -6375,7 +6346,6 @@ export type Database = {
           losses?: number | null
           played?: number | null
           points?: number | null
-          qualified_for_mundial?: boolean | null
           season_month?: number
           season_year?: number
           sequence?: string | null
@@ -6471,13 +6441,11 @@ export type Database = {
           division: number | null
           division_level: number | null
           id: string
-          is_finished: boolean | null
           max_teams: number | null
           name: string
           prizes_paid: boolean | null
           season_month: number | null
           season_year: number | null
-          winner_processed: boolean | null
         }
         Insert: {
           active?: boolean | null
@@ -6488,13 +6456,11 @@ export type Database = {
           division?: number | null
           division_level?: number | null
           id?: string
-          is_finished?: boolean | null
           max_teams?: number | null
           name: string
           prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
-          winner_processed?: boolean | null
         }
         Update: {
           active?: boolean | null
@@ -6505,13 +6471,11 @@ export type Database = {
           division?: number | null
           division_level?: number | null
           id?: string
-          is_finished?: boolean | null
           max_teams?: number | null
           name?: string
           prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
-          winner_processed?: boolean | null
         }
         Relationships: [
           {
@@ -7342,7 +7306,6 @@ export type Database = {
         Args: { country_code: string }
         Returns: string
       }
-      get_current_season_day: { Args: never; Returns: number }
       get_division_start_time: { Args: { div_level: number }; Returns: string }
       get_league_match_time: {
         Args: { division_level: number }
@@ -7590,7 +7553,6 @@ export type Database = {
         Args: { _continent: string; _season_year: number }
         Returns: Json
       }
-      qualify_teams_for_mundial: { Args: never; Returns: undefined }
       random_bot_logo: { Args: never; Returns: string }
       rebuild_all_leagues_v3: { Args: never; Returns: undefined }
       rebuild_league_teams_to_16: {

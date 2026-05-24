@@ -191,49 +191,6 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
     infrastructure.physiotherapy.upgradeCompletesAt,
   ]);
 
-  // Real-time Season Sync from season_system_state
-  useEffect(() => {
-    const fetchSeasonState = async () => {
-      const { data, error } = await supabase
-        .from('season_system_state')
-        .select('*')
-        .limit(1)
-        .single();
-      
-      if (data && !error) {
-        setSeason(prev => ({
-          ...prev,
-          currentSeason: data.current_season,
-          currentWeek: data.current_day, // Day mapping
-          totalWeeks: 30, // 30 days season cycle
-        }));
-      }
-    };
-
-    fetchSeasonState();
-
-    const channel = supabase
-      .channel('season-state-sync')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'season_system_state'
-      }, (payload) => {
-        const data = payload.new as any;
-        setSeason(prev => ({
-          ...prev,
-          currentSeason: data.current_season,
-          currentWeek: data.current_day,
-          totalWeeks: 30,
-        }));
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
   // V5 — Geração automática da Base: 1 ciclo = 7 dias (Semanas).
   // Agora utiliza o Edge Function centralizado para garantir integridade e sincronização.
   useEffect(() => {

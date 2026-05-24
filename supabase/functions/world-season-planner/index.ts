@@ -88,7 +88,6 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const onlyLeagueId: string | undefined = body?.league_id;
     const force: boolean = body?.force === true;
-    const roundsPerDay: number = body?.rounds_per_day || 1;
 
     // 1. Buscar ligas ativas
     let q = supabase
@@ -165,15 +164,11 @@ Deno.serve(async (req: Request) => {
         const inserts: any[] = [];
         rounds.forEach((round, idx) => {
           const matchday = idx + 1;
-          // Calculate day: if roundsPerDay = 2, round 1&2 are day 0, 3&4 are day 1, etc.
-          const dayOffset = Math.floor(idx / roundsPerDay);
-          const dateStr = addDaysBrt(startDate, dayOffset);
+          const dateStr = addDaysBrt(startDate, idx);
           
-          // If 2 rounds per day, round 1 is at 15:00, round 2 at 19:30
-          const isSecondRoundOfDay = roundsPerDay > 1 && (idx % roundsPerDay === 1);
-          
-          const hour = isSecondRoundOfDay ? 19 : (league.division === 1 ? 15 : league.kickoff_hour);
-          const minute = isSecondRoundOfDay ? 30 : (league.division === 1 ? 0 : (league.kickoff_minute ?? 0));
+          // Enforce 19:30 for Division 1, otherwise use league settings
+          const hour = league.division === 1 ? 19 : league.kickoff_hour;
+          const minute = league.division === 1 ? 30 : (league.kickoff_minute ?? 0);
           
           const kickoffUtc = brtDateTimeToUtcIso(dateStr, hour, minute);
           for (const [homeId, awayId] of round) {

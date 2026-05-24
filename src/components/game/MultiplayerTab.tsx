@@ -386,12 +386,12 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   const sorted = members;
   
   const getExpectedReward = (pos: number) => {
-    if (pos === 1) return '18M';
+    if (pos === 1) return '16M';
     if (pos === 2) return '15M';
-    if (pos === 3) return '13M';
-    if (pos === 4) return '11M';
-    if (pos >= 5 && pos <= 8) return (13 - (pos - 1)).toString() + 'M';
-    return Math.max(3, 6 - (pos - 9)).toString() + 'M';
+    if (pos === 3) return '14M';
+    if (pos === 4) return '13M';
+    if (pos >= 5 && pos <= 8) return (13 - (pos - 4)).toString() + 'M';
+    return Math.max(4, 7 - (pos - 9)).toString() + 'M';
   };
 
   const getLast5 = (teamId: string) => {
@@ -417,8 +417,8 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   };
 
   const getZoneBorder = (zone: string) => {
-    if (zone === 'title') return 'border-l-4 border-l-yellow-500';
-    if (zone === 'continental') return 'border-l-4 border-l-emerald-500';
+    if (zone === 'title') return 'border-l-4 border-l-emerald-500';
+    if (zone === 'continental') return 'border-l-4 border-l-blue-500';
     if (zone === 'relegation') return 'border-l-4 border-l-rose-500';
     return 'border-l-4 border-l-transparent';
   };
@@ -475,7 +475,7 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
               return (
               <TableRow 
                 key={m.id} 
-                className={`${m.user_id === userId ? 'bg-primary/20 font-black border-l-4 border-l-primary' : ''} ${zone === 'title' ? 'bg-yellow-500/5' : zone === 'continental' ? 'bg-emerald-500/5' : zone === 'relegation' ? 'bg-red-500/5' : ''} transition-colors hover:bg-muted/30`}
+                className={`${m.user_id === userId ? 'bg-primary/20 font-black border-l-4 border-l-primary' : ''} ${zone === 'title' ? 'bg-emerald-500/5' : zone === 'relegation' ? 'bg-red-500/5' : ''} transition-colors hover:bg-muted/30`}
               >
                 <TableCell className="text-center text-xs">
                   <span className="flex items-center justify-center gap-0.5">
@@ -544,8 +544,8 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
 
         {/* Legend */}
         <div className="flex flex-wrap gap-4 px-4 py-3 border-t border-border/50 bg-muted/20 text-[10px] text-muted-foreground">
-          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> Mundial (1º)</div>
-          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Libertadores (2º-8º)</div>
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Mundial (1º)</div>
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Continental (2º-8º)</div>
           <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Rebaixamento (13º-16º)</div>
         </div>
       </CardContent>
