@@ -235,48 +235,48 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
               </TabsList>
             </div>
 
-            <TabsContent value="info" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <TabsContent value="info" className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-2 mt-0">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {/* Personal Details */}
-                <div className="md:col-span-1 space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">Dados Pessoais</h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/50">
-                      <span className="text-xs text-muted-foreground flex items-center gap-2"><Ruler className="h-3.5 w-3.5" /> Altura</span>
-                      <span className="text-sm font-bold">{prospect.height ?? 175} cm</span>
+                <div className="md:col-span-1 space-y-3 sm:space-y-4">
+                  <h3 className="text-[11px] sm:text-sm font-bold uppercase tracking-wider text-muted-foreground">Dados Pessoais</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-1 gap-2 sm:gap-3">
+                    <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-card border border-border/50">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1.5"><Ruler className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Altura</span>
+                      <span className="text-xs sm:text-sm font-bold">{prospect.height ?? 175}cm</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/50">
-                      <span className="text-xs text-muted-foreground flex items-center gap-2"><Weight className="h-3.5 w-3.5" /> Peso</span>
-                      <span className="text-sm font-bold">{prospect.weight ?? 70} kg</span>
+                    <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-card border border-border/50">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1.5"><Weight className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Peso</span>
+                      <span className="text-xs sm:text-sm font-bold">{prospect.weight ?? 70}kg</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/50">
-                      <span className="text-xs text-muted-foreground flex items-center gap-2"><Footprints className="h-3.5 w-3.5" /> Pé Dominante</span>
-                      <span className="text-sm font-bold">{prospect.dominantFoot ?? 'Destro'}</span>
+                    <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-card border border-border/50">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1.5"><Footprints className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Pé</span>
+                      <span className="text-xs sm:text-sm font-bold">{prospect.dominantFoot ?? 'Destro'}</span>
                     </div>
-                    <div className="flex flex-col p-3 rounded-xl bg-card border border-border/50">
-                      <span className="text-xs text-muted-foreground mb-2 flex items-center gap-2"><Award className="h-3.5 w-3.5" /> Posições</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Badge variant="secondary" className="bg-primary/10 text-primary">{prospect.position}</Badge>
+                    <div className="flex flex-col p-2.5 sm:p-3 rounded-xl bg-card border border-border/50">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5"><Award className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Posições</span>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary text-[10px] px-1.5 py-0">{prospect.position}</Badge>
                         {prospect.secondaryPositions?.map(p => (
-                          <Badge key={p} variant="outline">{p}</Badge>
+                          <Badge key={p} variant="outline" className="text-[10px] px-1.5 py-0">{p}</Badge>
                         ))}
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-2"><Coins className="h-3.5 w-3.5" /> Valor de Mercado</span>
+                  <div className="p-3 sm:p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                    <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                      <span className="text-[10px] sm:text-xs font-bold text-emerald-400 flex items-center gap-1.5"><Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Valor de Mercado</span>
                     </div>
-                    <p className="text-2xl font-black text-emerald-400">{formatMoney(Number(prospect.marketValue))}</p>
+                    <p className="text-lg sm:text-2xl font-black text-emerald-400">{formatMoney(Number(prospect.marketValue))}</p>
                     <p className="text-[10px] text-muted-foreground mt-1">Estimado com base em potencial e idade</p>
                   </div>
                 </div>
 
                 {/* Radar Chart */}
-                <div className="md:col-span-1 flex flex-col items-center justify-center p-4 bg-card rounded-2xl border border-border/50">
-                   <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 w-full">Equilíbrio de Atributos</h3>
-                   <div className="w-full h-64">
+                <div className="md:col-span-1 flex flex-col items-center justify-center p-3 sm:p-4 bg-card rounded-2xl border border-border/50">
+                   <h3 className="text-[11px] sm:text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 sm:mb-4 w-full">Equilíbrio</h3>
+                   <div className="w-full h-48 sm:h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                         <PolarGrid stroke="#333" />
@@ -294,37 +294,37 @@ export function YouthPlayerDetailModal({ prospect, isOpen, onClose, onPromote, o
                 </div>
 
                 {/* Main Stats Grid */}
-                <div className="md:col-span-1 space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">Atributos Técnicos</h3>
-                  <div className="grid grid-cols-1 gap-2">
+                <div className="md:col-span-1 space-y-3 sm:space-y-4">
+                  <h3 className="text-[11px] sm:text-sm font-bold uppercase tracking-wider text-muted-foreground">Atributos Técnicos</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-1 gap-x-3 gap-y-2">
                     {Object.entries(prospect.attributes).filter(([k, v]) => v != null && k !== 'goalkeeping').slice(0, 8).map(([key, val]) => (
                       <div key={key} className="space-y-1">
                         <div className="flex items-center justify-between text-[10px] font-bold uppercase text-muted-foreground">
-                          <span>{key === 'shooting' ? 'Finalização' : key === 'passing' ? 'Passe' : key === 'speed' ? 'Velocidade' : key === 'defending' ? 'Defesa' : key === 'physical' ? 'Físico' : key === 'dribbling' ? 'Drible' : key}</span>
+                          <span className="truncate">{key === 'shooting' ? 'Finaliz.' : key === 'passing' ? 'Passe' : key === 'speed' ? 'Veloc.' : key === 'defending' ? 'Defesa' : key === 'physical' ? 'Físico' : key === 'dribbling' ? 'Drible' : key}</span>
                           <span className={Number(val) >= 70 ? 'text-emerald-400' : Number(val) >= 50 ? 'text-primary' : 'text-amber-400'}>{val}</span>
                         </div>
-                        <Progress value={Number(val)} className="h-1" />
+                        <Progress value={Number(val)} className="h-1.5" />
                       </div>
                     ))}
-                    {/* Extra Attributes */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-[10px] font-bold uppercase text-muted-foreground">
-                        <span>Interceptação</span>
+                        <span className="truncate">Intercept.</span>
                         <span className="text-primary">{prospect.interception ?? 50}</span>
                       </div>
-                      <Progress value={prospect.interception ?? 50} className="h-1" />
+                      <Progress value={prospect.interception ?? 50} className="h-1.5" />
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-[10px] font-bold uppercase text-muted-foreground">
-                        <span>Inteligência Tática</span>
+                        <span className="truncate">Intel. Tática</span>
                         <span className="text-primary">{prospect.tacticalIQ ?? 50}</span>
                       </div>
-                      <Progress value={prospect.tacticalIQ ?? 50} className="h-1" />
+                      <Progress value={prospect.tacticalIQ ?? 50} className="h-1.5" />
                     </div>
                   </div>
                 </div>
               </div>
             </TabsContent>
+
 
             <TabsContent value="development" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
