@@ -330,6 +330,11 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
              )}
              
              {/* Dynamic Status Badges */}
+             {!isLoanedIn && !isLoanedOut && player.contract <= 1 && (
+               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-red-500/20 border border-red-500/40 text-[8px] font-black text-red-400 uppercase tracking-widest animate-bounce">
+                 <Clock className="w-2.5 h-2.5" /> RENOVAR AGORA
+               </span>
+             )}
              {isForSale && (
                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
                  <Tag className="w-2.5 h-2.5" /> À VENDA
@@ -392,13 +397,20 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 overflow-hidden">
         <div className="flex flex-col items-end shrink-0">
           <span className="text-[10px] sm:text-[11px] font-black text-white/80 italic whitespace-nowrap">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
-          <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
+          <span className={cn(
+            "text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-1",
+            (!isLoanedIn && !isLoanedOut && player.contract <= 1) ? "text-red-400 animate-pulse font-black" : "text-white/30"
+          )}>
+            {(!isLoanedIn && !isLoanedOut && player.contract <= 1) && <AlertTriangle className="w-3 h-3" />}
             {isLoanedIn || isLoanedOut ? `${player.loanWeeksRemaining || 0} SEM (EMP)` : `${player.contract} TEMP`}
           </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="flex flex-col items-end min-w-[80px] sm:min-w-[100px]">
-            <span className="text-xs sm:text-sm font-black text-emerald-400 italic leading-none whitespace-nowrap">{formatMoney(getPlayerValue(player))}</span>
+            <span className={cn(
+              "text-xs sm:text-sm font-black italic leading-none whitespace-nowrap",
+              (!isLoanedIn && !isLoanedOut && player.contract <= 1) ? "text-red-400" : "text-emerald-400"
+            )}>{formatMoney(getPlayerValue(player))}</span>
             <span className="text-[8px] sm:text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
           </div>
           
