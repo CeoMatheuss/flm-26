@@ -182,7 +182,7 @@ export function isObjectiveMet(obj: SponsorObjective, ctx: SeasonContext): boole
     case 'win_title':
       return ctx.leaguePosition === 1;
     case 'continental':
-      return ctx.leaguePosition !== null && ctx.leaguePosition <= 4;
+      return ctx.leaguePosition !== null && ctx.leaguePosition <= 8;
     case 'top5':
       return ctx.leaguePosition !== null && ctx.leaguePosition <= 5;
     case 'top10':
