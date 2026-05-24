@@ -525,6 +525,65 @@ export type Database = {
         }
         Relationships: []
       }
+      club_scouts: {
+        Row: {
+          analysis_rating: number | null
+          club_id: string | null
+          contract_seasons_left: number | null
+          created_at: string | null
+          discovery_rating: number | null
+          favorite_region: string | null
+          id: string
+          name: string
+          nationality: string | null
+          potential_eval_rating: number | null
+          rarity: string | null
+          salary_cents: number | null
+          specialty: string | null
+          status: string | null
+        }
+        Insert: {
+          analysis_rating?: number | null
+          club_id?: string | null
+          contract_seasons_left?: number | null
+          created_at?: string | null
+          discovery_rating?: number | null
+          favorite_region?: string | null
+          id?: string
+          name: string
+          nationality?: string | null
+          potential_eval_rating?: number | null
+          rarity?: string | null
+          salary_cents?: number | null
+          specialty?: string | null
+          status?: string | null
+        }
+        Update: {
+          analysis_rating?: number | null
+          club_id?: string | null
+          contract_seasons_left?: number | null
+          created_at?: string | null
+          discovery_rating?: number | null
+          favorite_region?: string | null
+          id?: string
+          name?: string
+          nationality?: string | null
+          potential_eval_rating?: number | null
+          rarity?: string | null
+          salary_cents?: number | null
+          specialty?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_scouts_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_shop_orders: {
         Row: {
           actual_delivery_at: string | null
@@ -4741,6 +4800,45 @@ export type Database = {
           },
         ]
       }
+      shop_scout_packs: {
+        Row: {
+          chance_elite: number | null
+          chance_mundial: number | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          max_rarity: string | null
+          min_rarity: string | null
+          name: string
+          price_cents: number
+        }
+        Insert: {
+          chance_elite?: number | null
+          chance_mundial?: number | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          max_rarity?: string | null
+          min_rarity?: string | null
+          name: string
+          price_cents: number
+        }
+        Update: {
+          chance_elite?: number | null
+          chance_mundial?: number | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          max_rarity?: string | null
+          min_rarity?: string | null
+          name?: string
+          price_cents?: number
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           admin_response: string | null
@@ -6640,7 +6738,9 @@ export type Database = {
         Args: { p_league_id: string }
         Returns: undefined
       }
-      generate_random_scout: { Args: never; Returns: undefined }
+      generate_random_scout:
+        | { Args: never; Returns: undefined }
+        | { Args: { p_club_id: string; p_pack_id: string }; Returns: string }
       generate_weekly_scout: { Args: never; Returns: undefined }
       get_auction_start_price: { Args: { ovr: number }; Returns: number }
       get_available_league_for_country: {
