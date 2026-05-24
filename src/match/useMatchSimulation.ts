@@ -661,6 +661,7 @@ export function useMatchSimulation() {
 
   const startMatch = useCallback(async (params: any) => {
     setState(s => ({ ...s, phase: 'loading' }));
+    if (params.homePlayers) setHomePlayers(params.homePlayers);
     try {
       const { data, error } = await supabase.functions.invoke('start-match', { body: params });
       if (error || !data?.success) {
