@@ -22,7 +22,7 @@ export function useScouting(userId: string) {
       setLoading(true);
       const [scoutsRes, marketRes, missionsRes, reportsRes] = await Promise.all([
         supabase.from('scouts').select('*').eq('user_id', userId),
-        supabase.from('scout_market_pool').select('*').gt('expires_at', new Date().toISOString()),
+        supabase.rpc('get_scout_market'),
         supabase.from('scout_missions').select('*').eq('user_id', userId).eq('status', 'em_andamento'),
         supabase.from('scout_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       ]);
