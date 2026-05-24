@@ -1,11 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Club } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, TrendingDown, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle, Globe } from 'lucide-react';
+import { Trophy, Users, DollarSign, Star, Shield, TrendingUp, TrendingDown, Flame, Heart, Zap, Swords, Building2, Activity, Calendar, User, Instagram, GraduationCap, Dumbbell, Stethoscope, Landmark, Loader2, FileText, CheckCircle2, XCircle, MinusCircle, Globe, RefreshCcw, Bell } from 'lucide-react';
 import { calculateStadiumEconomy, safeNumber } from '@/match/stadiumEconomyEngine';
 
 import { ClubShield } from './ClubShield';
@@ -19,7 +19,7 @@ import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { SeasonStartWidget } from './SeasonStartWidget';
 import { WaitingListPanel } from './WaitingListPanel';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Logic for standing sync
 function LeagueStandingsMini({ userId }: { userId?: string }) {
@@ -165,6 +165,42 @@ interface Props {
 }
 
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, onExploreOtherModes, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<Date>(new Date());
+  
+  // Sincronização automática via Realtime
+  useEffect(() => {
+    if (!userId) return;
+
+    const channels = [
+      supabase.channel('dashboard-sync-teams')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'world_teams', filter: `user_id=eq.${userId}` }, () => {
+          refreshDashboard();
+        }).subscribe(),
+      supabase.channel('dashboard-sync-league')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_table' }, () => {
+          refreshDashboard();
+        }).subscribe(),
+      supabase.channel('dashboard-sync-ranking')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'global_ranking', filter: `user_id=eq.${userId}` }, () => {
+          refreshDashboard();
+        }).subscribe()
+    ];
+
+    return () => {
+      channels.forEach(ch => supabase.removeChannel(ch));
+    };
+  }, [userId]);
+
+  const refreshDashboard = useCallback(async () => {
+    setIsSyncing(true);
+    // Dispara evento global para forçar hooks (useGame, etc) a recarregarem se necessário
+    window.dispatchEvent(new CustomEvent('flm:refresh-game-state'));
+    setLastSync(new Date());
+    setTimeout(() => setIsSyncing(false), 1000);
+  }, []);
+
+
   const tiredPlayers = club.players.filter(p => p.stamina < 45);
   const showFatigueWarning = tiredPlayers.length >= 3;
 
@@ -244,6 +280,34 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-10">
+      {/* Header Vivo com Status de Sincronização */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-emerald-500 animate-ping' : 'bg-emerald-500/40'}`} />
+          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+            Dashboard em Tempo Real {isSyncing && '• Sincronizando...'}
+          </span>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-6 gap-2 text-[9px] font-bold uppercase tracking-tighter hover:bg-white/5"
+          onClick={refreshDashboard}
+          disabled={isSyncing}
+        >
+          <RefreshCcw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+          Atualizado às {lastSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+        </Button>
+      </div>
+
+      <AnimatePresence>
+        <motion.div
+          key="dashboard-content"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3 sm:space-y-4"
+        >
+
       {/* Fatigue Warning */}
       {showFatigueWarning && (
         <Card className="border-orange-500/50 bg-orange-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -306,8 +370,45 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
       {userId && <WaitingListPanel userId={userId} onExploreOtherModes={onExploreOtherModes} />}
       <SeasonStartWidget seasonNumber={season} userId={userId} />
 
-      {/* Stats Row */}
+      {/* Quick Stats Grid - Modern Style */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="game-card border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all group">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <Trophy className="h-5 w-5 text-primary mb-2 group-hover:scale-110 transition-transform" />
+            <p className="text-2xl font-black italic tracking-tighter">{club.stats.points}</p>
+            <p className="text-[9px] uppercase font-bold text-muted-foreground">Pontos na Liga</p>
+          </CardContent>
+        </Card>
+
+        <Card className="game-card border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all group">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <DollarSign className="h-5 w-5 text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
+            <p className="text-xl font-black italic tracking-tighter text-emerald-400 truncate max-w-full">
+              {formatMoneyShort(club.budget).replace('R$ ', '')}
+            </p>
+            <p className="text-[9px] uppercase font-bold text-muted-foreground">Orçamento</p>
+          </CardContent>
+        </Card>
+
+        <Card className="game-card border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-all group">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <Users className="h-5 w-5 text-amber-500 mb-2 group-hover:scale-110 transition-transform" />
+            <p className="text-2xl font-black italic tracking-tighter">{club.fans.toLocaleString()}</p>
+            <p className="text-[9px] uppercase font-bold text-muted-foreground">Fãs Ativos</p>
+          </CardContent>
+        </Card>
+
+        <Card className="game-card border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10 transition-all group">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <TrendingUp className="h-5 w-5 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
+            <p className="text-2xl font-black italic tracking-tighter">{avgOvr}</p>
+            <p className="text-[9px] uppercase font-bold text-muted-foreground">Média do Elenco</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
         <Card className="game-card border-primary/20 bg-primary/5">
           <CardHeader className="pb-2 px-4 pt-3">
             <CardTitle className="text-[10px] sm:text-xs uppercase tracking-widest text-primary flex items-center justify-between">
@@ -440,6 +541,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           ))}
         </CardContent>
       </Card>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
