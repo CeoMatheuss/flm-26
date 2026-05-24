@@ -38,7 +38,8 @@ function seedRng(matchId: string) {
 function rng() { return _rng(); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(rng() * arr.length)]; }
 
-const awayNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Alves', 'Pereira', 'Lima', 'Gomes', 'Costa', 'Ribeiro', 'Martins', 'Carvalho', 'Almeida', 'Lopes', 'Soares', 'Fernandes'];
+const awayNames = []; // Eliminated random names to avoid "phantom" players
+
 
 // ── TYPES ──────────────────────────────────────────────────────
 
@@ -2341,14 +2342,24 @@ Deno.serve(async (req) => {
     
     // ── AUTOMATIC STATS SYNC ──────────────────────────────────
     try {
-      const statsPayload = result.allPlayers.map(p => ({
-        player_id: p.id,
-        team_id: (p.team === 'home' ? (effHomeTeamId || p.team_id) : (effAwayTeamId || p.team_id)),
-        goals: p.goals || 0,
-        assists: p.assists || 0,
-        rating: p.rating || 6.0,
-        yellow_card: (p.yellowCards || 0) > 0,
-        red_card: p.redCards || 0,
+      // Filter out invalid/duplicate players before syncing
+      const seenIds = new Set();
+      const validStatsPayload = result.allPlayers
+        .filter(p => {
+          if (!p.id || seenIds.has(p.id)) return false;
+          seenIds.add(p.id);
+          return true;
+        })
+        .map(p => ({
+          player_id: p.id,
+          team_id: (p.team === 'home' ? (effHomeTeamId || p.team_id) : (effAwayTeamId || p.team_id)),
+          goals: p.goals || 0,
+          assists: p.assists || 0,
+          rating: p.rating || 6.0,
+          yellow_card: (p.yellowCards || 0) > 0,
+          red_card: p.redCards || 0,
+        }));
+
         is_gk: p.position === 'GOL',
         clean_sheet: (p.team === 'home' ? result.awayGoals === 0 : result.homeGoals === 0)
       })).filter(p => !p.player_id.includes('-')); // filter out temp bot IDs like 'away-1'

@@ -307,8 +307,11 @@ export function SquadTab({ players, budget, clubName, trainingLevel, onRest, onR
       const starterAndBenchCount = without.filter(p => ['starter', 'bench'].includes(p.squad_status as any)).length;
       insertAt = Math.min(without.length, starterAndBenchCount);
     }
-    const newOrder = [...without.slice(0, insertAt), player, ...without.slice(insertAt)];
-    onReorderPlayers(newOrder);
+    
+    // Auto-organize after move
+    const updatedWithPlayer = [...without.slice(0, insertAt), player, ...without.slice(insertAt)];
+    const finalReordered = autoLineup(updatedWithPlayer, tactics?.formation || '4-4-2');
+    onReorderPlayers(finalReordered);
   };
 
   // Swap two players' positions in the array (for substitutions)

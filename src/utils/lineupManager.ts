@@ -38,24 +38,19 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   const canPlayMatch = (player: Player) => {
     const raw = player as any;
-    const isBaseYouth = raw.isYouth && raw.contractStatus !== 'profissional';
-    // Use the explicit squad_status if available
-    if (raw.squad_status === 'injured' || raw.squad_status === 'suspended') return false;
-    return !isBaseYouth && !player.injury && !raw.isInjured && !raw.isSuspended && !raw.suspended && !raw.isLoaned && !raw.loanedOut && !raw.inactive && !raw.removed && !player.disciplinary?.isSuspended;
+    if (player.injury || player.disciplinary?.isSuspended || raw.squad_status === 'injured' || raw.squad_status === 'suspended') return false;
+    if (raw.isLoaned || raw.loanedOut || raw.inactive || raw.removed) return false;
+    return true;
   };
 
-  const allPlayers = [...players].sort((a, b) => {
-    // Basic sorting: available professionals/promoted first, then high overall
-    if (canPlayMatch(a) !== canPlayMatch(b)) return canPlayMatch(a) ? -1 : 1;
-    return b.overall - a.overall;
-  });
+  // 1. Separate players by availability
+  const availablePlayers = [...players].filter(canPlayMatch).sort((a, b) => b.overall - a.overall);
+  const unavailablePlayers = [...players].filter(p => !canPlayMatch(p));
 
   const used = new Set<string>();
   const starters: (Player | null)[] = new Array(11).fill(null);
 
   const getPlayerScoreForPos = (player: Player, targetPos: Player['position']) => {
-    if (!canPlayMatch(player)) return -1000;
-    
     let score = player.overall;
     if (player.position === targetPos) score += 20;
     else if (player.secondaryPosition === targetPos) score += 12; 
@@ -70,16 +65,14 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
       };
       score += (penalties[player.position]?.[targetPos] || -30);
     }
-    
     score += (player.stamina / 10);
     score += (player.morale / 20);
-    if (player.matchRating) score += (player.matchRating * 2);
     return score;
   };
 
   // 1. Assign Goalkeeper
-  const bestGK = allPlayers
-    .filter(p => canPlayMatch(p) && p.position === 'GOL')
+  const bestGK = availablePlayers
+    .filter(p => p.position === 'GOL')
     .sort((a, b) => getPlayerScoreForPos(b, 'GOL') - getPlayerScoreForPos(a, 'GOL'))[0];
   
   if (bestGK) {
@@ -90,8 +83,8 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   // 2. Assign other starters based on formation requirements
   for (let i = 1; i < safeRequirements.length; i++) {
     const reqPos = safeRequirements[i] as Player['position'];
-    const bestPlayer = allPlayers
-      .filter(p => !used.has(p.id) && canPlayMatch(p) && p.position !== 'GOL') // Proibir GOL nas outras posições de linha
+    const bestPlayer = availablePlayers
+      .filter(p => !used.has(p.id) && p.position !== 'GOL') // Proibir GOL nas outras posições de linha
       .sort((a, b) => getPlayerScoreForPos(b, reqPos) - getPlayerScoreForPos(a, reqPos))[0];
     
     if (bestPlayer) {
@@ -103,8 +96,8 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   // Fill empty starter slots if needed (fallback to highest OVR)
   for (let i = 0; i < starters.length; i++) {
     if (!starters[i]) {
-      const fallback = allPlayers
-        .filter(p => !used.has(p.id) && canPlayMatch(p) && (i === 0 ? p.position === 'GOL' : p.position !== 'GOL'))
+      const fallback = availablePlayers
+        .filter(p => !used.has(p.id) && (i === 0 ? p.position === 'GOL' : p.position !== 'GOL'))
         .sort((a, b) => b.overall - a.overall)[0];
       if (fallback) {
         starters[i] = fallback;
@@ -113,60 +106,52 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
     }
   }
 
-  const finalStarters = starters.filter((p): p is Player => !!p);
+  const finalStarters = starters.filter((p): p is Player => !!p).map(p => ({
+    ...p,
+    squad_status: 'starter' as const,
+    squadRole: 'titular' as const
+  }));
 
-  // 3. Intelligent Balanced Reserves (Exact 11 slots)
-  const reserves: Player[] = [];
-  const poolForReserves = allPlayers.filter(p => !used.has(p.id) && canPlayMatch(p));
-
-  // Reserve GK (Mandatory if available)
-  const resGK = poolForReserves.find(p => p.position === 'GOL');
-  if (resGK) {
-    reserves.push(resGK);
-    used.add(resGK.id);
-  }
-
-  // Balanced logic: 3 Def, 4 Mid, 3 Atk or similar based on availability
-  const slots = [
-    { pos: ['ZAG', 'LAT'], count: 3 },
-    { pos: ['VOL', 'MEI'], count: 4 },
-    { pos: ['ATA'], count: 3 }
-  ];
-
-  slots.forEach(slot => {
-    const candidates = poolForReserves
-      .filter(p => !used.has(p.id) && slot.pos.includes(p.position as any))
-      .sort((a, b) => b.overall - a.overall);
-    
-    for (let i = 0; i < slot.count && candidates.length > 0; i++) {
-      const p = candidates.shift()!;
-      reserves.push(p);
-      used.add(p.id);
-    }
-  });
-
-  // Fill remaining reserve slots (up to 11) with best remaining available
-  const leftForReserves = allPlayers
-    .filter(p => !used.has(p.id) && canPlayMatch(p))
-    .sort((a, b) => b.overall - a.overall);
+  // 3. Intelligent Balanced Reserves (max 7 usually in FLM, but keeping logic flexible)
+  const BENCH_LIMIT = 7;
+  const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
   
-  while (reserves.length < 11 && leftForReserves.length > 0) {
-    const p = leftForReserves.shift()!;
-    reserves.push(p);
-    used.add(p.id);
-  }
+  const poolForReserves = availablePlayers
+    .filter(p => !used.has(p.id))
+    .sort((a, b) => {
+      const posA = posOrder.indexOf(a.position);
+      const posB = posOrder.indexOf(b.position);
+      if (posA !== posB) return posA - posB;
+      return b.overall - a.overall;
+    });
 
-  // All other players go to "reserve" status (which will be filtered into "Fora" tab)
-  const otherPlayers = allPlayers.filter(p => !used.has(p.id));
-  
+  const reserves = poolForReserves.slice(0, BENCH_LIMIT).map(p => ({
+    ...p,
+    squad_status: 'bench' as const,
+    squadRole: 'reserva' as const
+  }));
+
+  reserves.forEach(p => used.add(p.id));
+
+  // 4. Out/Reserves (Not called)
+  const otherPlayers = availablePlayers.filter(p => !used.has(p.id)).map(p => ({
+    ...p,
+    squad_status: 'reserve' as const,
+    squadRole: 'reserva' as const,
+  }));
+
+  // 5. Unavailable (Injured/Suspended)
+  const finalUnavailable = unavailablePlayers.map(p => ({
+    ...p,
+    squad_status: p.injury ? ('injured' as const) : ('suspended' as const),
+    squadRole: 'reserva' as const
+  }));
+
   return [
-    ...finalStarters.map(p => ({ ...p, squad_status: 'starter' as const, squadRole: 'titular' as const })),
-    ...reserves.map(p => ({ ...p, squad_status: 'bench' as const, squadRole: 'reserva' as const })),
-    ...otherPlayers.map(p => ({
-      ...p,
-      squad_status: 'reserve' as const,
-      squadRole: 'reserva' as const,
-    })),
+    ...finalStarters,
+    ...reserves,
+    ...otherPlayers,
+    ...finalUnavailable
   ];
 }
 
