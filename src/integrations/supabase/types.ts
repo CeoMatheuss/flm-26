@@ -3975,6 +3975,24 @@ export type Database = {
           },
         ]
       }
+      scout_market_config: {
+        Row: {
+          id: string
+          last_refresh: string | null
+          refresh_interval_days: number | null
+        }
+        Insert: {
+          id?: string
+          last_refresh?: string | null
+          refresh_interval_days?: number | null
+        }
+        Update: {
+          id?: string
+          last_refresh?: string | null
+          refresh_interval_days?: number | null
+        }
+        Relationships: []
+      }
       scout_market_pool: {
         Row: {
           analysis_speed: number | null
@@ -6458,6 +6476,31 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_scout_market: {
+        Args: never
+        Returns: {
+          analysis_speed: number | null
+          country: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          level: string
+          name: string
+          potential_evaluation: number | null
+          preferred_region: string | null
+          reputation: number | null
+          salary: number
+          specialization: string
+          technical_evaluation: number | null
+          youth_discovery: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "scout_market_pool"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_user_club_shield: { Args: { _user_id: string }; Returns: Json }
       get_user_league_info: {
         Args: { _user_id: string }
@@ -6654,6 +6697,7 @@ export type Database = {
         Returns: undefined
       }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
+      refresh_scout_market: { Args: never; Returns: undefined }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       replace_bot_with_player:
         | {
