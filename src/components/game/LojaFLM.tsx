@@ -24,7 +24,9 @@ import { useStoreManager } from '@/hooks/useStoreManager';
 import { useMarketingDelivery } from '@/hooks/useMarketingDelivery';
 import { formatMoney } from '@/lib/formatMoney';
 import { PacotinhosTab } from './PacotinhosTab';
+import { ScoutPackTab } from './shop/ScoutPackTab';
 import { OfflineSummary } from '@/types/store';
+
 
 interface LojaProps {
   club: any;
