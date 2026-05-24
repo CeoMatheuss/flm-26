@@ -118,19 +118,8 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
       "flex flex-col h-full overflow-hidden min-w-[700px] bg-zinc-950/20 rounded-[2rem] transition-all duration-500",
       pendingSwapId && "ring-4 ring-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.3)] bg-emerald-500/10"
     )}>
-      {/* Search & Filters */}
-      <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-          <input 
-            type="text"
-            placeholder="Buscar jogador..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-xs font-bold focus:outline-none focus:border-emerald-500/50 transition-all"
-          />
-        </div>
-        
+      {/* Filters */}
+      <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-end bg-zinc-950/20">
         <div className="flex items-center gap-2">
            <span className="text-[10px] font-black uppercase tracking-widest text-white/20 mr-2">Ordenar por:</span>
            <SortBtn active={sortBy === 'overall'} onClick={() => setSortBy('overall')} label="OVR" />
