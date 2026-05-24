@@ -121,6 +121,26 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
     setBenchOpen(false);
   };
 
+  const handlePlayerClick = (player: Player) => {
+    setSelectedPlayer(player);
+    setPanelOpen(true);
+  };
+
+  const handleSetCaptain = (id: string) => {
+    onUpdate({ ...safeTactics, captainId: id });
+    toast.success("Novo capitão definido!");
+  };
+
+  const handleSwapRequest = () => {
+    if (selectedPlayer) {
+      setPendingFieldId(selectedPlayer.id);
+      setPanelOpen(false);
+      setBenchOpen(true);
+      toast.info(`Selecione um reserva para entrar no lugar de ${selectedPlayer.name.split(' ').pop()}`);
+    }
+  };
+
+
   return (
     <div className={cn(
       hideSwapButton
