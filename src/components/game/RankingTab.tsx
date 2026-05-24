@@ -88,7 +88,7 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
         query = query.order('ranking_points', { ascending: false });
     }
 
-    const { data: rankingData, error } = await query.limit(100);
+    const { data: rankingData, error } = await query.not('user_id', 'is', null).limit(100);
 
     if (!error && rankingData) {
       const userIds = rankingData.map(r => r.user_id);
