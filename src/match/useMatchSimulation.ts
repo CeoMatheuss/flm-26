@@ -453,6 +453,7 @@ export function useMatchSimulation() {
           attendance: data.attendance,
           // currentMoment already handled above
           playerStamina: stamina,
+          playerRatings: calculatePlayerRatings(homePlayers, visibleEvents, nextEvent.minute, data.isHome),
           assistantTips: visibleEvents.filter(e => e.type === 'assistant_tip'),
           onAnimationComplete: () => { isAnimatingRef.current = false; },
         };
