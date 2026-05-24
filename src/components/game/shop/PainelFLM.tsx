@@ -20,6 +20,7 @@ interface PainelFLMProps {
   userId: string;
 }
 
+
 type LedgerEntry = {
   id: string;
   ts: string;
