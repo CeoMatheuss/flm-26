@@ -20,13 +20,16 @@ interface PlayerRankingEntry {
   reputation_level: string;
   current_position: number;
   prev_position: number;
-  position_rank: number;
+  position_rank?: number;
   total_goals: number;
   total_assists: number;
-  total_clean_sheets: number;
+  total_clean_sheets?: number;
   avg_rating: number;
-  mvp_count: number;
+  mvp_count?: number;
+  seasonal_points?: number;
+  last_update?: string;
   players: {
+    id: string;
     name: string;
     position: string;
     overall: number;
@@ -34,13 +37,15 @@ interface PlayerRankingEntry {
     age: number;
     market_value: number;
     nationality: string;
-    clubs: {
+    squad_status: string;
+    clubs?: {
       club_name: string;
       logo_url: string | null;
       shield_config: any;
-    };
+    } | null;
   };
 }
+
 
 export function PlayerRankingTab() {
   const [rankings, setRankings] = useState<PlayerRankingEntry[]>([]);
