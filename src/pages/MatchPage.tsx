@@ -2146,7 +2146,7 @@ function ManagerSubstitutionView({ currentStarters, currentBench, hasAnyPlayers,
 
 function ImprovedSubsView({
   starters, bench, subQueue, selectedSubOut, onSelectSubOut, onConfirmSub, onCancelSub,
-  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason, liveStaminaMap,
+  subsUsed, maxSubs, windowsUsed, maxWindows, isHalftime, blocked, blockedReason, liveStaminaMap, playerRatings,
 }: {
   starters: Player[]; bench: Player[];
   subQueue: { outId: string; inId: string; scheduledMinute?: number }[];
