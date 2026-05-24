@@ -461,7 +461,9 @@ export type Database = {
           club_id: string
           happiness: number | null
           id: string
+          member_count: number | null
           monthly_revenue_cents: number | null
+          plan_id: string | null
           total_members: number | null
           updated_at: string | null
         }
@@ -471,7 +473,9 @@ export type Database = {
           club_id: string
           happiness?: number | null
           id?: string
+          member_count?: number | null
           monthly_revenue_cents?: number | null
+          plan_id?: string | null
           total_members?: number | null
           updated_at?: string | null
         }
@@ -481,7 +485,9 @@ export type Database = {
           club_id?: string
           happiness?: number | null
           id?: string
+          member_count?: number | null
           monthly_revenue_cents?: number | null
+          plan_id?: string | null
           total_members?: number | null
           updated_at?: string | null
         }
@@ -491,6 +497,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: true
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_memberships_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3187,6 +3200,71 @@ export type Database = {
           status?: string | null
         }
         Relationships: []
+      }
+      membership_plans: {
+        Row: {
+          benefits: string[] | null
+          bonus_multiplier: number | null
+          created_at: string | null
+          id: string
+          min_reputation_required: number | null
+          monthly_price: number
+          name: string
+        }
+        Insert: {
+          benefits?: string[] | null
+          bonus_multiplier?: number | null
+          created_at?: string | null
+          id?: string
+          min_reputation_required?: number | null
+          monthly_price: number
+          name: string
+        }
+        Update: {
+          benefits?: string[] | null
+          bonus_multiplier?: number | null
+          created_at?: string | null
+          id?: string
+          min_reputation_required?: number | null
+          monthly_price?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      membership_revenue_history: {
+        Row: {
+          amount: number
+          club_id: string | null
+          created_at: string | null
+          id: string
+          member_total: number
+          month_year: string
+        }
+        Insert: {
+          amount: number
+          club_id?: string | null
+          created_at?: string | null
+          id?: string
+          member_total: number
+          month_year: string
+        }
+        Update: {
+          amount?: number
+          club_id?: string | null
+          created_at?: string | null
+          id?: string
+          member_total?: number
+          month_year?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_revenue_history_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       migration_logs: {
         Row: {
@@ -7421,6 +7499,7 @@ export type Database = {
         Args: { _competition_type: string; _player_ids: string[] }
         Returns: undefined
       }
+      process_monthly_membership_revenue: { Args: never; Returns: undefined }
       process_offline_shop_activity: {
         Args: { p_club_id: string; p_seconds_offline: number }
         Returns: Json
