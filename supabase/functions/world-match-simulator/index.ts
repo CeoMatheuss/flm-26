@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     for (const m of matches) {
       const simStart = Date.now();
       try {
-        const table = m.type === 'cup' ? 'world_cup_matches' : 'world_matches';
+        const table = m.type === 'cup' ? 'tournament_matches' : 'world_matches';
         
         // Atomic claim
         const { data: locked, error: lockErr } = await sb.from(table)
