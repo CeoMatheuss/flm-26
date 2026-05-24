@@ -519,6 +519,7 @@ export function useMatchSimulation() {
                       matchId: data.matchDbId,
                       homeGoals: state.homeGoals,
                       awayGoals: state.awayGoals,
+                      playerRatings: state.playerRatings,
                       rankingChange: rankingResult.deltaPoints,
                       fansChange: rankingResult.deltaFans,
                       fanMessage: rankingResult.fanMessage
