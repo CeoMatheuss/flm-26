@@ -1,5 +1,6 @@
 import { Player } from '@/types/game';
 import { SimEvent } from '../useMatchSimulation';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface PlayerMatchStats {
   id: string;
