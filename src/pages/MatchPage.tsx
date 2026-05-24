@@ -1000,14 +1000,14 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
     const isRed = alert.type === 'injury' || alert.type === 'extreme_fatigue';
     
     return (
-      <Card className={`border-l-4 ${isRed ? 'border-l-red-500 bg-red-500/5' : 'border-l-yellow-500 bg-yellow-500/5'} animate-in slide-in-from-right-4 duration-500 shadow-lg relative overflow-hidden`}>
+      <Card className={`border-l-4 ${isRed ? 'border-l-red-500 bg-red-500/5' : 'border-l-yellow-500 bg-yellow-500/5'} shadow-lg relative overflow-hidden`}>
         <div className={`absolute top-0 right-0 p-1 opacity-10 ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
           {isRed ? <Activity className="w-12 h-12" /> : <Zap className="w-12 h-12" />}
         </div>
         <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-3 relative z-10">
           <div className="flex items-center gap-3">
             <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${isRed ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
-              {alert.type === 'injury' ? <Activity className="h-5 w-5" /> : <Zap className="h-5 w-5 animate-pulse" />}
+              {alert.type === 'injury' ? <Activity className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
             </div>
             <div className="min-w-0">
               <p className={`text-[10px] font-black uppercase tracking-widest ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
