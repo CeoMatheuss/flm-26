@@ -331,17 +331,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
             Dashboard em Tempo Real {isSyncing && '• Sincronizando...'}
           </span>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-6 gap-2 text-[9px] font-bold uppercase tracking-tighter hover:bg-white/5"
-          onClick={refreshDashboard}
-          disabled={isSyncing}
-        >
-          <RefreshCcw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-          Sincronizar
-        </Button>
       </div>
+
 
       <AnimatePresence>
         <motion.div
