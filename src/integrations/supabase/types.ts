@@ -3975,16 +3975,71 @@ export type Database = {
           },
         ]
       }
+      scout_market_pool: {
+        Row: {
+          analysis_speed: number | null
+          country: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          level: string
+          name: string
+          potential_evaluation: number | null
+          preferred_region: string | null
+          reputation: number | null
+          salary: number
+          specialization: string
+          technical_evaluation: number | null
+          youth_discovery: number | null
+        }
+        Insert: {
+          analysis_speed?: number | null
+          country: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          level: string
+          name: string
+          potential_evaluation?: number | null
+          preferred_region?: string | null
+          reputation?: number | null
+          salary: number
+          specialization: string
+          technical_evaluation?: number | null
+          youth_discovery?: number | null
+        }
+        Update: {
+          analysis_speed?: number | null
+          country?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          level?: string
+          name?: string
+          potential_evaluation?: number | null
+          preferred_region?: string | null
+          reputation?: number | null
+          salary?: number
+          specialization?: string
+          technical_evaluation?: number | null
+          youth_discovery?: number | null
+        }
+        Relationships: []
+      }
       scout_missions: {
         Row: {
           created_at: string | null
           ends_at: string
           id: string
+          region: string | null
           reward_multiplier: number
           risk: number
           scout_id: string
           starts_at: string | null
           status: Database["public"]["Enums"]["mission_status"]
+          target_max_age: number | null
+          target_min_age: number | null
+          target_min_potential: number | null
           target_position: string | null
           type: Database["public"]["Enums"]["mission_type"]
           user_id: string
@@ -3993,11 +4048,15 @@ export type Database = {
           created_at?: string | null
           ends_at: string
           id?: string
+          region?: string | null
           reward_multiplier?: number
           risk?: number
           scout_id: string
           starts_at?: string | null
           status?: Database["public"]["Enums"]["mission_status"]
+          target_max_age?: number | null
+          target_min_age?: number | null
+          target_min_potential?: number | null
           target_position?: string | null
           type: Database["public"]["Enums"]["mission_type"]
           user_id: string
@@ -4006,11 +4065,15 @@ export type Database = {
           created_at?: string | null
           ends_at?: string
           id?: string
+          region?: string | null
           reward_multiplier?: number
           risk?: number
           scout_id?: string
           starts_at?: string | null
           status?: Database["public"]["Enums"]["mission_status"]
+          target_max_age?: number | null
+          target_min_age?: number | null
+          target_min_potential?: number | null
           target_position?: string | null
           type?: Database["public"]["Enums"]["mission_type"]
           user_id?: string
@@ -4065,7 +4128,10 @@ export type Database = {
       }
       scouts: {
         Row: {
+          analysis_speed: number | null
           avatar_url: string | null
+          contract_end: string | null
+          contract_start: string | null
           country: string
           created_at: string | null
           efficiency: number
@@ -4076,13 +4142,23 @@ export type Database = {
           level: Database["public"]["Enums"]["scout_level"]
           market_available_at: string | null
           name: string
+          potential_evaluation: number | null
+          preferred_region: string | null
+          regional_knowledge: Json | null
+          reputation: number | null
+          salary: number | null
           seasons_remaining: number | null
           specialization: Database["public"]["Enums"]["scout_specialization"]
+          technical_evaluation: number | null
           updated_at: string | null
           user_id: string | null
+          youth_discovery: number | null
         }
         Insert: {
+          analysis_speed?: number | null
           avatar_url?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
           country: string
           created_at?: string | null
           efficiency?: number
@@ -4093,13 +4169,23 @@ export type Database = {
           level?: Database["public"]["Enums"]["scout_level"]
           market_available_at?: string | null
           name: string
+          potential_evaluation?: number | null
+          preferred_region?: string | null
+          regional_knowledge?: Json | null
+          reputation?: number | null
+          salary?: number | null
           seasons_remaining?: number | null
           specialization?: Database["public"]["Enums"]["scout_specialization"]
+          technical_evaluation?: number | null
           updated_at?: string | null
           user_id?: string | null
+          youth_discovery?: number | null
         }
         Update: {
+          analysis_speed?: number | null
           avatar_url?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
           country?: string
           created_at?: string | null
           efficiency?: number
@@ -4110,10 +4196,17 @@ export type Database = {
           level?: Database["public"]["Enums"]["scout_level"]
           market_available_at?: string | null
           name?: string
+          potential_evaluation?: number | null
+          preferred_region?: string | null
+          regional_knowledge?: Json | null
+          reputation?: number | null
+          salary?: number | null
           seasons_remaining?: number | null
           specialization?: Database["public"]["Enums"]["scout_specialization"]
+          technical_evaluation?: number | null
           updated_at?: string | null
           user_id?: string | null
+          youth_discovery?: number | null
         }
         Relationships: []
       }
