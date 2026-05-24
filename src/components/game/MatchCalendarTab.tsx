@@ -242,36 +242,41 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
         setMyTeamId(teamData.id);
       }
 
-      if (teamData?.league) {
-        const league = teamData.league as any;
-        setSelectedMatchday(league.current_round || 1);
-        setMaxMatchdays(league.total_rounds || 30);
-        setLeagueDivision(league.division || 1);
-        setLeagueName(league.name || 'Liga');
+      if (teamData?.league_id) {
+        const { data: leagueData } = await supabase
+          .from('world_leagues')
+          .select('id, name, current_round, total_rounds, division')
+          .eq('id', teamData.league_id)
+          .single();
 
-        const { data: wm } = await supabase
-          .from('world_matches')
-          .select(`
-            *, 
-            home_team:world_teams!world_matches_home_team_id_fkey(id, name, logo, is_bot, user_id), 
-            away_team:world_teams!world_matches_away_team_id_fkey(id, name, logo, is_bot, user_id)
-          `)
-          .eq('league_id', league.id)
-          .order('round', { ascending: true })
-          .order('scheduled_at', { ascending: true });
-        
-        if (wm) {
-          const userIds = [...wm.map(m => m.home_team?.user_id), ...wm.map(m => m.away_team?.user_id)].filter(Boolean);
-          const { data: clubsData } = await supabase.from('clubs').select('*').in('user_id', userIds);
+        if (leagueData) {
+          const league = leagueData as any;
+          setSelectedMatchday(league.current_round || 1);
+          setMaxMatchdays(league.total_rounds || 30);
+          setLeagueDivision(league.division || 1);
+          setLeagueName(league.name || 'Liga');
 
-          const enhanced = wm.map(m => ({
-            ...m,
-            competition_kind: 'league' as const,
-            competition_name: league.name || 'Liga',
-            home_full: { ...m.home_team, ...clubsData?.find(c => c.user_id === m.home_team?.user_id) },
-            away_full: { ...m.away_team, ...clubsData?.find(c => c.user_id === m.away_team?.user_id) }
-          }));
-          setWorldMatches(enhanced);
+          const { data: wm } = await supabase
+            .from('world_matches')
+            .select(`
+              *, 
+              home_team:world_teams!world_matches_home_team_id_fkey(id, name, logo, is_bot, user_id, shield_config, primary_color, secondary_color, detail_color, shield_pattern, shield_shape, shield_icon), 
+              away_team:world_teams!world_matches_away_team_id_fkey(id, name, logo, is_bot, user_id, shield_config, primary_color, secondary_color, detail_color, shield_pattern, shield_shape, shield_icon)
+            `)
+            .eq('league_id', league.id)
+            .order('round', { ascending: true })
+            .order('scheduled_at', { ascending: true });
+          
+          if (wm) {
+            const enhanced = wm.map(m => ({
+              ...m,
+              competition_kind: 'league' as const,
+              competition_name: league.name || 'Liga',
+              home_full: m.home_team,
+              away_full: m.away_team
+            }));
+            setWorldMatches(enhanced);
+          }
         }
       }
 
@@ -342,6 +347,20 @@ export function MatchCalendarTab({ userId, clubName }: Props) {
   
   useEffect(() => {
     load();
+    
+    // Realtime subscription for matches to update calendar automatically
+    const channel = supabase.channel('calendar_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches' }, () => {
+        load();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'national_cup_matches' }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   if (selected) return <MatchDetailModal match={selected} clubName={clubName} onClose={() => setSelected(null)} />;
