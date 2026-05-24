@@ -372,16 +372,19 @@ export function PlayerRankingTab() {
                               <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent" />
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-sm font-bold">{entry.players.name}</span>
+                              <span className="text-sm font-bold">{entry.players?.name || 'Jogador'}</span>
                               <span className="text-[10px] text-muted-foreground uppercase flex items-center gap-1">
-                                {entry.players.position} • {entry.players.age} anos
+                                {entry.players?.position || 'POS'} • {entry.players?.age || '--'} anos
+                                {entry.players?.squad_status === 'youth' && (
+                                  <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[8px] h-3 px-1 ml-1">BASE</Badge>
+                                )}
                               </span>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-4 text-center">
                           <Badge variant="outline" className="font-bold border-primary/20 text-primary bg-primary/5">
-                            {entry.players.overall}
+                            {entry.players?.overall || 0}
                           </Badge>
                         </td>
                         <td className="py-4 px-4 text-center hidden md:table-cell">
@@ -403,7 +406,7 @@ export function PlayerRankingTab() {
                             <span className={`text-sm font-black ${entry.avg_rating >= 7 ? 'text-emerald-500' : 'text-amber-500'}`}>
                               {Number(entry.avg_rating).toFixed(2)}
                             </span>
-                            {entry.mvp_count > 0 && (
+                            {(entry.mvp_count || 0) > 0 && (
                               <Badge className="bg-amber-500/20 text-amber-500 text-[8px] px-1 py-0 h-4" variant="outline">
                                 <Zap className="w-2 h-2 mr-0.5 fill-amber-500" /> {entry.mvp_count}
                               </Badge>
@@ -413,9 +416,10 @@ export function PlayerRankingTab() {
                         <td className="py-4 px-4 text-right">
                           <div className="flex flex-col items-end">
                             <span className="text-sm font-black italic">{Math.round(entry.ranking_points)}</span>
-                            <span className="text-[9px] text-muted-foreground uppercase">{formatCurrency(entry.players.market_value)}</span>
+                            <span className="text-[9px] text-muted-foreground uppercase">{formatCurrency(entry.players?.market_value || 0)}</span>
                           </div>
                         </td>
+
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end">
                             {variation > 0 ? (
