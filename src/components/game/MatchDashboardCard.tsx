@@ -326,9 +326,13 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
 
   // Live countdown timer — sincronizado com o horário da liga (ScheduledAt)
+  // Auto-dispara simulação quando os 5 minutos do lobby expiram sem o usuário entrar
+  const [autoSimTriggered, setAutoSimTriggered] = useState(false);
+  useEffect(() => { setAutoSimTriggered(false); }, [nextMatch?.matchId]);
+
   useEffect(() => {
     if (!nextMatch?.date || nextMatch.status === 'finished') return;
-    const update = () => {
+    const update = async () => {
       const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
       
@@ -343,9 +347,20 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
           setTimeLeft('🔴 AO VIVO');
           setIsReady(true);
         } else {
-          // Se passou dos 5 minutos e não iniciou, está sendo simulado pelo servidor
-          setTimeLeft('⌛ SIMULANDO');
+          // Passou dos 5 minutos: dispara simulação automática no servidor
+          setTimeLeft('⌛ Simulando automaticamente...');
           setIsReady(false);
+
+          if (!autoSimTriggered) {
+            setAutoSimTriggered(true);
+            console.log('[MatchDashboardCard] Janela de 5min expirada — disparando auto-simulação para', nextMatch.matchId);
+            try {
+              const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
+              triggerAutoSim();
+            } catch (err) {
+              console.error('[MatchDashboardCard] Falha ao disparar auto-sim:', err);
+            }
+          }
         }
         return;
       }
@@ -366,7 +381,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [nextMatch?.date, nextMatch?.status]);
+  }, [nextMatch?.date, nextMatch?.status, nextMatch?.matchId, autoSimTriggered]);
 
   const resolvedStadium = useMemo(() => {
     if (!nextMatch) return { name: '', isShifted: false };
