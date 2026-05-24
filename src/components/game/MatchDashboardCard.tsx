@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useMatchShields } from '@/hooks/useMatchShields';
 import { syncEngine } from '@/hooks/useWorldSync';
-import { isDateBlockedByEvents, resolveMatchStadium } from '@/match/stadiumEvents';
+import { isDateBlockedByEvents, resolveMatchStadium, getEffectiveCapacity } from '@/match/stadiumEvents';
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -370,17 +370,20 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
 
   const resolvedStadium = useMemo(() => {
     if (!nextMatch) return { name: '', isShifted: false };
+    const stadiumInfo = { 
+      stadiumName: club.stadiumName, 
+      stadiumOps: club.stadiumOps,
+      stadiumLevel: stadiumLevel || 1 
+    };
     return resolveMatchStadium(
       nextMatch.date,
-      { stadiumName: club.stadiumName, stadiumOps: club.stadiumOps },
+      stadiumInfo,
       nextMatch.isHome ? nextMatch.away : nextMatch.home,
       nextMatch.isHome
     );
-  }, [nextMatch, club.stadiumName, club.stadiumOps]);
+  }, [nextMatch, club.stadiumName, club.stadiumOps, stadiumLevel]);
 
-  const stadiumCapacity = useMemo(() => {
-    return getStadiumCapacity(stadiumLevel || 1);
-  }, [stadiumLevel]);
+  const stadiumCapacity = (resolvedStadium as any).capacity || 20000;
 
   const handleGoToMatch = () => {
     if (!nextMatch) return;
@@ -391,6 +394,9 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     }
     const stageStr = String(nextMatch.stage || '').toLowerCase();
     const isKnockout = stageStr && !stageStr.startsWith('grupo') && stageStr !== 'league' && stageStr !== 'liga' && stageStr !== 'group';
+    
+    // Calcular público estimado para o lobby se for mandante
+    // Para simplificar, passamos a capacidade real e o nome real
     navigate('/', {
       replace: true,
       state: {
@@ -546,7 +552,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
                     <Info className="h-3 w-3 text-amber-500 cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-[10px] max-w-[200px]">{resolvedStadium.shiftReason}</p>
+                    <p className="text-[10px] max-w-[200px]">{(resolvedStadium as any).shiftReason || 'Partida transferida devido a evento.'}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
