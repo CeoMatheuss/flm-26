@@ -982,7 +982,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
                   <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-black uppercase italic rounded-xl gap-2 shadow-lg shadow-primary/20" 
                     onClick={executeKitPayment} disabled={loading || !email || !fullName || !cpf}>
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
-                    Gerar PIX de Lançamento
+                    Pagar via Mercado Livre (R$ 0,01)
                   </Button>
                 </div>
               )}
