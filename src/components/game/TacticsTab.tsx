@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormationView } from './FormationView';
+import { PlayerTacticsPanel } from './Tactics/PlayerTacticsPanel';
 import { TacticsConfig, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES, playStyleEffects, type PlayStyle } from '@/types/tactics';
 import { Player } from '@/types/game';
-import { ArrowLeft, Zap, Target, Shield, X, Sparkles, Users } from 'lucide-react';
+import { ArrowLeft, Zap, Target, Shield, X, Sparkles, Users, User } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -28,6 +29,9 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
   const isMobile = useIsMobile();
   const [benchOpen, setBenchOpen] = useState(false);
   const [pendingFieldId, setPendingFieldId] = useState<string | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+
 
   // Guardas defensivas: evita crash (tela preta) quando players/tactics ainda não carregaram
   const safePlayers: Player[] = Array.isArray(players) ? players : [];
