@@ -36,15 +36,40 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
   const { userId, clubName, outcome, competition, competitionLabel, opponentStrength = 65, teamStrength = 65 } = input;
   if (!userId) return;
 
+  // 1. Snapshot positions BEFORE points change to track variation
+  try {
+    await supabase.rpc('snapshot_ranking_positions');
+  } catch (e) {
+    console.error('Error snapshoting positions:', e);
+  }
+
   const strengthDiff = opponentStrength - teamStrength;
   const strengthFactor = 1 + (strengthDiff / 50);
-  const delta = Math.round(BASE[outcome] * WEIGHT[competition] * strengthFactor);
-
+  
   const { data: row } = await supabase
     .from('global_ranking')
-    .select('id, ranking_points, games_played, wins, draws, losses')
+    .select('*')
     .eq('user_id', userId)
     .maybeSingle();
+
+  const currentStreak = row?.winning_streak ?? 0;
+  const newStreak = outcome === 'win' ? currentStreak + 1 : 0;
+  const streakMultiplier = outcome === 'win' ? (1 + (Math.min(newStreak, 5) * 0.05)) : 1;
+
+  const delta = Math.round(BASE[outcome] * WEIGHT[competition] * strengthFactor * streakMultiplier);
+
+  const recentForm = row?.recent_form ? [...(row.recent_form as any[])] : [];
+  recentForm.unshift(outcome === 'win' ? 'V' : outcome === 'draw' ? 'E' : 'D');
+  const truncatedForm = recentForm.slice(0, 5);
+
+  const pointsHistory = row?.points_history ? [...(row.points_history as any[])] : [];
+  pointsHistory.push({
+    date: new Date().toISOString(),
+    points: Math.max(0, (row?.ranking_points ?? 100) + delta),
+    delta,
+    competition: competitionLabel ?? 'Amistoso'
+  });
+  const truncatedHistory = pointsHistory.slice(-20);
 
   if (!row) {
     await supabase.from('global_ranking').insert({
@@ -57,22 +82,27 @@ export async function updateGlobalRanking(input: UpdateInput): Promise<void> {
       losses: outcome === 'loss' ? 1 : 0,
       last_change: delta,
       current_competition: competitionLabel ?? 'Amistoso',
+      recent_form: truncatedForm,
+      winning_streak: newStreak,
+      points_history: truncatedHistory
     });
-    return;
+  } else {
+    await supabase
+      .from('global_ranking')
+      .update({
+        club_name: clubName,
+        ranking_points: Math.max(0, (row.ranking_points ?? 100) + delta),
+        games_played: (row.games_played ?? 0) + 1,
+        wins: (row.wins ?? 0) + (outcome === 'win' ? 1 : 0),
+        draws: (row.draws ?? 0) + (outcome === 'draw' ? 1 : 0),
+        losses: (row.losses ?? 0) + (outcome === 'loss' ? 1 : 0),
+        last_change: delta,
+        current_competition: competitionLabel ?? 'Amistoso',
+        recent_form: truncatedForm,
+        winning_streak: newStreak,
+        points_history: truncatedHistory,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', row.id);
   }
-
-  await supabase
-    .from('global_ranking')
-    .update({
-      club_name: clubName,
-      ranking_points: Math.max(0, (row.ranking_points ?? 100) + delta),
-      games_played: (row.games_played ?? 0) + 1,
-      wins: (row.wins ?? 0) + (outcome === 'win' ? 1 : 0),
-      draws: (row.draws ?? 0) + (outcome === 'draw' ? 1 : 0),
-      losses: (row.losses ?? 0) + (outcome === 'loss' ? 1 : 0),
-      last_change: delta,
-      current_competition: competitionLabel ?? 'Amistoso',
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', row.id);
 }
