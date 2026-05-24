@@ -35,6 +35,7 @@ export function YouthAcademyModernTab({
   lastYouthGenAt, isPremium, onSelect
 }: YouthAcademyModernTabProps & { onSelect?: (p: YouthProspect) => void }) {
   const [selectedProspect, setSelectedProspect] = useState<YouthProspect | null>(null);
+  const [isConfirmingPromotion, setIsConfirmingPromotion] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPos, setFilterPos] = useState('ALL');
   const [timeLeft, setTimeLeft] = useState<string>('');
