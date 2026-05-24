@@ -32,8 +32,9 @@ export function WorldLeagues({ userId, rating = 0, rankingHistory = [], clubName
               <Trophy className="h-3 w-3" /> Copas Nacionais
             </TabsTrigger>
             <TabsTrigger value="mundial" className="text-xs px-4 flex items-center gap-1.5">
-              <Star className="h-3 w-3 text-yellow-500" /> Mundial
+              <Star className="h-3 w-3 text-yellow-500 animate-pulse" /> Mundial de Clubes
             </TabsTrigger>
+
           </TabsList>
         </div>
 
