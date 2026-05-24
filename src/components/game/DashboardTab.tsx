@@ -498,16 +498,17 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
           </CardHeader>
           <CardContent className="px-4 pb-4">
             {useMemo(() => {
+              const currentPoints = liveStats?.points ?? club.stats.points;
               let boardGoal = 45; let goalLabel = "Top 10";
               if (avgOvr >= 80) { boardGoal = 85; goalLabel = "Título"; }
               else if (avgOvr >= 75) { boardGoal = 70; goalLabel = "G4"; }
               else if (avgOvr >= 70) { boardGoal = 60; goalLabel = "G6"; }
-              const progress = Math.min(100, Math.max(0, (club.stats.points / boardGoal) * 100));
+              const progress = Math.min(100, Math.max(0, (currentPoints / boardGoal) * 100));
               return (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-3xl font-black">{club.stats.points}<span className="text-sm ml-1 text-muted-foreground">pts</span></p>
+                      <p className="text-3xl font-black">{currentPoints}<span className="text-sm ml-1 text-muted-foreground">pts</span></p>
                       <Badge variant="outline" className="text-[10px] mt-1">Meta: {goalLabel}</Badge>
                     </div>
                     <Trophy className="h-8 w-8 text-primary animate-pulse" />
@@ -515,7 +516,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                   <Progress value={progress} className="h-1.5" />
                 </div>
               );
-            }, [club.stats.points, avgOvr])}
+            }, [club.stats.points, liveStats?.points, avgOvr])}
+
           </CardContent>
         </Card>
 
