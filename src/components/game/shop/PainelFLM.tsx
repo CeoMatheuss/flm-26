@@ -242,7 +242,7 @@ export function PainelFLM({ club, userId }: PainelFLMProps) {
                 <p className="text-[10px] font-black uppercase tracking-widest">Saldo do Clube</p>
               </div>
               <p className={`mt-2 text-3xl sm:text-5xl font-black italic tracking-tighter ${budget >= 0 ? 'text-white' : 'text-red-400'}`}>
-                R$ {budget.toLocaleString('pt-BR')}
+                FL$ {budget.toLocaleString('pt-BR')}
               </p>
               <p className="text-[10px] text-white/40 font-medium mt-1">
                 Atualizado em tempo real · {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
