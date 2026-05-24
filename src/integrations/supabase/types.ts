@@ -5102,6 +5102,172 @@ export type Database = {
         }
         Relationships: []
       }
+      world_cup_competitions: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          season_year: number
+          status: string | null
+          updated_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          season_year: number
+          status?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          season_year?: number
+          status?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_cup_competitions_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_cup_matches: {
+        Row: {
+          away_goals: number | null
+          away_penalty_goals: number | null
+          away_team_id: string | null
+          created_at: string | null
+          cup_id: string | null
+          home_goals: number | null
+          home_penalty_goals: number | null
+          home_team_id: string | null
+          id: string
+          match_data: Json | null
+          scheduled_at: string
+          stage: string
+          status: string | null
+          winner_team_id: string | null
+        }
+        Insert: {
+          away_goals?: number | null
+          away_penalty_goals?: number | null
+          away_team_id?: string | null
+          created_at?: string | null
+          cup_id?: string | null
+          home_goals?: number | null
+          home_penalty_goals?: number | null
+          home_team_id?: string | null
+          id?: string
+          match_data?: Json | null
+          scheduled_at: string
+          stage: string
+          status?: string | null
+          winner_team_id?: string | null
+        }
+        Update: {
+          away_goals?: number | null
+          away_penalty_goals?: number | null
+          away_team_id?: string | null
+          created_at?: string | null
+          cup_id?: string | null
+          home_goals?: number | null
+          home_penalty_goals?: number | null
+          home_team_id?: string | null
+          id?: string
+          match_data?: Json | null
+          scheduled_at?: string
+          stage?: string
+          status?: string | null
+          winner_team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_cup_matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_cup_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_matches_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "world_cup_competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_cup_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_matches_winner_team_id_fkey"
+            columns: ["winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "world_cup_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_cup_teams: {
+        Row: {
+          club_id: string | null
+          created_at: string | null
+          cup_id: string | null
+          entry_round: string | null
+          id: string
+          is_bot: boolean | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string | null
+          cup_id?: string | null
+          entry_round?: string | null
+          id?: string
+          is_bot?: boolean | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string | null
+          cup_id?: string | null
+          entry_round?: string | null
+          id?: string
+          is_bot?: boolean | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_cup_teams_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_cup_teams_cup_id_fkey"
+            columns: ["cup_id"]
+            isOneToOne: false
+            referencedRelation: "world_cup_competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       world_divisions: {
         Row: {
           created_at: string | null
@@ -6558,6 +6724,7 @@ export type Database = {
         Args: { _country: string; _season_year: number }
         Returns: string
       }
+      start_world_cup: { Args: { _season: number }; Returns: Json }
       sync_all_saves_to_world_system: { Args: never; Returns: undefined }
       sync_beginner_cup: { Args: { _user_id: string }; Returns: undefined }
       sync_league_integrity: { Args: { _user_id: string }; Returns: undefined }
