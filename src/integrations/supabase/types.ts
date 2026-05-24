@@ -1900,10 +1900,15 @@ export type Database = {
       global_ranking: {
         Row: {
           club_name: string
+          coach_name: string | null
+          country: string | null
           created_at: string
           current_competition: string
+          division: string | null
           draws: number
           games_played: number
+          goals_against: number | null
+          goals_for: number | null
           id: string
           last_change: number
           losses: number
@@ -1911,8 +1916,12 @@ export type Database = {
           prev_position: number | null
           ranking_points: number
           recent_form: Json | null
+          season_points: number | null
           titles_count: number | null
           titles_data: Json | null
+          total_draws: number | null
+          total_losses: number | null
+          total_wins: number | null
           updated_at: string
           user_id: string
           winning_streak: number | null
@@ -1920,10 +1929,15 @@ export type Database = {
         }
         Insert: {
           club_name?: string
+          coach_name?: string | null
+          country?: string | null
           created_at?: string
           current_competition?: string
+          division?: string | null
           draws?: number
           games_played?: number
+          goals_against?: number | null
+          goals_for?: number | null
           id?: string
           last_change?: number
           losses?: number
@@ -1931,8 +1945,12 @@ export type Database = {
           prev_position?: number | null
           ranking_points?: number
           recent_form?: Json | null
+          season_points?: number | null
           titles_count?: number | null
           titles_data?: Json | null
+          total_draws?: number | null
+          total_losses?: number | null
+          total_wins?: number | null
           updated_at?: string
           user_id: string
           winning_streak?: number | null
@@ -1940,10 +1958,15 @@ export type Database = {
         }
         Update: {
           club_name?: string
+          coach_name?: string | null
+          country?: string | null
           created_at?: string
           current_competition?: string
+          division?: string | null
           draws?: number
           games_played?: number
+          goals_against?: number | null
+          goals_for?: number | null
           id?: string
           last_change?: number
           losses?: number
@@ -1951,8 +1974,12 @@ export type Database = {
           prev_position?: number | null
           ranking_points?: number
           recent_form?: Json | null
+          season_points?: number | null
           titles_count?: number | null
           titles_data?: Json | null
+          total_draws?: number | null
+          total_losses?: number | null
+          total_wins?: number | null
           updated_at?: string
           user_id?: string
           winning_streak?: number | null
@@ -6621,6 +6648,16 @@ export type Database = {
           p_overall: number
           p_potential: number
           p_reputation: number
+        }
+        Returns: number
+      }
+      calculate_ranking_points: {
+        Args: {
+          p_competition_type: string
+          p_my_ovr: number
+          p_opponent_ovr: number
+          p_result: string
+          p_winning_streak?: number
         }
         Returns: number
       }
