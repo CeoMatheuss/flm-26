@@ -19,7 +19,9 @@ const INITIAL: MatchState = {
   visibleEvents: [], latestEvent: null, stats: { ...EMPTY_STATS },
   stadiumName: '', stadiumCapacity: 0, attendance: 0, matchDbId: null, errorMsg: null,
   competition: '', isHome: true,
-  currentMoment: 'equilíbrio', playerStamina: {}, assistantTips: [],
+  currentMoment: 'equilíbrio', playerStamina: {}, 
+  playerRatings: {},
+  assistantTips: [],
   resumeFromBreak: () => {},
 };
 
