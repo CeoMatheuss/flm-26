@@ -115,6 +115,7 @@ function GlobalRankingMini({ userId }: { userId?: string }) {
 
   if (loading || !me) return null;
 
+
   const variation = me.prev_position ? me.prev_position - pos! : 0;
 
   return (
