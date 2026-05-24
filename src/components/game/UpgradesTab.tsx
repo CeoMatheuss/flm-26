@@ -116,7 +116,7 @@ export function UpgradesTab({ infrastructure, budget, isPremium, onUpgradeFacili
         <Wrench className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-black uppercase tracking-wide">Upgrades do Clube</h2>
         <span className="ml-auto text-xs text-muted-foreground">
-          Caixa: <span className="text-foreground font-bold">{formatMoney(budget)}</span>
+          Caixa: <span className="text-foreground font-bold">FL$ {budget.toLocaleString()}</span>
         </span>
       </div>
 
