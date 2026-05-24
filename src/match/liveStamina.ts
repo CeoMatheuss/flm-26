@@ -31,10 +31,17 @@ function tacticIntensity(t?: TacticsConfig | null): number {
   if (!t) return 1.0;
   let mult = 1.0;
   switch (t.pressing as any) {
-    case 'ultra-alto': mult *= 1.65; break; // Mais severo
-    case 'alto':       mult *= 1.40; break;
+    case 'ultra-alto': mult *= 1.75; break; // Mais severo (conforme plano)
+    case 'alto':       mult *= 1.45; break;
     case 'medio':      mult *= 1.0;  break;
-    case 'baixo':      mult *= 0.80; break;
+    case 'baixo':      mult *= 0.75; break;
+  }
+  // Intensidade gasta mais stamina conforme plano
+  switch (t.intensity as any) {
+    case 'pressao-maxima': mult *= 1.8; break;
+    case 'agressiva':      mult *= 1.3; break;
+    case 'equilibrada':    mult *= 1.0; break;
+    case 'baixa':          mult *= 0.8; break;
   }
   switch (t.tempo as any) {
     case 'rapido':     mult *= 1.25; break;
