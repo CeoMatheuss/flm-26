@@ -358,7 +358,7 @@ export function useMatchSimulation() {
               } else if (syncData?.success) {
                 console.log("[MATCH] Persistence sync complete via RPC:", syncData);
                 
-                // 🏆 Sincronização de Ranking centralizada
+                // 🏆 Sincronização de Ranking e Torcida centralizada
                 const outcome = data.finalHomeGoals > data.finalAwayGoals ? 'win' : (data.finalHomeGoals === data.finalAwayGoals ? 'draw' : 'loss');
                 const competitionLabel = syncData.competition || 'Amistoso';
                 const compLower = competitionLabel.toLowerCase();
@@ -371,7 +371,7 @@ export function useMatchSimulation() {
                 const { updateGlobalRanking } = await import('@/match/rankingUpdater');
                 const session = await supabase.auth.getSession();
                 
-                await updateGlobalRanking({
+                const rankingResult = await updateGlobalRanking({
                   userId: session.data.session?.user?.id || '',
                   clubName: data.homeTeam,
                   outcome,
@@ -384,7 +384,10 @@ export function useMatchSimulation() {
                   detail: { 
                     matchId: data.matchDbId,
                     homeGoals: data.finalHomeGoals,
-                    awayGoals: data.finalAwayGoals
+                    awayGoals: data.finalAwayGoals,
+                    rankingChange: rankingResult.deltaPoints,
+                    fansChange: rankingResult.deltaFans,
+                    fanMessage: rankingResult.fanMessage
                   } 
                 }));
               }
