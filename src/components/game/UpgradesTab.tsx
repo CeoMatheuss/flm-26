@@ -116,7 +116,7 @@ export function UpgradesTab({ infrastructure, budget, isPremium, onUpgradeFacili
         <Wrench className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-black uppercase tracking-wide">Upgrades do Clube</h2>
         <span className="ml-auto text-xs text-muted-foreground">
-          Caixa: <span className="text-foreground font-bold">{formatMoney(budget)}</span>
+          Caixa: <span className="text-foreground font-bold">FL$ {budget.toLocaleString()}</span>
         </span>
       </div>
 
@@ -174,7 +174,7 @@ export function UpgradesTab({ infrastructure, budget, isPremium, onUpgradeFacili
                   <div>
                     <div className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Custo</div>
                     <div className={cn('text-sm font-black', canAfford ? 'text-foreground' : 'text-red-400')}>
-                      {maxed ? '—' : formatMoney(c.cost)}
+                      {maxed ? '—' : `FL$ ${c.cost.toLocaleString()}`}
                     </div>
                     <div className="text-[9px] text-muted-foreground mt-0.5">
                       {isPremium ? 'Premium: instantâneo' : 'Duração: 24h'}
@@ -202,7 +202,7 @@ export function UpgradesTab({ infrastructure, budget, isPremium, onUpgradeFacili
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm">
                 <div><b>{confirming?.title}</b> — Nível {confirming ? infrastructure[confirming.key].level : 0} → {confirming ? infrastructure[confirming.key].level + 1 : 0}</div>
-                <div>Custo: <b>{confirming ? formatMoney(confirming.cost) : '—'}</b></div>
+                <div>Custo: <b>{confirming ? `FL$ ${confirming.cost.toLocaleString()}` : '—'}</b></div>
                 <div>Duração: <b>{isPremium ? 'Instantâneo (Premium)' : '24 horas'}</b></div>
                 <div className="pt-1 text-muted-foreground">Benefícios:</div>
                 <ul className="text-xs pl-3 space-y-0.5">

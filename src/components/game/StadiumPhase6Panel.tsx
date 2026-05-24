@@ -36,7 +36,7 @@ export function StadiumPhase6Panel({
             </span>
             {billing.totalMembers > 0 && (
               <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/40">
-                {billing.totalMembers.toLocaleString()} sócios • R$ {(billing.totalRevenue/1000).toFixed(0)}k/mês
+                {billing.totalMembers.toLocaleString()} sócios • FL$ {(billing.totalRevenue/1000).toFixed(0)}k/mês
               </Badge>
             )}
           </CardTitle>
@@ -56,7 +56,7 @@ export function StadiumPhase6Panel({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-2xl">{cfg.emoji}</span>
                     <div className="min-w-0">
-                      <p className={`text-sm font-bold ${cfg.color}`}>{cfg.label} • R$ {cfg.monthlyPrice}/mês</p>
+                      <p className={`text-sm font-bold ${cfg.color}`}>{cfg.label} • FL$ {cfg.monthlyPrice}/mês</p>
                       <p className="text-[10px] text-muted-foreground">{cfg.description}</p>
                       {!unlocked ? (
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
@@ -94,7 +94,7 @@ export function StadiumPhase6Panel({
             </span>
             {upgEff.totalMonthlyCost > 0 && (
               <Badge variant="outline" className="text-[10px]">
-                <Wrench className="h-3 w-3 mr-1" /> R$ {(upgEff.totalMonthlyCost/1000).toFixed(0)}k/mês
+                <Wrench className="h-3 w-3 mr-1" /> FL$ {(upgEff.totalMonthlyCost/1000).toFixed(0)}k/mês
               </Badge>
             )}
           </CardTitle>
@@ -137,11 +137,11 @@ export function StadiumPhase6Panel({
                         onClick={() => onBuyUpgrade(cfg.id)}
                         className="h-8 text-[11px]"
                       >
-                        R$ {(cfg.cost/1_000_000).toFixed(2)}M
+                        FL$ {(cfg.cost/1_000_000).toFixed(2)}M
                       </Button>
                     )}
                     <p className="text-[9px] text-muted-foreground mt-1">
-                      Manut. R$ {(cfg.monthlyCost/1000).toFixed(0)}k/mês
+                      Manut. FL$ {(cfg.monthlyCost/1000).toFixed(0)}k/mês
                     </p>
                   </div>
                 </div>
