@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Club } from '@/types/game';
+import { Club, Player } from '@/types/game';
 import { GameEvent } from '@/types/events';
 import { Infrastructure, getStadiumCapacity } from '@/types/infrastructure';
 import { ClubProfile } from '@/types/clubProfile';
@@ -20,6 +20,7 @@ import { SeasonStartWidget } from './SeasonStartWidget';
 import { WaitingListPanel } from './WaitingListPanel';
 import { BallonDorTeaserWidget } from './BallonDorTeaserWidget';
 import { motion, AnimatePresence } from 'framer-motion';
+
 
 // Logic for standing sync
 function LeagueStandingsMini({ userId }: { userId?: string }) {
@@ -167,8 +168,48 @@ interface Props {
 export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, onGoToFriendly, userId, onOpenTournament, onExploreOtherModes, clubProfile, season, currentWeek, totalWeeks, onViewClub, onGoToSquad, onRestAll }: Props) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date>(new Date());
+  const [dbPlayers, setDbPlayers] = useState<Player[]>(club.players || []);
   
+  // 🔄 Sincronização automática do elenco via Realtime
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadPlayers = async () => {
+      const { data: teamData } = await supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle();
+      if (teamData) {
+        const { data: playersData } = await supabase
+          .from('world_players')
+          .select('*')
+          .eq('team_id', teamData.id);
+        if (playersData) {
+          const formatted = playersData.map((p: any) => ({
+            ...p,
+            attributes: typeof p.attributes === 'string' ? JSON.parse(p.attributes) : p.attributes,
+          }));
+          setDbPlayers(formatted as Player[]);
+        }
+      }
+    };
+
+    loadPlayers();
+
+    const channel = supabase.channel(`dashboard-players-${userId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'world_players'
+      }, () => {
+        loadPlayers();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   // Sincronização automática via Realtime
+
   useEffect(() => {
     if (!userId) return;
 
@@ -260,7 +301,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
   const stadiumLevel = infrastructure?.stadium?.level || 1;
   const stadiumCapacity = infrastructure ? getStadiumCapacity(stadiumLevel) : 0;
   const isMaxStadium = stadiumLevel >= (infrastructure?.stadium?.maxLevel || 15);
-  const avgOvr = club.players.length > 0 ? Math.round(club.players.reduce((s, p) => s + (p.overall || 0), 0) / club.players.length) : 0;
+  const playersToUse = dbPlayers.length > 0 ? dbPlayers : club.players;
+  const avgOvr = playersToUse.length > 0 ? Math.round(playersToUse.reduce((s, p) => s + (p.overall || 0), 0) / playersToUse.length) : 0;
+
   
   const stadiumEconomy = useMemo(() => {
     return calculateStadiumEconomy({
@@ -354,8 +397,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="h-3 w-3 text-primary" />
-                  <span className="font-bold">{club.players.length} jog. (OVR {avgOvr})</span>
+                  <span className="font-bold">{playersToUse.length} jog. (OVR {avgOvr})</span>
                 </div>
+
                 <div className="flex items-center gap-1 text-emerald-400">
                   <DollarSign className="h-3 w-3" />
                   <span className="font-bold">{formatMoneyShort(club.budget)}</span>
