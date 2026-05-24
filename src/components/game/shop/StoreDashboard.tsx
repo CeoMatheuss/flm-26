@@ -158,7 +158,7 @@ export function StoreDashboard({ stats }: StoreDashboardProps) {
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
               <p className="text-[10px] text-white/40 uppercase font-black">Receita Diária</p>
-              <p className="text-lg font-black italic text-emerald-400">{formatMoney(stats.dailyRevenue)}</p>
+              <p className="text-lg font-black italic text-emerald-400">{(stats.dailyRevenue || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace('R$', 'R$ ')}</p>
             </div>
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
               <p className="text-[10px] text-white/40 uppercase font-black">Produtos em Alta</p>

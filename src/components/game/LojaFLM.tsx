@@ -344,10 +344,18 @@ export function LojaFLM({ club, infrastructure, userId, isPremium, onBuyPack }: 
           orderId: data.order_id
         });
         setShowPixModal(true);
+        
+        // Atualizar status para pendente no monitor
+        await supabase.from('admin_shop_activity').update({ status: 'pending' }).eq('metadata->>order_id', data.order_id);
       } else if (data?.init_point) {
         setCurrentOrderId(data.order_id);
+        
+        // Atualizar status para pendente no monitor
+        await supabase.from('admin_shop_activity').update({ status: 'pending' }).eq('metadata->>order_id', data.order_id);
+        
         window.location.href = data.init_point;
       }
+
     } catch (e: any) {
       console.error(e);
       toast.error('Erro ao processar compra. Verifique sua conexão.');
