@@ -421,19 +421,38 @@ export function useMatchSimulation() {
             .then(async () => {
               console.log("[MATCH] Finalizado via Apito Final. Sincronizando persistence...");
               try {
-                const { error: rpcError } = await supabase.rpc('sync_match_persistence' as any, { _match_id: data.matchDbId });
-                if (rpcError) console.error("[MATCH] Erro ao sincronizar persistence:", rpcError);
-                
-                // Emit custom event to refresh widgets globally
-                window.dispatchEvent(new CustomEvent('flm:match-finalized', { 
-                  detail: { 
-                    matchId: data.matchDbId,
-                    homeGoals: state.homeGoals,
-                    awayGoals: state.awayGoals
-                  } 
-                }));
-                
-                console.log("[MATCH] Persistence sync complete.");
+                const { data: syncData, error: rpcError } = await supabase.rpc('sync_match_persistence', { _match_id: data.matchDbId });
+                if (rpcError) {
+                  console.error("[MATCH] Erro ao sincronizar persistence:", rpcError);
+                } else if (syncData?.success) {
+                  console.log("[MATCH] Persistence sync complete via RPC:", syncData);
+                  
+                  // 🏆 Agora chamamos o rankingUpdater centralizado para manter consistência
+                  const outcome = state.homeGoals > state.awayGoals ? 'win' : (state.homeGoals === state.awayGoals ? 'draw' : 'loss');
+                  const compLower = (syncData.competition || 'Amistoso').toLowerCase();
+                  let rankingComp: 'friendly' | 'league' | 'continental' | 'world' = 'league';
+                  if (compLower.includes('amist')) rankingComp = 'friendly';
+                  else if (compLower.includes('mundial')) rankingComp = 'world';
+                  else if (compLower.includes('continental') || compLower.includes('copa')) rankingComp = 'continental';
+
+                  const { updateGlobalRanking } = await import('@/match/rankingUpdater');
+                  await updateGlobalRanking({
+                    userId: (await supabase.auth.getSession()).data.session?.user?.id || '',
+                    clubName: data.homeTeam,
+                    outcome,
+                    competition: rankingComp,
+                    competitionLabel: syncData.competition
+                  });
+
+                  // Emit custom event to refresh widgets globally
+                  window.dispatchEvent(new CustomEvent('flm:match-finalized', { 
+                    detail: { 
+                      matchId: data.matchDbId,
+                      homeGoals: state.homeGoals,
+                      awayGoals: state.awayGoals
+                    } 
+                  }));
+                }
               } catch (err) {
                 console.error("[MATCH] Exceção ao sincronizar tabela:", err);
               }
