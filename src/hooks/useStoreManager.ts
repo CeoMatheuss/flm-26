@@ -31,7 +31,7 @@ export function useStoreManager(club: Club, userId: string) {
       const client = supabase as any;
       const [effectsRes, launchesRes, statsRes, membersRes, ordersRes, productsRes] = await Promise.all([
         client.from('club_active_effects').select('*').eq('club_id', club.id),
-        client.from('club_uniform_launches').select('*').eq('club_id', club.id).eq('is_active', true),
+        client.from('club_uniform_launches').select('*').eq('club_id', club.id).in('status', ['approved', 'active', 'official']),
         client.from('club_shop_stats').select('*').eq('club_id', club.id).maybeSingle(),
         client.from('club_memberships').select('*').eq('club_id', club.id).maybeSingle(),
         client.from('club_shop_orders').select('*, shipping_companies(*), club_shop_products(*)').eq('club_id', club.id).order('created_at', { ascending: false }).limit(10),
@@ -65,7 +65,7 @@ export function useStoreManager(club: Club, userId: string) {
             totalSales: Number(l.total_sales_count || 0),
             totalRevenue: Number(l.total_revenue_cents || 0) / 100,
             launchedAt: l.launched_at,
-            isActive: l.is_active
+            isActive: ['approved', 'active', 'official'].includes(l.status)
           }))
         }));
       }

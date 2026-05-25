@@ -553,7 +553,23 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     }
   };
 
-  // Monitorar pagamento
+  const confirmUniformPayment = async () => {
+    if (!pendingLaunchId) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: clubData } = await supabase.from('clubs')
+      .select('name, fans, reputation')
+      .eq('user_id', user.id)
+      .single();
+
+    if (clubData) {
+      await handlePaymentSuccessInternal(pendingLaunchId, clubData.name, clubData.fans || 0, clubData.reputation || 50);
+    }
+  };
+
+  // Monitorar pagamento em tempo real, igual ao fluxo da Loja FLM
   useEffect(() => {
     if (paymentStep !== 'pix' || !pixInfo?.order_id || !pendingLaunchId) return;
 
@@ -565,21 +581,58 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         table: 'payment_orders',
         filter: `id=eq.${pixInfo.order_id}`
       }, async (payload: any) => {
-        if (payload.new.status === 'approved') {
-          const { data: clubData } = await supabase.from('clubs')
-            .select('name, fans, reputation')
-            .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-            .single();
-            
-          if (clubData) {
-            handlePaymentSuccessInternal(pendingLaunchId, clubData.name, clubData.fans || 0, clubData.reputation || 50);
-          }
+        if (payload.new?.status === 'approved' || payload.new?.delivered) {
+          await confirmUniformPayment();
+        }
+
+        if (['rejected', 'cancelled', 'expired'].includes(payload.new?.status)) {
+          toast.error('Pagamento não concluído. Tente novamente.');
+          setPaymentStep('checkout');
         }
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [paymentStep, pixInfo, pendingLaunchId]);
+
+  // Polling de segurança: garante atualização mesmo se o realtime/webhook atrasar
+  useEffect(() => {
+    if (paymentStep !== 'pix' || !pixInfo?.order_id || !pendingLaunchId) return;
+
+    let cancelled = false;
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts += 1;
+      try {
+        const { data, error } = await supabase
+          .from('payment_orders')
+          .select('status, delivered')
+          .eq('id', pixInfo.order_id)
+          .maybeSingle();
+
+        if (cancelled || error || !data) return;
+
+        if (data.status === 'approved' || data.delivered) {
+          clearInterval(interval);
+          await confirmUniformPayment();
+        } else if (['rejected', 'cancelled', 'expired'].includes(data.status)) {
+          clearInterval(interval);
+          toast.error('Pagamento não concluído. Tente novamente.');
+          setPaymentStep('checkout');
+        } else if (attempts >= 24) {
+          clearInterval(interval);
+          toast.info('Pagamento ainda pendente. Assim que aprovar, o uniforme será lançado automaticamente.');
+        }
+      } catch (error) {
+        console.warn('[uniform-launch] polling error:', error);
+      }
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [paymentStep, pixInfo?.order_id, pendingLaunchId]);
 
   const handlePaymentSuccessInternal = async (launchId: string, clubName: string, fans: number, reputation: number) => {
     toast.success('Pagamento aprovado! Lançando uniforme...');
