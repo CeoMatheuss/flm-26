@@ -525,7 +525,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
           method: 'pix', // Garantindo o método correto para gerar QR Code
           email: email,
           full_name: fullName,
-          cpf: cpf.replace(/\D/g, '') || '00000000000', // CPF fallback para garantir geração do QR Code
+          // CPF não é mais obrigatório no fluxo de lançamento
           custom_amount: 1, // R$ 0,01
           metadata: { uniform_id: pendingLaunchId, item_type: 'uniform_launch' }
         }
@@ -546,7 +546,8 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
         }
       }
     } catch (e: any) {
-      toast.error('Erro ao processar pagamento.');
+      console.error('[uniform-launch] payment error:', e);
+      toast.error('Erro ao processar pagamento: ' + (e?.message || 'tente novamente'));
     } finally {
       setLoading(false);
     }
