@@ -618,9 +618,10 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
             <div className="bg-amber-500/10 border border-amber-500/30 rounded p-2 flex items-center gap-2 justify-center">
               <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500 shrink-0" />
               <p className="text-[10px] font-bold text-amber-200 leading-tight">
-                Aguardando servidor finalizar a partida…
+                ⚡ Simulando automaticamente...
               </p>
             </div>
+
           ) : (
             <Button
               size="sm"
