@@ -418,7 +418,7 @@ export function FinancePanel() {
           <div className="space-y-2">
             <p className="text-[10px] text-muted-foreground leading-relaxed">
               O Mercado Pago está configurado como gateway principal para a Loja FLM. 
-              O token de acesso (Access Token) é gerenciado de forma segura nas configurações de ambiente da Lovable Cloud.
+              O token de acesso (Access Token) é gerenciado de forma segura nas configurações de ambiente do servidor.
             </p>
             <div className="flex gap-2">
               <Input 
