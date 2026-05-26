@@ -26,6 +26,7 @@ interface ReportData {
     manOfTheMatch: string | undefined;
   };
   tactical: string[];
+  tacticalImpact?: Array<{ side: 'home'|'away'|'both'; name: string; impact: string; kind: string; detail?: string }>;
   impacts: {
     moraleChange: number;
     rankingChange: number;
@@ -270,6 +271,17 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
                 {report.tactical.map((t, i) => (
                   <p key={i} className="text-[11px] text-muted-foreground">📋 {t}</p>
                 ))}
+                {report.tacticalImpact && report.tacticalImpact.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-white/5 space-y-1">
+                    <p className="text-[10px] font-semibold text-primary uppercase tracking-wide">Impacto tático mensurado</p>
+                    {report.tacticalImpact.map((f, i) => (
+                      <div key={i} className="text-[10px] flex items-start gap-1.5">
+                        <span className={`px-1 rounded text-[9px] font-bold ${f.side==='home'?'bg-emerald-500/20 text-emerald-300':f.side==='away'?'bg-red-500/20 text-red-300':'bg-blue-500/20 text-blue-300'}`}>{f.side==='home'?'NÓS':f.side==='away'?'ADV':'JOGO'}</span>
+                        <span className="flex-1"><span className="font-medium">{f.name}</span> <span className="text-amber-300">{f.impact}</span>{f.detail && <span className="block text-[9px] text-muted-foreground italic">{f.detail}</span>}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

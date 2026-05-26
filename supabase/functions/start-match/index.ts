@@ -491,7 +491,8 @@ function generateReport(
   manOfTheMatch: string | undefined, isHome: boolean, competition: string,
   homeStrength: number, awayStrength: number, tactics: any, stadiumCapacity: number,
   homePlayers: SimPlayer[], awayPlayers: SimPlayer[],
-  attendanceOverride?: number, ticketRevenueOverride?: number
+  attendanceOverride?: number, ticketRevenueOverride?: number,
+  tacticalImpactFactors?: Array<{ side: 'home'|'away'|'both'; name: string; impact: string; kind: string; detail?: string }>
 ) {
   const isUserHome = isHome;
   const userGoals = isUserHome ? homeGoals : awayGoals;
@@ -572,6 +573,7 @@ function generateReport(
         manOfTheMatch,
       },
       tactical: tacticalNotes,
+      tacticalImpact: tacticalImpactFactors || [],
       impacts: { moraleChange, rankingChange, attendance, revenue: ticketRevenue, fatigue: pressing === 'ultra-alto' ? 12 : pressing === 'alto' ? 8 : 5 },
     },
   };
@@ -892,25 +894,57 @@ function simulateFullMatch(
   console.log(`[Tactics] HOME mark=${tactics?.marking||'zona'} pass=${tactics?.passingStyle||'misto'} line=${tactics?.defenseLine||'media'} width=${tactics?.width||'normal'} form=${tactics?.formation||'4-4-2'}`);
   console.log(`[Tactics] AWAY mark=${awayTacticsInput?.marking||'zona'} pass=${awayTacticsInput?.passingStyle||'misto'} line=${awayTacticsInput?.defenseLine||'media'} width=${awayTacticsInput?.width||'normal'} form=${awayTacticsInput?.formation||'4-4-2'}`);
 
+  // ── TACTICAL AMPLIFIER (FLM26) ────────────────────────────
+  // Faz cada lever do treinador ter ~20% mais impacto na simulação.
+  // Mantém a métrica neutra em 1.0; apenas amplia a distância do neutro.
+  const TACTICAL_AMP = 1.20;
+  const amp = (v: number) => 1 + (v - 1) * TACTICAL_AMP;
+
   // Tactical impact on simulation (HOME) — uses style table + extras
   const pressingBase = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
-  const pressingMod = clamp(pressingBase + homeStyleMod.pressureExtra + homeExtras.pressBonus, 0.5, 2.2);
-  const offensiveMod = homeStyleMod.atk * homeExtras.atkMul;
-  const defensiveMod = homeStyleMod.def * homeExtras.defMul;
-  const tempoMod = tempo === 'muito-rapido' ? 1.15 : tempo === 'rapido' ? 1.08 : tempo === 'normal' ? 1.0 : 0.9;
+  const pressingMod = clamp(amp(pressingBase) + homeStyleMod.pressureExtra + homeExtras.pressBonus, 0.5, 2.4);
+  const offensiveMod = amp(homeStyleMod.atk * homeExtras.atkMul);
+  const defensiveMod = amp(homeStyleMod.def * homeExtras.defMul);
+  const tempoMod = amp(tempo === 'muito-rapido' ? 1.15 : tempo === 'rapido' ? 1.08 : tempo === 'normal' ? 1.0 : 0.9);
 
   // Away tactical mods
   const awayPressingBase = awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8;
-  const awayPressingMod = clamp(awayPressingBase + awayStyleMod.pressureExtra + awayExtras.pressBonus, 0.5, 2.2);
-  const awayOffensiveMod = awayStyleMod.atk * awayExtras.atkMul;
-  const awayDefensiveMod = awayStyleMod.def * awayExtras.defMul;
-  const awayTempoMod = awayTempo === 'muito-rapido' ? 1.15 : awayTempo === 'rapido' ? 1.08 : awayTempo === 'normal' ? 1.0 : 0.9;
+  const awayPressingMod = clamp(amp(awayPressingBase) + awayStyleMod.pressureExtra + awayExtras.pressBonus, 0.5, 2.4);
+  const awayOffensiveMod = amp(awayStyleMod.atk * awayExtras.atkMul);
+  const awayDefensiveMod = amp(awayStyleMod.def * awayExtras.defMul);
+  const awayTempoMod = amp(awayTempo === 'muito-rapido' ? 1.15 : awayTempo === 'rapido' ? 1.08 : awayTempo === 'normal' ? 1.0 : 0.9);
 
   // Stamina drain modifiers for pressing/tempo (multiplied by style drain + extras)
   const staminaDrainPressing = (pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8) * homeStyleMod.staminaDrain * homeExtras.drainMul;
   const staminaDrainTempo = tempo === 'muito-rapido' ? 1.2 : tempo === 'rapido' ? 1.1 : 1.0;
   const awayStaminaDrainPressing = (awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8) * awayStyleMod.staminaDrain * awayExtras.drainMul;
   const awayStaminaDrainTempo = awayTempo === 'muito-rapido' ? 1.2 : awayTempo === 'rapido' ? 1.1 : 1.0;
+
+  // ── STRUCTURED TACTICAL IMPACT LOG (visible in post-match report) ─
+  type ImpactFactor = { side: 'home'|'away'|'both'; name: string; impact: string; kind: string; detail?: string };
+  const tacticalImpactFactors: ImpactFactor[] = [];
+  const pct = (v: number) => `${v>=0?'+':''}${Math.round(v*100)}%`;
+
+  const pushSideFactors = (
+    side: 'home'|'away', t: any, sMod: StyleMod, ex: TacticalExtras,
+    pMod: number, oMod: number, dMod: number, tMod: number
+  ) => {
+    const sPress = t?.pressing || 'medio';
+    const sStyle = t?.playStyle || 'equilibrado';
+    const sTempo = t?.tempo || 'normal';
+    if (sPress !== 'medio') tacticalImpactFactors.push({ side, name:`Pressing ${sPress}`, impact: pct(pMod-1), kind:'pressing', detail:'Recupera mais bolas no campo de ataque, porém drena stamina mais rápido.' });
+    if (sStyle !== 'equilibrado') tacticalImpactFactors.push({ side, name:`Estilo: ${sStyle}`, impact:`Atq ${pct(oMod-1)} / Def ${pct(dMod-1)}`, kind:'style' });
+    if (sTempo !== 'normal') tacticalImpactFactors.push({ side, name:`Ritmo: ${sTempo}`, impact: pct(tMod-1), kind:'tempo', detail: sTempo.includes('rapido') ? '+volume ofensivo, +desgaste' : '−desgaste, −volume' });
+    const dline = t?.defenseLine; if (dline && dline !== 'media') tacticalImpactFactors.push({ side, name:`Linha defensiva ${dline}`, impact: dline==='alta'?'+impedimentos / +risco contra-ataque':'−volume / +segurança', kind:'def_line' });
+    const mk = t?.marking; if (mk === 'individual') tacticalImpactFactors.push({ side, name:'Marcação individual', impact:'+faltas / +intensidade', kind:'marking' });
+    const ps = t?.passingStyle; if (ps && ps !== 'misto') tacticalImpactFactors.push({ side, name:`Passe: ${ps}`, impact: ps==='curto'?'+posse / −verticalidade':'+verticalidade / −posse', kind:'passing' });
+    if (ex.crossBoost > 0) tacticalImpactFactors.push({ side, name:'Foco em cruzamentos', impact:`+${Math.round(ex.crossBoost*100)}% jogo aéreo`, kind:'crosses' });
+    if (ex.longShotBoost > 0) tacticalImpactFactors.push({ side, name:'Chutes de longe', impact:`+${Math.round(ex.longShotBoost*100)}% finalizações fora`, kind:'long_shots' });
+    if (ex.shortPassBoost > 0) tacticalImpactFactors.push({ side, name:'Trama curta', impact:`+${Math.round(ex.shortPassBoost*100)}% posse`, kind:'short_pass' });
+    if (Math.abs(ex.foulBias) > 0.05) tacticalImpactFactors.push({ side, name:'Agressividade defensiva', impact: ex.foulBias>0?'+faltas / +cartões':'−faltas', kind:'fouls' });
+  };
+  pushSideFactors('home', tactics, homeStyleMod, homeExtras, pressingMod, offensiveMod, defensiveMod, tempoMod);
+  pushSideFactors('away', awayTacticsInput, awayStyleMod, awayExtras, awayPressingMod, awayOffensiveMod, awayDefensiveMod, awayTempoMod);
 
   // ── ATTRIBUTE-BASED STRENGTH ──────────────────────────────
   const homeDefenders = home.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
@@ -1008,6 +1042,64 @@ function simulateFullMatch(
         penaltyMins.push({ minute: m, team, isGoal: rng() < conversionProb });
       }
     }
+  }
+
+  // ── SCORE-REACTIVE LATE CHANCES (FLM26 adaptativo) ────────
+  // Times perdendo no fim do jogo ganham chances extras proporcionais à
+  // sua agressividade tática (estilo + pressing + tempo) e à stamina
+  // restante. Isso faz "perdendo fica mais ofensivo" virar gols de verdade.
+  {
+    const homeAggro = clamp(0.35 + (offensiveMod - 1) * 0.9 + (pressingMod - 1) * 0.5 + (tempoMod - 1) * 0.4, 0.10, 2.2);
+    const awayAggro = clamp(0.35 + (awayOffensiveMod - 1) * 0.9 + (awayPressingMod - 1) * 0.5 + (awayTempoMod - 1) * 0.4, 0.10, 2.2);
+    const homeStaminaFactor = clamp(avgStamina / 80, 0.5, 1.25);
+    const awayStaminaFactor = clamp(awayAvgStaminaInit / 80, 0.5, 1.25);
+
+    const lateWindow = Array.from({ length: 30 }, (_, i) => 60 + i).filter(m => !usedMinutes.has(m));
+    const initHome = totalHomeGoals + penaltyMins.filter(p => p.team === 'home' && p.isGoal).length;
+    const initAway = totalAwayGoals + penaltyMins.filter(p => p.team === 'away' && p.isGoal).length;
+
+    const spawnLate = (side: 'home' | 'away', deficit: number, aggro: number, stamFactor: number) => {
+      if (deficit <= 0 || lateWindow.length === 0) return;
+      const bonusLambda = deficit * 0.40 * aggro * stamFactor;
+      const extra = poissonSample(bonusLambda);
+      for (let i = 0; i < extra && lateWindow.length; i++) {
+        const idx = Math.floor(rng() * lateWindow.length);
+        const m = lateWindow.splice(idx, 1)[0];
+        usedMinutes.add(m);
+        if (side === 'home') homeGoalMins.push(m); else awayGoalMins.push(m);
+        tacticalImpactFactors.push({
+          side, name: 'Reação tática no fim de jogo',
+          impact: '+1 gol', kind: 'late_reaction',
+          detail: `Time perdendo por ${deficit} forçou chance extra no min ${m} (agressividade ${aggro.toFixed(2)}).`
+        });
+      }
+    };
+    spawnLate('home', initAway - initHome, homeAggro, homeStaminaFactor);
+    spawnLate('away', initHome - initAway, awayAggro, awayStaminaFactor);
+
+    // ── AI ADAPTATIVA DO BOT (away) ──
+    // Se nenhuma tática away foi fornecida (jogo single-player ou bot),
+    // emulamos um treinador que vira a chave quando está perdendo: mais
+    // uma chance bonus se entrou em desvantagem >=1 gol.
+    const awayIsBot = !awayTacticsInput || awayTacticsInput.__auto !== false;
+    if (awayIsBot) {
+      const awayDeficit = initHome - initAway;
+      if (awayDeficit >= 1 && lateWindow.length) {
+        const aiLambda = 0.25 * awayDeficit * awayStaminaFactor;
+        if (rng() < 1 - Math.exp(-aiLambda) && lateWindow.length) {
+          const idx = Math.floor(rng() * lateWindow.length);
+          const m = lateWindow.splice(idx, 1)[0];
+          usedMinutes.add(m);
+          awayGoalMins.push(m);
+          tacticalImpactFactors.push({
+            side: 'away', name: 'Treinador adversário se lança ao ataque',
+            impact: '+1 gol', kind: 'ai_adapt',
+            detail: `Bot adversário reagiu à derrota e gerou chance extra no min ${m}.`
+          });
+        }
+      }
+    }
+    console.log(`[FLM26 late-react] homeAggro=${homeAggro.toFixed(2)} awayAggro=${awayAggro.toFixed(2)} extraHome=${homeGoalMins.length - totalHomeGoals} extraAway=${awayGoalMins.length - totalAwayGoals}`);
   }
 
   // ── SUPPORT EVENTS ──────────────────────────────────────────
@@ -2009,7 +2101,8 @@ function simulateFullMatch(
     stats, playerRatings, goalScorers, manOfTheMatch,
     isHome, competition, homeStrength, awayStrength, tactics,
     stadiumCapacity, [...home, ...away], [...home, ...away],
-    estimatedCrowd, ticketRevenue
+    estimatedCrowd, ticketRevenue,
+    tacticalImpactFactors
   );
 
   console.log(`[Sim] Final: ${aggregateHomeGoals}x${aggregateAwayGoals} (Pen: ${shootoutHomeGoals}x${shootoutAwayGoals}) | Events: ${finalEvents.length}`);
