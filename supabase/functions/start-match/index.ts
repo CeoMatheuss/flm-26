@@ -491,7 +491,8 @@ function generateReport(
   manOfTheMatch: string | undefined, isHome: boolean, competition: string,
   homeStrength: number, awayStrength: number, tactics: any, stadiumCapacity: number,
   homePlayers: SimPlayer[], awayPlayers: SimPlayer[],
-  attendanceOverride?: number, ticketRevenueOverride?: number
+  attendanceOverride?: number, ticketRevenueOverride?: number,
+  tacticalImpactFactors?: Array<{ side: 'home'|'away'|'both'; name: string; impact: string; kind: string; detail?: string }>
 ) {
   const isUserHome = isHome;
   const userGoals = isUserHome ? homeGoals : awayGoals;
