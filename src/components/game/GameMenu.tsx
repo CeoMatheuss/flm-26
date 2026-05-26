@@ -59,7 +59,7 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">💰 Finanças</p>
         <DropdownMenuItem onClick={() => onTabChange('finance')} className="menu-item"><DollarSign className="h-3.5 w-3.5 text-primary/70" /> Relatório Financeiro <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('sponsors')} className="menu-item"><Handshake className="h-3.5 w-3.5 text-primary/70" /> Patrocínios <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        
 
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">💼 Transferências</p>

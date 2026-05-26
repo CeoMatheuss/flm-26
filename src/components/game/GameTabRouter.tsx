@@ -17,7 +17,7 @@ import { InfrastructureTab } from '@/components/game/InfrastructureTab';
 import { TrainingCenterTab } from '@/components/game/TrainingCenterTab';
 import { StadiumTab } from '@/components/game/StadiumTab';
 import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
-import { SponsorsTab } from '@/components/game/SponsorsTab';
+
 import { FansTab } from '@/components/game/FansTab';
 import { MembersTab } from '@/components/game/MembersTab';
 import { InfrastructureWrapper } from '@/components/game/InfrastructureWrapper';
@@ -481,19 +481,6 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       <TabsContent value="settings"><SettingsTab /></TabsContent>
       <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} onSave={() => {}} uniformsUnlocked={!!game.clubProfile?.uniformsUnlocked} /></TabsContent>
       
-      <TabsContent value="sponsors">
-        {isTabBlocked('sponsors') ? <BlockedMessage /> : (
-          <SponsorsTab 
-            sponsors={game.sponsors}
-            offers={game.sponsorOffers}
-            reputation={game.club.reputation}
-            onAccept={game.acceptSponsor}
-            onRefreshOffers={game.refreshSponsorOffers}
-            userId={userId}
-            addBonus={game.addBonus}
-          />
-        )}
-      </TabsContent>
       
       
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
