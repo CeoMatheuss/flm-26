@@ -240,13 +240,13 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
         </div>
       </header>
 
-      {/* Conteúdo: layout vertical (campo em cima, painel embaixo) */}
+      {/* Conteúdo: campo à esquerda (maior, mais estreito) + info à direita / embaixo */}
       <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col gap-3 sm:gap-4 p-2 sm:p-4">
-          {/* Campo */}
-          <div className="w-full max-w-[680px] mx-auto bg-zinc-900/20 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center relative">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] gap-3 sm:gap-4 p-2 sm:p-4 items-start">
+          {/* Campo (2D) - lado esquerdo, formato retrato (alto e estreito) */}
+          <div className="w-full max-w-[460px] mx-auto lg:mx-0 bg-zinc-900/20 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center relative lg:sticky lg:top-2">
             {safePlayers.length < 11 ? (
-              <div className="w-full aspect-[4/5] sm:aspect-[16/10] flex flex-col items-center justify-center text-white/40 gap-2">
+              <div className="w-full aspect-[3/4] flex flex-col items-center justify-center text-white/40 gap-2">
                 <div className="w-10 h-10 rounded-full border-2 border-emerald-500/40 border-t-emerald-500 animate-spin" />
                 <p className="text-[10px] font-bold uppercase tracking-widest">Carregando elenco...</p>
               </div>
@@ -255,7 +255,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
                 formation={safeTactics.formation}
                 players={safePlayers}
                 captainId={safeTactics.captainId}
-                orientation={isMobile ? "portrait" : "landscape"}
+                orientation="portrait"
                 selectedId={pendingFieldId}
                 onSlotSelect={(id) => setPendingFieldId(prev => (prev === id ? null : id))}
                 onSwapPlayers={onUpdatePlayers ? swapInLineup : undefined}
