@@ -15,6 +15,7 @@ import { TrainingMatchCanvas, TrainingReport } from './TrainingMatchCanvas';
 import { InfrastructureTab } from './InfrastructureTab';
 import { TrainingCenterTab } from './TrainingCenterTab';
 import { CTRoomsTab } from './CTRoomsTab';
+import { TrainingHistoryModal } from './TrainingHistoryModal';
 import { Dumbbell, Gamepad2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 
