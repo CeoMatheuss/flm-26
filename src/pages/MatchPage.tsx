@@ -1737,7 +1737,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
             </div>
 
             {/* Fatigue & Injury Alerts (V4) */}
-            <MatchAlerts matchState={matchState} starters={currentStarters} onOpenSubs={() => setExpandedWidget('subs')} />
+            <MatchAlerts matchState={matchState} starters={currentStarters} onOpenSubs={(playerId) => { if (playerId) setSelectedSubOut(playerId); setExpandedWidget('subs'); }} />
 
             {/* Expanded Widget */}
             {expandedWidget === 'stats' && (
