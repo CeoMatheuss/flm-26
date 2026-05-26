@@ -265,6 +265,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         } else {
           const filtered = candidates.filter(c => {
             const localM = club.matches?.find(m => m.id === c.matchId);
+            // Mantém 'scheduled' e 'live' (em simulação). Só remove se já estiver finalizada.
             return !localM?.played && c.status !== 'finished' && c.status !== 'played';
           });
           filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
