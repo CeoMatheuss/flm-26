@@ -355,19 +355,20 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
       const diff = scheduledTime - now;
+      const isLive = nextMatch.status === 'live';
 
-      // Horário chegou: dispara auto-simulação imediatamente (sem janela de espera)
-      if (diff <= 0) {
+      // Horário chegou OU já em simulação no servidor: força auto-sim imediato
+      if (diff <= 0 || isLive) {
         const elapsedMin = Math.floor(Math.abs(diff) / 60000);
         const elapsedTxt = elapsedMin >= 60
           ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m`
           : elapsedMin > 0 ? `${elapsedMin}m` : 'agora';
-        setTimeLeft(`⚡ Simulando automaticamente (${elapsedTxt})`);
+        setTimeLeft(isLive ? `🔴 Ao vivo (${elapsedTxt})` : `⚡ Simulando automaticamente (${elapsedTxt})`);
         setIsReady(false);
 
         if (!autoSimTriggered) {
           setAutoSimTriggered(true);
-          console.log('[MatchDashboardCard] Horário atingido — disparando auto-simulação para', nextMatch.matchId);
+          console.log('[MatchDashboardCard] Disparando auto-simulação para', nextMatch.matchId, 'status=', nextMatch.status);
           try {
             const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
             triggerAutoSim();
