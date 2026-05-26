@@ -244,7 +244,7 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
       <div className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-3 sm:gap-4 p-2 sm:p-4">
           {/* Campo */}
-          <div className="w-full bg-zinc-900/20 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center relative">
+          <div className="w-full max-w-[680px] mx-auto bg-zinc-900/20 rounded-xl sm:rounded-2xl border-0 sm:border sm:border-white/5 p-0 sm:p-4 flex items-center justify-center relative">
             {safePlayers.length < 11 ? (
               <div className="w-full aspect-[4/5] sm:aspect-[16/10] flex flex-col items-center justify-center text-white/40 gap-2">
                 <div className="w-10 h-10 rounded-full border-2 border-emerald-500/40 border-t-emerald-500 animate-spin" />
