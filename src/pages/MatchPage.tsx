@@ -980,7 +980,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
   // Halftime timer — moved outside render in component body (stable identity below)
 
   // Fatigue/Injury Alert System
-  const MatchAlerts = ({ matchState, starters, onOpenSubs }: { matchState: MatchState, starters: Player[], onOpenSubs: () => void }) => {
+  const MatchAlerts = ({ matchState, starters, onOpenSubs }: { matchState: MatchState, starters: Player[], onOpenSubs: (playerId?: string) => void }) => {
     const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
     const [lastAlertTime, setLastAlertTime] = useState(0);
 
@@ -1043,7 +1043,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">
-                  <Button size="sm" className={`h-8 px-4 text-[10px] font-black uppercase tracking-wider shadow-lg ${isRed ? 'bg-red-500 hover:bg-red-600' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}`} onClick={onOpenSubs}>
+                  <Button size="sm" className={`h-8 px-4 text-[10px] font-black uppercase tracking-wider shadow-lg ${isRed ? 'bg-red-500 hover:bg-red-600' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}`} onClick={() => onOpenSubs(alert.player.id)}>
                     Substituir
                   </Button>
                   <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-muted-foreground" onClick={() => {
@@ -1737,7 +1737,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
             </div>
 
             {/* Fatigue & Injury Alerts (V4) */}
-            <MatchAlerts matchState={matchState} starters={currentStarters} onOpenSubs={() => setExpandedWidget('subs')} />
+            <MatchAlerts matchState={matchState} starters={currentStarters} onOpenSubs={(playerId) => { if (playerId) setSelectedSubOut(playerId); setExpandedWidget('subs'); }} />
 
             {/* Expanded Widget */}
             {expandedWidget === 'stats' && (
