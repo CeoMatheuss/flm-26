@@ -298,7 +298,8 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     window.addEventListener('league_match_updated', handleSync);
     window.addEventListener('flm:match-finalized', handleSync);
 
-    const interval = setInterval(loadNextMatch, autoSimTriggered ? 5000 : 60000);
+    // Poll mais agressivo quando há sim em andamento OU quando a partida já passou do horário
+    const interval = setInterval(loadNextMatch, autoSimTriggered ? 4000 : 20000);
     return () => { 
       cancelled = true; 
       clearInterval(interval); 
