@@ -106,6 +106,12 @@ export function TrainingWrapper({
         {tabBtn('infra', 'Infraestrutura', Building2)}
       </div>
 
+      {/* Histórico de evolução (auditoria) */}
+      <div className="flex justify-end">
+        <TrainingHistoryModal userId={userId} />
+      </div>
+
+
       {/* Content */}
       {activeTab === 'training' && (
         <TrainingTab
