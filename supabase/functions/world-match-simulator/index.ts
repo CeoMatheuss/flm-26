@@ -7,8 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const STUCK_THRESHOLD_MS = 15 * 60 * 1000;
-const MATCH_WAIT_TIME_MS = 5 * 60 * 1000;
+const STUCK_THRESHOLD_MS = 5 * 60 * 1000;
+const MATCH_WAIT_TIME_MS = 0;
+
 const BATCH_SIZE = 40;
 
 function rng() { return Math.random(); }
