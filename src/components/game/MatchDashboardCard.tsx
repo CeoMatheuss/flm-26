@@ -350,36 +350,25 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     const update = async () => {
       const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
-
-      // Janela clássica de 5 minutos APÓS o horário agendado para o lobby
-      const LOBBY_WINDOW_MS = 5 * 60 * 1000;
       const diff = scheduledTime - now;
 
-      // Se o horário agendado já passou
+      // Horário chegou: dispara auto-simulação imediatamente (sem janela de espera)
       if (diff <= 0) {
-        // Se ainda estiver dentro da janela de 5 minutos
-        if (Math.abs(diff) < LOBBY_WINDOW_MS) {
-          setTimeLeft('🔴 AO VIVO');
-          setIsReady(true);
-        } else {
-          // Passou dos 5 minutos: dispara simulação automática no servidor
-          // Mostra há quanto tempo está aguardando para o usuário ter feedback
-          const elapsedMin = Math.floor(Math.abs(diff) / 60000);
-          const elapsedTxt = elapsedMin >= 60
-            ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m`
-            : `${elapsedMin}m`;
-          setTimeLeft(`⌛ Processando no servidor (${elapsedTxt})`);
-          setIsReady(false);
+        const elapsedMin = Math.floor(Math.abs(diff) / 60000);
+        const elapsedTxt = elapsedMin >= 60
+          ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m`
+          : elapsedMin > 0 ? `${elapsedMin}m` : 'agora';
+        setTimeLeft(`⚡ Simulando automaticamente (${elapsedTxt})`);
+        setIsReady(false);
 
-          if (!autoSimTriggered) {
-            setAutoSimTriggered(true);
-            console.log('[MatchDashboardCard] Janela de 5min expirada — disparando auto-simulação para', nextMatch.matchId);
-            try {
-              const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
-              triggerAutoSim();
-            } catch (err) {
-              console.error('[MatchDashboardCard] Falha ao disparar auto-sim:', err);
-            }
+        if (!autoSimTriggered) {
+          setAutoSimTriggered(true);
+          console.log('[MatchDashboardCard] Horário atingido — disparando auto-simulação para', nextMatch.matchId);
+          try {
+            const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
+            triggerAutoSim();
+          } catch (err) {
+            console.error('[MatchDashboardCard] Falha ao disparar auto-sim:', err);
           }
         }
         return;
@@ -402,6 +391,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [nextMatch?.date, nextMatch?.status, nextMatch?.matchId, autoSimTriggered]);
+
 
   const resolvedStadium = useMemo(() => {
     if (!nextMatch) return { name: '', isShifted: false };
