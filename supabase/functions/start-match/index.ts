@@ -892,25 +892,57 @@ function simulateFullMatch(
   console.log(`[Tactics] HOME mark=${tactics?.marking||'zona'} pass=${tactics?.passingStyle||'misto'} line=${tactics?.defenseLine||'media'} width=${tactics?.width||'normal'} form=${tactics?.formation||'4-4-2'}`);
   console.log(`[Tactics] AWAY mark=${awayTacticsInput?.marking||'zona'} pass=${awayTacticsInput?.passingStyle||'misto'} line=${awayTacticsInput?.defenseLine||'media'} width=${awayTacticsInput?.width||'normal'} form=${awayTacticsInput?.formation||'4-4-2'}`);
 
+  // ── TACTICAL AMPLIFIER (FLM26) ────────────────────────────
+  // Faz cada lever do treinador ter ~20% mais impacto na simulação.
+  // Mantém a métrica neutra em 1.0; apenas amplia a distância do neutro.
+  const TACTICAL_AMP = 1.20;
+  const amp = (v: number) => 1 + (v - 1) * TACTICAL_AMP;
+
   // Tactical impact on simulation (HOME) — uses style table + extras
   const pressingBase = pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8;
-  const pressingMod = clamp(pressingBase + homeStyleMod.pressureExtra + homeExtras.pressBonus, 0.5, 2.2);
-  const offensiveMod = homeStyleMod.atk * homeExtras.atkMul;
-  const defensiveMod = homeStyleMod.def * homeExtras.defMul;
-  const tempoMod = tempo === 'muito-rapido' ? 1.15 : tempo === 'rapido' ? 1.08 : tempo === 'normal' ? 1.0 : 0.9;
+  const pressingMod = clamp(amp(pressingBase) + homeStyleMod.pressureExtra + homeExtras.pressBonus, 0.5, 2.4);
+  const offensiveMod = amp(homeStyleMod.atk * homeExtras.atkMul);
+  const defensiveMod = amp(homeStyleMod.def * homeExtras.defMul);
+  const tempoMod = amp(tempo === 'muito-rapido' ? 1.15 : tempo === 'rapido' ? 1.08 : tempo === 'normal' ? 1.0 : 0.9);
 
   // Away tactical mods
   const awayPressingBase = awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8;
-  const awayPressingMod = clamp(awayPressingBase + awayStyleMod.pressureExtra + awayExtras.pressBonus, 0.5, 2.2);
-  const awayOffensiveMod = awayStyleMod.atk * awayExtras.atkMul;
-  const awayDefensiveMod = awayStyleMod.def * awayExtras.defMul;
-  const awayTempoMod = awayTempo === 'muito-rapido' ? 1.15 : awayTempo === 'rapido' ? 1.08 : awayTempo === 'normal' ? 1.0 : 0.9;
+  const awayPressingMod = clamp(amp(awayPressingBase) + awayStyleMod.pressureExtra + awayExtras.pressBonus, 0.5, 2.4);
+  const awayOffensiveMod = amp(awayStyleMod.atk * awayExtras.atkMul);
+  const awayDefensiveMod = amp(awayStyleMod.def * awayExtras.defMul);
+  const awayTempoMod = amp(awayTempo === 'muito-rapido' ? 1.15 : awayTempo === 'rapido' ? 1.08 : awayTempo === 'normal' ? 1.0 : 0.9);
 
   // Stamina drain modifiers for pressing/tempo (multiplied by style drain + extras)
   const staminaDrainPressing = (pressing === 'ultra-alto' ? 1.5 : pressing === 'alto' ? 1.25 : pressing === 'medio' ? 1.0 : 0.8) * homeStyleMod.staminaDrain * homeExtras.drainMul;
   const staminaDrainTempo = tempo === 'muito-rapido' ? 1.2 : tempo === 'rapido' ? 1.1 : 1.0;
   const awayStaminaDrainPressing = (awayPressing === 'ultra-alto' ? 1.5 : awayPressing === 'alto' ? 1.25 : awayPressing === 'medio' ? 1.0 : 0.8) * awayStyleMod.staminaDrain * awayExtras.drainMul;
   const awayStaminaDrainTempo = awayTempo === 'muito-rapido' ? 1.2 : awayTempo === 'rapido' ? 1.1 : 1.0;
+
+  // ── STRUCTURED TACTICAL IMPACT LOG (visible in post-match report) ─
+  type ImpactFactor = { side: 'home'|'away'|'both'; name: string; impact: string; kind: string; detail?: string };
+  const tacticalImpactFactors: ImpactFactor[] = [];
+  const pct = (v: number) => `${v>=0?'+':''}${Math.round(v*100)}%`;
+
+  const pushSideFactors = (
+    side: 'home'|'away', t: any, sMod: StyleMod, ex: TacticalExtras,
+    pMod: number, oMod: number, dMod: number, tMod: number
+  ) => {
+    const sPress = t?.pressing || 'medio';
+    const sStyle = t?.playStyle || 'equilibrado';
+    const sTempo = t?.tempo || 'normal';
+    if (sPress !== 'medio') tacticalImpactFactors.push({ side, name:`Pressing ${sPress}`, impact: pct(pMod-1), kind:'pressing', detail:'Recupera mais bolas no campo de ataque, porém drena stamina mais rápido.' });
+    if (sStyle !== 'equilibrado') tacticalImpactFactors.push({ side, name:`Estilo: ${sStyle}`, impact:`Atq ${pct(oMod-1)} / Def ${pct(dMod-1)}`, kind:'style' });
+    if (sTempo !== 'normal') tacticalImpactFactors.push({ side, name:`Ritmo: ${sTempo}`, impact: pct(tMod-1), kind:'tempo', detail: sTempo.includes('rapido') ? '+volume ofensivo, +desgaste' : '−desgaste, −volume' });
+    const dline = t?.defenseLine; if (dline && dline !== 'media') tacticalImpactFactors.push({ side, name:`Linha defensiva ${dline}`, impact: dline==='alta'?'+impedimentos / +risco contra-ataque':'−volume / +segurança', kind:'def_line' });
+    const mk = t?.marking; if (mk === 'individual') tacticalImpactFactors.push({ side, name:'Marcação individual', impact:'+faltas / +intensidade', kind:'marking' });
+    const ps = t?.passingStyle; if (ps && ps !== 'misto') tacticalImpactFactors.push({ side, name:`Passe: ${ps}`, impact: ps==='curto'?'+posse / −verticalidade':'+verticalidade / −posse', kind:'passing' });
+    if (ex.crossBoost > 0) tacticalImpactFactors.push({ side, name:'Foco em cruzamentos', impact:`+${Math.round(ex.crossBoost*100)}% jogo aéreo`, kind:'crosses' });
+    if (ex.longShotBoost > 0) tacticalImpactFactors.push({ side, name:'Chutes de longe', impact:`+${Math.round(ex.longShotBoost*100)}% finalizações fora`, kind:'long_shots' });
+    if (ex.shortPassBoost > 0) tacticalImpactFactors.push({ side, name:'Trama curta', impact:`+${Math.round(ex.shortPassBoost*100)}% posse`, kind:'short_pass' });
+    if (Math.abs(ex.foulBias) > 0.05) tacticalImpactFactors.push({ side, name:'Agressividade defensiva', impact: ex.foulBias>0?'+faltas / +cartões':'−faltas', kind:'fouls' });
+  };
+  pushSideFactors('home', tactics, homeStyleMod, homeExtras, pressingMod, offensiveMod, defensiveMod, tempoMod);
+  pushSideFactors('away', awayTacticsInput, awayStyleMod, awayExtras, awayPressingMod, awayOffensiveMod, awayDefensiveMod, awayTempoMod);
 
   // ── ATTRIBUTE-BASED STRENGTH ──────────────────────────────
   const homeDefenders = home.filter(p => ['ZAG', 'LAT', 'GOL'].includes(p.position));
