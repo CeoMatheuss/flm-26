@@ -376,7 +376,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   useEffect(() => {
     fetchLaunches();
     // Dispara um tick imediato no servidor pra atualizar vendas/hype assim que a aba abre
-    supabase.rpc('process_all_uniform_sales').then(() => fetchLaunches()).catch(() => {});
+    supabase.rpc('process_all_uniform_sales').then(() => fetchLaunches(), () => {});
 
     // Realtime: quando o servidor atualizar vendas/hype, refletir na UI sem refresh
     const channel = supabase
