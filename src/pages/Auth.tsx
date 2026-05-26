@@ -52,6 +52,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(initialEmail);
   const [verificationCode, setVerificationCode] = useState('');
 
