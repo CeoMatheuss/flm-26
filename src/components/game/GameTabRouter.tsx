@@ -3,6 +3,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card, CardContent } from '@/components/ui/card';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
+import { PhysioTab } from '@/components/game/PhysioTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
@@ -279,6 +280,11 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           </ErrorBoundary>
         )}
       </TabsContent>
+
+      <TabsContent value="physio">
+        <PhysioTab players={game.club.players} />
+      </TabsContent>
+      
       
       <TabsContent value="fans">
         <FansTab club={game.club} winStreak={winStreak} loseStreak={0} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
