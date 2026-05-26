@@ -37,6 +37,11 @@ export class TrainingManager {
     this.devEngine.premiumBoost = enabled;
   }
 
+  /** Retorna se o bônus Premium está ativo. */
+  isPremiumBoostActive(): boolean {
+    return !!this.devEngine.premiumBoost;
+  }
+
   /** Define investimento mensal global em treino (R$). Afeta a chance de evolução. */
   setMonthlyTrainingInvestment(value: number): void {
     this.devEngine.setMonthlyInvestment(value);

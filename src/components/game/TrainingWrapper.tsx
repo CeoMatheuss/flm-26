@@ -15,6 +15,7 @@ import { TrainingMatchCanvas, TrainingReport } from './TrainingMatchCanvas';
 import { InfrastructureTab } from './InfrastructureTab';
 import { TrainingCenterTab } from './TrainingCenterTab';
 import { CTRoomsTab } from './CTRoomsTab';
+import { TrainingHistoryModal } from './TrainingHistoryModal';
 import { Dumbbell, Gamepad2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -104,6 +105,12 @@ export function TrainingWrapper({
         {tabBtn('training2d', 'Treinos 2D', Gamepad2)}
         {tabBtn('infra', 'Infraestrutura', Building2)}
       </div>
+
+      {/* Histórico de evolução (auditoria) */}
+      <div className="flex justify-end">
+        <TrainingHistoryModal userId={userId} />
+      </div>
+
 
       {/* Content */}
       {activeTab === 'training' && (

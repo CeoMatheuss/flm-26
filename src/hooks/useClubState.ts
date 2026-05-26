@@ -508,7 +508,70 @@ export function useClubState(initialState: any, userId?: string) {
           setLastTrainingCycleAt(new Date(now).toISOString());
 
           if (result.developmentLogs.length > 0) {
-            toast.success(`🏋️ Treino Concluído! ${result.developmentLogs.length} jogadores evoluíram.`);
+            // 🔎 LOGS DETALHADOS no console
+            const ATTR_PT: Record<string, string> = {
+              speed: 'Velocidade', shooting: 'Finalização', passing: 'Passe',
+              defending: 'Defesa', physical: 'Físico', dribbling: 'Drible',
+              positioning: 'Posicionamento', heading: 'Cabeceio', vision: 'Visão',
+              composure: 'Compostura', marking: 'Marcação', setPieces: 'Bola Parada',
+              goalkeeping: 'Defesa GK',
+            };
+            console.groupCollapsed(`🏋️ [Treino] Ciclo concluído — ${result.developmentLogs.length} evoluções (CT lv ${ctLevel})`);
+            result.developmentLogs.forEach(log => {
+              const before = log.oldValue;
+              const after = log.newValue;
+              const delta = +(after - before).toFixed(2);
+              const p = prev.players.find(pl => pl.id === log.playerId);
+              console.log(
+                `📈 ${log.playerName} | ${ATTR_PT[String(log.attribute)] || log.attribute}: ${before} → ${after} (+${delta}) | idade ${p?.age ?? '?'} | fadiga ${p?.stamina ?? '?'}% | foco ${configs[log.playerId]?.focus} | intensidade ${configs[log.playerId]?.intensity}`
+              );
+            });
+            console.groupEnd();
+
+            toast.success(`🏋️ Treino Concluído! ${result.developmentLogs.length} jogadores evoluíram.`, { duration: 4000 });
+
+            // 🎉 Toast individual por evolução (até 5 para não poluir)
+            result.developmentLogs.slice(0, 5).forEach((log, idx) => {
+              const attrName = ATTR_PT[String(log.attribute)] || String(log.attribute);
+              const delta = +(log.newValue - log.oldValue).toFixed(1);
+              setTimeout(() => {
+                toast.success(`📈 ${log.playerName}: +${delta} ${attrName}`, {
+                  description: `${log.oldValue} → ${log.newValue}`,
+                  duration: 5000,
+                });
+              }, 300 * (idx + 1));
+            });
+
+            // 💾 Persistir auditoria no banco
+            if (userId) {
+              const rows = result.developmentLogs.map(log => {
+                const p = prev.players.find(pl => pl.id === log.playerId);
+                return {
+                  user_id: userId,
+                  player_id: log.playerId,
+                  player_name: log.playerName,
+                  attribute: String(log.attribute),
+                  old_value: log.oldValue,
+                  new_value: log.newValue,
+                  week: log.week,
+                  season: (prev as any).season?.currentSeason ?? 1,
+                  focus: configs[log.playerId]?.focus ?? null,
+                  intensity: configs[log.playerId]?.intensity ?? null,
+                  ct_level: ctLevel,
+                  premium_boost: getTrainingManager().isPremiumBoostActive(),
+                  age: p?.age ?? null,
+                  stamina: p?.stamina ?? null,
+                  source: log.source ?? 'training',
+                };
+              });
+              supabase.from('player_training_history' as any).insert(rows)
+                .then(({ error }) => {
+                  if (error) console.error('[Training] Falha ao salvar histórico:', error);
+                  else console.log(`[Training] ${rows.length} registros de evolução salvos no histórico.`);
+                });
+            }
+          } else {
+            console.log('[Training] Ciclo processado, nenhuma evolução nesta rodada.');
           }
 
           return { ...prev, players: updatedPlayers };

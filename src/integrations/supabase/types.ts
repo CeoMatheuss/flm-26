@@ -4212,6 +4212,69 @@ export type Database = {
           },
         ]
       }
+      player_training_history: {
+        Row: {
+          age: number | null
+          attribute: string
+          created_at: string
+          ct_level: number | null
+          delta: number | null
+          focus: string | null
+          id: string
+          intensity: string | null
+          new_value: number
+          old_value: number
+          player_id: string
+          player_name: string
+          premium_boost: boolean
+          season: number | null
+          source: string
+          stamina: number | null
+          user_id: string
+          week: number | null
+        }
+        Insert: {
+          age?: number | null
+          attribute: string
+          created_at?: string
+          ct_level?: number | null
+          delta?: number | null
+          focus?: string | null
+          id?: string
+          intensity?: string | null
+          new_value: number
+          old_value: number
+          player_id: string
+          player_name: string
+          premium_boost?: boolean
+          season?: number | null
+          source?: string
+          stamina?: number | null
+          user_id: string
+          week?: number | null
+        }
+        Update: {
+          age?: number | null
+          attribute?: string
+          created_at?: string
+          ct_level?: number | null
+          delta?: number | null
+          focus?: string | null
+          id?: string
+          intensity?: string | null
+          new_value?: number
+          old_value?: number
+          player_id?: string
+          player_name?: string
+          premium_boost?: boolean
+          season?: number | null
+          source?: string
+          stamina?: number | null
+          user_id?: string
+          week?: number | null
+        }
+        Relationships: []
+      }
       premium_sponsorships: {
         Row: {
           activated_at: string
