@@ -12,6 +12,29 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  build: {
+    // No source maps in production to avoid exposing original source
+    sourcemap: false,
+    // Minify aggressively
+    minify: "esbuild",
+    // Strip comments, jsdoc and legal comments
+    cssMinify: true,
+    rollupOptions: {
+      output: {
+        // Hash output files so internal route/component names are not guessable
+        entryFileNames: "assets/[hash].js",
+        chunkFileNames: "assets/[hash].js",
+        assetFileNames: "assets/[hash][extname]",
+      },
+    },
+  },
+  esbuild: mode === "production"
+    ? {
+        // Remove console.* and debugger statements from the production bundle
+        drop: ["console", "debugger"],
+        legalComments: "none",
+      }
+    : undefined,
   plugins: [
     react(),
     VitePWA({
