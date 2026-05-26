@@ -191,11 +191,13 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         home_team:world_teams!world_matches_home_team_id_fkey (name, strength),
         away_team:world_teams!world_matches_away_team_id_fkey (name, strength)
       `;
+      // Inclui 'live' para que o widget nunca fique em branco enquanto a partida
+      // está sendo simulada no servidor (estado intermediário entre 'scheduled' e 'finished').
       const { data: matches } = await supabase
         .from('world_matches')
         .select(worldSelect)
         .or(`home_team_id.eq.${teamData.id},away_team_id.eq.${teamData.id}`)
-        .eq('status', 'scheduled') // Only pending matches
+        .in('status', ['scheduled', 'live'])
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
@@ -263,6 +265,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         } else {
           const filtered = candidates.filter(c => {
             const localM = club.matches?.find(m => m.id === c.matchId);
+            // Mantém 'scheduled' e 'live' (em simulação). Só remove se já estiver finalizada.
             return !localM?.played && c.status !== 'finished' && c.status !== 'played';
           });
           filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -296,7 +299,8 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
     window.addEventListener('league_match_updated', handleSync);
     window.addEventListener('flm:match-finalized', handleSync);
 
-    const interval = setInterval(loadNextMatch, autoSimTriggered ? 5000 : 60000);
+    // Poll mais agressivo quando há sim em andamento OU quando a partida já passou do horário
+    const interval = setInterval(loadNextMatch, autoSimTriggered ? 4000 : 20000);
     return () => { 
       cancelled = true; 
       clearInterval(interval); 
@@ -330,7 +334,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   // Auto-dispara simulação quando os 5 minutos do lobby expiram sem o usuário entrar
   useEffect(() => { setAutoSimTriggered(false); }, [nextMatch?.matchId]);
 
-  // Retry de auto-sim a cada 30s enquanto a partida estiver presa no estado "simulando"
+  // Retry de auto-sim a cada 10s enquanto a partida estiver presa em 'live'/'simulando'
   useEffect(() => {
     if (!autoSimTriggered || !nextMatch?.matchId) return;
     const retry = setInterval(async () => {
@@ -338,10 +342,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         console.log('[MatchDashboardCard] Retry auto-sim para', nextMatch.matchId);
         const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
         triggerAutoSim();
+        // Força refresh dos dados pra capturar o status 'finished' assim que vier
+        window.dispatchEvent(new CustomEvent('league_match_updated'));
       } catch (err) {
         console.error('[MatchDashboardCard] Retry auto-sim falhou:', err);
       }
-    }, 30000);
+    }, 10000);
     return () => clearInterval(retry);
   }, [autoSimTriggered, nextMatch?.matchId]);
 
@@ -351,19 +357,20 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       const scheduledTime = new Date(nextMatch.date).getTime();
       const now = Date.now();
       const diff = scheduledTime - now;
+      const isLive = nextMatch.status === 'live';
 
-      // Horário chegou: dispara auto-simulação imediatamente (sem janela de espera)
-      if (diff <= 0) {
+      // Horário chegou OU já em simulação no servidor: força auto-sim imediato
+      if (diff <= 0 || isLive) {
         const elapsedMin = Math.floor(Math.abs(diff) / 60000);
         const elapsedTxt = elapsedMin >= 60
           ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m`
           : elapsedMin > 0 ? `${elapsedMin}m` : 'agora';
-        setTimeLeft(`⚡ Simulando automaticamente (${elapsedTxt})`);
+        setTimeLeft(isLive ? `🔴 Ao vivo (${elapsedTxt})` : `⚡ Simulando automaticamente (${elapsedTxt})`);
         setIsReady(false);
 
         if (!autoSimTriggered) {
           setAutoSimTriggered(true);
-          console.log('[MatchDashboardCard] Horário atingido — disparando auto-simulação para', nextMatch.matchId);
+          console.log('[MatchDashboardCard] Disparando auto-simulação para', nextMatch.matchId, 'status=', nextMatch.status);
           try {
             const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
             triggerAutoSim();
