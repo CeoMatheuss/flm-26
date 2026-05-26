@@ -1461,7 +1461,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                     </div>
 
                     <div className="pt-2">
-                      <HalftimeTimer onComplete={() => resumeFromBreak()} />
+                      <HalftimeTimer matchId={matchDbId} onComplete={() => resumeFromBreak()} />
                     </div>
                   </div>
                 ) : (
