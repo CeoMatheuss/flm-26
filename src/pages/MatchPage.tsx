@@ -1043,7 +1043,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">
-                  <Button size="sm" className={`h-8 px-4 text-[10px] font-black uppercase tracking-wider shadow-lg ${isRed ? 'bg-red-500 hover:bg-red-600' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}`} onClick={onOpenSubs}>
+                  <Button size="sm" className={`h-8 px-4 text-[10px] font-black uppercase tracking-wider shadow-lg ${isRed ? 'bg-red-500 hover:bg-red-600' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}`} onClick={() => onOpenSubs(alert.player.id)}>
                     Substituir
                   </Button>
                   <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-muted-foreground" onClick={() => {
