@@ -1510,7 +1510,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                             ({(matchState as any).home_penalty_goals} - {(matchState as any).away_penalty_goals}) Pênaltis
                           </div>
                         )}
-                        {(matchState as any).has_extra_time && !(matchState.latestEvent?.type.includes('penalty')) && (
+                        {(matchState as any).has_extra_time && !(matchState.latestEvent?.type || '').includes('penalty') && (
                           <div className="text-[8px] font-bold text-yellow-500 uppercase tracking-tighter mt-0.5">
                             Prorrogação
                           </div>
