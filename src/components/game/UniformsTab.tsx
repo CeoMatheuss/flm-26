@@ -683,7 +683,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       }).eq('id', launchId);
 
       // Gerar notícia
-      await generateLaunchNews(user.id, clubName, fans, reputation);
+      await generateLaunchNews(user.id, clubName, fans, reputation, launchId);
       
       // Notificação de sucesso
       await supabase.from('user_notifications').insert({
