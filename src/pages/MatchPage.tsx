@@ -1361,6 +1361,21 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
       toast.error('🚫 Esse jogador não está disponível no banco');
       return;
     }
+    // Goleiro só pode ser substituído por outro goleiro (e vice-versa)
+    const outPlayer = currentStarters.find(p => p.id === playerOutId);
+    const inPlayer = currentBench.find(p => p.id === playerInId);
+    if (outPlayer && inPlayer) {
+      const outIsGK = outPlayer.position === 'GOL';
+      const inIsGK = inPlayer.position === 'GOL';
+      if (outIsGK && !inIsGK) {
+        toast.error('🧤 Goleiro só pode ser substituído por outro goleiro');
+        return;
+      }
+      if (!outIsGK && inIsGK) {
+        toast.error('🧤 Jogador de linha não pode ser substituído por um goleiro');
+        return;
+      }
+    }
     setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
     setSelectedSubOut(null);
     if (scheduledMinute) {
