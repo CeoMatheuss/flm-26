@@ -3,6 +3,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card, CardContent } from '@/components/ui/card';
 import { DashboardTab } from '@/components/game/DashboardTab';
 import { TacticsTab } from '@/components/game/TacticsTab';
+import { PhysioTab } from '@/components/game/PhysioTab';
 import { MultiplayerTab } from '@/components/game/MultiplayerTab';
 import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
 import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
