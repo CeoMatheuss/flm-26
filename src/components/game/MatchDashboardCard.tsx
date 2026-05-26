@@ -191,11 +191,13 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         home_team:world_teams!world_matches_home_team_id_fkey (name, strength),
         away_team:world_teams!world_matches_away_team_id_fkey (name, strength)
       `;
+      // Inclui 'live' para que o widget nunca fique em branco enquanto a partida
+      // está sendo simulada no servidor (estado intermediário entre 'scheduled' e 'finished').
       const { data: matches } = await supabase
         .from('world_matches')
         .select(worldSelect)
         .or(`home_team_id.eq.${teamData.id},away_team_id.eq.${teamData.id}`)
-        .eq('status', 'scheduled') // Only pending matches
+        .in('status', ['scheduled', 'live'])
         .order('scheduled_at', { ascending: true })
         .limit(1);
 
