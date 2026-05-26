@@ -4,6 +4,7 @@ import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -16,6 +17,7 @@ import { BetaAccessRequestForm } from '@/components/auth/BetaAccessRequestForm';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
 import gamePreview3 from '@/assets/game-preview-3.jpg';
+import { Link } from 'react-router-dom';
 
 const RESEND_COOLDOWN = 60;
 
@@ -50,6 +52,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(initialEmail);
   const [verificationCode, setVerificationCode] = useState('');
 
@@ -363,15 +366,30 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                   minLength={6}
                   className="h-12 text-sm"
                 />
-                {confirmPassword.length > 0 && password !== confirmPassword && (
+              {confirmPassword.length > 0 && password !== confirmPassword && (
                   <p className="text-[10px] text-destructive">As senhas não coincidem</p>
                 )}
+              </div>
+
+              <div className="flex items-start gap-2 pt-1">
+                <Checkbox
+                  id="terms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                  className="mt-0.5 shrink-0"
+                />
+                <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
+                  Você aceita os{" "}
+                  <Link to="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline hover:text-primary/80">
+                    termos de uso
+                  </Link>
+                </label>
               </div>
             </div>
 
             <Button
               onClick={handleSignup}
-              disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword}
+              disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword || !acceptedTerms}
               className="w-full h-12 font-bold gap-2"
             >
               {loading ? 'Criando conta...' : 'Criar Conta'} <ChevronRight className="w-4 h-4" />
