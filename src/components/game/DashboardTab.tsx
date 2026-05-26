@@ -622,11 +622,9 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
 
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} stadiumLevel={stadiumLevel} />
 
-      {/* Standings & Ranking Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <LeagueStandingsMini userId={userId} />
-        <GlobalRankingMini userId={userId} />
-      </div>
+      {/* Ranking Mundial */}
+      <GlobalRankingMini userId={userId} />
+
       
       <WorldCupTeaser userId={userId} onOpenWorldCup={onOpenWorldCup} />
 
