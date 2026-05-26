@@ -175,6 +175,13 @@ export function PlayerRankingTab() {
 
   useEffect(() => {
     fetchPlayerRankings();
+    const channel = supabase
+      .channel('player-ranking-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'global_player_ranking' }, () => {
+        fetchPlayerRankings();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [category]);
 
   const filteredRankings = useMemo(() => {
