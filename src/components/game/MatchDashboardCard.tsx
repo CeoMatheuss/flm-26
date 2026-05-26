@@ -334,7 +334,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
   // Auto-dispara simulação quando os 5 minutos do lobby expiram sem o usuário entrar
   useEffect(() => { setAutoSimTriggered(false); }, [nextMatch?.matchId]);
 
-  // Retry de auto-sim a cada 30s enquanto a partida estiver presa no estado "simulando"
+  // Retry de auto-sim a cada 10s enquanto a partida estiver presa em 'live'/'simulando'
   useEffect(() => {
     if (!autoSimTriggered || !nextMatch?.matchId) return;
     const retry = setInterval(async () => {
@@ -342,10 +342,12 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
         console.log('[MatchDashboardCard] Retry auto-sim para', nextMatch.matchId);
         const { triggerAutoSim } = await import('@/hooks/useAutoSimulator');
         triggerAutoSim();
+        // Força refresh dos dados pra capturar o status 'finished' assim que vier
+        window.dispatchEvent(new CustomEvent('league_match_updated'));
       } catch (err) {
         console.error('[MatchDashboardCard] Retry auto-sim falhou:', err);
       }
-    }, 30000);
+    }, 10000);
     return () => clearInterval(retry);
   }, [autoSimTriggered, nextMatch?.matchId]);
 
