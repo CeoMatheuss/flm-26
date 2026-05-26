@@ -26,6 +26,7 @@ interface ReportData {
     manOfTheMatch: string | undefined;
   };
   tactical: string[];
+  tacticalImpact?: Array<{ side: 'home'|'away'|'both'; name: string; impact: string; kind: string; detail?: string }>;
   impacts: {
     moraleChange: number;
     rankingChange: number;
