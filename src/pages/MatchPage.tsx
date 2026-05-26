@@ -2615,7 +2615,7 @@ function ChatEventRow({ ev, homeTeam, awayTeam, homeShield, awayShield }: { ev: 
           {isGoal && <span className="text-[12px] font-black text-emerald-400 uppercase tracking-wider animate-pulse">⚽ GOL</span>}
         </div>
         <p className={`leading-relaxed font-medium ${isGoal ? 'text-base sm:text-lg font-bold' : 'text-sm sm:text-base'} ${getEventColor(ev.type)}`}>
-          {teamName && !ev.description.includes(getEventIcon(ev.type)) && (
+          {teamName && !(ev.description || '').includes(getEventIcon(ev.type)) && (
             <span className="mr-1">{getEventIcon(ev.type)}</span>
           )}
           {ev.description}
