@@ -1950,6 +1950,7 @@ export type Database = {
           id: string
           last_update: string | null
           mvp_count: number | null
+          penalties_saved: number
           player_id: string
           position_rank: number | null
           prev_position: number | null
@@ -1967,6 +1968,7 @@ export type Database = {
           id?: string
           last_update?: string | null
           mvp_count?: number | null
+          penalties_saved?: number
           player_id: string
           position_rank?: number | null
           prev_position?: number | null
@@ -1984,6 +1986,7 @@ export type Database = {
           id?: string
           last_update?: string | null
           mvp_count?: number | null
+          penalties_saved?: number
           player_id?: string
           position_rank?: number | null
           prev_position?: number | null
@@ -6969,6 +6972,7 @@ export type Database = {
           matches_played: number | null
           minutes_played: number | null
           mvp_count: number | null
+          penalties_saved: number
           player_id: string
           red_cards: number | null
           season_month: number
@@ -6992,6 +6996,7 @@ export type Database = {
           matches_played?: number | null
           minutes_played?: number | null
           mvp_count?: number | null
+          penalties_saved?: number
           player_id: string
           red_cards?: number | null
           season_month: number
@@ -7015,6 +7020,7 @@ export type Database = {
           matches_played?: number | null
           minutes_played?: number | null
           mvp_count?: number | null
+          penalties_saved?: number
           player_id?: string
           red_cards?: number | null
           season_month?: number

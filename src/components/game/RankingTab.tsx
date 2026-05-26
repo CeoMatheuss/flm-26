@@ -352,7 +352,7 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                   <th className="py-3 px-6 text-left font-bold w-16">Pos</th>
                   <th className="py-3 px-2 text-left font-bold">Clube / Treinador</th>
                   <th className="py-3 px-4 text-center font-bold hidden md:table-cell">Reputação</th>
-                  <th className="py-3 px-4 text-center font-bold hidden md:table-cell">Forma</th>
+                  
                   <th className="py-3 px-4 text-right font-bold">
                     {category === 'offensive' ? 'Gols M.' : category === 'defensive' ? 'Gols S.' : 'Pontos'}
                   </th>
@@ -419,11 +419,6 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                           <Badge variant="outline" className="text-[10px] font-bold border-amber-500/20 text-amber-500">
                             ★ {entry.clubs?.reputation || 0}
                           </Badge>
-                        </td>
-                        <td className="py-4 px-4 text-center hidden md:table-cell">
-                          <div className="flex justify-center">
-                            {renderForm(entry.recent_form)}
-                          </div>
                         </td>
                         <td className="py-4 px-4 text-right">
                           <span className="text-sm font-black italic text-primary">
