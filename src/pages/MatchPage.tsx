@@ -980,7 +980,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
   // Halftime timer — moved outside render in component body (stable identity below)
 
   // Fatigue/Injury Alert System
-  const MatchAlerts = ({ matchState, starters, onOpenSubs }: { matchState: MatchState, starters: Player[], onOpenSubs: () => void }) => {
+  const MatchAlerts = ({ matchState, starters, onOpenSubs }: { matchState: MatchState, starters: Player[], onOpenSubs: (playerId?: string) => void }) => {
     const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
     const [lastAlertTime, setLastAlertTime] = useState(0);
 
