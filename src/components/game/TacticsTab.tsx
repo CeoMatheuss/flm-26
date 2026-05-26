@@ -5,7 +5,7 @@ import { FormationView } from './FormationView';
 import { PlayerTacticsPanel } from './Tactics/PlayerTacticsPanel';
 import { TacticsConfig, MAIN_PLAY_STYLES, ADVANCED_PLAY_STYLES, playStyleEffects, type PlayStyle } from '@/types/tactics';
 import { Player } from '@/types/game';
-import { ArrowLeft, Zap, Target, Shield, X, Sparkles, Users, User } from 'lucide-react';
+import { ArrowLeft, Zap, Target, Shield, X, Users, User } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
