@@ -369,22 +369,6 @@ export function TacticsTab({ tactics, players, onUpdate, onUpdatePlayers, hideSw
               </CardContent>
             </Card>
 
-            {/* Poder Tático */}
-            <Card className="bg-emerald-500/10 border-emerald-500/20 rounded-2xl">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-5 h-5 text-zinc-950" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Poder Tático</p>
-                  <p className="text-2xl font-black text-white leading-none">{tacticalRating}<span className="text-sm text-emerald-400">%</span></p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-white/40">OVR</p>
-                  <p className="text-2xl font-black text-white leading-none">{avgOverall}</p>
-                </div>
-              </CardContent>
-            </Card>
           </aside>
         </div>
       </div>
