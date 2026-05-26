@@ -366,15 +366,30 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                   minLength={6}
                   className="h-12 text-sm"
                 />
-                {confirmPassword.length > 0 && password !== confirmPassword && (
+              {confirmPassword.length > 0 && password !== confirmPassword && (
                   <p className="text-[10px] text-destructive">As senhas não coincidem</p>
                 )}
+              </div>
+
+              <div className="flex items-start gap-2 pt-1">
+                <Checkbox
+                  id="terms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                  className="mt-0.5 shrink-0"
+                />
+                <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
+                  Você aceita os{" "}
+                  <Link to="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline hover:text-primary/80">
+                    termos de uso
+                  </Link>
+                </label>
               </div>
             </div>
 
             <Button
               onClick={handleSignup}
-              disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword}
+              disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword || !acceptedTerms}
               className="w-full h-12 font-bold gap-2"
             >
               {loading ? 'Criando conta...' : 'Criar Conta'} <ChevronRight className="w-4 h-4" />
