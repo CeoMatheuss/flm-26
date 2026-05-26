@@ -27,7 +27,54 @@ import type { ShieldRenderProps } from '@/components/game/shieldHelpers';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+// Halftime countdown — stable component (defined outside parent so state survives re-renders).
+// Sync baseline: uses the wall-clock timestamp when halftime started, persisted via a sessionStorage
+// key derived from matchId, so refresh/re-render does not reset the countdown.
+function HalftimeTimer({ matchId, durationSec = 120, onComplete }: { matchId?: string; durationSec?: number; onComplete: () => void }) {
+  const storageKey = `flm:halftime:${matchId || 'local'}`;
+  const startedAtRef = useRef<number>(0);
+  if (startedAtRef.current === 0) {
+    const stored = typeof window !== 'undefined' ? sessionStorage.getItem(storageKey) : null;
+    const parsed = stored ? parseInt(stored, 10) : NaN;
+    if (!Number.isNaN(parsed) && Date.now() - parsed < durationSec * 1000) {
+      startedAtRef.current = parsed;
+    } else {
+      startedAtRef.current = Date.now();
+      try { sessionStorage.setItem(storageKey, String(startedAtRef.current)); } catch {}
+    }
+  }
+
+  const compute = () => Math.max(0, durationSec - Math.floor((Date.now() - startedAtRef.current) / 1000));
+  const [timeLeft, setTimeLeft] = useState<number>(compute);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const left = compute();
+      setTimeLeft(left);
+      if (left <= 0) {
+        clearInterval(timer);
+        try { sessionStorage.removeItem(storageKey); } catch {}
+        onComplete();
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId]);
+
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
+  const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+  return (
+    <div className="bg-background/40 backdrop-blur-md border border-primary/30 rounded-xl px-4 py-3 flex flex-col items-center gap-1">
+      <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Segundo tempo começa em</p>
+      <p className="text-3xl font-black font-mono text-foreground tracking-tighter">{formatted}</p>
+    </div>
+  );
+}
+
 interface MatchPageState {
+
   homeTeam: string;
   awayTeam: string;
   homePlayers: Player[];
@@ -930,36 +977,8 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
     return () => { cancelled = true; };
   }, [matchDbId]);
 
-  // NEW: Halftime Timer Component
-  const HalftimeTimer = ({ onComplete }: { onComplete: () => void }) => {
-    const [timeLeft, setTimeLeft] = useState(120); // 2 minutes in seconds
-    useEffect(() => {
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            onComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }, [onComplete]);
+  // Halftime timer — moved outside render in component body (stable identity below)
 
-    const formatTime = (s: number) => {
-      const mins = Math.floor(s / 60);
-      const secs = s % 60;
-      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    return (
-      <div className="bg-background/40 backdrop-blur-md border border-primary/30 rounded-xl px-4 py-3 flex flex-col items-center gap-1">
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Segundo tempo começa em</p>
-        <p className="text-3xl font-black font-mono text-foreground tracking-tighter">{formatTime(timeLeft)}</p>
-      </div>
-    );
-  };
   // Fatigue/Injury Alert System
   const MatchAlerts = ({ matchState, starters, onOpenSubs }: { matchState: MatchState, starters: Player[], onOpenSubs: () => void }) => {
     const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
@@ -1442,7 +1461,7 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                     </div>
 
                     <div className="pt-2">
-                      <HalftimeTimer onComplete={() => resumeFromBreak()} />
+                      <HalftimeTimer matchId={matchDbId} onComplete={() => resumeFromBreak()} />
                     </div>
                   </div>
                 ) : (
