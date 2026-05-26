@@ -558,7 +558,7 @@ export function useClubState(initialState: any, userId?: string) {
                   focus: configs[log.playerId]?.focus ?? null,
                   intensity: configs[log.playerId]?.intensity ?? null,
                   ct_level: ctLevel,
-                  premium_boost: !!getTrainingManager().devEngine?.premiumBoost,
+                  premium_boost: getTrainingManager().isPremiumBoostActive(),
                   age: p?.age ?? null,
                   stamina: p?.stamina ?? null,
                   source: log.source ?? 'training',
