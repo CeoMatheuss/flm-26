@@ -3025,12 +3025,97 @@ export type Database = {
         }
         Relationships: []
       }
+      match_context_modifiers: {
+        Row: {
+          code: string
+          condition: Json
+          created_at: string
+          description: string | null
+          enabled: boolean
+          event_filter: Json
+          id: string
+          weight_multiplier: number
+        }
+        Insert: {
+          code: string
+          condition?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          event_filter?: Json
+          id?: string
+          weight_multiplier?: number
+        }
+        Update: {
+          code?: string
+          condition?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          event_filter?: Json
+          id?: string
+          weight_multiplier?: number
+        }
+        Relationships: []
+      }
+      match_event_catalog: {
+        Row: {
+          base_weight: number
+          category: string
+          code: string
+          created_at: string
+          enabled: boolean
+          headline_templates: string[]
+          id: string
+          max_minute: number
+          min_minute: number
+          narration_templates: string[]
+          outcome: string
+          requires_context: Json
+          stats_impact: Json
+          subcategory: string
+        }
+        Insert: {
+          base_weight?: number
+          category: string
+          code: string
+          created_at?: string
+          enabled?: boolean
+          headline_templates?: string[]
+          id?: string
+          max_minute?: number
+          min_minute?: number
+          narration_templates?: string[]
+          outcome: string
+          requires_context?: Json
+          stats_impact?: Json
+          subcategory: string
+        }
+        Update: {
+          base_weight?: number
+          category?: string
+          code?: string
+          created_at?: string
+          enabled?: boolean
+          headline_templates?: string[]
+          id?: string
+          max_minute?: number
+          min_minute?: number
+          narration_templates?: string[]
+          outcome?: string
+          requires_context?: Json
+          stats_impact?: Json
+          subcategory?: string
+        }
+        Relationships: []
+      }
       match_history: {
         Row: {
           away_goals: number
           away_team: string
           competition: string
           created_at: string
+          event_diversity_score: number | null
           events: Json
           goal_scorers: Json
           home_goals: number
@@ -3041,6 +3126,7 @@ export type Database = {
           live_match_id: string | null
           man_of_the_match: string | null
           match_type: string
+          narrative_id: string | null
           played_at: string
           player_ratings: Json
           stadium_capacity: number
@@ -3053,6 +3139,7 @@ export type Database = {
           away_team: string
           competition?: string
           created_at?: string
+          event_diversity_score?: number | null
           events?: Json
           goal_scorers?: Json
           home_goals?: number
@@ -3063,6 +3150,7 @@ export type Database = {
           live_match_id?: string | null
           man_of_the_match?: string | null
           match_type?: string
+          narrative_id?: string | null
           played_at?: string
           player_ratings?: Json
           stadium_capacity?: number
@@ -3075,6 +3163,7 @@ export type Database = {
           away_team?: string
           competition?: string
           created_at?: string
+          event_diversity_score?: number | null
           events?: Json
           goal_scorers?: Json
           home_goals?: number
@@ -3085,12 +3174,60 @@ export type Database = {
           live_match_id?: string | null
           man_of_the_match?: string | null
           match_type?: string
+          narrative_id?: string | null
           played_at?: string
           player_ratings?: Json
           stadium_capacity?: number
           stadium_name?: string
           stats?: Json
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_history_narrative_id_fkey"
+            columns: ["narrative_id"]
+            isOneToOne: false
+            referencedRelation: "match_narratives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_narratives: {
+        Row: {
+          created_at: string
+          event_diversity_score: number | null
+          headline: string
+          id: string
+          key_moments: Json
+          man_of_the_match: Json | null
+          match_id: string
+          shared_match_id: string | null
+          summary: string | null
+          tactical_read: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_diversity_score?: number | null
+          headline: string
+          id?: string
+          key_moments?: Json
+          man_of_the_match?: Json | null
+          match_id: string
+          shared_match_id?: string | null
+          summary?: string | null
+          tactical_read?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_diversity_score?: number | null
+          headline?: string
+          id?: string
+          key_moments?: Json
+          man_of_the_match?: Json | null
+          match_id?: string
+          shared_match_id?: string | null
+          summary?: string | null
+          tactical_read?: string | null
         }
         Relationships: []
       }
