@@ -930,36 +930,8 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
     return () => { cancelled = true; };
   }, [matchDbId]);
 
-  // NEW: Halftime Timer Component
-  const HalftimeTimer = ({ onComplete }: { onComplete: () => void }) => {
-    const [timeLeft, setTimeLeft] = useState(120); // 2 minutes in seconds
-    useEffect(() => {
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            onComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }, [onComplete]);
+  // Halftime timer — moved outside render in component body (stable identity below)
 
-    const formatTime = (s: number) => {
-      const mins = Math.floor(s / 60);
-      const secs = s % 60;
-      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    return (
-      <div className="bg-background/40 backdrop-blur-md border border-primary/30 rounded-xl px-4 py-3 flex flex-col items-center gap-1">
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Segundo tempo começa em</p>
-        <p className="text-3xl font-black font-mono text-foreground tracking-tighter">{formatTime(timeLeft)}</p>
-      </div>
-    );
-  };
   // Fatigue/Injury Alert System
   const MatchAlerts = ({ matchState, starters, onOpenSubs }: { matchState: MatchState, starters: Player[], onOpenSubs: () => void }) => {
     const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
