@@ -420,11 +420,6 @@ export function RankingTab({ rating, rankingHistory, clubName, stats, season }: 
                             ★ {entry.clubs?.reputation || 0}
                           </Badge>
                         </td>
-                        <td className="py-4 px-4 text-center hidden md:table-cell">
-                          <div className="flex justify-center">
-                            {renderForm(entry.recent_form)}
-                          </div>
-                        </td>
                         <td className="py-4 px-4 text-right">
                           <span className="text-sm font-black italic text-primary">
                             {category === 'offensive' ? entry.goals_for : category === 'defensive' ? entry.goals_against : entry.ranking_points}
