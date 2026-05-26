@@ -1042,6 +1042,64 @@ function simulateFullMatch(
     }
   }
 
+  // ── SCORE-REACTIVE LATE CHANCES (FLM26 adaptativo) ────────
+  // Times perdendo no fim do jogo ganham chances extras proporcionais à
+  // sua agressividade tática (estilo + pressing + tempo) e à stamina
+  // restante. Isso faz "perdendo fica mais ofensivo" virar gols de verdade.
+  {
+    const homeAggro = clamp(0.35 + (offensiveMod - 1) * 0.9 + (pressingMod - 1) * 0.5 + (tempoMod - 1) * 0.4, 0.10, 2.2);
+    const awayAggro = clamp(0.35 + (awayOffensiveMod - 1) * 0.9 + (awayPressingMod - 1) * 0.5 + (awayTempoMod - 1) * 0.4, 0.10, 2.2);
+    const homeStaminaFactor = clamp(avgStamina / 80, 0.5, 1.25);
+    const awayStaminaFactor = clamp(awayAvgStaminaInit / 80, 0.5, 1.25);
+
+    const lateWindow = Array.from({ length: 30 }, (_, i) => 60 + i).filter(m => !usedMinutes.has(m));
+    const initHome = totalHomeGoals + penaltyMins.filter(p => p.team === 'home' && p.isGoal).length;
+    const initAway = totalAwayGoals + penaltyMins.filter(p => p.team === 'away' && p.isGoal).length;
+
+    const spawnLate = (side: 'home' | 'away', deficit: number, aggro: number, stamFactor: number) => {
+      if (deficit <= 0 || lateWindow.length === 0) return;
+      const bonusLambda = deficit * 0.40 * aggro * stamFactor;
+      const extra = poissonSample(bonusLambda);
+      for (let i = 0; i < extra && lateWindow.length; i++) {
+        const idx = Math.floor(rng() * lateWindow.length);
+        const m = lateWindow.splice(idx, 1)[0];
+        usedMinutes.add(m);
+        if (side === 'home') homeGoalMins.push(m); else awayGoalMins.push(m);
+        tacticalImpactFactors.push({
+          side, name: 'Reação tática no fim de jogo',
+          impact: '+1 gol', kind: 'late_reaction',
+          detail: `Time perdendo por ${deficit} forçou chance extra no min ${m} (agressividade ${aggro.toFixed(2)}).`
+        });
+      }
+    };
+    spawnLate('home', initAway - initHome, homeAggro, homeStaminaFactor);
+    spawnLate('away', initHome - initAway, awayAggro, awayStaminaFactor);
+
+    // ── AI ADAPTATIVA DO BOT (away) ──
+    // Se nenhuma tática away foi fornecida (jogo single-player ou bot),
+    // emulamos um treinador que vira a chave quando está perdendo: mais
+    // uma chance bonus se entrou em desvantagem >=1 gol.
+    const awayIsBot = !awayTacticsInput || awayTacticsInput.__auto !== false;
+    if (awayIsBot) {
+      const awayDeficit = initHome - initAway;
+      if (awayDeficit >= 1 && lateWindow.length) {
+        const aiLambda = 0.25 * awayDeficit * awayStaminaFactor;
+        if (rng() < 1 - Math.exp(-aiLambda) && lateWindow.length) {
+          const idx = Math.floor(rng() * lateWindow.length);
+          const m = lateWindow.splice(idx, 1)[0];
+          usedMinutes.add(m);
+          awayGoalMins.push(m);
+          tacticalImpactFactors.push({
+            side: 'away', name: 'Treinador adversário se lança ao ataque',
+            impact: '+1 gol', kind: 'ai_adapt',
+            detail: `Bot adversário reagiu à derrota e gerou chance extra no min ${m}.`
+          });
+        }
+      }
+    }
+    console.log(`[FLM26 late-react] homeAggro=${homeAggro.toFixed(2)} awayAggro=${awayAggro.toFixed(2)} extraHome=${homeGoalMins.length - totalHomeGoals} extraAway=${awayGoalMins.length - totalAwayGoals}`);
+  }
+
   // ── SUPPORT EVENTS ──────────────────────────────────────────
   // Reduzido drasticamente para ser mais realista.
   const cardMins: number[] = [];
