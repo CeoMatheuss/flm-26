@@ -1361,16 +1361,6 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
       toast.error('🚫 Esse jogador não está disponível no banco');
       return;
     }
-    setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
-    setSelectedSubOut(null);
-    if (scheduledMinute) {
-      toast.success(`⏱️ Substituição programada para o minuto ${scheduledMinute}'`);
-    } else if (isHalftime) {
-      toast.success('✅ Substituição confirmada — jogador entra no 2º tempo');
-    } else {
-      toast.success('✅ Substituição enviada — aplicada no próximo lance');
-    }
-  }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds, enteredInIds, currentStarters, currentBench]);
     // Goleiro só pode ser substituído por outro goleiro (e vice-versa)
     const outPlayer = currentStarters.find(p => p.id === playerOutId);
     const inPlayer = currentBench.find(p => p.id === playerInId);
@@ -1386,6 +1376,17 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
         return;
       }
     }
+    setSubQueue(q => [...q, { outId: playerOutId, inId: playerInId, scheduledMinute }]);
+    setSelectedSubOut(null);
+    if (scheduledMinute) {
+      toast.success(`⏱️ Substituição programada para o minuto ${scheduledMinute}'`);
+    } else if (isHalftime) {
+      toast.success('✅ Substituição confirmada — jogador entra no 2º tempo');
+    } else {
+      toast.success('✅ Substituição enviada — aplicada no próximo lance');
+    }
+  }, [validateSubAllowed, isHalftime, subQueue, substitutedPlayerIds, enteredInIds, currentStarters, currentBench]);
+
   // Cancel a queued substitution before it's applied (only allowed if not yet executed)
   const handleCancelQueuedSub = useCallback((outId: string) => {
     setSubQueue(q => q.filter(s => s.outId !== outId));
