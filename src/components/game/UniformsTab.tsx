@@ -711,33 +711,34 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
   };
 
 
-  const calculateCurrentSales = (launch: any, clubFans: number, clubRep: number) => {
-    if (!launch) return { daily: 0, total: 0, hype: 0, daysSinceLaunch: 0, revenue: 0 };
-    
+  // Os dados reais (hype/vendas) vêm do servidor via process_all_uniform_sales.
+  // O frontend só lê e exibe — autoritativo no backend.
+  const calculateCurrentSales = (launch: any) => {
+    if (!launch) return { daily: 0, total: 0, hype: 0, daysSinceLaunch: 0, revenue: 0, revenueToday: 0 };
+
     const launchedAt = launch.launched_at ? new Date(launch.launched_at) : new Date();
-    const daysSinceLaunch = Math.max(0, (Date.now() - launchedAt.getTime()) / (24 * 3600 * 1000));
-    
-    // Vendas baseadas em torcida e reputação
-    const baseDaily = (clubFans * 0.008) * (clubRep / 100);
-    
-    // Hype cai com o tempo
-    let hype = launch.hype_score / 100;
-    if (daysSinceLaunch > 7) {
-      hype = Math.max(0.1, hype - ((daysSinceLaunch - 7) * 0.02));
-    }
-    
-    const dailySales = Math.floor(baseDaily * hype);
-    
+    const daysSinceLaunch = Math.max(0, Math.floor((Date.now() - launchedAt.getTime()) / (24 * 3600 * 1000)));
+
+    // Vendas de hoje vêm da tabela uniform_sales_history (linha do dia atual em BRT)
+    const todayBRT = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    const todayRow = salesHistory.find((s: any) => s.sale_date === todayBRT);
+    const dailySales = todayRow?.quantity || 0;
+    const revenueToday = Number(todayRow?.revenue || 0);
+
+    const hype = Math.max(0, Math.min(100, Math.round(Number(launch.hype_score ?? 0))));
+
     return {
       daily: dailySales,
-      revenue: dailySales * shirtPrice,
-      hype: Math.round(hype * 100),
-      daysSinceLaunch: Math.floor(daysSinceLaunch)
+      revenue: revenueToday,
+      revenueToday,
+      total: launch.total_sales_count || 0,
+      hype,
+      daysSinceLaunch,
     };
   };
 
 
-  const salesStats = useMemo(() => calculateCurrentSales(activeLaunch, clubReputation || 50, clubReputation || 50), [activeLaunch, clubReputation]);
+  const salesStats = useMemo(() => calculateCurrentSales(activeLaunch), [activeLaunch, salesHistory]);
 
   const handleSave = () => {
     /*
