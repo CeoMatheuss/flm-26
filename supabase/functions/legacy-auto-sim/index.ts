@@ -10,8 +10,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const STUCK_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutos para considerar partida travada
-const MATCH_WAIT_TIME_MS = 5 * 60 * 1000;  // 5 minutos de espera antes da auto-simulação
+const STUCK_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutos para destravar simulação presa
+const MATCH_WAIT_TIME_MS = 0;              // Sem espera: simula assim que o horário chega
+
 const BATCH_SIZE = 40;
 
 // --- UTILS ---
