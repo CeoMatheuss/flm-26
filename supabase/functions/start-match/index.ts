@@ -573,6 +573,7 @@ function generateReport(
         manOfTheMatch,
       },
       tactical: tacticalNotes,
+      tacticalImpact: tacticalImpactFactors || [],
       impacts: { moraleChange, rankingChange, attendance, revenue: ticketRevenue, fatigue: pressing === 'ultra-alto' ? 12 : pressing === 'alto' ? 8 : 5 },
     },
   };
