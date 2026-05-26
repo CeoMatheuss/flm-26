@@ -428,26 +428,60 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
     setKits(prev => ({ ...prev, [activeKit]: updated }));
   };
 
-  const generateLaunchNews = async (userId: string, clubName: string, fans: number, reputation: number) => {
-    const { data: userProfile } = await supabase.from('profiles').select('display_name').eq('user_id', userId).maybeSingle();
-    const managerName = userProfile?.display_name || 'do clube';
-    const newsText = `👕 O ${clubName} acaba de lançar uma nova coleção de uniformes! O Manager ${managerName} convida todos para verem o novo manto.`;
-
-    await supabase.from('newspaper_entries').insert([{
-      user_id: userId,
-      text: newsText,
-      category: 'ELENCO',
-      importance: 3,
-      template_key: 'kit_launch',
-      metadata: {
-        clubName: clubName,
-        kit: kits[activeKit],
-        managerName: managerName
+  const generateLaunchNews = async (userId: string, clubName: string, _fans: number, _reputation: number, launchId?: string) => {
+    try {
+      // Anti-duplicação: se o trigger do banco já criou, não duplica
+      if (launchId) {
+        const { data: existing } = await supabase
+          .from('newspaper_entries')
+          .select('id')
+          .eq('template_key', 'kit_launch')
+          .filter('metadata->>launchId', 'eq', launchId)
+          .limit(1)
+          .maybeSingle();
+        if (existing) {
+          console.log('[uniform-news] notícia já existe para launch', launchId);
+          return;
+        }
       }
-    }] as any);
 
+      const { data: userProfile } = await supabase.from('profiles').select('display_name').eq('user_id', userId).maybeSingle();
+      const managerName = userProfile?.display_name || 'do clube';
 
+      const headlines = [
+        `👕 O ${clubName} apresenta seu novo uniforme para a temporada!`,
+        `✨ Nova camisa do ${clubName} é revelada oficialmente.`,
+        `🔥 Torcida reage ao novo manto lançado pelo ${clubName}.`,
+        `📣 ${clubName} lança coleção inédita e movimenta o mercado.`,
+        `🏆 O Manager ${managerName} apresenta o novo uniforme do ${clubName}.`,
+        `👀 Confira o novo uniforme oficial do ${clubName} — já disponível na loja!`,
+      ];
+      const newsText = headlines[Math.floor(Math.random() * headlines.length)];
+
+      const { error } = await supabase.from('newspaper_entries').insert([{
+        user_id: userId,
+        text: newsText,
+        category: 'ELENCO',
+        importance: 3,
+        template_key: 'kit_launch',
+        metadata: {
+          launchId,
+          clubName,
+          kit: kits[activeKit],
+          managerName,
+        },
+      }] as any);
+
+      if (error) {
+        console.error('[uniform-news] erro ao inserir notícia:', error);
+      } else {
+        console.log('[uniform-news] notícia publicada com sucesso');
+      }
+    } catch (err) {
+      console.error('[uniform-news] exceção ao gerar notícia:', err);
+    }
   };
+
 
 
 
@@ -649,7 +683,7 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
       }).eq('id', launchId);
 
       // Gerar notícia
-      await generateLaunchNews(user.id, clubName, fans, reputation);
+      await generateLaunchNews(user.id, clubName, fans, reputation, launchId);
       
       // Notificação de sucesso
       await supabase.from('user_notifications').insert({
