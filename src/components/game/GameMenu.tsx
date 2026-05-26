@@ -37,12 +37,12 @@ export function GameMenu({ showAdmin, onTabChange, onShowTutorial, onMarketSubTa
         <DropdownMenuItem onClick={() => onTabChange('continental')} className="menu-item"><Trophy className="h-3.5 w-3.5 text-yellow-500" /> Continentais <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('ranking')} className="menu-item"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Rankings <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('trophies')} className="menu-item"><Medal className="h-3.5 w-3.5 text-primary/70" /> Histórico <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('stats')} className="menu-item"><BarChart3 className="h-3.5 w-3.5 text-primary/70" /> Estatísticas <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        
 
         <div className="my-1.5 border-t border-border/20" />
         <p className="menu-category">⚙️ Gerais</p>
         <DropdownMenuItem onClick={() => onTabChange('matches')} className="menu-item"><Swords className="h-3.5 w-3.5 text-primary/70" /> Amistosos! <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onTabChange('calendar')} className="menu-item"><Calendar className="h-3.5 w-3.5 text-primary/70" /> Calendário <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
+        
         <DropdownMenuItem onClick={() => onTabChange('scouts')} className="menu-item"><Search className="h-3.5 w-3.5 text-primary/70" /> Olheiros <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('uniforms')} className="menu-item"><Shirt className="h-3.5 w-3.5 text-primary/70" /> Uniformes <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTabChange('clubprofile')} className="menu-item"><User className="h-3.5 w-3.5 text-primary/70" /> Perfil do Clube <ChevronRight className="h-3 w-3 ml-auto text-muted-foreground/30" /></DropdownMenuItem>

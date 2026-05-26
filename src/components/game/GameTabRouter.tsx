@@ -9,7 +9,7 @@ import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
 import { ChampionshipsTab } from '@/components/game/ChampionshipsTab';
 import { ScoutsTab } from '@/components/game/ScoutsTab';
 
-import { MatchCalendarTab } from '@/components/game/MatchCalendarTab';
+
 import { MatchesTab } from '@/components/game/MatchesTab';
 import { FinanceTab } from '@/components/game/FinanceTab';
 import { InfrastructureTab } from '@/components/game/InfrastructureTab';
@@ -124,7 +124,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       
-      <TabsContent value="calendar">{isTabBlocked('calendar') ? <BlockedMessage /> : <MatchCalendarTab userId={userId} clubName={game.club.name} />}</TabsContent>
+      
 
       <TabsContent value="matches">
         <MatchesTab
@@ -489,13 +489,6 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       
-      <TabsContent value="stats">
-        <div className="p-8 text-center text-muted-foreground">
-          <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm font-bold">Estatísticas detalhadas</p>
-          <p className="text-xs">Em breve: artilharia, assistências e scouts avançados.</p>
-        </div>
-      </TabsContent>
       
       <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
       
