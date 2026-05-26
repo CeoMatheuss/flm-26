@@ -7267,10 +7267,12 @@ export type Database = {
         Args: { _division: number }
         Returns: number
       }
-      calculate_daily_uniform_sales: {
-        Args: { p_club_id: string; p_launch_id: string }
-        Returns: undefined
-      }
+      calculate_daily_uniform_sales:
+        | {
+            Args: { p_club_id: string; p_launch_id: string }
+            Returns: undefined
+          }
+        | { Args: { p_launch_id: string }; Returns: undefined }
       calculate_league_reward: { Args: { p_pos: number }; Returns: number }
       calculate_match_scheduled_time: {
         Args: { p_date: string; p_league_id: string }
