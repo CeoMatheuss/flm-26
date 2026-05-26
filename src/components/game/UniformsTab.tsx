@@ -375,6 +375,29 @@ export function UniformsTab({ primaryColor, secondaryColor, uniforms, onSave, sp
 
   useEffect(() => {
     fetchLaunches();
+    // Dispara um tick imediato no servidor pra atualizar vendas/hype assim que a aba abre
+    supabase.rpc('process_all_uniform_sales').then(() => fetchLaunches()).catch(() => {});
+
+    // Realtime: quando o servidor atualizar vendas/hype, refletir na UI sem refresh
+    const channel = supabase
+      .channel('uniform-launches-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'club_uniform_launches' }, () => fetchLaunches())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'uniform_sales_history' }, () => {
+        if (activeLaunch?.id) fetchSalesHistory(activeLaunch.id);
+      })
+      .subscribe();
+
+    // Refresh periódico de segurança (60s)
+    const poll = setInterval(() => {
+      fetchLaunches();
+      if (activeLaunch?.id) fetchSalesHistory(activeLaunch.id);
+    }, 60000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchLaunches = async () => {
