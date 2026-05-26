@@ -4,6 +4,7 @@ import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -16,6 +17,7 @@ import { BetaAccessRequestForm } from '@/components/auth/BetaAccessRequestForm';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
 import gamePreview3 from '@/assets/game-preview-3.jpg';
+import { Link } from 'react-router-dom';
 
 const RESEND_COOLDOWN = 60;
 
