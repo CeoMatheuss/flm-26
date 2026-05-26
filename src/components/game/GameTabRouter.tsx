@@ -280,6 +280,11 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
           </ErrorBoundary>
         )}
       </TabsContent>
+
+      <TabsContent value="physio">
+        <PhysioTab players={game.club.players} />
+      </TabsContent>
+      
       
       <TabsContent value="fans">
         <FansTab club={game.club} winStreak={winStreak} loseStreak={0} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
