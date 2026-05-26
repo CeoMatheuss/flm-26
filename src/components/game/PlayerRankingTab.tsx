@@ -135,25 +135,26 @@ export function PlayerRankingTab() {
             .map(p => ({
               id: p.id,
               player_id: p.id,
-              ranking_points: p.overall * 10, // Pontuação baseada em overall como fallback
-              reputation_score: p.reputation || 50,
-              reputation_level: p.reputation >= 90 ? 'Mundial' : p.reputation >= 75 ? 'Continental' : 'Nacional',
+              ranking_points: 0, // sem stats reais ainda → fica no fim
+              reputation_score: p.reputation || 0,
+              reputation_level: p.reputation >= 90 ? 'Mundial' : p.reputation >= 70 ? 'Continental' : p.reputation >= 40 ? 'Nacional' : 'Local',
               current_position: 0,
               prev_position: 0,
               total_goals: 0,
               total_assists: 0,
               total_clean_sheets: 0,
+              penalties_saved: 0,
               mvp_count: 0,
               position_rank: 0,
               seasonal_points: 0,
               last_update: new Date().toISOString(),
-              avg_rating: 6.0,
+              avg_rating: 0,
               players: {
                 ...p,
-                clubs: p.clubs ? { 
-                  club_name: (p.clubs as any).name, 
-                  logo_url: (p.clubs as any).logo_url, 
-                  shield_config: (p.clubs as any).shield_config 
+                clubs: p.clubs ? {
+                  club_name: (p.clubs as any).name,
+                  logo_url: (p.clubs as any).logo_url,
+                  shield_config: (p.clubs as any).shield_config
                 } : null
               }
             }));
