@@ -582,8 +582,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
               const currentPoints = liveStats?.points ?? club.stats.points;
               let boardGoal = 45; let goalLabel = "Top 10";
               if (avgOvr >= 80) { boardGoal = 85; goalLabel = "Título"; }
-              else if (avgOvr >= 75) { boardGoal = 70; goalLabel = "Libertadores"; }
-              else if (avgOvr >= 70) { boardGoal = 60; goalLabel = "Libertadores"; }
+              else if (avgOvr >= 75) { boardGoal = 70; goalLabel = "Continental"; }
+              else if (avgOvr >= 70) { boardGoal = 60; goalLabel = "Continental"; }
               const progress = Math.min(100, Math.max(0, (currentPoints / boardGoal) * 100));
               return (
                 <div className="space-y-3">
