@@ -222,6 +222,16 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
     if (data) setLoanListings(data);
   }, []);
 
+  const loadLoanOffers = useCallback(async () => {
+    if (!userId) return;
+    const [{ data: incoming }, { data: mine }] = await Promise.all([
+      supabase.from('loan_offers').select('*').eq('seller_id', userId).in('status', ['pending', 'countered']).order('created_at', { ascending: false }),
+      supabase.from('loan_offers').select('*').eq('buyer_id', userId).in('status', ['pending', 'countered', 'rejected', 'accepted']).order('created_at', { ascending: false }).limit(20),
+    ]);
+    setIncomingLoanOffers(incoming || []);
+    setMyLoanOffers(mine || []);
+  }, [userId]);
+
   const loadMyRenewals = useCallback(async () => {
     const { data } = await supabase
       .from('player_negotiations')
