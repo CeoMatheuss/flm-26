@@ -863,14 +863,18 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Limite de 3 empréstimos recebidos atingido.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      const now = new Date();
+      // 🔄 Finalização robusta via RPC (atômico)
+      const { data: rpcResult, error: rpcError } = await adminClient.rpc('finalize_loan_listing_transfer', {
+        p_listing_id: listingId,
+        p_buyer_id: userId,
+        p_buyer_club_name: (clubName || 'Um clube').slice(0, 50)
+      });
 
-      await adminClient.from('loan_listings').update({
-        status: 'accepted',
-        buyer_id: userId,
-        buyer_club_name: (clubName || '').slice(0, 50),
-        accepted_at: now.toISOString(),
-      }).eq('id', listingId);
+      if (rpcError || !rpcResult?.success) {
+        console.error('RPC Error (loan-accept):', rpcError || rpcResult?.error);
+        return new Response(JSON.stringify({ error: 'Erro crítico ao processar empréstimo. Tente novamente.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
 
       // Create journal entry
       await adminClient.from('journal_updates').insert({
