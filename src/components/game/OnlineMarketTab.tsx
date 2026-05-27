@@ -123,6 +123,9 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
   const [loanListings, setLoanListings] = useState<any[]>([]);
+  const [incomingLoanOffers, setIncomingLoanOffers] = useState<any[]>([]);
+  const [myLoanOffers, setMyLoanOffers] = useState<any[]>([]);
+  const [counterLoanOffer, setCounterLoanOffer] = useState<any | null>(null);
   const [myRenewals, setMyRenewals] = useState<any[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -219,6 +222,16 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
     if (data) setLoanListings(data);
   }, []);
 
+  const loadLoanOffers = useCallback(async () => {
+    if (!userId) return;
+    const [{ data: incoming }, { data: mine }] = await Promise.all([
+      supabase.from('loan_offers').select('*').eq('seller_id', userId).in('status', ['pending', 'countered']).order('created_at', { ascending: false }),
+      supabase.from('loan_offers').select('*').eq('buyer_id', userId).in('status', ['pending', 'countered', 'rejected', 'accepted']).order('created_at', { ascending: false }).limit(20),
+    ]);
+    setIncomingLoanOffers(incoming || []);
+    setMyLoanOffers(mine || []);
+  }, [userId]);
+
   const loadMyRenewals = useCallback(async () => {
     const { data } = await supabase
       .from('player_negotiations')
@@ -239,6 +252,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       loadMyOffers();
       loadIncomingOffers();
       loadLoanListings();
+      loadLoanOffers();
       loadMyRenewals();
     });
 
@@ -258,17 +272,22 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       .on('postgres_changes', { event: '*', schema: 'public', table: 'player_negotiations', filter: `user_id=eq.${userId}` }, () => { loadMyRenewals(); })
       .subscribe();
 
-    const backupInterval = setInterval(loadListings, 30000); // 1 min backup refresh
+    const ch5 = supabase.channel('loan-offers')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_offers' }, () => { loadLoanOffers(); })
+      .subscribe();
 
-    return () => { 
-      supabase.removeChannel(ch1); 
-      supabase.removeChannel(ch2); 
+    const backupInterval = setInterval(loadListings, 30000);
+
+    return () => {
+      supabase.removeChannel(ch1);
+      supabase.removeChannel(ch2);
       supabase.removeChannel(ch3);
       supabase.removeChannel(ch4);
+      supabase.removeChannel(ch5);
       clearInterval(backupInterval);
     };
 
-  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, loadMyRenewals, resolveDecisions, userId]);
+  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, loadLoanOffers, loadMyRenewals, resolveDecisions, userId]);
 
   const listPlayer = async (player: Player) => {
     setLoading(true);
@@ -1208,7 +1227,126 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
               </div>
             )}
           </div>
+
+          {/* Empréstimos Recebidos */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <ArrowLeftRight className="h-4 w-4 text-cyan-400" /> Empréstimos Recebidos
+              {incomingLoanOffers.length > 0 && <Badge className="bg-cyan-500/15 text-cyan-400 text-[9px]">{incomingLoanOffers.length}</Badge>}
+            </h3>
+
+            {incomingLoanOffers.length === 0 ? (
+              <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+                Nenhuma proposta de empréstimo recebida.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {incomingLoanOffers.map(offer => {
+                  const listing = loanListings.find(l => l.id === offer.listing_id);
+                  const borrowerPct = offer.offered_salary_payer === 'buyer'
+                    ? offer.offered_salary_split_pct || 100
+                    : offer.offered_salary_payer === 'seller'
+                      ? 100 - (offer.offered_salary_split_pct || 0)
+                      : offer.offered_salary_split_pct || 50;
+                  return (
+                    <div key={offer.id} className="rounded-xl border border-cyan-500/20 overflow-hidden" style={{ background: 'hsl(var(--card))' }}>
+                      <div className="p-3 bg-gradient-to-r from-cyan-500/10 to-transparent">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-muted/30 text-[10px] font-black shrink-0">
+                              {listing?.player_overall ?? '?'}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-black truncate">{listing?.player_name || 'Jogador'}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">De: <span className="text-primary">{offer.buyer_club_name}</span></p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-base font-black text-cyan-400">R${((offer.offered_loan_fee || 0) / 1000).toFixed(0)}k</p>
+                            <p className="text-[9px] text-muted-foreground">taxa de empréstimo</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-3 pb-3">
+                        <div className="grid grid-cols-2 gap-1.5 mb-3 mt-2">
+                          <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>📅 1 Temporada</div>
+                          <div className="rounded-lg p-1.5 text-[9px] text-center" style={{ background: 'hsl(var(--accent) / 0.5)' }}>💰 Receptor: {borrowerPct}%</div>
+                        </div>
+                        {offer.status === 'countered' && (
+                          <div className="rounded-lg p-2 mb-2 text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                            ↩️ Contraproposta enviada — aguardando resposta do clube comprador.
+                          </div>
+                        )}
+                        {offer.status === 'pending' && (
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" className="flex-1 min-w-[90px] h-9 text-xs rounded-lg gap-1.5 bg-emerald-600 hover:bg-emerald-500" disabled={loading} onClick={async () => {
+                              setLoading(true);
+                              const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-offer-accept', offerId: offer.id } });
+                              if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
+                              else toast.success('Empréstimo confirmado!');
+                              setLoading(false); loadLoanOffers(); loadLoanListings();
+                            }}>
+                              <Check className="h-3.5 w-3.5" /> Aceitar
+                            </Button>
+                            <Button size="sm" variant="outline" className="flex-1 min-w-[90px] h-9 text-xs rounded-lg gap-1.5 border-amber-500/40 text-amber-400 hover:bg-amber-500/10" disabled={loading} onClick={() => setCounterLoanOffer({ ...offer, _listing: listing })}>
+                              <RefreshCw className="h-3.5 w-3.5" /> Contraproposta
+                            </Button>
+                            <Button size="sm" variant="destructive" className="flex-1 min-w-[90px] h-9 text-xs rounded-lg gap-1.5" disabled={loading} onClick={async () => {
+                              setLoading(true);
+                              const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-offer-reject', offerId: offer.id } });
+                              if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
+                              else toast.success('Proposta recusada');
+                              setLoading(false); loadLoanOffers();
+                            }}>
+                              <X className="h-3.5 w-3.5" /> Recusar
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Empréstimos Enviados (status) */}
+          {myLoanOffers.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="font-bold text-sm flex items-center gap-2">
+                <Send className="h-4 w-4 text-cyan-400" /> Propostas de Empréstimo Enviadas
+                <Badge variant="outline" className="text-[9px]">{myLoanOffers.length}</Badge>
+              </h3>
+              <div className="space-y-1.5">
+                {myLoanOffers.map(offer => {
+                  const listing = loanListings.find(l => l.id === offer.listing_id);
+                  const sc: Record<string, { bg: string; text: string; label: string }> = {
+                    pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Pendente' },
+                    countered: { bg: 'bg-blue-500/15', text: 'text-blue-400', label: '↩️ Contraproposta' },
+                    accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Aceita' },
+                    rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
+                  };
+                  const s = sc[offer.status] || sc.pending;
+                  return (
+                    <div key={offer.id} className="rounded-xl border border-border/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate">{listing?.player_name || 'Jogador'}</p>
+                        <p className="text-[10px] text-muted-foreground">Taxa: R${((offer.offered_loan_fee || 0) / 1000).toFixed(0)}k</p>
+                        {offer.status === 'countered' && offer.counter_message && (
+                          <p className="text-[9px] text-amber-300 mt-1">💬 {offer.counter_message}</p>
+                        )}
+                      </div>
+                      <Badge className={`text-[8px] ${s.bg} ${s.text} border-0 shrink-0`}>{s.label}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </TabsContent>
+
+
 
         {negotiateLoan && (
           <LoanNegotiationModal
@@ -1258,6 +1396,55 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             loading={loading}
           />
         )}
+
+        {counterLoanOffer && (
+          <LoanNegotiationModal
+            open={!!counterLoanOffer}
+            onOpenChange={(open) => { if (!open) setCounterLoanOffer(null); }}
+            mode="negotiate"
+            player={{
+              name: counterLoanOffer._listing?.player_name || 'Jogador',
+              position: counterLoanOffer._listing?.player_position,
+              age: counterLoanOffer._listing?.player_age,
+              overall: counterLoanOffer._listing?.player_overall,
+              salary: counterLoanOffer._listing?.salary || 0,
+            }}
+            initialTerms={{
+              duration: 12,
+              loanFee: counterLoanOffer.offered_loan_fee || 0,
+              salaryPercentageOwner: counterLoanOffer.offered_salary_payer === 'seller' ? (counterLoanOffer.offered_salary_split_pct || 100) : 100 - (counterLoanOffer.offered_salary_split_pct || 100),
+              salaryPercentageBorrower: counterLoanOffer.offered_salary_payer === 'buyer' ? (counterLoanOffer.offered_salary_split_pct || 100) : 100 - (counterLoanOffer.offered_salary_split_pct || 100),
+              obligatoryPurchase: false,
+              allowTermination: true,
+              minStayMonths: 0,
+              terminationFee: 0,
+              canPlayAgainstOwner: false,
+              usagePriority: 'none',
+              minMinutesRequired: 0,
+              performanceBonus: 0,
+            }}
+            onSubmit={async (terms: LoanTerms) => {
+              setLoading(true);
+              const res = await supabase.functions.invoke('process-transfer', {
+                body: {
+                  action: 'loan-offer-counter',
+                  offerId: counterLoanOffer.id,
+                  counterSalaryPayer: terms.salaryPercentageBorrower >= 100 ? 'buyer' : terms.salaryPercentageBorrower <= 0 ? 'seller' : 'split',
+                  counterSalarySplitPct: terms.salaryPercentageBorrower,
+                  counterLoanFee: terms.loanFee,
+                  counterOfferedTerms: terms,
+                }
+              });
+              if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao enviar contraproposta');
+              else toast.success('Contraproposta enviada!');
+              setLoading(false);
+              setCounterLoanOffer(null);
+              loadLoanOffers();
+            }}
+            loading={loading}
+          />
+        )}
+
         </div>
       </Tabs>
     </div>
