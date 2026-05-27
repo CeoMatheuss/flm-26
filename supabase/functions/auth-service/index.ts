@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getVerificationEmailTemplate } from "../_shared/email-templates/verification.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -240,7 +241,27 @@ serve(async (req) => {
 
     if (action === 'send-code') {
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-      console.log(`[send-code] email=${email}`)
+      const startTime = Date.now()
+      console.log(`[send-code] Iniciando envio para: ${email}`)
+
+      // Anti-flood: Verificar se já houve um envio recente (últimos 60 segundos)
+      const { data: recentCode } = await supabaseAdmin
+        .from('auth_verification_codes')
+        .select('created_at')
+        .eq('email', email)
+        .gt('created_at', new Date(Date.now() - 60 * 1000).toISOString())
+        .limit(1)
+
+      if (recentCode && recentCode.length > 0) {
+        console.warn(`[send-code] Anti-flood atingido para ${email}`)
+        return new Response(JSON.stringify({ 
+          error: 'Aguarde um minuto antes de solicitar um novo código.',
+          cooldown: true 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
 
       // Invalida códigos anteriores para evitar confusão
       await supabaseAdmin
@@ -249,16 +270,19 @@ serve(async (req) => {
         .eq('email', email)
         .is('used_at', null)
 
-      const { error: dbError } = await supabaseAdmin
+      const { data: insertedCode, error: dbError } = await supabaseAdmin
         .from('auth_verification_codes')
         .insert({
           email,
           code: verificationCode,
-          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString()
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+          delivery_status: 'sending'
         })
+        .select()
+        .single()
 
       if (dbError) {
-        console.error('[send-code] DB insert failed:', dbError)
+        console.error('[send-code] Erro ao salvar no banco:', dbError)
         throw dbError
       }
 
@@ -275,7 +299,9 @@ serve(async (req) => {
         while (attempt < maxRetries && !success) {
           attempt++
           try {
-            console.log(`[send-code] Attempt ${attempt} for ${email}`)
+            const attemptStart = Date.now()
+            console.log(`[send-code] Tentativa ${attempt} para ${email}`)
+            
             const resp = await fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: {
@@ -291,45 +317,58 @@ serve(async (req) => {
                   verificationCode: verificationCode,
                   expirationMinutes: 10,
                   clubName: 'Seu Clube FLM',
-                  ipAddress: req.headers.get('x-forwarded-for') || 'Acesso Remoto'
+                  ipAddress: req.headers.get('x-forwarded-for') || 'Indisponível'
                 }),
               }),
             })
 
             const body = await resp.text()
+            const duration = Date.now() - attemptStart
+            
             if (!resp.ok) {
               emailError = `Resend ${resp.status}: ${body}`
-              console.error(`[send-code] Attempt ${attempt} failed:`, emailError)
+              console.error(`[send-code] Tentativa ${attempt} falhou (${duration}ms):`, emailError)
               
-              // If it's a 403 (unverified domain), don't bother retrying
               if (resp.status === 403) {
                 emailError = 'DOMINIO_NAO_VERIFICADO'
-                break
+                break 
               }
             } else {
               emailSent = true
               success = true
-              console.log('[send-code] Resend OK')
+              console.log(`[send-code] Resend OK (${duration}ms)`)
             }
           } catch (e: any) {
             emailError = e.message
-            console.error(`[send-code] Attempt ${attempt} threw:`, e)
+            console.error(`[send-code] Erro na tentativa ${attempt}:`, e)
           }
           
           if (!success && attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+            await new Promise(resolve => setTimeout(resolve, 1500 * attempt))
           }
         }
       } else {
-        emailError = 'RESEND_API_KEY not configured'
+        emailError = 'RESEND_API_KEY não configurada'
         console.warn('[send-code]', emailError)
       }
+
+      // Atualizar status final no banco
+      await supabaseAdmin
+        .from('auth_verification_codes')
+        .update({ 
+          delivery_status: emailSent ? 'sent' : 'failed',
+          delivery_error: emailError
+        })
+        .eq('id', insertedCode.id)
+
+      const totalTime = Date.now() - startTime
+      console.log(`[send-code] Fluxo concluído em ${totalTime}ms. Sucesso: ${emailSent}`)
 
       return new Response(JSON.stringify({
         success: true,
         emailSent,
         emailError,
-        message: emailSent ? 'Código enviado com sucesso' : 'Código gerado, mas envio do e-mail falhou',
+        message: emailSent ? 'Código enviado com sucesso' : 'Código gerado, mas envio falhou. Verifique se o domínio está validado na Resend.',
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
