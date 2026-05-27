@@ -935,7 +935,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   useEffect(() => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => saveGame(true), 2000);
+    // Aumentado para 10 segundos para reduzir pressão no banco de dados
+    saveTimeoutRef.current = setTimeout(() => saveGame(true), 10000);
     return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
   }, [gameState, saveGame]);
 

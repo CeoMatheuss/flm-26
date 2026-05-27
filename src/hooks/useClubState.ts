@@ -91,25 +91,25 @@ export function useClubState(initialState: any, userId?: string) {
   useEffect(() => {
     if (!initialState) return;
     
-    // Only update if something changed to avoid unnecessary re-renders
-    if (initialState.club && JSON.stringify(initialState.club) !== JSON.stringify(club)) {
-      console.log('[useClubState] Syncing club from official state');
+    // Efficient deep comparison alternative: check specific important fields or versions if available
+    // For now, only update if the reference changes to avoid loops, but parent should handle stability
+    if (initialState.club && initialState.club !== club) {
       setClub(initialState.club);
     }
     
-    if (initialState.marketPlayers && JSON.stringify(initialState.marketPlayers) !== JSON.stringify(marketPlayers)) {
+    if (initialState.marketPlayers && initialState.marketPlayers !== marketPlayers) {
       setMarketPlayers(initialState.marketPlayers);
     }
     
-    if (initialState.freeAgents && JSON.stringify(initialState.freeAgents) !== JSON.stringify(freeAgents)) {
+    if (initialState.freeAgents && initialState.freeAgents !== freeAgents) {
       setFreeAgents(initialState.freeAgents);
     }
     
-    if (initialState.loanedPlayers && JSON.stringify(initialState.loanedPlayers) !== JSON.stringify(loanedPlayers)) {
+    if (initialState.loanedPlayers && initialState.loanedPlayers !== loanedPlayers) {
       setLoanedPlayers(initialState.loanedPlayers);
     }
     
-    if (initialState.clubProfile && JSON.stringify(initialState.clubProfile) !== JSON.stringify(clubProfile)) {
+    if (initialState.clubProfile && initialState.clubProfile !== clubProfile) {
       setClubProfile(initialState.clubProfile);
     }
   }, [initialState]);

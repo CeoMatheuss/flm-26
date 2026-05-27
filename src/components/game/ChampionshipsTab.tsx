@@ -101,15 +101,38 @@ export function ChampionshipsTab() {
     setLoadingDetails(false);
   };
 
-  // Realtime refresh when standings or matches change
+  // Realtime refresh with debounce for better performance
   useEffect(() => {
     if (!selectedLeague) return;
+    
+    let timeoutId: NodeJS.Timeout;
+    const debouncedReload = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        loadLeagueDetails(selectedLeague);
+      }, 2000); // 2 seconds debounce to avoid multiple rapid refreshes
+    };
+
     const channel = supabase
       .channel(`league-detail-${selectedLeague.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_standings', filter: `league_id=eq.${selectedLeague.id}` }, () => loadLeagueDetails(selectedLeague))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches', filter: `league_id=eq.${selectedLeague.id}` }, () => loadLeagueDetails(selectedLeague))
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'world_league_standings', 
+        filter: `league_id=eq.${selectedLeague.id}` 
+      }, debouncedReload)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'world_matches', 
+        filter: `league_id=eq.${selectedLeague.id}` 
+      }, debouncedReload)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    return () => { 
+      clearTimeout(timeoutId);
+      supabase.removeChannel(channel); 
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLeague?.id]);
 

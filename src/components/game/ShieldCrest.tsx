@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import heraldicAnimalsSprite from '@/assets/heraldic-animals.png';
 import heraldicSymbolsSprite from '@/assets/heraldic-symbols.png';
 import heraldicParrot from '@/assets/heraldic-parrot.png';
@@ -891,12 +891,12 @@ function renderIcon(icon: ShieldIcon | undefined, s: number, dc: string, sc: str
   }
 }
 
-export function ShieldCrest({
+export const ShieldCrest = memo(({
   primaryColor, secondaryColor, detailColor, pattern, shape = 'classic', size = 64, className = '', icon,
   borderColor, borderWidth, iconScale = 1, iconOffsetX = 0, iconOffsetY = 0, iconRotation = 0,
   iconOpacity = 1, iconMirror = false, topStars = 0, showLaurels = false, showCrown = false,
   bannerText, bannerColor,
-}: ShieldProps) {
+}: ShieldProps) => {
   const s = size;
   const h = s / 2;
   const dc = detailColor || secondaryColor;
@@ -1201,4 +1201,4 @@ export function ShieldCrest({
       )}
     </svg>
   );
-}
+});

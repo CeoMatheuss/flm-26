@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 // @ts-ignore
 import useSound from 'use-sound';
 
@@ -28,17 +29,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 
 // Logic for standing sync
-function LeagueStandingsMini({ userId }: { userId?: string }) {
-  const [standings, setStandings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [myTeamId, setMyTeamId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!userId) return;
-    const load = async () => {
+const LeagueStandingsMini = memo(({ userId }: { userId?: string }) => {
+  const { data: standingsData, isLoading } = useQuery({
+    queryKey: ['league-standings-mini', userId],
+    queryFn: async () => {
+      if (!userId) return { table: [], myTeamId: null };
       const { data: teamData } = await supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle();
       if (teamData && teamData.league_id) {
-        setMyTeamId(teamData.id);
         const { data: table } = await supabase
           .from('world_league_table')
           .select('*, world_teams(name)')
@@ -47,15 +44,18 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
           .order('wins', { ascending: false })
           .order('goals_for', { ascending: false })
           .limit(5);
-        if (table) setStandings(table);
+        return { table: table || [], myTeamId: teamData.id };
       }
-      setLoading(false);
-    };
-    load();
-  }, [userId]);
+      return { table: [], myTeamId: null };
+    },
+    enabled: !!userId,
+    staleTime: 60000, // 1 minute
+  });
 
-  if (loading) return <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin" /></div>;
-  if (standings.length === 0) return null;
+  const standings = standingsData?.table || [];
+  const myTeamId = standingsData?.myTeamId;
+
+  if (isLoading) return <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin" /></div>;
 
   return (
     <Card className="game-card">
@@ -89,17 +89,14 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
       </CardContent>
     </Card>
   );
-}
+});
 
 
-function GlobalRankingMini({ userId }: { userId?: string }) {
-  const [me, setMe] = useState<any>(null);
-  const [pos, setPos] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!userId) return;
-    const load = async () => {
+const GlobalRankingMini = memo(({ userId }: { userId?: string }) => {
+  const { data: rankingData, isLoading } = useQuery({
+    queryKey: ['global-ranking-mini', userId],
+    queryFn: async () => {
+      if (!userId) return null;
       const { data: all } = await supabase
         .from('global_ranking')
         .select('*')
@@ -108,17 +105,20 @@ function GlobalRankingMini({ userId }: { userId?: string }) {
       if (all) {
         const index = all.findIndex(r => r.user_id === userId);
         if (index >= 0) {
-          setMe(all[index]);
-          setPos(index + 1);
+          return { me: all[index], pos: index + 1 };
         }
       }
-      setLoading(false);
-    };
-    load();
-  }, [userId]);
+      return null;
+    },
+    enabled: !!userId,
+    staleTime: 60000,
+  });
+
+  const me = rankingData?.me;
+  const pos = rankingData?.pos;
 
 
-  if (loading || !me) return null;
+  if (isLoading || !me) return null;
 
 
 
@@ -151,7 +151,7 @@ function GlobalRankingMini({ userId }: { userId?: string }) {
           </div>
         </div>
         <div className="mt-3 flex gap-1 justify-center">
-          {me.recent_form?.slice(0, 5).map((res: string, i: number) => (
+          {(me.recent_form as string[] || []).slice(0, 5).map((res: string, i: number) => (
             <div 
               key={i}
               className={`w-3 h-3 rounded-full flex items-center justify-center text-[7px] font-bold text-white
@@ -164,7 +164,7 @@ function GlobalRankingMini({ userId }: { userId?: string }) {
       </CardContent>
     </Card>
   );
-}
+});
 
 interface Props {
   club: Club;
