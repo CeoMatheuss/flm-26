@@ -359,9 +359,14 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
         return;
       }
 
-      const loadingToast = toast.loading('Entrando na Liga...', {
-        description: `Buscando vaga no país: ${clubCountry}...`
-      });
+      // ✅ Mostra o toast "Entrando na Liga..." apenas UMA VEZ por usuário (persistente).
+      const joinNoticeKey = `flm:league-join-notice:${userId}`;
+      const alreadyShown = typeof window !== 'undefined' && localStorage.getItem(joinNoticeKey) === '1';
+      const loadingToast = alreadyShown
+        ? null
+        : toast.loading('Entrando na Liga...', {
+            description: `Buscando vaga no país: ${clubCountry}...`
+          });
 
       console.log(`[LeagueRegistration] Attempting auto-join for user ${userId} in ${clubCountry}`);
 
