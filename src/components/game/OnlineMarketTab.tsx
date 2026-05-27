@@ -1126,12 +1126,42 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
         {/* ── PROPOSTAS (recebidas + enviadas) ── */}
         <TabsContent value="offers" className="space-y-4 mt-3">
+          {/* ── PREMIUM HERO ── */}
+          <div className="relative overflow-hidden rounded-2xl border border-amber-500/15 backdrop-blur-xl"
+            style={{ background: 'linear-gradient(135deg, hsl(40 50% 9% / 0.7), hsl(220 45% 8% / 0.85))' }}>
+            <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-amber-500/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="relative p-3 flex items-center gap-3">
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-xl bg-amber-500/30 blur-md" />
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-700/10 border border-amber-400/40 flex items-center justify-center">
+                  <Send className="h-5 w-5 text-amber-200" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-sm font-black tracking-tight">Central de Propostas</h2>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Recebidas · Enviadas · Renovas · Empréstimos</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {incomingOffers.length > 0 && (
+                  <Badge className="text-[9px] bg-red-500/20 text-red-300 border-red-500/30 animate-pulse">{incomingOffers.length} novas</Badge>
+                )}
+                {incomingLoanOffers.length > 0 && (
+                  <Badge className="text-[9px] bg-cyan-500/20 text-cyan-300 border-cyan-500/30">{incomingLoanOffers.length} empréstimo</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Recebidas */}
           <div className="space-y-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              📩 Recebidas
-              {incomingOffers.length > 0 && <Badge className="bg-destructive/15 text-destructive text-[9px]">{incomingOffers.length}</Badge>}
-            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+                <span className="text-[11px]">📩</span>
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">Transferências Recebidas</h3>
+              {incomingOffers.length > 0 && <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-[9px]">{incomingOffers.length}</Badge>}
+            </div>
 
             {incomingOffers.length === 0 ? (
               <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
