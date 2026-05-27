@@ -387,10 +387,10 @@ function StandingsView({ members, userId, division, leagueMatches, leagueSquads,
   
   const getExpectedReward = (pos: number) => {
     if (pos === 1) return '18M'; // Mundial
-    if (pos === 2) return '15M'; // Libertadores
-    if (pos === 3) return '13M'; // Libertadores
-    if (pos === 4) return '11M'; // Libertadores
-    if (pos >= 5 && pos <= 8) return (9 - (pos - 5)).toString() + 'M'; // Libertadores
+    if (pos === 2) return '15M'; // Continental
+    if (pos === 3) return '13M'; // Continental
+    if (pos === 4) return '11M'; // Continental
+    if (pos >= 5 && pos <= 8) return (9 - (pos - 5)).toString() + 'M'; // Continental
     return Math.max(2, 5 - (pos - 9)).toString() + 'M';
   };
 
