@@ -11,17 +11,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { NotificationFullPage } from './NotificationFullPage';
 
+export interface NotificationAction {
+  label: string;
+  icon?: string; // Icon name or emoji
+  type: 'navigate' | 'invoke' | 'open_modal';
+  payload: any;
+  variant?: 'default' | 'destructive' | 'outline';
+}
+
 export interface Notification {
   id: string;
   icon: string;
   title: string;
   message: string;
-  type: 'warning' | 'info' | 'danger' | 'success';
-  category?: 'Jogos' | 'Transferências' | 'Financeiro' | 'Copa' | 'Liga' | 'Clube';
+  type: 'warning' | 'info' | 'danger' | 'success' | 'special' | 'premium';
+  category?: 'Jogos' | 'Transferências' | 'Financeiro' | 'Copa' | 'Liga' | 'Clube' | 'Eventos' | 'Premium';
   priority?: 'low' | 'medium' | 'high' | 'ultra';
   createdAt: Date;
-  actions?: { label: string; icon: React.ReactNode; variant: 'default' | 'destructive'; onClick: () => void }[];
-  /** Optional structured payload (e.g. { match_db_id } for match_report notifications). */
+  actions?: { label: string; icon?: React.ReactNode; variant: 'default' | 'destructive' | 'outline'; onClick: () => void }[];
+  /** Optional structured payload. */
   data?: Record<string, any> | null;
 }
 
