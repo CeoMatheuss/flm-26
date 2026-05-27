@@ -352,6 +352,33 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
     setLoading(false);
   };
 
+  const buyNow = async (listing: TransferListing) => {
+    const price = listing.asking_price;
+    if (price > tBudget) {
+      toast.error(`Verba de transferências insuficiente! Disponível: ${formatMoney(tBudget)}, necessário: ${formatMoney(price)}.`);
+      return;
+    }
+    const playerSalary = listing.player_data?.salary || 500;
+    const annualSalary = playerSalary * 12;
+    if (annualSalary > salaryRemaining) {
+      toast.error(`Verba de salários insuficiente! Disponível: ${formatMoney(salaryRemaining)}/ano, salário do jogador custa: ${formatMoney(annualSalary)}/ano.`);
+      return;
+    }
+    if (!window.confirm(`Comprar ${listing.player_name} (OVR ${listing.player_overall}) por ${formatMoney(price)} agora?\n\nA transferência será concluída imediatamente.`)) return;
+
+    setLoading(true);
+    const res = await supabase.functions.invoke('process-transfer', {
+      body: { action: 'buy-now', listingId: listing.id, clubName },
+    });
+    if (res.error || res.data?.error) {
+      toast.error(res.data?.error || 'Erro ao concluir compra imediata');
+    } else {
+      toast.success(`⚡ ${listing.player_name} adquirido por ${formatMoney(price)}!`);
+      loadListings(); loadMyOffers();
+    }
+    setLoading(false);
+  };
+
   const respondOffer = async (offerId: string, accept: boolean, listing?: TransferListing) => {
     setLoading(true);
     let rejectionReason = 'Recusada pelo clube vendedor.';
