@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════
     // LIVE MATCH GUARD: bloqueia ações sensíveis durante partida ao vivo
     // ═══════════════════════════════════════════════════════════════
-    const SENSITIVE_ACTIONS = new Set(['list', 'offer', 'accept', 'respond', 'buy', 'cancel-listing', 'loan-list', 'loan-accept', 'loan-offer-create', 'loan-offer-accept']);
+    const SENSITIVE_ACTIONS = new Set(['list', 'offer', 'accept', 'respond', 'buy', 'buy-now', 'cancel-listing', 'loan-list', 'loan-accept', 'loan-offer-create', 'loan-offer-accept']);
     if (SENSITIVE_ACTIONS.has(action)) {
       const { data: liveMatch } = await adminClient
         .from('live_matches')
