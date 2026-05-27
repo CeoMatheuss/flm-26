@@ -73,10 +73,14 @@ function LeagueStandingsMini({ userId }: { userId?: string }) {
               onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: s.world_teams?.name } }))}
             >
               <div className="flex items-center gap-2">
-                <span className={`font-bold w-3 ${s.team_id === myTeamId ? 'text-primary' : 'text-muted-foreground'}`}>{i + 1}</span>
-                <span className={`truncate max-w-[100px] group-hover:text-primary transition-colors ${s.team_id === myTeamId ? 'font-black text-primary' : ''}`}>
-                  {s.team_id === myTeamId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}
-                </span>
+                <span className={`font-bold w-3 ${s.team_id === myTeamId ? 'text-primary' : (i === 0 ? 'text-yellow-500' : 'text-blue-400')}`}>{i + 1}</span>
+                <div className="flex flex-col">
+                  <span className={`truncate max-w-[100px] group-hover:text-primary transition-colors ${s.team_id === myTeamId ? 'font-black text-primary' : ''}`}>
+                    {s.team_id === myTeamId ? 'Seu Time' : (s.world_teams?.name || `Time ${i + 1}`)}
+                  </span>
+                  {i === 0 && <span className="text-[7px] font-black text-yellow-500 uppercase tracking-tighter">Mundial</span>}
+                  {i >= 1 && i < 8 && <span className="text-[7px] font-black text-blue-400 uppercase tracking-tighter">Continental</span>}
+                </div>
               </div>
               <span className={`font-bold ${s.team_id === myTeamId ? 'text-primary' : 'text-muted-foreground'}`}>{s.points} pts</span>
             </div>
