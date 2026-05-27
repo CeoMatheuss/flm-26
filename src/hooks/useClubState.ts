@@ -748,6 +748,8 @@ export function useClubState(initialState: any, userId?: string) {
         contract: Math.floor(Math.random() * 3 + 2),
         squad_status: 'reserve' as const,
         squadRole: 'reserva' as const,
+        signedAt: Date.now(),
+        signingType: 'free_agent',
         ...({ contractStatus: 'profissional' } as any)
       };
       return { ...prev, budget: prev.budget - cost, players: [...prev.players, signedPlayerObj as Player] };
