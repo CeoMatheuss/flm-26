@@ -7653,8 +7653,16 @@ export type Database = {
       }
       expire_shop_effects: { Args: never; Returns: Json }
       fill_league_with_bots: { Args: { _league_id: string }; Returns: number }
+      finalize_free_agent_signing: {
+        Args: { p_buyer_id: string; p_offer_id: string }
+        Returns: Json
+      }
       finalize_league_match: {
         Args: { _away_goals: number; _home_goals: number; _match_id: string }
+        Returns: Json
+      }
+      finalize_player_transfer: {
+        Args: { p_buyer_id: string; p_listing_id: string; p_offer_id: string }
         Returns: Json
       }
       finalize_stale_live_matches: { Args: never; Returns: number }
@@ -7948,6 +7956,10 @@ export type Database = {
           p_year: number
         }
         Returns: boolean
+      }
+      promote_youth_to_pro: {
+        Args: { p_player_data: Json; p_user_id: string; p_youth_id: string }
+        Returns: Json
       }
       publish_newspaper_event: {
         Args: {
