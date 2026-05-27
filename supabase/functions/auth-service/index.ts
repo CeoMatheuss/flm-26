@@ -286,12 +286,13 @@ serve(async (req) => {
                 from: `Football Life Manager <${fromEmail}>`,
                 to: [email],
                 subject: `Seu código FLM: ${verificationCode}`,
-                html: PREMIUM_EMAIL_TEMPLATE(
-                  'Bem-vindo ao Football Life Manager',
-                  'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
-                  verificationCode,
-                  'Este código expira em 10 minutos por motivos de segurança.'
-                ),
+                html: getVerificationEmailTemplate({
+                  userName: email.split('@')[0],
+                  verificationCode: verificationCode,
+                  expirationMinutes: 10,
+                  clubName: 'Seu Clube FLM',
+                  ipAddress: req.headers.get('x-forwarded-for') || 'Acesso Remoto'
+                }),
               }),
             })
 
