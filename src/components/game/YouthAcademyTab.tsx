@@ -82,8 +82,33 @@ export function YouthAcademyTab({
     return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
   })();
 
+  if (academyLevel < 1) {
+    return (
+      <Card className="border-border/50 bg-slate-900/50 backdrop-blur-sm">
+        <CardContent className="flex flex-col items-center justify-center p-12 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center">
+            <GraduationCap className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-black uppercase italic tracking-tighter text-white">Seu clube ainda não possui categoria de base</h3>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              Realize o upgrade da Academia de Juniores na aba "Infraestrutura" para começar a revelar novos talentos.
+            </p>
+          </div>
+          <Button 
+            className="rounded-xl font-bold gap-2"
+            onClick={onUpgradeAcademy}
+          >
+            Ir para Infraestrutura
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+
       <YouthAcademyHeader 
         lastYouthGenAt={lastYouthGenAt || new Date().toISOString()}
         totalPlayers={prospects.length}
