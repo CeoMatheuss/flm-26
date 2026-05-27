@@ -141,9 +141,13 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
               <TabsContent value="reserves" className="mt-0">
                 {reserves.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => <PlayerRow key={p.id} player={p} />)}
               </TabsContent>
+              <TabsContent value="out" className="mt-0">
+                {out.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => <PlayerRow key={p.id} player={p} />)}
+              </TabsContent>
               <TabsContent value="youth" className="mt-0">
                 {youth.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => <PlayerRow key={p.id} player={p} />)}
               </TabsContent>
+
             </ScrollArea>
           </Tabs>
         </div>
