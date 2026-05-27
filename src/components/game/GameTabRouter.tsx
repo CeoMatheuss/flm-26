@@ -178,7 +178,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
 
       <TabsContent value="championships">
-        {isTabBlocked('championships') ? <BlockedMessage /> : <ChampionshipsTab userId={userId} />}
+        {isTabBlocked('championships') ? <BlockedMessage /> : <ChampionshipsTab />}
       </TabsContent>
       <TabsContent value="copas">
         {isTabBlocked('copas') ? <BlockedMessage /> : <CopasTab userId={userId} />}
