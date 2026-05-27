@@ -2591,6 +2591,42 @@ export type Database = {
           },
         ]
       }
+      league_registration_logs: {
+        Row: {
+          action: string
+          bot_replaced_id: string | null
+          club_name: string | null
+          country: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          league_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          bot_replaced_id?: string | null
+          club_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          league_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          bot_replaced_id?: string | null
+          club_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          league_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       league_squads: {
         Row: {
           id: string
