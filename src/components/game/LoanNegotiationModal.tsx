@@ -77,21 +77,10 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
                 <Label className="text-[10px] uppercase text-zinc-500 font-bold flex items-center gap-1">
                   <Calendar className="h-3 w-3" /> Duração
                 </Label>
-                <Select
-                  disabled={isViewOnly}
-                  value={terms.duration.toString()}
-                  onValueChange={(v) => setTerms(p => ({ ...p, duration: Number(v) }))}
-                >
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 h-10 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="3">3 Meses</SelectItem>
-                    <SelectItem value="6">6 Meses</SelectItem>
-                    <SelectItem value="12">1 Temporada</SelectItem>
-                    <SelectItem value="24">2 Temporadas</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="h-10 px-3 flex items-center rounded-md bg-zinc-900/60 border border-zinc-800 text-sm font-bold text-zinc-300">
+                  1 Temporada
+                  <span className="ml-1 text-[10px] text-zinc-500 font-normal">(30 dias)</span>
+                </div>
               </div>
 
               <div className="space-y-1.5">
