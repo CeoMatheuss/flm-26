@@ -11,7 +11,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { cn } from '@/lib/utils';
 
 
-import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye, Search, TrendingUp, Sparkles, Globe, FileText, Timer, EyeOff, Zap, Crown, Handshake } from 'lucide-react';
+import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye, Search, TrendingUp, Sparkles, Globe, FileText, Timer, EyeOff, Zap, Crown, Handshake, SlidersHorizontal } from 'lucide-react';
 import { ShieldCrest } from './ShieldCrest';
 import { SellerTeamView } from './SellerTeamView';
 import { FreeAgentMarketPanel } from './FreeAgentMarketPanel';
@@ -24,6 +24,7 @@ import { formatMoney } from '@/lib/formatMoney';
 import { useLiveMatchGuard } from './LiveMatchGuard';
 import { LoanNegotiationModal } from './LoanNegotiationModal';
 import { LoanTerms } from '@/types/loan';
+import { PremiumListingCard } from './market/PremiumListingCard';
 
 interface TransferListing {
   id: string;
@@ -678,56 +679,65 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
         {/* ── BROWSE ── */}
         <TabsContent value="browse" className="space-y-3 mt-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <Globe className="h-4 w-4 text-primary" /> Mercado Online
-              <Badge variant="outline" className="text-[9px]">{listings.length}</Badge>
-
-            </h3>
-            <Button variant="outline" size="sm" onClick={loadListings} className="text-xs gap-1.5 h-8 rounded-lg">
-              <RefreshCw className="h-3 w-3" /> Atualizar
-            </Button>
-          </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex-1 min-w-[120px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-8 pl-8 text-xs rounded-lg" />
-            </div>
-             <Select value={posFilter} onValueChange={v => { setPosFilter(v); setCurrentPage(1); }}>
-              <SelectTrigger className="h-8 w-[80px] text-[10px] rounded-lg"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={v => { setSortBy(v); setCurrentPage(1); }}>
-              <SelectTrigger className="h-8 w-[100px] text-[10px] rounded-lg"><SelectValue placeholder="Ordenar" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">Recente</SelectItem>
-                <SelectItem value="ovr_desc">OVR ↓</SelectItem>
-                <SelectItem value="ovr_asc">OVR ↑</SelectItem>
-                <SelectItem value="price_asc">Preço ↑</SelectItem>
-                <SelectItem value="price_desc">Preço ↓</SelectItem>
-                <SelectItem value="age_asc">Idade ↑</SelectItem>
-                <SelectItem value="age_desc">Idade ↓</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Input placeholder="OVR min" type="number" value={ovrMinFilter} onChange={e => { setOvrMinFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[65px] text-[10px] rounded-lg" />
-            <Input placeholder="OVR max" type="number" value={ovrMaxFilter} onChange={e => { setOvrMaxFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[65px] text-[10px] rounded-lg" />
-            <Input placeholder="Idade min" type="number" value={ageMinFilter} onChange={e => { setAgeMinFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[70px] text-[10px] rounded-lg" />
-            <Input placeholder="Idade max" type="number" value={ageMaxFilter} onChange={e => { setAgeMaxFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[70px] text-[10px] rounded-lg" />
-            {(searchText || posFilter !== 'all' || ovrMinFilter || ovrMaxFilter || ageMinFilter || ageMaxFilter || sortBy !== 'recent') && (
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-[9px] text-destructive" onClick={() => {
-                setSearchText(''); setPosFilter('all'); setOvrMinFilter(''); setOvrMaxFilter('');
-                setAgeMinFilter(''); setAgeMaxFilter(''); setSortBy('recent'); setCurrentPage(1);
-              }}>
-                <X className="h-3 w-3 mr-0.5" /> Limpar
+          {/* Premium header */}
+          <div className="relative overflow-hidden rounded-2xl border border-white/5 p-3 backdrop-blur-sm"
+            style={{ background: 'linear-gradient(135deg, hsl(220 40% 9% / 0.7), hsl(150 50% 8% / 0.5))' }}>
+            <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-amber-500/10 blur-3xl" />
+            <div className="relative flex items-center justify-between gap-2 mb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center">
+                  <Globe className="h-4 w-4 text-emerald-300" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm leading-none">Mercado Global</h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{listings.length} jogadores disponíveis ao vivo</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={loadListings} className="text-xs gap-1.5 h-8 rounded-lg border-white/10 hover:border-white/20 hover:bg-white/5">
+                <RefreshCw className={cn('h-3 w-3', isLoadingListings && 'animate-spin')} /> Atualizar
               </Button>
-            )}
+            </div>
+
+            <div className="relative flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[160px]">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-9 pl-8 text-xs rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/40" />
+              </div>
+              <Select value={posFilter} onValueChange={v => { setPosFilter(v); setCurrentPage(1); }}>
+                <SelectTrigger className="h-9 w-[90px] text-[11px] rounded-xl bg-black/30 border-white/10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas pos.</SelectItem>
+                  {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={v => { setSortBy(v); setCurrentPage(1); }}>
+                <SelectTrigger className="h-9 w-[120px] text-[11px] rounded-xl bg-black/30 border-white/10"><SlidersHorizontal className="h-3 w-3 mr-1" /><SelectValue placeholder="Ordenar" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Recente</SelectItem>
+                  <SelectItem value="ovr_desc">OVR ↓</SelectItem>
+                  <SelectItem value="ovr_asc">OVR ↑</SelectItem>
+                  <SelectItem value="price_asc">Preço ↑</SelectItem>
+                  <SelectItem value="price_desc">Preço ↓</SelectItem>
+                  <SelectItem value="age_asc">Idade ↑</SelectItem>
+                  <SelectItem value="age_desc">Idade ↓</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="relative flex items-center gap-1.5 flex-wrap mt-2">
+              <Input placeholder="OVR min" type="number" value={ovrMinFilter} onChange={e => { setOvrMinFilter(e.target.value); setCurrentPage(1); }} className="h-8 w-[72px] text-[10px] rounded-lg bg-black/30 border-white/10" />
+              <Input placeholder="OVR max" type="number" value={ovrMaxFilter} onChange={e => { setOvrMaxFilter(e.target.value); setCurrentPage(1); }} className="h-8 w-[72px] text-[10px] rounded-lg bg-black/30 border-white/10" />
+              <Input placeholder="Idade min" type="number" value={ageMinFilter} onChange={e => { setAgeMinFilter(e.target.value); setCurrentPage(1); }} className="h-8 w-[78px] text-[10px] rounded-lg bg-black/30 border-white/10" />
+              <Input placeholder="Idade max" type="number" value={ageMaxFilter} onChange={e => { setAgeMaxFilter(e.target.value); setCurrentPage(1); }} className="h-8 w-[78px] text-[10px] rounded-lg bg-black/30 border-white/10" />
+              {(searchText || posFilter !== 'all' || ovrMinFilter || ovrMaxFilter || ageMinFilter || ageMaxFilter || sortBy !== 'recent') && (
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-[10px] text-destructive hover:bg-destructive/10" onClick={() => {
+                  setSearchText(''); setPosFilter('all'); setOvrMinFilter(''); setOvrMaxFilter('');
+                  setAgeMinFilter(''); setAgeMaxFilter(''); setSortBy('recent'); setCurrentPage(1);
+                }}>
+                  <X className="h-3 w-3 mr-0.5" /> Limpar
+                </Button>
+              )}
+            </div>
           </div>
 
           {isLoadingListings && listings.length === 0 ? (
@@ -751,99 +761,21 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
             return (
               <>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
                   {paginated.map(listing => {
-                    const pd = listing.player_data;
                     const shield = listing.seller_shield as any;
-                    const pos = posColors[listing.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
-
                     const isOwn = listing.seller_id === userId;
+                    const canAfford = budget >= listing.asking_price * 0.5;
                     return (
-                      <div
+                      <PremiumListingCard
                         key={listing.id}
-                        className={cn(
-                          "group relative rounded-xl overflow-hidden transition-all duration-300 animate-fade-in",
-                          "border-2",
-                          isOwn
-                            ? "border-amber-400/60 shadow-[0_0_22px_-6px_hsl(45_90%_55%/0.55)]"
-                            : "border-emerald-500/40 hover:border-emerald-400/80 hover:shadow-[0_0_24px_-4px_hsl(150_70%_45%/0.55)]"
-                        )}
-                        style={{ background: 'hsl(var(--card))' }}
-                      >
-                        {/* Animated top ribbon */}
-                        <div className={cn(
-                          "absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r",
-                          isOwn
-                            ? "from-amber-500 via-yellow-400 to-amber-500"
-                            : "from-emerald-500 via-emerald-300 to-emerald-500",
-                          "animate-pulse"
-                        )} />
-                        {/* Corner status badge */}
-                        <div className="absolute top-0 right-0 z-10">
-                          <div className={cn(
-                            "px-2 py-0.5 text-[8px] font-black tracking-widest uppercase rounded-bl-lg shadow-lg flex items-center gap-1",
-                            isOwn
-                              ? "bg-amber-500 text-amber-950"
-                              : "bg-emerald-500 text-emerald-950"
-                          )}>
-                            {isOwn ? (<><Crown className="h-2.5 w-2.5" /> Seu Anúncio</>) : (<><Send className="h-2.5 w-2.5" /> À Venda</>)}
-                          </div>
-                        </div>
-
-                        <div className={`flex items-center gap-2.5 p-3 pt-3.5 bg-gradient-to-r ${getOvrBg(listing.player_overall)}`}>
-                          <div className="shrink-0">
-                            {shield ? (
-                              <ShieldCrest primaryColor={shield.primaryColor} secondaryColor={shield.secondaryColor} pattern={shield.pattern} shape={shield.shape || 'classic'} size={28} />
-                            ) : (
-                              <div className="w-7 h-7 rounded-lg bg-muted/30 flex items-center justify-center text-xs">⚽</div>
-                            )}
-                          </div>
-                          <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border} shrink-0`}>
-                            <span className={`text-sm font-black ${getOvrColor(listing.player_overall)}`}>{listing.player_overall}</span>
-                            <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{listing.player_position}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-xs truncate">{listing.player_name}</p>
-                            <button className="text-[10px] text-primary hover:underline cursor-pointer truncate block" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
-                              {listing.seller_club_name}
-                            </button>
-                            <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5 flex-wrap">
-                              <span>{listing.player_age}a</span>
-                              <span>•</span>
-                              <span className="flex items-center gap-0.5"><Zap className="h-2 w-2 text-emerald-400" /> {pd?.stamina ?? 100}%</span>
-                              <span>•</span>
-                              <span className="flex items-center gap-0.5">😊 {pd?.morale ?? 80}%</span>
-                              <span>•</span>
-                              <span>{pd?.gamesPlayed ?? 0}j</span>
-                              <span>⚽{pd?.goals ?? 0}</span>
-                              <span>🅰️{pd?.assists ?? 0}</span>
-                            </div>
-                            {pd?.salary != null && (
-                              <p className="text-[9px] text-muted-foreground mt-0.5">Salário: <span className="font-semibold text-foreground/90">R${(pd.salary / 1000).toFixed(1)}k</span>/mês</p>
-                            )}
-                          </div>
-
-                          {listing.transfer_count > 2 && (
-                            <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 shrink-0 gap-0.5">
-                              <ArrowLeftRight className="h-2.5 w-2.5" /> {listing.transfer_count}x
-                            </Badge>
-                          )}
-                          <div className="shrink-0 text-right">
-                            <div className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 shadow-[0_0_12px_-4px_hsl(150_70%_45%/0.6)]">
-                              <p className="text-[7px] uppercase tracking-wider text-emerald-300/80 font-bold leading-none">Pedido</p>
-                              <p className="text-sm font-black text-emerald-300 leading-tight">R${(listing.asking_price / 1000).toFixed(0)}k</p>
-                            </div>
-                            <div className="flex gap-1 mt-1.5 justify-end">
-                              <Button size="sm" className="h-7 px-2.5 text-[9px] rounded-lg gap-1 bg-emerald-600 hover:bg-emerald-500 text-white" onClick={() => openOfferDialog(listing)} disabled={loading || budget < listing.asking_price * 0.5 || isOwn}>
-                                <Send className="h-3 w-3" /> Proposta
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-7 px-2 text-[9px] rounded-lg" onClick={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}>
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                        listing={listing}
+                        isOwn={isOwn}
+                        canAfford={canAfford}
+                        loading={loading}
+                        onOffer={() => openOfferDialog(listing)}
+                        onViewSeller={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}
+                      />
                     );
                   })}
                 </div>
