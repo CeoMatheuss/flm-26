@@ -15,7 +15,6 @@ export const getVerificationEmailTemplate = (params: {
   const { 
     userName, 
     verificationCode, 
-    verificationCode, 
     expirationMinutes, 
     clubName = 'Seu Clube', 
     creationDate = new Date().toLocaleString('pt-BR'),
