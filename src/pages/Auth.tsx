@@ -80,12 +80,62 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+    
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(error.message);
+    const startTime = performance.now();
+    console.log('[Auth] Login iniciado', { email, timestamp: new Date().toISOString() });
+
+    try {
+      // Timeout de 10 segundos
+      const loginPromise = supabase.auth.signInWithPassword({ email, password });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 10000)
+      );
+
+      const result = await Promise.race([loginPromise, timeoutPromise]) as any;
+      const duration = (performance.now() - startTime).toFixed(2);
+      
+      if (result.error) {
+        console.error(`[Auth] Falha no login (${duration}ms):`, result.error);
+        
+        let message = 'Falha ao entrar. Verifique seus dados.';
+        if (result.error.status === 400) {
+          if (result.error.message.includes('Invalid login credentials')) {
+            message = 'Email ou senha incorretos.';
+          } else if (result.error.message.includes('Email not confirmed')) {
+            message = 'Por favor, confirme seu email antes de entrar.';
+          }
+        } else if (result.error.status === 429) {
+          message = 'Muitas tentativas. Tente novamente em alguns minutos.';
+        } else if (!window.navigator.onLine) {
+          message = 'Você parece estar offline. Verifique sua internet.';
+        }
+        
+        toast.error(message);
+      } else {
+        console.log(`[Auth] Login bem-sucedido (${duration}ms)`, { user: result.data.user?.id });
+        toast.success('Entrando...');
+        
+        // Pequeno delay para garantir que o redirect do onAuthStateChange aconteça ou forçar se necessário
+        setTimeout(() => {
+          if (window.location.pathname !== '/') {
+            window.location.href = '/';
+          }
+        }, 500);
+      }
+    } catch (err: any) {
+      const duration = (performance.now() - startTime).toFixed(2);
+      if (err.message === 'TIMEOUT_ERROR') {
+        console.error(`[Auth] Timeout no login (${duration}ms)`);
+        toast.error('O servidor demorou muito para responder. Tente novamente.');
+      } else {
+        console.error(`[Auth] Erro inesperado (${duration}ms):`, err);
+        toast.error('Erro inesperado no sistema. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSignup = async () => {
