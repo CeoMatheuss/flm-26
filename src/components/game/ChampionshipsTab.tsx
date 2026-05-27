@@ -56,21 +56,62 @@ export function ChampionshipsTab() {
     setLoadingDetails(true);
     setActiveSubTab('standings');
 
-    // Parallel fetch for speed
     const [standingsRes, matchesRes, scorersRes] = await Promise.all([
-      supabase.from('world_league_standings').select('*, world_teams(name, logo)').eq('league_id', league.id).order('points', { ascending: false }).order('goal_diff', { ascending: false }),
-      supabase.from('world_matches').select('*, home_team:world_teams!world_matches_home_team_id_fkey(name, logo), away_team:world_teams!world_matches_away_team_id_fkey(name, logo)').eq('league_id', league.id).order('round', { ascending: false }).limit(20),
-      supabase.from('world_player_stats').select('*, world_players(name), world_teams(name)').eq('league_id', league.id).order('goals', { ascending: false }).limit(10)
+      supabase
+        .from('world_league_standings')
+        .select('*, world_teams!world_league_standings_team_id_fkey(name, logo)')
+        .eq('league_id', league.id)
+        .order('points', { ascending: false })
+        .order('goal_diff', { ascending: false }),
+      supabase
+        .from('world_matches')
+        .select('*, home_team:world_teams!world_matches_home_team_id_fkey(name, logo), away_team:world_teams!world_matches_away_team_id_fkey(name, logo)')
+        .eq('league_id', league.id)
+        .order('round', { ascending: true })
+        .order('scheduled_at', { ascending: true })
+        .limit(200),
+      supabase
+        .from('world_player_stats')
+        .select('*, world_players!world_player_stats_player_id_fkey(name), world_teams!world_player_stats_team_id_fkey(name)')
+        .eq('league_id', league.id)
+        .order('goals', { ascending: false })
+        .limit(20),
     ]);
 
+    if (standingsRes.error) console.error('[Championships] standings:', standingsRes.error);
+    if (matchesRes.error) console.error('[Championships] matches:', matchesRes.error);
+    if (scorersRes.error) console.error('[Championships] scorers:', scorersRes.error);
+
+    const standings = standingsRes.data || [];
+    const totalGoals = standings.reduce((s: number, t: any) => s + (t.goals_for || 0), 0);
+    const totalPlayed = standings.reduce((s: number, t: any) => s + (t.played || 0), 0);
+    const stats = standings.length > 0 ? [
+      { label: 'Líder', team: standings[0], value: `${standings[0]?.points || 0} pts` },
+      { label: 'Melhor Ataque', team: [...standings].sort((a, b) => (b.goals_for || 0) - (a.goals_for || 0))[0], value: `${[...standings].sort((a, b) => (b.goals_for || 0) - (a.goals_for || 0))[0]?.goals_for || 0} gols` },
+      { label: 'Melhor Defesa', team: [...standings].sort((a, b) => (a.goals_against || 0) - (b.goals_against || 0))[0], value: `${[...standings].sort((a, b) => (a.goals_against || 0) - (b.goals_against || 0))[0]?.goals_against || 0} sofridos` },
+      { label: 'Média Gols/Jogo', value: totalPlayed > 0 ? (totalGoals / totalPlayed).toFixed(2) : '0.00' },
+    ] : [];
+
     setLeagueData({
-      standings: standingsRes.data || [],
+      standings,
       matches: matchesRes.data || [],
       scorers: scorersRes.data || [],
-      stats: [] // Would normally compute from standings
+      stats,
     });
     setLoadingDetails(false);
   };
+
+  // Realtime refresh when standings or matches change
+  useEffect(() => {
+    if (!selectedLeague) return;
+    const channel = supabase
+      .channel(`league-detail-${selectedLeague.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_league_standings', filter: `league_id=eq.${selectedLeague.id}` }, () => loadLeagueDetails(selectedLeague))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'world_matches', filter: `league_id=eq.${selectedLeague.id}` }, () => loadLeagueDetails(selectedLeague))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLeague?.id]);
 
   const filteredLeagues = useMemo(() => {
     return leagues.filter(l => 
