@@ -1,19 +1,8 @@
-// Edge Function: world-leagues-activate
-// Cria e ativa todas as ligas oficiais do mundo para a próxima season.
-// - Idempotente: pula ligas que já existem para a season.
-// - Distribui 20 times por liga (bots gerados se faltar real).
-// - Aciona world-season-planner para gerar calendário (30 rodadas).
-// - Validações: duplicatas, ligas incompletas, falhas de calendário.
-//
-// Disparado automaticamente via pg_cron à 00:00 BRT do dia 1 (= 03:00 UTC),
-// ou manualmente via painel admin (botão "Ativar agora").
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const COUNTRIES = [
@@ -32,299 +21,117 @@ const COUNTRY_FLAGS: Record<string, string> = {
   JP:"🇯🇵",KR:"🇰🇷",CN:"🇨🇳",SA:"🇸🇦",QA:"🇶🇦",IR:"🇮🇷",AU:"🇦🇺",AE:"🇦🇪",
 };
 
-const TOP_LEAGUE_NAMES: Record<string, string> = {
-  BR:"Brasileirão Série A",AR:"Liga Profesional",UY:"Primera División",
-  PY:"División de Honor",CL:"Primera División",CO:"Liga BetPlay",
-  PE:"Liga 1",EC:"LigaPro Serie A",BO:"División Profesional",
-  VE:"Liga FUTVE",EN:"Premier League",ES:"La Liga",DE:"Bundesliga",
-  IT:"Serie A",FR:"Ligue 1",PT:"Liga Portugal",NL:"Eredivisie",
-  BE:"Pro League",TR:"Süper Lig",SC:"Premiership",US:"MLS",
-  MX:"Liga MX",CA:"Canadian Premier",CR:"Primera División CR",
-  HN:"Liga Nacional HN",PA:"Liga Panameña",EG:"Egyptian Premier",
-  MA:"Botola Pro",TN:"Ligue 1 TN",NG:"NPFL",SN:"Ligue 1 SN",
-  ZA:"PSL",GH:"GPL",CM:"Elite One",JP:"J1 League",KR:"K League 1",
-  CN:"Chinese Super League",SA:"Saudi Pro League",
-  QA:"Qatar Stars League",IR:"Persian Gulf Pro",AU:"A-League",
-  AE:"UAE Pro League",
-};
-
-// Horários FIXOS por (país, divisão) — determinístico.
-// Cada país tem hora-base estável (hash) na janela 16..22 BRT.
-// D1 = base, D2 = base:30, D3 = base-1, D4 = base+1, Várzea = base-2.
-function hashCountry(country: string): number {
-  let h = 0;
-  for (let i = 0; i < country.length; i++) {
-    h = ((h << 5) - h + country.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
-function kickoffFor(country: string, division: number): { hour: number; minute: number } {
-  const base = 16 + (hashCountry(country) % 7); // 16..22
-  switch (division) {
-    case 1: return { hour: base, minute: 0 };
-    case 2: return { hour: base, minute: 30 };
-    case 3: return { hour: Math.max(12, base - 1), minute: 0 };
-    case 4: return { hour: Math.min(22, base + 1), minute: 0 };
-    default: return { hour: Math.max(12, base - 2), minute: 0 };
-  }
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  const buf = new Uint32Array(1);
-  for (let i = a.length - 1; i > 0; i--) {
-    crypto.getRandomValues(buf);
-    const j = buf[0] % (i + 1);
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-// 20 times bots padrão por país (genéricos – usados quando não houver clubes humanos).
-function generateBotTeams(country: string): Array<{ name: string; logo: string; strength: number }> {
-  const flag = COUNTRY_FLAGS[country] ?? "⚽";
-  const baseNames = [
-    "United","City","Atlético","Sporting","Real","Olympic","Internacional",
-    "Nacional","Estrela","Dragões","Lobos","Águias","Tigres","Leões",
-    "Falcões","Furacão","Rayo","Estrella","Albion","Rovers",
-  ];
-  return baseNames.map((n, i) => ({
-    name: `${n} ${country}`,
-    logo: flag,
-    strength: 78 - i, // 78..59
-  }));
-}
-
-async function getNextSeason(sb: any): Promise<number> {
-  const { data } = await sb
-    .from("world_leagues")
-    .select("season")
-    .order("season", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return (data?.season ?? 0) + 1;
-}
-
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const sb = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const body = await req.json().catch(() => ({}));
+    const force = body.force === true;
 
-    const body = await req.json().catch(() => ({} as any));
-    const force: boolean = body?.force === true;
-    const dryRun: boolean = body?.dry_run === true;
+    // 1. Get next season
+    const { data: lastSeasonData } = await sb.from("world_leagues").select("season").order("season", { ascending: false }).limit(1).maybeSingle();
+    const nextSeason = (lastSeasonData?.season ?? 0) + 1;
 
-    const nextSeason = await getNextSeason(sb);
+    // 2. Load division configurations
+    const { data: configs } = await sb.from("world_league_config").select("*");
+    
+    // 3. Count human players per country to decide tiers
+    const { data: humanClubs } = await sb.from("clubs").select("id, country");
+    const clubsByCountry: Record<string, string[]> = {};
+    humanClubs?.forEach(c => {
+      if (!clubsByCountry[c.country]) clubsByCountry[c.country] = [];
+      clubsByCountry[c.country].push(c.id);
+    });
 
-    // Carrega ligas já existentes para essa season
-    const { data: existing } = await sb
-      .from("world_leagues")
-      .select("id, country, division")
-      .eq("season", nextSeason);
-    const existingMap = new Map<string, string>();
-    for (const l of existing ?? []) {
-      existingMap.set(`${l.country}|${l.division}`, l.id);
-    }
+    const results = [];
 
-    const created: any[] = [];
-    const skipped: any[] = [];
-    const errors: any[] = [];
-    const validation_warnings: any[] = [];
+    for (const countryCode of COUNTRIES) {
+      const countryName = getCountryName(countryCode); // Helper needed or use map
+      const humanCount = clubsByCountry[countryName]?.length || 0;
+      
+      // Minimum: Tier 1 (always)
+      // Tier 2: if humanCount > 10
+      // Tier 3: if humanCount > 30
+      // Tier 4: if humanCount > 60
+      // Tier 5: if humanCount > 100
+      let maxTier = 1;
+      if (humanCount > 10) maxTier = 2;
+      if (humanCount > 30) maxTier = 3;
+      if (humanCount > 60) maxTier = 4;
+      if (humanCount > 100) maxTier = 5;
 
-    // Hoje em BRT (UTC-3) → ISO date
-    const nowUtc = new Date();
-    const brt = new Date(nowUtc.getTime() - 3 * 60 * 60 * 1000);
-    const todayBrt = brt.toISOString().slice(0, 10);
-    // season_started_at = início do dia BRT em UTC ISO
-    const seasonStartUtcIso = new Date(
-      Date.UTC(brt.getUTCFullYear(), brt.getUTCMonth(), brt.getUTCDate(), 3, 0, 0),
-    ).toISOString();
+      for (let tier = 1; tier <= maxTier; tier++) {
+        const config = configs?.find(c => c.country === countryName && c.tier_level === tier);
+        if (!config && tier > 1) continue; // Only D1 is guaranteed without config
 
-    for (let ci = 0; ci < COUNTRIES.length; ci++) {
-      const country = COUNTRIES[ci];
-      const division = 1;
-      const key = `${country}|${division}`;
-      let leagueId = existingMap.get(key);
+        const leagueName = config?.division_name || `${countryName} Divisão ${tier}`;
+        const matchTime = config?.match_time || "20:00:00";
 
-      try {
-        if (leagueId && !force) {
-          skipped.push({ country, division, reason: "já existe", league_id: leagueId });
+        // Create league
+        const { data: league, error: lErr } = await sb.from("world_leagues").insert({
+          country: countryName,
+          league_name: leagueName,
+          division: tier,
+          tier_level: tier,
+          season: nextSeason,
+          status: "in_progress",
+          total_matchdays: 30,
+          total_slots: 16,
+          flag_emoji: COUNTRY_FLAGS[countryCode] || "🏳️",
+          kickoff_hour: parseInt(matchTime.split(":")[0]),
+          kickoff_minute: parseInt(matchTime.split(":")[1]),
+        }).select().single();
+
+        if (lErr) {
+          console.error(`Error creating league ${leagueName}:`, lErr);
           continue;
         }
 
-        if (leagueId && force) {
-          // Limpa matches/teams antes de recriar
-          await sb.from("world_matches").delete().eq("league_id", leagueId);
-          await sb.from("world_league_teams").delete().eq("league_id", leagueId);
-          await sb.from("world_leagues").delete().eq("id", leagueId);
-          leagueId = undefined;
-        }
-
-        if (dryRun) {
-          created.push({ country, division, dry_run: true });
-          continue;
-        }
-
-        // 1. Cria a liga (kickoff fixo determinístico por país+divisão)
-        const k = kickoffFor(country, division);
-        const { data: leagueRow, error: lErr } = await sb
-          .from("world_leagues")
-          .insert({
-            country,
-            flag_emoji: COUNTRY_FLAGS[country] ?? "🏳️",
-            division,
-            league_name: TOP_LEAGUE_NAMES[country] ?? `${country} D1`,
-            kickoff_hour: k.hour,
-            kickoff_minute: k.minute,
-            season: nextSeason,
-            current_matchday: 0,
-            total_matchdays: 30,
-            total_slots: 20,
-            status: "in_progress",
-            season_started_at: seasonStartUtcIso,
-          })
-          .select("id")
-          .single();
-        if (lErr) throw lErr;
-        leagueId = leagueRow.id;
-
-        // 2. Distribui 20 times bots (humanos podem ser realocados em outro fluxo)
-        const teams = shuffle(generateBotTeams(country));
-        const teamRows = teams.slice(0, 20).map((t) => ({
-          league_id: leagueId,
-          user_id: null,
-          is_bot: true,
-          bot_strength: t.strength,
+        // Fill with bots for now (Promotion/Relegation would reorder this)
+        const botTeams = generateBotTeams(countryName, 16);
+        const teamRows = botTeams.map(t => ({
+          league_id: league.id,
           club_name: t.name,
-          club_logo: t.logo,
+          club_logo: COUNTRY_FLAGS[countryCode] || "⚽",
+          is_bot: true,
+          bot_strength: 70 - (tier * 5),
         }));
 
-        // Validação anti-duplicata: nomes únicos dentro da liga
-        const nameSet = new Set(teamRows.map((r) => r.club_name));
-        if (nameSet.size !== teamRows.length) {
-          throw new Error(`Times duplicados detectados em ${country}`);
-        }
-        if (teamRows.length !== 20) {
-          throw new Error(`Liga incompleta: ${teamRows.length}/20 times em ${country}`);
-        }
+        await sb.from("world_league_teams").insert(teamRows);
+        
+        // Generate calendar
+        await sb.rpc("generate_world_league_calendar", {
+          p_league_id: league.id,
+          p_start_date: new Date().toISOString(),
+          p_match_time: matchTime
+        });
 
-        const { error: tErr } = await sb.from("world_league_teams").insert(teamRows);
-        if (tErr) throw tErr;
-
-        created.push({ country, division, league_id: leagueId, teams: 20 });
-      } catch (e: any) {
-        errors.push({ country, division, error: e?.message ?? String(e) });
-        // Rollback parcial se deu erro depois de criar a liga
-        if (leagueId) {
-          await sb.from("world_league_teams").delete().eq("league_id", leagueId);
-          await sb.from("world_leagues").delete().eq("id", leagueId);
-        }
+        results.push({ league: leagueName, country: countryName, tier });
       }
     }
 
-    // 3. Aciona o planner de calendário (gera world_matches para todas as ligas in_progress)
-    let plannerResult: any = null;
-    if (!dryRun && created.length > 0) {
-      try {
-        const plannerRes = await fetch(
-          `${Deno.env.get("SUPABASE_URL")}/functions/v1/world-season-planner`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-            },
-            body: JSON.stringify({}),
-          },
-        );
-        plannerResult = await plannerRes.json();
-        if (plannerResult?.errors?.length) {
-          for (const err of plannerResult.errors) {
-            validation_warnings.push({
-              type: "calendar_failed",
-              league_id: err.league_id,
-              error: err.error,
-            });
-          }
-        }
-      } catch (e: any) {
-        validation_warnings.push({ type: "planner_call_failed", error: e?.message });
-      }
-    }
-
-    // 3.5 Aplica horários fixos determinísticos (autoritativo via SQL)
-    if (!dryRun) {
-      try {
-        await sb.rpc("world_leagues_apply_fixed_kickoff");
-      } catch (e: any) {
-        validation_warnings.push({ type: "apply_fixed_kickoff_failed", error: e?.message });
-      }
-    }
-
-    // 4. Validação pós-criação: cada liga deve ter exatamente 20 times e 300 matches
-    if (!dryRun) {
-      const { data: validate } = await sb
-        .from("world_leagues")
-        .select("id, country, division, season")
-        .eq("season", nextSeason);
-      for (const l of validate ?? []) {
-        const { count: teamCount } = await sb
-          .from("world_league_teams")
-          .select("id", { count: "exact", head: true })
-          .eq("league_id", l.id);
-        if (teamCount !== 20) {
-          validation_warnings.push({
-            type: "incomplete_league",
-            league_id: l.id,
-            country: l.country,
-            teams: teamCount,
-            expected: 20,
-          });
-        }
-        const { count: matchCount } = await sb
-          .from("world_matches")
-          .select("id", { count: "exact", head: true })
-          .eq("league_id", l.id)
-          .eq("season", l.season);
-        if ((matchCount ?? 0) === 0) {
-          validation_warnings.push({
-            type: "no_calendar",
-            league_id: l.id,
-            country: l.country,
-          });
-        }
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        next_season: nextSeason,
-        activated_at: new Date().toISOString(),
-        force,
-        dry_run: dryRun,
-        created_count: created.length,
-        skipped_count: skipped.length,
-        error_count: errors.length,
-        warnings_count: validation_warnings.length,
-        created,
-        skipped,
-        errors,
-        validation_warnings,
-        planner_result: plannerResult,
-      }, null, 2),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ ok: true, results }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
-    return new Response(
-      JSON.stringify({ ok: false, error: e?.message ?? String(e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
+
+function getCountryName(code: string): string {
+  const map: Record<string, string> = {
+    BR: "Brasil", AR: "Argentina", EN: "Inglaterra", ES: "Espanha", IT: "Itália",
+    DE: "Alemanha", FR: "França", PT: "Portugal", NL: "Holanda", BE: "Bélgica",
+    TR: "Turquia", MX: "México", US: "Estados Unidos", JP: "Japão", KR: "Coreia do Sul",
+    CN: "China", SA: "Arábia Saudita", RU: "Rússia", UA: "Ucrânia", SC: "Escócia",
+    CH: "Suíça", AT: "Áustria", DK: "Dinamarca", SE: "Suécia", NO: "Noruega",
+    GR: "Grécia", HR: "Croácia", RS: "Sérvia", UY: "Uruguai", CO: "Colômbia",
+    CL: "Chile", PY: "Paraguai"
+  };
+  return map[code] || code;
+}
+
+function generateBotTeams(country: string, count: number) {
+  return Array.from({ length: count }, (_, i) => ({
+    name: `${country} Bot FC ${i + 1}`,
+  }));
+}

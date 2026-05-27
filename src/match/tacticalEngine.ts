@@ -121,7 +121,7 @@ function add<K extends keyof TacticalModifiers>(target: TacticalModifiers, key: 
   (target as any)[key] = (target as any)[key] + delta;
 }
 
-export function calculateTacticalModifiers(tactics: TacticsConfig): TacticalModifiers {
+export function calculateTacticalModifiers(tactics: TacticsConfig, isRealTimeUpdate = false): TacticalModifiers {
   const mods: TacticalModifiers = {
     staminaBurnRate: 1.0,
     offensivePower: 1.0,
