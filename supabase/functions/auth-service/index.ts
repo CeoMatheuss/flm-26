@@ -317,7 +317,7 @@ serve(async (req) => {
                   verificationCode: verificationCode,
                   expirationMinutes: 10,
                   clubName: 'Seu Clube FLM',
-                  ipAddress: req.headers.get('x-forwarded-for') || 'Indisponível'
+                  ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] || 'Indisponível'
                 }),
               }),
             })
@@ -330,6 +330,36 @@ serve(async (req) => {
               console.error(`[send-code] Tentativa ${attempt} falhou (${duration}ms):`, emailError)
               
               if (resp.status === 403) {
+                console.warn('[send-code] Domínio não verificado. Tentando fallback com onboarding@resend.dev...')
+                
+                // Fallback attempt with onboarding@resend.dev
+                const fallbackResp = await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${resendKey}`,
+                  },
+                  body: JSON.stringify({
+                    from: 'FLM Onboarding <onboarding@resend.dev>',
+                    to: [email],
+                    subject: `[TESTE] Seu código FLM: ${verificationCode}`,
+                    html: getVerificationEmailTemplate({
+                      userName: email.split('@')[0],
+                      verificationCode: verificationCode,
+                      expirationMinutes: 10,
+                      clubName: 'Acesso de Teste (Sandbox)',
+                      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] || 'Indisponível'
+                    }),
+                  }),
+                })
+
+                if (fallbackResp.ok) {
+                  emailSent = true
+                  success = true
+                  console.log('[send-code] Fallback OK (onboarding@resend.dev)')
+                  break
+                }
+
                 emailError = 'DOMINIO_NAO_VERIFICADO'
                 break 
               }
