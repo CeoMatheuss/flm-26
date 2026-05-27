@@ -90,12 +90,21 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
 
 
   const handleGoogleLogin = async () => {
+    if (loading) return;
     setLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin
-    });
-    if (error) {
-      toast.error('Erro ao entrar com Google');
+    console.log('[Auth] Login Google iniciado');
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin
+      }) as any;
+      if (error) {
+        console.error('[Auth] Erro no Google Login:', error);
+        toast.error('Erro ao entrar com Google. Tente novamente.');
+      }
+    } catch (err) {
+      console.error('[Auth] Erro inesperado no Google Login:', err);
+      toast.error('Erro ao conectar com Google.');
+    } finally {
       setLoading(false);
     }
   };
