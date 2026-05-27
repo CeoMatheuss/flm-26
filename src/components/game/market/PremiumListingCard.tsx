@@ -6,18 +6,18 @@ import { cn } from '@/lib/utils';
 import { Send, Eye, Crown, Sparkles, Flame, Shield, Zap, Heart, ArrowLeftRight, Star } from 'lucide-react';
 
 const posStyle: Record<string, { ring: string; text: string; chip: string; glow: string }> = {
-  GOL: { ring: 'ring-amber-400/60', text: 'text-amber-300', chip: 'bg-amber-500/15 border-amber-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(45_90%_55%/0.55)]' },
-  ZAG: { ring: 'ring-blue-400/60', text: 'text-blue-300', chip: 'bg-blue-500/15 border-blue-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(220_80%_55%/0.55)]' },
-  LAT: { ring: 'ring-cyan-400/60', text: 'text-cyan-300', chip: 'bg-cyan-500/15 border-cyan-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(190_80%_55%/0.55)]' },
-  VOL: { ring: 'ring-emerald-400/60', text: 'text-emerald-300', chip: 'bg-emerald-500/15 border-emerald-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(150_70%_50%/0.55)]' },
-  MEI: { ring: 'ring-purple-400/60', text: 'text-purple-300', chip: 'bg-purple-500/15 border-purple-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(270_70%_60%/0.55)]' },
-  ATA: { ring: 'ring-rose-400/60', text: 'text-rose-300', chip: 'bg-rose-500/15 border-rose-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(0_80%_60%/0.55)]' },
+  GOL: { ring: 'ring-amber-400/30', text: 'text-amber-300', chip: 'bg-amber-500/15 border-amber-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(45_90%_55%/0.55)]' },
+  ZAG: { ring: 'ring-blue-400/30', text: 'text-blue-300', chip: 'bg-blue-500/15 border-blue-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(220_80%_55%/0.55)]' },
+  LAT: { ring: 'ring-cyan-400/30', text: 'text-cyan-300', chip: 'bg-cyan-500/15 border-cyan-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(190_80%_55%/0.55)]' },
+  VOL: { ring: 'ring-emerald-400/30', text: 'text-emerald-300', chip: 'bg-emerald-500/15 border-emerald-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(150_70%_50%/0.55)]' },
+  MEI: { ring: 'ring-purple-400/30', text: 'text-purple-300', chip: 'bg-purple-500/15 border-purple-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(270_70%_60%/0.55)]' },
+  ATA: { ring: 'ring-rose-400/30', text: 'text-rose-300', chip: 'bg-rose-500/15 border-rose-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(0_80%_60%/0.55)]' },
 };
 
 function ovrTier(ovr: number) {
-  if (ovr >= 88) return { color: 'text-amber-300', stroke: 'hsl(45 95% 60%)', from: 'from-amber-500/30', to: 'to-amber-500/0', label: 'ELITE' };
-  if (ovr >= 80) return { color: 'text-amber-300', stroke: 'hsl(45 90% 55%)', from: 'from-amber-500/20', to: 'to-amber-500/0', label: 'CRAQUE' };
-  if (ovr >= 72) return { color: 'text-emerald-300', stroke: 'hsl(150 70% 50%)', from: 'from-emerald-500/20', to: 'to-emerald-500/0', label: 'TITULAR' };
+  if (ovr >= 88) return { color: 'text-amber-300', stroke: 'hsl(45 95% 60%)', from: 'from-amber-500/15', to: 'to-amber-500/0', label: 'ELITE' };
+  if (ovr >= 80) return { color: 'text-amber-300', stroke: 'hsl(45 90% 55%)', from: 'from-amber-500/10', to: 'to-amber-500/0', label: 'CRAQUE' };
+  if (ovr >= 72) return { color: 'text-emerald-300', stroke: 'hsl(150 70% 50%)', from: 'from-emerald-500/10', to: 'to-emerald-500/0', label: 'TITULAR' };
   if (ovr >= 62) return { color: 'text-sky-300', stroke: 'hsl(200 80% 55%)', from: 'from-sky-500/15', to: 'to-sky-500/0', label: 'PROMISSOR' };
   return { color: 'text-muted-foreground', stroke: 'hsl(220 10% 50%)', from: 'from-muted/20', to: 'to-muted/0', label: 'BASE' };
 }
@@ -56,8 +56,8 @@ export const PremiumListingCard = memo(function PremiumListingCard({
         'group relative rounded-2xl overflow-hidden border transition-all duration-300 animate-fade-in',
         'backdrop-blur-sm hover:-translate-y-0.5',
         isOwn
-          ? 'border-amber-400/40 shadow-[0_0_30px_-10px_hsl(45_90%_55%/0.5)]'
-          : 'border-white/5 hover:border-emerald-400/50 hover:shadow-[0_8px_40px_-12px_hsl(150_70%_45%/0.45)]',
+          ? 'border-amber-400/20 shadow-[0_0_30px_-10px_hsl(45_90%_55%/0.5)]'
+          : 'border-white/5 hover:border-emerald-400/25 hover:shadow-[0_8px_40px_-12px_hsl(150_70%_45%/0.45)]',
       )}
       style={{
         background: isOwn

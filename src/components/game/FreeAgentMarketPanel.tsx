@@ -313,7 +313,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
         <div className="relative p-3 flex items-start gap-3">
           <div className="relative shrink-0">
             <div className="absolute inset-0 rounded-xl bg-emerald-500/20 blur-md" />
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-700/10 border border-emerald-400/30 flex items-center justify-center">
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-700/5 border border-emerald-400/30 flex items-center justify-center">
               <EyeOff className="h-5 w-5 text-emerald-200" />
             </div>
           </div>
@@ -352,13 +352,13 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Buscar jogador..."
-                className="pl-8 h-9 text-[11px] rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/40"
+                className="pl-8 h-9 text-[11px] rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/20"
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
               />
             </div>
             <select value={posFilter} onChange={e => setPosFilter(e.target.value)}
-              className="h-9 rounded-xl border border-white/10 bg-black/30 px-3 text-[11px] outline-none focus:border-emerald-500/40 cursor-pointer">
+              className="h-9 rounded-xl border border-white/10 bg-black/30 px-3 text-[11px] outline-none focus:border-emerald-500/20 cursor-pointer">
               <option value="all">Todas Pos.</option>
               {Object.keys(posColors).map(p => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -585,7 +585,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
             <div className="rounded-xl p-3 border border-white/5 bg-black/40 space-y-2">
               <label className="text-[11px] font-bold flex items-center gap-1.5">💰 Salário mensal</label>
               <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value) || 100))}
-                className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-emerald-500/40" />
+                className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-emerald-500/20" />
               <div className="flex items-center justify-between text-[10px]">
                 <span className="text-muted-foreground">Anual: <strong className="text-foreground">{formatMoney(offerSalary * 12)}</strong></span>
                 <span className={cn("font-bold", offerSalary * 12 > salaryBudgetRemaining ? "text-red-400" : "text-emerald-300")}>
@@ -602,7 +602,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
                   <button key={y} onClick={() => setOfferYears(y)}
                     className={cn("h-10 rounded-lg text-xs font-black transition border",
                       offerYears === y
-                        ? "bg-gradient-to-br from-emerald-500/30 to-emerald-500/10 border-emerald-500/50 text-emerald-200 shadow-[0_0_15px_-5px_hsl(var(--primary))]"
+                        ? "bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border-emerald-500/25 text-emerald-200 shadow-[0_0_15px_-5px_hsl(var(--primary))]"
                         : "bg-black/40 border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
                     )}>
                     {y}a
@@ -615,12 +615,12 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
             <div className="rounded-xl p-3 border border-white/5 bg-black/40 space-y-2">
               <label className="text-[11px] font-bold flex items-center gap-1.5">🎁 Luvas</label>
               <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value) || 0))}
-                className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-amber-500/40" />
+                className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-amber-500/20" />
               <div className="flex gap-1">
                 {[0, 50000, 200000, 500000].map(v => (
                   <button key={v} onClick={() => setSigningBonus(v)}
                     className={cn("flex-1 h-7 text-[10px] rounded-md border font-bold transition",
-                      signingBonus === v ? "bg-amber-500/15 border-amber-500/40 text-amber-200" : "bg-white/[0.03] border-white/5 text-muted-foreground hover:bg-white/10"
+                      signingBonus === v ? "bg-amber-500/15 border-amber-500/20 text-amber-200" : "bg-white/[0.03] border-white/5 text-muted-foreground hover:bg-white/10"
                     )}>
                     {v === 0 ? '—' : formatMoney(v)}
                   </button>

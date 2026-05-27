@@ -91,9 +91,9 @@ function getRarityByOverall(overall: number): 'comum' | 'raro' | 'epico' | 'lend
 
 function getRarityStyles(rarity: string): string {
   switch (rarity) {
-    case 'lendario': return 'border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)] bg-gradient-to-br from-amber-500/10 via-card to-amber-900/20';
-    case 'epico': return 'border-purple-400/50 shadow-[0_0_10px_rgba(168,85,247,0.2)] bg-gradient-to-br from-purple-500/10 via-card to-purple-900/20';
-    case 'raro': return 'border-blue-400/50 shadow-[0_0_8px_rgba(59,130,246,0.1)] bg-gradient-to-br from-blue-500/10 via-card to-blue-900/20';
+    case 'lendario': return 'border-amber-400/25 shadow-[0_0_15px_rgba(251,191,36,0.3)] bg-gradient-to-br from-amber-500/10 via-card to-amber-900/20';
+    case 'epico': return 'border-purple-400/25 shadow-[0_0_10px_rgba(168,85,247,0.2)] bg-gradient-to-br from-purple-500/10 via-card to-purple-900/20';
+    case 'raro': return 'border-blue-400/25 shadow-[0_0_8px_rgba(59,130,246,0.1)] bg-gradient-to-br from-blue-500/10 via-card to-blue-900/20';
     default: return 'border-border/50 bg-card';
   }
 }
@@ -259,7 +259,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
           <div className="flex items-start gap-3">
             <div className="relative shrink-0">
               <div className="absolute inset-0 rounded-2xl bg-purple-500/30 blur-lg" />
-              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/40 to-purple-700/20 border border-purple-400/40 flex items-center justify-center">
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/15 to-purple-700/5 border border-purple-400/20 flex items-center justify-center">
                 <Gavel className="h-6 w-6 text-purple-200" />
               </div>
             </div>
@@ -314,7 +314,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                   return (
                     <div key={p.id} className={`group flex items-center justify-between gap-2 p-2.5 rounded-xl bg-black/40 border border-white/5 hover:border-white/15 hover:bg-black/50 transition ring-1 ${rarityRing}`}>
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-700/10 border border-purple-500/25 flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-700/5 border border-purple-500/25 flex items-center justify-center shrink-0">
                           <span className="text-xs font-black text-purple-200">{p.overall}</span>
                         </div>
                         <div className="min-w-0">
@@ -367,7 +367,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                 const rarityLabel = a.rarity.charAt(0).toUpperCase() + a.rarity.slice(1);
                 const rarityBadge = a.rarity === 'lendario' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : a.rarity === 'epico' ? 'bg-purple-500/15 text-purple-300 border-purple-500/30' : a.rarity === 'raro' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' : 'bg-white/5 text-muted-foreground border-white/10';
                 return (
-                  <div key={a.id} className={`relative overflow-hidden rounded-xl border p-3 transition-all ${rarityStyle} ${isMyBid ? 'ring-2 ring-emerald-500/50' : isMyAuction ? 'ring-2 ring-purple-500/50' : ''} ${closing ? 'ring-2 ring-red-500/60' : ''}`}>
+                  <div key={a.id} className={`relative overflow-hidden rounded-xl border p-3 transition-all ${rarityStyle} ${isMyBid ? 'ring-2 ring-emerald-500/50' : isMyAuction ? 'ring-2 ring-purple-500/50' : ''} ${closing ? 'ring-2 ring-red-500/30' : ''}`}>
                     {closing && (
                       <div className="absolute top-2 right-2 z-10">
                         <Badge className="text-[8px] h-4 px-1.5 bg-red-500 text-white animate-pulse border-0">🔥 FINALIZANDO</Badge>
@@ -378,7 +378,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                       {/* OVR badge */}
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 rounded-xl bg-purple-500/30 blur-md opacity-50" />
-                        <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/30 to-purple-700/10 border border-purple-400/40 flex flex-col items-center justify-center">
+                        <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/15 to-purple-700/5 border border-purple-400/20 flex flex-col items-center justify-center">
                           <span className="text-base font-black text-purple-100 leading-none">{a.player_overall}</span>
                           <span className="text-[8px] text-purple-300/80 font-bold mt-0.5">OVR</span>
                         </div>
@@ -410,7 +410,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                           <p className="text-[8px] text-muted-foreground mt-1 truncate">por {a.current_bidder_name}</p>
                         )}
                       </div>
-                      <div className={`rounded-lg p-2 bg-black/40 border ${closing ? 'border-red-500/40' : 'border-white/10'}`}>
+                      <div className={`rounded-lg p-2 bg-black/40 border ${closing ? 'border-red-500/20' : 'border-white/10'}`}>
                         <p className="text-[8px] text-muted-foreground uppercase tracking-wider">Termina em</p>
                         <p className={`text-sm font-black leading-none mt-0.5 flex items-center gap-1 ${closing ? 'text-red-300 animate-pulse' : 'text-foreground'}`}>
                           <Clock className="h-3 w-3" /> {getTimeLeft(a.expires_at)}
@@ -488,7 +488,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                 </label>
                 <Input type="number" step={dialogIncrement} min={dialogMinBid} value={bidAmount}
                   onChange={(e) => setBidAmount(parseInt(e.target.value || '0', 10))}
-                  className="h-11 text-base font-black rounded-lg bg-black/40 border-white/10 focus-visible:border-purple-500/50 text-purple-200" />
+                  className="h-11 text-base font-black rounded-lg bg-black/40 border-white/10 focus-visible:border-purple-500/25 text-purple-200" />
               </div>
 
               <div className="flex flex-wrap gap-1">
@@ -497,7 +497,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                   return (
                     <button key={m} onClick={() => setBidAmount(v)}
                       className={`flex-1 h-8 text-[10px] rounded-md border font-bold transition ${
-                        bidAmount === v ? 'bg-purple-500/20 border-purple-500/50 text-purple-200' : 'bg-white/[0.03] border-white/10 text-muted-foreground hover:bg-white/10'
+                        bidAmount === v ? 'bg-purple-500/20 border-purple-500/25 text-purple-200' : 'bg-white/[0.03] border-white/10 text-muted-foreground hover:bg-white/10'
                       }`}>
                       {fmtMoney(v)}
                     </button>

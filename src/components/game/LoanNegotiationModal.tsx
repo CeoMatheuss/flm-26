@@ -124,53 +124,6 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
               </p>
             </div>
 
-            {/* Opção de Compra */}
-            <div className="flex items-center justify-between gap-3 p-3 bg-zinc-900 rounded-lg border border-zinc-800">
-              <Label className="text-sm font-bold">Opção de Compra</Label>
-              <div className="flex items-center gap-2">
-                {terms.optionalPurchasePrice !== undefined && (
-                  <div className="relative w-24 sm:w-28">
-                    <Input
-                      disabled={isViewOnly}
-                      type="number"
-                      inputMode="numeric"
-                      value={terms.optionalPurchasePrice}
-                      onChange={(e) => setTerms(p => ({ ...p, optionalPurchasePrice: Number(e.target.value) }))}
-                      className="h-8 bg-zinc-950 border-zinc-800 pl-7 text-xs"
-                    />
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] font-bold">FL$</span>
-                  </div>
-                )}
-                <Switch
-                  disabled={isViewOnly}
-                  checked={terms.optionalPurchasePrice !== undefined}
-                  onCheckedChange={(checked) => setTerms(p => ({ ...p, optionalPurchasePrice: checked ? player?.marketValue || 1000000 : undefined }))}
-                />
-              </div>
-            </div>
-
-            {/* Cláusulas compactas */}
-            <div className="flex items-center justify-between gap-3 p-3 bg-zinc-900 rounded-lg border border-zinc-800">
-              <Label className="text-sm font-bold flex items-center gap-2">
-                <Ban className="h-4 w-4 text-zinc-500" /> Permitir Cancelamento
-              </Label>
-              <Switch
-                disabled={isViewOnly}
-                checked={terms.allowTermination}
-                onCheckedChange={(v) => setTerms(p => ({ ...p, allowTermination: v }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-3 p-3 bg-zinc-900 rounded-lg border border-zinc-800">
-              <Label className="text-sm font-bold flex items-center gap-2">
-                <Shield className="h-4 w-4 text-zinc-500" /> Jogar contra Dono
-              </Label>
-              <Switch
-                disabled={isViewOnly}
-                checked={terms.canPlayAgainstOwner}
-                onCheckedChange={(v) => setTerms(p => ({ ...p, canPlayAgainstOwner: v }))}
-              />
-            </div>
           </div>
         </ScrollArea>
 
