@@ -89,7 +89,7 @@ const LeagueStandingsMini = memo(({ userId }: { userId?: string }) => {
       </CardContent>
     </Card>
   );
-}
+});
 
 
 function GlobalRankingMini({ userId }: { userId?: string }) {
