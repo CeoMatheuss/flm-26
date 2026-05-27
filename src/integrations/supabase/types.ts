@@ -6863,6 +6863,8 @@ export type Database = {
           season_year: number | null
           status: string | null
           tier_level: number | null
+          total_matchdays: number | null
+          total_slots: number | null
           winner_processed: boolean | null
         }
         Insert: {
@@ -6884,6 +6886,8 @@ export type Database = {
           season_year?: number | null
           status?: string | null
           tier_level?: number | null
+          total_matchdays?: number | null
+          total_slots?: number | null
           winner_processed?: boolean | null
         }
         Update: {
@@ -6905,6 +6909,8 @@ export type Database = {
           season_year?: number | null
           status?: string | null
           tier_level?: number | null
+          total_matchdays?: number | null
+          total_slots?: number | null
           winner_processed?: boolean | null
         }
         Relationships: [
@@ -7588,6 +7594,10 @@ export type Database = {
       auto_simulate_overdue_matches: { Args: never; Returns: undefined }
       award_club_world_cup_prizes: {
         Args: { _cup_id: string }
+        Returns: undefined
+      }
+      batch_simulate_matches: {
+        Args: { p_match_ids: string[] }
         Returns: undefined
       }
       batch_upsert_player_stats: {
