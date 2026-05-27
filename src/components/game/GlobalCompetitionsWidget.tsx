@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Globe, Star, Medal, Calendar, Clock } from 'lucide-react';
@@ -29,28 +30,23 @@ const COMPETITION_META: Record<string, { icon: any; label: string; color: string
   league:       { icon: Medal,  label: 'Liga',        color: 'text-blue-500',     bg: 'bg-blue-500/10 border-blue-500/30' },
 };
 
-export function GlobalCompetitionsWidget({ userId }: Props) {
-  const [matches, setMatches] = useState<UpcomingMatch[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!userId) return;
-    
-    const load = async () => {
+export const GlobalCompetitionsWidget = memo(({ userId }: Props) => {
+  const { data: matches = [], isLoading } = useQuery({
+    queryKey: ['user-upcoming-matches', userId],
+    queryFn: async () => {
+      if (!userId) return [];
       const { data, error } = await supabase.rpc('get_user_upcoming_matches' as any, {
         _user_id: userId,
         _limit: 6,
       });
-      if (!error && data) setMatches(data as UpcomingMatch[]);
-      setLoading(false);
-    };
-    
-    load();
-    const interval = setInterval(load, 60_000);
-    return () => clearInterval(interval);
-  }, [userId]);
+      if (error) throw error;
+      return (data || []) as UpcomingMatch[];
+    },
+    enabled: !!userId,
+    staleTime: 60000,
+  });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader className="pb-3">
@@ -146,4 +142,4 @@ export function GlobalCompetitionsWidget({ userId }: Props) {
       </CardContent>
     </Card>
   );
-}
+});

@@ -151,7 +151,7 @@ const GlobalRankingMini = memo(({ userId }: { userId?: string }) => {
           </div>
         </div>
         <div className="mt-3 flex gap-1 justify-center">
-          {me.recent_form?.slice(0, 5).map((res: string, i: number) => (
+          {(me.recent_form as string[] || []).slice(0, 5).map((res: string, i: number) => (
             <div 
               key={i}
               className={`w-3 h-3 rounded-full flex items-center justify-center text-[7px] font-bold text-white
