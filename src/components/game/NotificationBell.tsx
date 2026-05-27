@@ -238,6 +238,10 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       id: 'expiring', icon: '📄', title: `${expiring.length} contrato(s) expirando`,
       message: `${names}${expiring.length > 3 ? ` e +${expiring.length - 3}` : ''} — renove!`,
       type: 'danger', category: 'Clube', priority: 'high', createdAt: new Date(),
+      actions: [
+        { label: 'Renovar Agora', variant: 'default', onClick: () => window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'squad' } })) },
+        { label: 'Ver Jogadores', variant: 'outline', onClick: () => window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'squad' } })) }
+      ]
     });
   }
 
