@@ -443,9 +443,8 @@ export function ClubCreation({ userId, onComplete }: Props) {
                                     <Gift className="h-2.5 w-2.5 mr-0.5" /> +{(s.bonus / 1000).toFixed(0)}K
                                   </Badge>
                                 )}
-                                <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-                                  <Users className="h-2.5 w-2.5" /> {s.players}
-                                </span>
+
+
                               </span>
                             </button>
                           );
