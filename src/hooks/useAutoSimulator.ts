@@ -1,23 +1,48 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Benign edge function errors that should not be logged/reported:
+// - 429: cooldown ativo (rate limit esperado)
+// - 504/IDLE_TIMEOUT: operação longa que continua no servidor
+const isBenignEdgeError = (err: any): boolean => {
+  const status = err?.context?.status;
+  const msg = (err?.message || String(err || '')).toLowerCase();
+  if (status === 429 || status === 504) return true;
+  return (
+    msg.includes('429') ||
+    msg.includes('504') ||
+    msg.includes('cooldown') ||
+    msg.includes('idle_timeout') ||
+    msg.includes('idle timeout')
+  );
+};
+
+const safeInvoke = async (name: string, options?: any) => {
+  try {
+    const { error } = await supabase.functions.invoke(name, options);
+    if (error && !isBenignEdgeError(error)) {
+      console.warn(`[AutoSim] ${name}:`, error.message || error);
+    }
+  } catch (err) {
+    if (!isBenignEdgeError(err)) {
+      console.warn(`[AutoSim] ${name} threw:`, err);
+    }
+  }
+};
+
 export function useAutoSimulator(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
     const runSim = async () => {
       console.log('[AutoSim] Executando simulação de segurança...');
-      try {
-        await Promise.all([
-          supabase.functions.invoke('world-match-simulator'),
-          supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' } }),
-          supabase.functions.invoke('process-transfer', { body: { action: 'resolve-decisions' } }),
-          supabase.rpc('process_all_uniform_sales'),
-          supabase.functions.invoke('legacy-auto-sim'),
-        ]);
-      } catch (err) {
-        console.error('[AutoSim] Erro na simulação:', err);
-      }
+      await Promise.allSettled([
+        safeInvoke('world-match-simulator'),
+        safeInvoke('national-cup-manager', { body: { action: 'advance_phase' } }),
+        safeInvoke('process-transfer', { body: { action: 'resolve-decisions' } }),
+        supabase.rpc('process_all_uniform_sales').then(() => {}, () => {}),
+        safeInvoke('legacy-auto-sim'),
+      ]);
     };
 
     runSim();
@@ -31,9 +56,9 @@ export function useAutoSimulator(userId: string | undefined) {
 
 export function triggerAutoSim() {
   // Centralized trigger for all simulation engines
-  Promise.all([
-    supabase.functions.invoke('world-match-simulator'),
-    supabase.functions.invoke('legacy-auto-sim')
+  Promise.allSettled([
+    safeInvoke('world-match-simulator'),
+    safeInvoke('legacy-auto-sim'),
   ]).then(() => {
     console.log('[AutoSim] Simulação global disparada manualmente.');
     // Notify UI that league data might have changed
