@@ -239,6 +239,22 @@ export function ChampionshipsTab() {
                     })}
                   </TableBody>
                 </Table>
+                
+                {/* Legenda de Classificação */}
+                <div className="p-4 bg-black/20 border-t border-white/5 flex flex-wrap gap-4 items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-tighter">Mundial</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-tighter">Continental</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-tighter">Rebaixamento</span>
+                  </div>
+                </div>
               </Card>
             )}
           </TabsContent>
