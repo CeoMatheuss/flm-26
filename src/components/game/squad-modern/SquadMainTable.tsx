@@ -348,38 +348,45 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             <span className="text-sm sm:text-base font-black text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tighter block">
               {player.name}
             </span>
-            <span className="text-[14px] flex items-center gap-1.5 shrink-0">
-              {flagFor((player as any).country || player.nationality)}
-              <button
-                onClick={(e) => {
-                  if (onSwapAction) {
-                    onSwapAction(e);
-                  } else {
-                    e.stopPropagation();
-                    onOpenQuickSwap?.();
-                  }
-                }}
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110 bg-black/20 backdrop-blur-sm border border-white/5",
-                  isPendingSwap && "animate-pulse ring-1 ring-red-500/40 bg-red-500/10"
-                )}
-                title={isPendingSwap ? "Cancelar Troca" : "Substituir Jogador"}
-              >
-                {isPendingSwap ? (
-                  <span className="text-white font-bold">✖</span>
-                ) : (
-                  <ArrowLeftRight className={cn(
-                    "w-4 h-4 transition-colors drop-shadow-sm",
-                    isStarter ? "text-emerald-400" : "text-zinc-400"
-                  )} />
-                )}
-              </button>
-            </span>
+            {activeTab !== 'emprestados' && (
+              <span className="text-[14px] flex items-center gap-1.5 shrink-0">
+                {flagFor((player as any).country || player.nationality)}
+                <button
+                  onClick={(e) => {
+                    if (onSwapAction) {
+                      onSwapAction(e);
+                    } else {
+                      e.stopPropagation();
+                      onOpenQuickSwap?.();
+                    }
+                  }}
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110 bg-black/20 backdrop-blur-sm border border-white/5",
+                    isPendingSwap && "animate-pulse ring-1 ring-red-500/40 bg-red-500/10"
+                  )}
+                  title={isPendingSwap ? "Cancelar Troca" : "Substituir Jogador"}
+                >
+                  {isPendingSwap ? (
+                    <span className="text-white font-bold">✖</span>
+                  ) : (
+                    <ArrowLeftRight className={cn(
+                      "w-4 h-4 transition-colors drop-shadow-sm",
+                      isStarter ? "text-emerald-400" : "text-zinc-400"
+                    )} />
+                  )}
+                </button>
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1">
               <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", getPositionColor(player.position))}>
                {player.position}
              </span>
+             {activeTab === 'emprestados' && (
+               <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest truncate max-w-[120px]">
+                 {player.loanedFrom || 'Dono desconhecido'}
+               </span>
+             )}
              {player.potential && player.potential >= 88 && (
                 <span className="text-[8px] font-black text-amber-400 uppercase tracking-tighter">💎 JOIA</span>
              )}
