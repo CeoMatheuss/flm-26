@@ -161,13 +161,10 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         }
 
         if (data?.emailSent === false) {
-          if (data.emailError === 'DOMINIO_NAO_VERIFICADO') {
-            toast.error('Erro de Entrega: O domínio footballlifemanager.com.br não está verificado na Resend. E-mails para domínios externos (Gmail, etc) estão bloqueados até que o DNS (SPF, DKIM, DMARC) seja configurado no painel da Resend.', {
-              duration: 8000,
-            });
-          } else {
-            toast.warning(`Conta criada, mas o e-mail pode atrasar ou falhou (${data.emailError || 'erro temporário'}). Verifique sua caixa de spam e tente reenviar se necessário.`);
-          }
+          console.error('Erro de envio:', data.details);
+          toast.error('Erro de Entrega: O domínio footballlifemanager.com.br não está verificado na Resend. E-mails para domínios externos (Gmail, etc) estão bloqueados até que o DNS (SPF, DKIM, DMARC) seja configurado.', {
+            duration: 10000,
+          });
         } else {
           toast.success('Código enviado! Verifique sua caixa de entrada e spam.');
         }
