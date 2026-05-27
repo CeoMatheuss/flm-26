@@ -145,15 +145,24 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       }
     } else {
       setPendingEmail(email);
-      // Dispara o envio do código via Edge Function
-      await supabase.functions.invoke('auth-service', {
-        body: { action: 'send-code', email }
-      });
       setStep('verify-email');
       startResendTimer();
-      toast.success('Código de verificação enviado para seu email!');
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke('auth-service', {
+          body: { action: 'send-code', email }
+        });
+        if (fnErr) throw fnErr;
+        if (data?.emailSent === false) {
+          toast.warning(`Conta criada, mas falhou ao enviar o e-mail (${data.emailError || 'erro desconhecido'}). Use "Reenviar código".`);
+        } else {
+          toast.success('Código de verificação enviado para seu email!');
+        }
+      } catch (e: any) {
+        toast.error(`Erro ao enviar código: ${e.message}. Clique em "Reenviar código".`);
+      }
     }
     setLoading(false);
+
   };
 
   const handleVerifyCode = async () => {
