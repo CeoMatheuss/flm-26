@@ -449,65 +449,96 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
     const pd = listing.player_data as any;
     const pos = posColors[listing.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
 
-    return (
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setOfferDialogId(null)}>
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Mercado
-        </Button>
+    const totalTransfer = listing.asking_price + signingBonus;
+    const canAfford = budget >= totalTransfer;
+    const salaryDelta = ((offerSalary - currentSalary) / Math.max(1, currentSalary)) * 100;
+    const fominha = bonusGoals > 50000 || bonusAssists > 50000;
 
-        {/* Player Hero Card */}
-        <div className="rounded-xl overflow-hidden border border-primary/20" style={{ background: 'hsl(var(--card))' }}>
-          <div className={`p-4 bg-gradient-to-r ${getOvrBg(listing.player_overall)}`}>
+    return (
+      <div className="space-y-4 pb-32">
+        {/* Back bar */}
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs rounded-lg hover:bg-white/5" onClick={() => setOfferDialogId(null)}>
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Mercado
+          </Button>
+          <Badge variant="outline" className="text-[10px] gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+            <Handshake className="h-3 w-3" /> Negociação Direta
+          </Badge>
+        </div>
+
+        {/* ── PREMIUM HERO ── */}
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 backdrop-blur-xl"
+          style={{ background: 'linear-gradient(135deg, hsl(220 45% 9% / 0.85), hsl(150 50% 10% / 0.6))' }}>
+          {/* Ambient glows */}
+          <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full bg-emerald-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-amber-500/10 blur-3xl" />
+          {/* Stadium stripes */}
+          <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
+            style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 24px, white 24px 25px)' }} />
+
+          <div className="relative p-4">
             <div className="flex items-center gap-3">
-              <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center ${pos.bg} border-2 ${pos.border}`}>
-                <span className={`text-lg font-black ${getOvrColor(listing.player_overall)}`}>{listing.player_overall}</span>
-                <span className={`text-[8px] font-bold ${pos.text}`}>{listing.player_position}</span>
+              {/* OVR badge with glow */}
+              <div className="relative">
+                <div className={`absolute inset-0 rounded-2xl blur-md opacity-50 bg-gradient-to-br ${getOvrBg(listing.player_overall)}`} />
+                <div className={`relative w-16 h-16 rounded-2xl flex flex-col items-center justify-center ${pos.bg} border-2 ${pos.border} backdrop-blur-sm`}>
+                  <span className={`text-xl font-black ${getOvrColor(listing.player_overall)} leading-none`}>{listing.player_overall}</span>
+                  <span className={`text-[9px] font-bold ${pos.text} mt-0.5`}>{listing.player_position}</span>
+                </div>
               </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-black">{listing.player_name}</h2>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-muted-foreground">{listing.player_age} anos</span>
-                  <span className="text-xs text-muted-foreground">•</span>
-                  <button className="text-xs text-primary hover:underline" onClick={() => { setOfferDialogId(null); setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield: listing.seller_shield }); }}>
+
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base font-black tracking-tight truncate">{listing.player_name}</h2>
+                <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
+                  <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{listing.player_age}a</span>
+                  <span>•</span>
+                  <button className="text-emerald-300 hover:text-emerald-200 hover:underline truncate" onClick={() => { setOfferDialogId(null); setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield: listing.seller_shield }); }}>
                     {listing.seller_club_name}
                   </button>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] text-muted-foreground">Preço</p>
-                <p className="text-xl font-black text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</p>
+
+              <div className="text-right shrink-0">
+                <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Pedido</p>
+                <p className="text-xl font-black bg-gradient-to-br from-emerald-300 to-emerald-500 bg-clip-text text-transparent leading-none">
+                  {formatMoney(listing.asking_price)}
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-4 gap-px" style={{ background: 'hsl(var(--border) / 0.15)' }}>
-            {[
-              { icon: '🏟️', label: 'Jogos', val: pd?.gamesPlayed ?? 0 },
-              { icon: '⚽', label: 'Gols', val: pd?.goals ?? 0 },
-              { icon: '🅰️', label: 'Assist.', val: pd?.assists ?? 0 },
-              { icon: '★', label: 'Média', val: pd?.seasonRatings?.length > 0 ? (pd.seasonRatings.reduce((a: number, b: number) => a + b, 0) / pd.seasonRatings.length).toFixed(1) : '—' },
-            ].map((s, i) => (
-              <div key={i} className="text-center py-2.5" style={{ background: 'hsl(var(--card))' }}>
-                <p className="text-lg font-black">{s.val}</p>
-                <p className="text-[9px] text-muted-foreground">{s.icon} {s.label}</p>
-              </div>
-            ))}
+            {/* Stats strip */}
+            <div className="grid grid-cols-4 gap-1.5 mt-4">
+              {[
+                { icon: '🏟️', label: 'Jogos', val: pd?.gamesPlayed ?? 0 },
+                { icon: '⚽', label: 'Gols', val: pd?.goals ?? 0 },
+                { icon: '🅰️', label: 'Assist', val: pd?.assists ?? 0 },
+                { icon: '★', label: 'Média', val: pd?.seasonRatings?.length > 0 ? (pd.seasonRatings.reduce((a: number, b: number) => a + b, 0) / pd.seasonRatings.length).toFixed(1) : '—' },
+              ].map((s, i) => (
+                <div key={i} className="text-center py-2 rounded-lg bg-black/30 border border-white/5">
+                  <p className="text-sm font-black leading-none">{s.val}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1">{s.icon} {s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Negotiation Form */}
+        {/* Tabs */}
         <Tabs defaultValue="negotiate" className="w-full">
-          <TabsList className="grid grid-cols-2 w-full h-9 rounded-xl p-1" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
-            <TabsTrigger value="negotiate" className="text-[10px] rounded-lg gap-1"><DollarSign className="h-3 w-3" /> Negociação</TabsTrigger>
-            <TabsTrigger value="history" className="text-[10px] rounded-lg gap-1"><FileText className="h-3 w-3" /> Histórico</TabsTrigger>
+          <TabsList className="grid grid-cols-2 w-full h-10 rounded-xl p-1 bg-black/40 border border-white/5">
+            <TabsTrigger value="negotiate" className="text-[11px] rounded-lg gap-1.5 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-200 data-[state=active]:shadow-[0_0_20px_-5px_hsl(var(--primary))]">
+              <DollarSign className="h-3.5 w-3.5" /> Negociação
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-[11px] rounded-lg gap-1.5 data-[state=active]:bg-white/10">
+              <FileText className="h-3.5 w-3.5" /> Histórico
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="history" className="space-y-3 mt-3">
+          <TabsContent value="history" className="space-y-2 mt-3">
             {pd?.history && pd.history.length > 0 ? (
               <div className="space-y-1.5">
                 {pd.history.map((h: any, i: number) => (
-                  <div key={i} className="flex items-center gap-2.5 rounded-xl p-2.5 border border-border/15" style={{ background: 'hsl(var(--card))' }}>
+                  <div key={i} className="flex items-center gap-2.5 rounded-xl p-2.5 border border-white/5 bg-black/30 hover:bg-black/40 transition">
                     <ShieldCrest primaryColor="#4a5568" secondaryColor="#a0aec0" pattern="solid" shape="classic" size={24} />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-xs truncate">{h.club}</p>
@@ -517,103 +548,185 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                       <span>{h.games}j</span>
                       <span>⚽{h.goals}</span>
                       <span>🅰️{h.assists}</span>
-                      {h.avgRating > 0 && <span className="font-bold text-primary">★{h.avgRating.toFixed(1)}</span>}
+                      {h.avgRating > 0 && <span className="font-bold text-emerald-300">★{h.avgRating.toFixed(1)}</span>}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6 text-xs text-muted-foreground">Sem histórico de clubes anteriores.</div>
+              <div className="text-center py-8 text-xs text-muted-foreground rounded-xl border border-white/5 bg-black/20">Sem histórico de clubes anteriores.</div>
             )}
           </TabsContent>
 
-          <TabsContent value="negotiate" className="space-y-4 mt-3">
-            {/* Price - fixed */}
-            <div className="rounded-xl p-3 border border-border/15" style={{ background: 'hsl(var(--card))' }}>
-              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" /> Valor da transferência</label>
-              <p className="text-2xl font-black text-emerald-400 mt-1">R${(listing.asking_price / 1000).toFixed(0)}k</p>
-              <p className="text-[9px] text-muted-foreground">Preço fixo baseado nos atributos</p>
+          <TabsContent value="negotiate" className="space-y-3 mt-3">
+            {/* Transfer fee — fixed */}
+            <div className="relative overflow-hidden rounded-xl p-3 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-transparent">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-emerald-300/80 uppercase tracking-wider flex items-center gap-1.5">
+                    <DollarSign className="h-3 w-3" /> Valor de Transferência
+                  </p>
+                  <p className="text-2xl font-black text-emerald-300 mt-1 leading-none">{formatMoney(listing.asking_price)}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1">Preço fixo baseado nos atributos</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                  <Tag className="h-5 w-5 text-emerald-300" />
+                </div>
+              </div>
             </div>
 
             {/* Salary */}
-            <div className="rounded-xl p-3 border border-border/15 space-y-2" style={{ background: 'hsl(var(--card))' }}>
-              <label className="text-xs font-bold text-muted-foreground">💰 Salário mensal — atual: R${currentSalary}</label>
-              <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-9 text-xs rounded-lg" />
+            <div className="rounded-xl p-3 border border-white/5 bg-black/30 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                  <span>💰</span> Salário mensal
+                </label>
+                <span className="text-[9px] text-muted-foreground">Atual: R${currentSalary}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-emerald-500/40" />
+                <Badge variant="outline" className={cn(
+                  "text-[10px] shrink-0 border",
+                  salaryDelta >= 20 ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" :
+                  salaryDelta >= 0 ? "border-blue-500/40 bg-blue-500/10 text-blue-300" :
+                  "border-orange-500/40 bg-orange-500/10 text-orange-300"
+                )}>
+                  {salaryDelta >= 0 ? '+' : ''}{salaryDelta.toFixed(0)}%
+                </Badge>
+              </div>
+              <div className="flex gap-1">
+                {[1, 1.2, 1.5, 2].map(mult => (
+                  <button key={mult} onClick={() => setOfferSalary(Math.round(currentSalary * mult))}
+                    className="flex-1 h-7 text-[10px] rounded-md border border-white/5 bg-white/[0.03] hover:bg-white/10 hover:border-white/20 transition font-bold text-muted-foreground hover:text-foreground">
+                    {mult === 1 ? 'Igual' : `${mult}x`}
+                  </button>
+                ))}
+              </div>
               {offerSalary < currentSalary && (
-                <p className="text-[10px] text-orange-400 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Salário inferior ao atual — menor chance de aceite</p>
+                <p className="text-[10px] text-orange-400 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Salário inferior — menor chance de aceite</p>
               )}
             </div>
 
             {/* Contract */}
-            <div className="rounded-xl p-3 border border-border/15 space-y-2" style={{ background: 'hsl(var(--card))' }}>
-              <label className="text-xs font-bold text-muted-foreground">📄 Duração do contrato</label>
-              <div className="flex gap-1.5">
+            <div className="rounded-xl p-3 border border-white/5 bg-black/30 space-y-2">
+              <label className="text-[11px] font-bold flex items-center gap-1.5"><span>📄</span> Duração do contrato</label>
+              <div className="grid grid-cols-5 gap-1.5">
                 {[1, 2, 3, 4, 5].map(y => (
-                  <Button key={y} size="sm" variant={offerYears === y ? 'default' : 'outline'} className="h-8 px-3.5 text-xs rounded-lg flex-1" onClick={() => setOfferYears(y)}>
+                  <button key={y} onClick={() => setOfferYears(y)}
+                    className={cn(
+                      "h-10 rounded-lg text-xs font-black transition border",
+                      offerYears === y
+                        ? "bg-gradient-to-br from-emerald-500/30 to-emerald-500/10 border-emerald-500/50 text-emerald-200 shadow-[0_0_20px_-8px_hsl(var(--primary))]"
+                        : "bg-black/40 border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
+                    )}>
                     {y}a
-                  </Button>
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Signing Bonus */}
-            <div className="rounded-xl p-3 border border-border/15 space-y-2" style={{ background: 'hsl(var(--card))' }}>
-              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5"><Gift className="h-3.5 w-3.5" /> Luvas (R$)</label>
-              <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-9 text-xs rounded-lg" />
+            {/* Signing bonus */}
+            <div className="rounded-xl p-3 border border-white/5 bg-black/30 space-y-2">
+              <label className="text-[11px] font-bold flex items-center gap-1.5">
+                <Gift className="h-3.5 w-3.5 text-amber-300" /> Luvas (bônus de assinatura)
+              </label>
+              <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-amber-500/40" />
+              <div className="flex gap-1">
+                {[0, 50000, 200000, 500000, 1000000].map(v => (
+                  <button key={v} onClick={() => setSigningBonus(v)}
+                    className={cn(
+                      "flex-1 h-7 text-[10px] rounded-md border transition font-bold",
+                      signingBonus === v ? "bg-amber-500/15 border-amber-500/40 text-amber-200" : "bg-white/[0.03] border-white/5 text-muted-foreground hover:bg-white/10"
+                    )}>
+                    {v === 0 ? '—' : formatMoney(v)}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Performance Bonuses */}
-            <div className="rounded-xl p-3 border border-border/15 space-y-2" style={{ background: 'hsl(var(--card))' }}>
+            <div className="rounded-xl p-3 border border-white/5 bg-black/30 space-y-2.5">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-muted-foreground">🎯 Bônus por desempenho (R$/ocorrência)</p>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowBonusHelp(!showBonusHelp)}>
+                <p className="text-[11px] font-bold flex items-center gap-1.5"><Target className="h-3.5 w-3.5 text-primary" /> Bônus por desempenho</p>
+                <button onClick={() => setShowBonusHelp(!showBonusHelp)} className="h-6 w-6 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center transition">
                   <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
+                </button>
               </div>
               {showBonusHelp && (
-                <div className="rounded-lg p-3 text-[10px] leading-relaxed border border-border/20" style={{ background: 'hsl(var(--accent) / 0.5)' }}>
-                  <p className="font-bold mb-1">📖 Como funcionam os bônus?</p>
-                  <p>• <strong>Luvas:</strong> Pagamento único na assinatura.</p>
-                  <p>• <strong>Bônus por gol/assist:</strong> Aumentam motivação. Valores altos = jogador "fominha".</p>
-                  <p>• <strong>Bônus por jogo:</strong> Motivação equilibrada.</p>
-                  <p>• <strong>Bônus por título:</strong> Grande motivação sem fominha.</p>
+                <div className="rounded-lg p-3 text-[10px] leading-relaxed border border-emerald-500/15 bg-emerald-500/[0.04]">
+                  <p className="font-bold mb-1.5 text-emerald-300">📖 Como funcionam os bônus?</p>
+                  <p className="text-muted-foreground">• <strong className="text-foreground">Luvas:</strong> Pagamento único na assinatura.</p>
+                  <p className="text-muted-foreground">• <strong className="text-foreground">Por gol/assist:</strong> Aumentam motivação. Altos = jogador "fominha".</p>
+                  <p className="text-muted-foreground">• <strong className="text-foreground">Por jogo:</strong> Motivação equilibrada.</p>
+                  <p className="text-muted-foreground">• <strong className="text-foreground">Por título:</strong> Grande motivação sem fominha.</p>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { label: '⚽ Por gol', value: bonusGoals, set: setBonusGoals },
-                  { label: '🅰️ Por assist.', value: bonusAssists, set: setBonusAssists },
-                  { label: '🏟️ Por jogo', value: bonusGames, set: setBonusGames },
-                  { label: '🏆 Por título', value: bonusTitles, set: setBonusTitles },
+                  { label: 'Por gol', emoji: '⚽', value: bonusGoals, set: setBonusGoals, alert: bonusGoals > 50000 },
+                  { label: 'Por assist.', emoji: '🅰️', value: bonusAssists, set: setBonusAssists, alert: bonusAssists > 50000 },
+                  { label: 'Por jogo', emoji: '🏟️', value: bonusGames, set: setBonusGames, alert: false },
+                  { label: 'Por título', emoji: '🏆', value: bonusTitles, set: setBonusTitles, alert: false },
                 ].map(b => (
-                  <div key={b.label}>
-                    <label className="text-[10px] text-muted-foreground">{b.label}</label>
-                    <Input type="number" value={b.value} onChange={e => b.set(Math.max(0, Number(e.target.value)))} className="h-8 text-xs rounded-lg" />
+                  <div key={b.label} className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <span>{b.emoji}</span> {b.label}
+                      {b.alert && <AlertTriangle className="h-2.5 w-2.5 text-orange-400" />}
+                    </label>
+                    <Input type="number" value={b.value} onChange={e => b.set(Math.max(0, Number(e.target.value)))}
+                      className={cn("h-9 text-xs font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-primary/40", b.alert && "border-orange-500/40")} />
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Summary */}
-            <div className="rounded-xl p-4 border border-primary/20" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.02))' }}>
-              <p className="font-black text-sm text-primary mb-2 flex items-center gap-1.5"><Sparkles className="h-4 w-4" /> Resumo da proposta</p>
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between"><span className="text-muted-foreground">Transferência</span><span className="font-bold text-emerald-400">R${(listing.asking_price / 1000).toFixed(0)}k</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Salário</span><span className={`font-bold ${offerSalary >= currentSalary ? 'text-emerald-400' : 'text-orange-400'}`}>R${offerSalary}/mês</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Contrato</span><span className="font-bold">{offerYears} ano{offerYears > 1 ? 's' : ''}</span></div>
-                {signingBonus > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Luvas</span><span className="font-bold">R${(signingBonus / 1000).toFixed(0)}k</span></div>}
-              </div>
-              {bonusGoals > 50000 && <p className="text-[10px] text-orange-400 mt-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Bônus por gol elevado pode tornar o jogador fominha</p>}
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 h-11 text-xs rounded-xl" onClick={() => setOfferDialogId(null)}>Cancelar</Button>
-              <Button className="flex-1 h-11 text-xs rounded-xl gap-1.5" onClick={() => makeOffer(listing)} disabled={loading || budget < offerPrice}>
-                <Send className="h-4 w-4" /> Enviar Proposta
-              </Button>
+              {fominha && (
+                <p className="text-[10px] text-orange-400 flex items-center gap-1 pt-1"><AlertTriangle className="h-3 w-3" /> Bônus elevados podem deixar o jogador "fominha"</p>
+              )}
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* ── STICKY SUMMARY + CTA ── */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-emerald-500/20 backdrop-blur-2xl"
+          style={{ background: 'linear-gradient(180deg, hsl(220 50% 6% / 0.85), hsl(220 50% 4% / 0.98))' }}>
+          <div className="max-w-2xl mx-auto p-3 space-y-2">
+            <div className="grid grid-cols-3 gap-2 text-[10px]">
+              <div className="rounded-lg p-2 bg-black/40 border border-white/5">
+                <p className="text-muted-foreground">Custo total</p>
+                <p className={cn("font-black text-sm leading-none mt-1", canAfford ? "text-emerald-300" : "text-red-400")}>
+                  {formatMoney(totalTransfer)}
+                </p>
+              </div>
+              <div className="rounded-lg p-2 bg-black/40 border border-white/5">
+                <p className="text-muted-foreground">Salário/mês</p>
+                <p className={cn("font-black text-sm leading-none mt-1", offerSalary >= currentSalary ? "text-blue-300" : "text-orange-400")}>
+                  R${offerSalary}
+                </p>
+              </div>
+              <div className="rounded-lg p-2 bg-black/40 border border-white/5">
+                <p className="text-muted-foreground">Contrato</p>
+                <p className="font-black text-sm leading-none mt-1">{offerYears} ano{offerYears > 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="h-11 px-4 text-xs rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/10" onClick={() => setOfferDialogId(null)}>
+                Cancelar
+              </Button>
+              <Button
+                className={cn(
+                  "flex-1 h-11 text-xs rounded-xl gap-1.5 font-black transition-all",
+                  canAfford
+                    ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-[0_0_30px_-5px_hsl(var(--primary))]"
+                    : "bg-red-500/20 text-red-300 cursor-not-allowed"
+                )}
+                onClick={() => makeOffer(listing)}
+                disabled={loading || !canAfford}>
+                <Send className="h-4 w-4" />
+                {canAfford ? 'Enviar Proposta Oficial' : 'Verba insuficiente'}
+                {canAfford && <Sparkles className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
