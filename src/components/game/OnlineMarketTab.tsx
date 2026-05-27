@@ -66,21 +66,21 @@ const posColors: Record<string, { bg: string; text: string; border: string }> = 
   GOL: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/30' },
   ZAG: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30' },
   LAT: { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/30' },
-  VOL: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+  VOL: { bg: 'bg-teal-500/15', text: 'text-teal-400', border: 'border-teal-500/30' },
   MEI: { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30' },
   ATA: { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/30' },
 };
 
 function getOvrColor(ovr: number) {
   if (ovr >= 85) return 'text-amber-400';
-  if (ovr >= 75) return 'text-emerald-400';
+  if (ovr >= 75) return 'text-teal-400';
   if (ovr >= 65) return 'text-blue-400';
   return 'text-muted-foreground';
 }
 
 function getOvrBg(ovr: number) {
   if (ovr >= 85) return 'from-amber-500/10 to-amber-500/5';
-  if (ovr >= 75) return 'from-emerald-500/10 to-emerald-500/5';
+  if (ovr >= 75) return 'from-teal-500/10 to-teal-500/5';
   if (ovr >= 65) return 'from-blue-500/10 to-blue-500/5';
   return 'from-muted/30 to-muted/10';
 }
@@ -488,7 +488,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs rounded-lg hover:bg-white/5" onClick={() => setOfferDialogId(null)}>
             <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Mercado
           </Button>
-          <Badge variant="outline" className="text-[10px] gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+          <Badge variant="outline" className="text-[10px] gap-1 border-teal-500/30 bg-teal-500/10 text-teal-300">
             <Handshake className="h-3 w-3" /> Negociação Direta
           </Badge>
         </div>
@@ -497,7 +497,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
         <div className="relative overflow-hidden rounded-2xl border border-white/10 backdrop-blur-xl"
           style={{ background: 'linear-gradient(135deg, hsl(220 45% 9% / 0.85), hsl(150 50% 10% / 0.6))' }}>
           {/* Ambient glows */}
-          <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full bg-emerald-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full bg-teal-500/15 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-amber-500/10 blur-3xl" />
           {/* Stadium stripes */}
           <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
@@ -519,7 +519,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
                   <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{listing.player_age}a</span>
                   <span>•</span>
-                  <button className="text-emerald-300 hover:text-emerald-200 hover:underline truncate" onClick={() => { setOfferDialogId(null); setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield: listing.seller_shield }); }}>
+                  <button className="text-teal-300 hover:text-teal-200 hover:underline truncate" onClick={() => { setOfferDialogId(null); setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield: listing.seller_shield }); }}>
                     {listing.seller_club_name}
                   </button>
                 </div>
@@ -527,7 +527,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
               <div className="text-right shrink-0">
                 <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Pedido</p>
-                <p className="text-xl font-black bg-gradient-to-br from-emerald-300 to-emerald-500 bg-clip-text text-transparent leading-none">
+                <p className="text-xl font-black bg-gradient-to-br from-teal-300 to-teal-500 bg-clip-text text-transparent leading-none">
                   {formatMoney(listing.asking_price)}
                 </p>
               </div>
@@ -553,7 +553,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
         {/* Tabs */}
         <Tabs defaultValue="negotiate" className="w-full">
           <TabsList className="grid grid-cols-2 w-full h-10 rounded-xl p-1 bg-black/40 border border-white/5">
-            <TabsTrigger value="negotiate" className="text-[11px] rounded-lg gap-1.5 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-200 data-[state=active]:shadow-[0_0_20px_-5px_hsl(var(--primary))]">
+            <TabsTrigger value="negotiate" className="text-[11px] rounded-lg gap-1.5 data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-200 data-[state=active]:shadow-[0_0_20px_-5px_hsl(var(--primary))]">
               <DollarSign className="h-3.5 w-3.5" /> Negociação
             </TabsTrigger>
             <TabsTrigger value="history" className="text-[11px] rounded-lg gap-1.5 data-[state=active]:bg-white/10">
@@ -575,7 +575,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                       <span>{h.games}j</span>
                       <span>⚽{h.goals}</span>
                       <span>🅰️{h.assists}</span>
-                      {h.avgRating > 0 && <span className="font-bold text-emerald-300">★{h.avgRating.toFixed(1)}</span>}
+                      {h.avgRating > 0 && <span className="font-bold text-teal-300">★{h.avgRating.toFixed(1)}</span>}
                     </div>
                   </div>
                 ))}
@@ -587,17 +587,17 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
           <TabsContent value="negotiate" className="space-y-3 mt-3">
             {/* Transfer fee — fixed */}
-            <div className="relative overflow-hidden rounded-xl p-3 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-transparent">
+            <div className="relative overflow-hidden rounded-xl p-3 border border-teal-500/20 bg-gradient-to-br from-teal-500/10 to-transparent">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-bold text-emerald-300/80 uppercase tracking-wider flex items-center gap-1.5">
+                  <p className="text-[10px] font-bold text-teal-300/80 uppercase tracking-wider flex items-center gap-1.5">
                     <DollarSign className="h-3 w-3" /> Valor de Transferência
                   </p>
-                  <p className="text-2xl font-black text-emerald-300 mt-1 leading-none">{formatMoney(listing.asking_price)}</p>
+                  <p className="text-2xl font-black text-teal-300 mt-1 leading-none">{formatMoney(listing.asking_price)}</p>
                   <p className="text-[9px] text-muted-foreground mt-1">Preço fixo baseado nos atributos</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                  <Tag className="h-5 w-5 text-emerald-300" />
+                <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center">
+                  <Tag className="h-5 w-5 text-teal-300" />
                 </div>
               </div>
             </div>
@@ -611,10 +611,10 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 <span className="text-[9px] text-muted-foreground">Atual: R${currentSalary}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-emerald-500/20" />
+                <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-teal-500/20" />
                 <Badge variant="outline" className={cn(
                   "text-[10px] shrink-0 border",
-                  salaryDelta >= 20 ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" :
+                  salaryDelta >= 20 ? "border-teal-500/20 bg-teal-500/10 text-teal-300" :
                   salaryDelta >= 0 ? "border-blue-500/20 bg-blue-500/10 text-blue-300" :
                   "border-orange-500/20 bg-orange-500/10 text-orange-300"
                 )}>
@@ -643,7 +643,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                     className={cn(
                       "h-10 rounded-lg text-xs font-black transition border",
                       offerYears === y
-                        ? "bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border-emerald-500/25 text-emerald-200 shadow-[0_0_20px_-8px_hsl(var(--primary))]"
+                        ? "bg-gradient-to-br from-teal-500/15 to-teal-500/5 border-teal-500/25 text-teal-200 shadow-[0_0_20px_-8px_hsl(var(--primary))]"
                         : "bg-black/40 border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
                     )}>
                     {y}a
@@ -680,8 +680,8 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 </button>
               </div>
               {showBonusHelp && (
-                <div className="rounded-lg p-3 text-[10px] leading-relaxed border border-emerald-500/15 bg-emerald-500/[0.04]">
-                  <p className="font-bold mb-1.5 text-emerald-300">📖 Como funcionam os bônus?</p>
+                <div className="rounded-lg p-3 text-[10px] leading-relaxed border border-teal-500/15 bg-teal-500/[0.04]">
+                  <p className="font-bold mb-1.5 text-teal-300">📖 Como funcionam os bônus?</p>
                   <p className="text-muted-foreground">• <strong className="text-foreground">Luvas:</strong> Pagamento único na assinatura.</p>
                   <p className="text-muted-foreground">• <strong className="text-foreground">Por gol/assist:</strong> Aumentam motivação. Altos = jogador "fominha".</p>
                   <p className="text-muted-foreground">• <strong className="text-foreground">Por jogo:</strong> Motivação equilibrada.</p>
@@ -713,13 +713,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
         </Tabs>
 
         {/* ── STICKY SUMMARY + CTA ── */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-emerald-500/20 backdrop-blur-2xl"
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-teal-500/20 backdrop-blur-2xl"
           style={{ background: 'linear-gradient(180deg, hsl(220 50% 6% / 0.85), hsl(220 50% 4% / 0.98))' }}>
           <div className="max-w-2xl mx-auto p-3 space-y-2">
             <div className="grid grid-cols-3 gap-2 text-[10px]">
               <div className="rounded-lg p-2 bg-black/40 border border-white/5">
                 <p className="text-muted-foreground">Custo total</p>
-                <p className={cn("font-black text-sm leading-none mt-1", canAfford ? "text-emerald-300" : "text-red-400")}>
+                <p className={cn("font-black text-sm leading-none mt-1", canAfford ? "text-teal-300" : "text-red-400")}>
                   {formatMoney(totalTransfer)}
                 </p>
               </div>
@@ -742,7 +742,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 className={cn(
                   "flex-1 h-11 text-xs rounded-xl gap-1.5 font-black transition-all",
                   canAfford
-                    ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-[0_0_30px_-5px_hsl(var(--primary))]"
+                    ? "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white shadow-[0_0_30px_-5px_hsl(var(--primary))]"
                     : "bg-red-500/20 text-red-300 cursor-not-allowed"
                 )}
                 onClick={() => makeOffer(listing)}
@@ -766,7 +766,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">💸 Verba Transferências</p>
-            <p className="text-lg font-black text-emerald-400">{formatMoney(tBudget)}</p>
+            <p className="text-lg font-black text-teal-400">{formatMoney(tBudget)}</p>
             <p className="text-[9px] text-muted-foreground">40% do orçamento</p>
           </div>
           <div>
@@ -822,12 +822,12 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           {/* Premium header */}
           <div className="relative overflow-hidden rounded-2xl border border-white/5 p-3 backdrop-blur-sm"
             style={{ background: 'linear-gradient(135deg, hsl(220 40% 9% / 0.7), hsl(150 50% 8% / 0.5))' }}>
-            <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-teal-500/10 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-amber-500/10 blur-3xl" />
             <div className="relative flex items-center justify-between gap-2 mb-2.5">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center">
-                  <Globe className="h-4 w-4 text-emerald-300" />
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500/15 to-teal-500/5 border border-teal-500/30 flex items-center justify-center">
+                  <Globe className="h-4 w-4 text-teal-300" />
                 </div>
                 <div>
                   <h3 className="font-black text-sm leading-none">Mercado Global</h3>
@@ -842,7 +842,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <div className="relative flex items-center gap-2 flex-wrap">
               <div className="relative flex-1 min-w-[160px]">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-9 pl-8 text-xs rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/20" />
+                <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-9 pl-8 text-xs rounded-xl bg-black/30 border-white/10 focus-visible:border-teal-500/20" />
               </div>
               <Select value={posFilter} onValueChange={v => { setPosFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger className="h-9 w-[90px] text-[11px] rounded-xl bg-black/30 border-white/10"><SelectValue /></SelectTrigger>
@@ -1158,7 +1158,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           <div className="relative overflow-hidden rounded-2xl border border-amber-500/15 backdrop-blur-xl"
             style={{ background: 'linear-gradient(135deg, hsl(40 50% 9% / 0.7), hsl(220 45% 8% / 0.85))' }}>
             <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-amber-500/15 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-teal-500/10 blur-3xl" />
             <div className="relative p-3 flex items-center gap-3">
               <div className="relative shrink-0">
                 <div className="absolute inset-0 rounded-xl bg-amber-500/30 blur-md" />
@@ -1215,7 +1215,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-lg font-black text-emerald-400">R${(offer.offered_price / 1000).toFixed(0)}k</p>
+                            <p className="text-lg font-black text-teal-400">R${(offer.offered_price / 1000).toFixed(0)}k</p>
                             <p className="text-[9px] text-muted-foreground">pedido: R${((listing?.asking_price || 0) / 1000).toFixed(0)}k</p>
                           </div>
                         </div>
@@ -1264,11 +1264,11 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                   const listing = listings.find(l => l.id === offer.listing_id);
                   const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
                     pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Pendente' },
-                    accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Aceita' },
+                    accepted: { bg: 'bg-teal-500/15', text: 'text-teal-400', label: '✅ Aceita' },
                     awaiting_decision: { bg: 'bg-blue-500/15', text: 'text-blue-400', label: '⏳ Jogador decidindo...' },
                     rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
                     player_rejected: { bg: 'bg-orange-500/15', text: 'text-orange-400', label: '🚫 Jogador recusou' },
-                    player_accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Jogador aceitou!' },
+                    player_accepted: { bg: 'bg-teal-500/15', text: 'text-teal-400', label: '✅ Jogador aceitou!' },
                   };
                   const sc = statusConfig[offer.decision_status || offer.status] || statusConfig.pending;
                   const deadlineStr = offer.decision_deadline;
@@ -1305,11 +1305,11 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           {/* Renovas (Próprios Jogadores) */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-                <RefreshCw className="h-3.5 w-3.5 text-emerald-300" />
+              <div className="w-7 h-7 rounded-lg bg-teal-500/15 border border-teal-500/25 flex items-center justify-center">
+                <RefreshCw className="h-3.5 w-3.5 text-teal-300" />
               </div>
               <h3 className="font-black text-xs uppercase tracking-wider">Renovas Oferecidas</h3>
-              <Badge variant="outline" className="text-[9px] border-emerald-500/25 bg-emerald-500/10 text-emerald-300">{myRenewals.length}</Badge>
+              <Badge variant="outline" className="text-[9px] border-teal-500/25 bg-teal-500/10 text-teal-300">{myRenewals.length}</Badge>
             </div>
 
             {myRenewals.length === 0 ? (
@@ -1321,7 +1321,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 {myRenewals.map(negotiation => {
                   const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
                     pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Analisando...' },
-                    accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Renovado!' },
+                    accepted: { bg: 'bg-teal-500/15', text: 'text-teal-400', label: '✅ Renovado!' },
                     rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
                   };
                   const sc = statusConfig[negotiation.status] || statusConfig.pending;
@@ -1403,7 +1403,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                         )}
                         {offer.status === 'pending' && (
                           <div className="flex flex-wrap gap-2">
-                            <Button size="sm" className="flex-1 min-w-[90px] h-9 text-xs rounded-lg gap-1.5 bg-emerald-600 hover:bg-emerald-500" disabled={loading} onClick={async () => {
+                            <Button size="sm" className="flex-1 min-w-[90px] h-9 text-xs rounded-lg gap-1.5 bg-teal-600 hover:bg-teal-500" disabled={loading} onClick={async () => {
                               setLoading(true);
                               const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-offer-accept', offerId: offer.id } });
                               if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
@@ -1447,7 +1447,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                   const sc: Record<string, { bg: string; text: string; label: string }> = {
                     pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Pendente' },
                     countered: { bg: 'bg-blue-500/15', text: 'text-blue-400', label: '↩️ Contraproposta' },
-                    accepted: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: '✅ Aceita' },
+                    accepted: { bg: 'bg-teal-500/15', text: 'text-teal-400', label: '✅ Aceita' },
                     rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
                   };
                   const s = sc[offer.status] || sc.pending;

@@ -291,8 +291,8 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
       <div className="rounded-2xl border border-white/5 bg-black/30 backdrop-blur-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-              <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+            <div className="w-7 h-7 rounded-lg bg-teal-500/15 border border-teal-500/25 flex items-center justify-center">
+              <Sparkles className="h-3.5 w-3.5 text-teal-300" />
             </div>
             <div>
               <h3 className="text-xs font-black">Colocar em Leilão</h3>
@@ -325,7 +325,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="text-right">
                           <p className="text-[8px] text-muted-foreground uppercase tracking-wider">Início</p>
-                          <p className="text-[10px] font-black text-emerald-300 leading-none">{fmtMoney(startPrice)}</p>
+                          <p className="text-[10px] font-black text-teal-300 leading-none">{fmtMoney(startPrice)}</p>
                         </div>
                         <Button size="sm" className="h-7 px-2.5 text-[10px] rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white font-bold gap-1"
                           onClick={() => handleCreateAuction(p)} disabled={loading}>
@@ -367,7 +367,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                 const rarityLabel = a.rarity.charAt(0).toUpperCase() + a.rarity.slice(1);
                 const rarityBadge = a.rarity === 'lendario' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : a.rarity === 'epico' ? 'bg-purple-500/15 text-purple-300 border-purple-500/30' : a.rarity === 'raro' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' : 'bg-white/5 text-muted-foreground border-white/10';
                 return (
-                  <div key={a.id} className={`relative overflow-hidden rounded-xl border p-3 transition-all ${rarityStyle} ${isMyBid ? 'ring-2 ring-emerald-500/50' : isMyAuction ? 'ring-2 ring-purple-500/50' : ''} ${closing ? 'ring-2 ring-red-500/30' : ''}`}>
+                  <div key={a.id} className={`relative overflow-hidden rounded-xl border p-3 transition-all ${rarityStyle} ${isMyBid ? 'ring-2 ring-teal-500/50' : isMyAuction ? 'ring-2 ring-purple-500/50' : ''} ${closing ? 'ring-2 ring-red-500/30' : ''}`}>
                     {closing && (
                       <div className="absolute top-2 right-2 z-10">
                         <Badge className="text-[8px] h-4 px-1.5 bg-red-500 text-white animate-pulse border-0">🔥 FINALIZANDO</Badge>
@@ -423,7 +423,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                     <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between gap-2 flex-wrap">
                       <p className="text-[9px] text-muted-foreground">
                         Próx. mín: <span className="font-black text-foreground">{fmtMoney(minNextBid)}</span>
-                        <span className="text-emerald-400"> (+{fmtMoney(inc)})</span>
+                        <span className="text-teal-400"> (+{fmtMoney(inc)})</span>
                       </p>
                       <div className="flex items-center gap-1">
                         <Button size="sm" variant="ghost" className="h-7 px-2 text-[9px] rounded-lg hover:bg-white/5"
@@ -445,7 +445,7 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                           <Badge variant="outline" className="text-[8px] text-purple-300 border-purple-500/30 bg-purple-500/5">Seu leilão</Badge>
                         )}
                         {isMyBid && !isMyAuction && (
-                          <Badge className="text-[8px] bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Seu lance</Badge>
+                          <Badge className="text-[8px] bg-teal-500/20 text-teal-300 border-teal-500/30">Seu lance</Badge>
                         )}
                       </div>
                     </div>

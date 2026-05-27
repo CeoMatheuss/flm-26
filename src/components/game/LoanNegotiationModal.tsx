@@ -52,12 +52,12 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
       <DialogContent className="max-w-lg w-[calc(100%-1rem)] max-h-[92dvh] flex flex-col p-0 overflow-hidden bg-zinc-950 border-zinc-800">
         <DialogHeader className="p-4 pb-2 sm:p-5 sm:pb-2">
           <DialogTitle className="text-base sm:text-lg font-black flex items-center gap-2">
-            <Handshake className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
+            <Handshake className="h-4 w-4 sm:h-5 sm:w-5 text-teal-400" />
             {mode === 'setup' || mode === 'list' ? 'Configurar Empréstimo' : 'Negociar'}
           </DialogTitle>
 
           <div className="flex items-center gap-2.5 mt-2">
-            <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-sm text-emerald-400 shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-sm text-teal-400 shrink-0">
               {player?.overall}
             </div>
             <div className="min-w-0">
@@ -107,7 +107,7 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
                 <Label className="text-[10px] uppercase text-zinc-500 font-bold flex items-center gap-1">
                   <Percent className="h-3 w-3" /> Salário Receptor
                 </Label>
-                <span className="text-sm font-black text-emerald-400">{terms.salaryPercentageBorrower}%</span>
+                <span className="text-sm font-black text-teal-400">{terms.salaryPercentageBorrower}%</span>
               </div>
               <Input
                 disabled={isViewOnly}
@@ -117,7 +117,7 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
                 step="10"
                 value={terms.salaryPercentageBorrower}
                 onChange={(e) => handleSalaryBorrowerChange(Number(e.target.value))}
-                className="h-2 p-0 accent-emerald-500"
+                className="h-2 p-0 accent-teal-500"
               />
               <p className="text-[10px] text-zinc-500 text-center">
                 Receptor paga <span className="text-white font-bold">{formatMoney((player?.salary || 0) * (terms.salaryPercentageBorrower / 100))}</span>/mês
@@ -133,13 +133,13 @@ export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, play
             <Button
               disabled={loading}
               onClick={() => activeSubmit(terms)}
-              className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black uppercase tracking-wider h-10"
+              className="flex-1 sm:flex-none bg-teal-500 hover:bg-teal-600 text-zinc-950 font-black uppercase tracking-wider h-10"
             >
               {loading ? 'Anunciando...' : 'Anunciar'}
             </Button>
           )}
           {mode === 'view' && !isOwner && (
-            <Button disabled={loading} onClick={() => activeSubmit(terms)} className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-10">
+            <Button disabled={loading} onClick={() => activeSubmit(terms)} className="flex-1 sm:flex-none bg-teal-500 hover:bg-teal-600 text-zinc-950 font-black h-10">
               Aceitar
             </Button>
           )}

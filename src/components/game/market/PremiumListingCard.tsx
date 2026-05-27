@@ -9,7 +9,7 @@ const posStyle: Record<string, { ring: string; text: string; chip: string; glow:
   GOL: { ring: 'ring-amber-400/30', text: 'text-amber-300', chip: 'bg-amber-500/15 border-amber-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(45_90%_55%/0.55)]' },
   ZAG: { ring: 'ring-blue-400/30', text: 'text-blue-300', chip: 'bg-blue-500/15 border-blue-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(220_80%_55%/0.55)]' },
   LAT: { ring: 'ring-cyan-400/30', text: 'text-cyan-300', chip: 'bg-cyan-500/15 border-cyan-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(190_80%_55%/0.55)]' },
-  VOL: { ring: 'ring-emerald-400/30', text: 'text-emerald-300', chip: 'bg-emerald-500/15 border-emerald-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(150_70%_50%/0.55)]' },
+  VOL: { ring: 'ring-teal-400/30', text: 'text-teal-300', chip: 'bg-teal-500/15 border-teal-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(150_70%_50%/0.55)]' },
   MEI: { ring: 'ring-purple-400/30', text: 'text-purple-300', chip: 'bg-purple-500/15 border-purple-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(270_70%_60%/0.55)]' },
   ATA: { ring: 'ring-rose-400/30', text: 'text-rose-300', chip: 'bg-rose-500/15 border-rose-500/30', glow: 'shadow-[0_0_24px_-6px_hsl(0_80%_60%/0.55)]' },
 };
@@ -17,7 +17,7 @@ const posStyle: Record<string, { ring: string; text: string; chip: string; glow:
 function ovrTier(ovr: number) {
   if (ovr >= 88) return { color: 'text-amber-300', stroke: 'hsl(45 95% 60%)', from: 'from-amber-500/15', to: 'to-amber-500/0', label: 'ELITE' };
   if (ovr >= 80) return { color: 'text-amber-300', stroke: 'hsl(45 90% 55%)', from: 'from-amber-500/10', to: 'to-amber-500/0', label: 'CRAQUE' };
-  if (ovr >= 72) return { color: 'text-emerald-300', stroke: 'hsl(150 70% 50%)', from: 'from-emerald-500/10', to: 'to-emerald-500/0', label: 'TITULAR' };
+  if (ovr >= 72) return { color: 'text-teal-300', stroke: 'hsl(150 70% 50%)', from: 'from-teal-500/10', to: 'to-teal-500/0', label: 'TITULAR' };
   if (ovr >= 62) return { color: 'text-sky-300', stroke: 'hsl(200 80% 55%)', from: 'from-sky-500/15', to: 'to-sky-500/0', label: 'PROMISSOR' };
   return { color: 'text-muted-foreground', stroke: 'hsl(220 10% 50%)', from: 'from-muted/20', to: 'to-muted/0', label: 'BASE' };
 }
@@ -58,7 +58,7 @@ export const PremiumListingCard = memo(function PremiumListingCard({
         'backdrop-blur-sm hover:-translate-y-0.5',
         isOwn
           ? 'border-amber-400/20 shadow-[0_0_30px_-10px_hsl(45_90%_55%/0.5)]'
-          : 'border-white/5 hover:border-emerald-400/25 hover:shadow-[0_8px_40px_-12px_hsl(150_70%_45%/0.45)]',
+          : 'border-white/5 hover:border-teal-400/25 hover:shadow-[0_8px_40px_-12px_hsl(150_70%_45%/0.45)]',
       )}
       style={{
         background: isOwn
@@ -69,12 +69,12 @@ export const PremiumListingCard = memo(function PremiumListingCard({
       {/* Top shimmer ribbon */}
       <div className={cn('absolute inset-x-0 top-0 h-[2px] opacity-80',
         isOwn ? 'bg-gradient-to-r from-amber-500/0 via-amber-300 to-amber-500/0'
-              : 'bg-gradient-to-r from-emerald-500/0 via-emerald-300 to-emerald-500/0')} />
+              : 'bg-gradient-to-r from-teal-500/0 via-teal-300 to-teal-500/0')} />
 
       {/* Corner status pill */}
       <div className="absolute top-2 right-2 z-10 flex gap-1">
         {!isOwn && (
-          <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider bg-gradient-to-r from-emerald-500 to-emerald-400 text-emerald-950 flex items-center gap-0.5 shadow-lg">
+          <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider bg-gradient-to-r from-teal-500 to-teal-400 text-teal-950 flex items-center gap-0.5 shadow-lg">
             <Zap className="h-2.5 w-2.5 fill-current" /> COMPRA IMEDIATA
           </span>
         )}
@@ -141,7 +141,7 @@ export const PremiumListingCard = memo(function PremiumListingCard({
           {/* Stats row */}
           <div className="mt-1.5 flex items-center gap-2 text-[9px] text-muted-foreground flex-wrap">
             <span className="font-semibold text-foreground/80">{age}a</span>
-            <span className="inline-flex items-center gap-0.5"><Zap className="h-2.5 w-2.5 text-emerald-400" />{stam}%</span>
+            <span className="inline-flex items-center gap-0.5"><Zap className="h-2.5 w-2.5 text-teal-400" />{stam}%</span>
             <span className="inline-flex items-center gap-0.5"><Heart className={cn('h-2.5 w-2.5', form >= 70 ? 'text-rose-400' : 'text-amber-400')} />{form}%</span>
             {pd?.gamesPlayed != null && <span>{pd.gamesPlayed}j</span>}
             {pd?.goals != null && <span>⚽{pd.goals}</span>}
@@ -158,7 +158,7 @@ export const PremiumListingCard = memo(function PremiumListingCard({
             <div>
               <div className="flex items-center justify-between text-[8px] text-muted-foreground"><span>Forma</span><span className="font-bold text-foreground/70">{form}</span></div>
               <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                <div className={cn('h-full rounded-full transition-all', form >= 70 ? 'bg-emerald-400' : form >= 40 ? 'bg-amber-400' : 'bg-rose-400')} style={{ width: `${form}%` }} />
+                <div className={cn('h-full rounded-full transition-all', form >= 70 ? 'bg-teal-400' : form >= 40 ? 'bg-amber-400' : 'bg-rose-400')} style={{ width: `${form}%` }} />
               </div>
             </div>
             <div>
@@ -179,8 +179,8 @@ export const PremiumListingCard = memo(function PremiumListingCard({
         {/* Price + actions */}
         <div className="shrink-0 flex flex-col items-end justify-between gap-2">
           <div className="text-right">
-            <p className="text-[7px] uppercase tracking-[0.15em] text-emerald-300/70 font-bold">Pedido</p>
-            <p className="text-base font-black text-emerald-300 leading-none">
+            <p className="text-[7px] uppercase tracking-[0.15em] text-teal-300/70 font-bold">Pedido</p>
+            <p className="text-base font-black text-teal-300 leading-none">
               R${(listing.asking_price / 1000).toFixed(0)}k
             </p>
             {!canAfford && !isOwn && (
@@ -197,8 +197,8 @@ export const PremiumListingCard = memo(function PremiumListingCard({
                 disabled={loading || !canAfford}
                 className={cn(
                   'h-7 px-2.5 text-[10px] rounded-lg gap-1 font-black uppercase tracking-wider transition-all',
-                  'bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300',
-                  'text-emerald-950 shadow-[0_4px_14px_-4px_hsl(160_70%_45%/0.6)]',
+                  'bg-gradient-to-r from-teal-400 to-teal-400 hover:from-teal-300 hover:to-teal-300',
+                  'text-teal-950 shadow-[0_4px_14px_-4px_hsl(160_70%_45%/0.6)]',
                 )}
                 title="Compra automática — instantânea"
               >
@@ -212,7 +212,7 @@ export const PremiumListingCard = memo(function PremiumListingCard({
               variant="outline"
               className={cn(
                 'h-7 px-2.5 text-[10px] rounded-lg gap-1 font-bold transition-all',
-                'border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10',
+                'border-teal-500/30 text-teal-200 hover:bg-teal-500/10',
               )}
             >
               <Send className="h-3 w-3" /> Proposta
