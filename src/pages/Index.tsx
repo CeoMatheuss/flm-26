@@ -484,7 +484,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [marketSubTab, setMarketSubTab] = useState('browse');
-  const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
+  const [signingPlayer, setSigningPlayer] = useState<{ id?: string; name: string; position: string; overall: number; age: number; signingType?: string; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
   const [viewingClubName, setViewedClubName] = useState<string | null>(searchParams.get('name'));
