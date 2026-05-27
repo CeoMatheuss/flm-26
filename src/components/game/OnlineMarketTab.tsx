@@ -79,9 +79,9 @@ function getOvrColor(ovr: number) {
 }
 
 function getOvrBg(ovr: number) {
-  if (ovr >= 85) return 'from-amber-500/20 to-amber-500/5';
-  if (ovr >= 75) return 'from-emerald-500/20 to-emerald-500/5';
-  if (ovr >= 65) return 'from-blue-500/20 to-blue-500/5';
+  if (ovr >= 85) return 'from-amber-500/10 to-amber-500/5';
+  if (ovr >= 75) return 'from-emerald-500/10 to-emerald-500/5';
+  if (ovr >= 65) return 'from-blue-500/10 to-blue-500/5';
   return 'from-muted/30 to-muted/10';
 }
 
@@ -584,12 +584,12 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 <span className="text-[9px] text-muted-foreground">Atual: R${currentSalary}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-emerald-500/40" />
+                <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value)))} className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-emerald-500/20" />
                 <Badge variant="outline" className={cn(
                   "text-[10px] shrink-0 border",
-                  salaryDelta >= 20 ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" :
-                  salaryDelta >= 0 ? "border-blue-500/40 bg-blue-500/10 text-blue-300" :
-                  "border-orange-500/40 bg-orange-500/10 text-orange-300"
+                  salaryDelta >= 20 ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" :
+                  salaryDelta >= 0 ? "border-blue-500/20 bg-blue-500/10 text-blue-300" :
+                  "border-orange-500/20 bg-orange-500/10 text-orange-300"
                 )}>
                   {salaryDelta >= 0 ? '+' : ''}{salaryDelta.toFixed(0)}%
                 </Badge>
@@ -616,7 +616,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                     className={cn(
                       "h-10 rounded-lg text-xs font-black transition border",
                       offerYears === y
-                        ? "bg-gradient-to-br from-emerald-500/30 to-emerald-500/10 border-emerald-500/50 text-emerald-200 shadow-[0_0_20px_-8px_hsl(var(--primary))]"
+                        ? "bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border-emerald-500/25 text-emerald-200 shadow-[0_0_20px_-8px_hsl(var(--primary))]"
                         : "bg-black/40 border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
                     )}>
                     {y}a
@@ -630,13 +630,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
               <label className="text-[11px] font-bold flex items-center gap-1.5">
                 <Gift className="h-3.5 w-3.5 text-amber-300" /> Luvas (bônus de assinatura)
               </label>
-              <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-amber-500/40" />
+              <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value)))} className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-amber-500/20" />
               <div className="flex gap-1">
                 {[0, 50000, 200000, 500000, 1000000].map(v => (
                   <button key={v} onClick={() => setSigningBonus(v)}
                     className={cn(
                       "flex-1 h-7 text-[10px] rounded-md border transition font-bold",
-                      signingBonus === v ? "bg-amber-500/15 border-amber-500/40 text-amber-200" : "bg-white/[0.03] border-white/5 text-muted-foreground hover:bg-white/10"
+                      signingBonus === v ? "bg-amber-500/15 border-amber-500/20 text-amber-200" : "bg-white/[0.03] border-white/5 text-muted-foreground hover:bg-white/10"
                     )}>
                     {v === 0 ? '—' : formatMoney(v)}
                   </button>
@@ -674,7 +674,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                       {b.alert && <AlertTriangle className="h-2.5 w-2.5 text-orange-400" />}
                     </label>
                     <Input type="number" value={b.value} onChange={e => b.set(Math.max(0, Number(e.target.value)))}
-                      className={cn("h-9 text-xs font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-primary/40", b.alert && "border-orange-500/40")} />
+                      className={cn("h-9 text-xs font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-primary/40", b.alert && "border-orange-500/20")} />
                   </div>
                 ))}
               </div>
@@ -799,7 +799,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-amber-500/10 blur-3xl" />
             <div className="relative flex items-center justify-between gap-2 mb-2.5">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center">
                   <Globe className="h-4 w-4 text-emerald-300" />
                 </div>
                 <div>
@@ -815,7 +815,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <div className="relative flex items-center gap-2 flex-wrap">
               <div className="relative flex-1 min-w-[160px]">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-9 pl-8 text-xs rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/40" />
+                <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-9 pl-8 text-xs rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/20" />
               </div>
               <Select value={posFilter} onValueChange={v => { setPosFilter(v); setCurrentPage(1); }}>
                 <SelectTrigger className="h-9 w-[90px] text-[11px] rounded-xl bg-black/30 border-white/10"><SelectValue /></SelectTrigger>
@@ -942,7 +942,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
               <div className="flex items-center gap-3">
                 <div className="relative shrink-0">
                   <div className="absolute inset-0 rounded-xl bg-cyan-500/30 blur-md" />
-                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-700/10 border border-cyan-400/40 flex items-center justify-center">
+                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-cyan-700/5 border border-cyan-400/20 flex items-center justify-center">
                     <Handshake className="h-5 w-5 text-cyan-200" />
                   </div>
                 </div>
@@ -957,7 +957,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                   <p className="text-[10px] text-muted-foreground mt-0.5">1 temporada · receptor paga 100% do salário</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={loadLoanListings} className="h-8 text-[10px] gap-1.5 rounded-lg border-white/10 hover:border-cyan-500/40 hover:bg-cyan-500/5">
+              <Button variant="outline" size="sm" onClick={loadLoanListings} className="h-8 text-[10px] gap-1.5 rounded-lg border-white/10 hover:border-cyan-500/20 hover:bg-cyan-500/5">
                 <RefreshCw className="h-3 w-3" /> Atualizar
               </Button>
             </div>
@@ -1024,7 +1024,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                       const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
                       return (
                         <div key={l.id}
-                          className="group relative rounded-xl overflow-hidden border border-cyan-500/25 backdrop-blur-sm hover:border-cyan-400/60 hover:shadow-[0_0_25px_-8px_hsl(190_85%_55%/0.6)] hover:-translate-y-0.5 transition-all duration-300"
+                          className="group relative rounded-xl overflow-hidden border border-cyan-500/25 backdrop-blur-sm hover:border-cyan-400/30 hover:shadow-[0_0_25px_-8px_hsl(190_85%_55%/0.6)] hover:-translate-y-0.5 transition-all duration-300"
                           style={{ background: 'linear-gradient(135deg, hsl(190 40% 9% / 0.6), hsl(220 45% 8% / 0.85))' }}>
                           <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 to-sky-600" />
                           <div className="absolute top-0 right-0 z-10">
@@ -1134,7 +1134,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             <div className="relative p-3 flex items-center gap-3">
               <div className="relative shrink-0">
                 <div className="absolute inset-0 rounded-xl bg-amber-500/30 blur-md" />
-                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-700/10 border border-amber-400/40 flex items-center justify-center">
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-700/5 border border-amber-400/20 flex items-center justify-center">
                   <Send className="h-5 w-5 text-amber-200" />
                 </div>
               </div>
@@ -1384,7 +1384,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                             }}>
                               <Check className="h-3.5 w-3.5" /> Aceitar
                             </Button>
-                            <Button size="sm" variant="outline" className="flex-1 min-w-[90px] h-9 text-xs rounded-lg gap-1.5 border-amber-500/40 text-amber-400 hover:bg-amber-500/10" disabled={loading} onClick={() => setCounterLoanOffer({ ...offer, _listing: listing })}>
+                            <Button size="sm" variant="outline" className="flex-1 min-w-[90px] h-9 text-xs rounded-lg gap-1.5 border-amber-500/20 text-amber-400 hover:bg-amber-500/10" disabled={loading} onClick={() => setCounterLoanOffer({ ...offer, _listing: listing })}>
                               <RefreshCw className="h-3.5 w-3.5" /> Contraproposta
                             </Button>
                             <Button size="sm" variant="destructive" className="flex-1 min-w-[90px] h-9 text-xs rounded-lg gap-1.5" disabled={loading} onClick={async () => {
