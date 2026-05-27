@@ -1219,7 +1219,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           </ErrorBoundary>
         </Tabs>
       </main>
-    </div>
+      </div>
+    </PlayerHighlightProvider>
   );
 }
 

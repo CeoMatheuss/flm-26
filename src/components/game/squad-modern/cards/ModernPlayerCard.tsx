@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { Player } from '@/types/game';
-import { Zap, Heart, Shield, Activity, TrendingUp, Sparkles, Tag, Handshake, ArrowLeftRight } from 'lucide-react';
+import { Zap, Heart, Shield, Activity, TrendingUp, Sparkles, Tag, Handshake, ArrowLeftRight, X } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';
 import { cn } from '@/lib/utils';
 import swapIcon from '@/assets/swap-icon.png';
 import { PotentialTier, potentialTierInfo, getPotentialTier } from '@/types/infrastructure';
+import { usePlayerHighlight } from '@/contexts/PlayerHighlightContext';
 
 interface ModernPlayerCardProps {
   player: Player;
@@ -12,20 +13,77 @@ interface ModernPlayerCardProps {
 }
 
 export function ModernPlayerCard({ player, onClick, onOpenQuickSwap }: ModernPlayerCardProps & { onOpenQuickSwap?: () => void }) {
+  const { highlights, removeHighlight } = usePlayerHighlight();
+  const highlight = highlights[player.id];
+
   const rawTier = (player as any).potentialTier || getPotentialTier((player as any).potential || 60, player.overall);
   const potTier: PotentialTier = (potentialTierInfo as any)[rawTier] ? rawTier : 'comum';
   const tierInfo = potentialTierInfo[potTier] || potentialTierInfo.comum;
   const tierColor = tierInfo.color || potentialTierInfo.comum.color;
-  const tierBorder = tierInfo.border || potentialTierInfo.comum.border;
+  const tierBorder = highlight 
+    ? highlight.type === 'listed_sale' || highlight.type === 'new_signing' ? 'border-amber-400' : 'border-cyan-400'
+    : (tierInfo.border || potentialTierInfo.comum.border);
+
+  const badgeLabels: Record<string, string> = {
+    new_signing: 'NOVO REFORÇO',
+    listed_loan: 'DISPONÍVEL P/ EMPRÉSTIMO',
+    transferred: 'TRANSFERIDO',
+    listed_sale: 'À VENDA'
+  };
 
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`relative p-4 rounded-3xl bg-[#0a0c14] border ${tierBorder} overflow-hidden cursor-pointer group hover:border-[#8b5cf6]/50 transition-all shadow-xl`}
+      className={cn(
+        "relative p-4 rounded-3xl bg-[#0a0c14] border overflow-hidden cursor-pointer group transition-all duration-500 shadow-xl",
+        tierBorder,
+        highlight && "ring-4 ring-offset-2 ring-offset-[#0a0c14] z-50",
+        highlight?.type === 'listed_sale' || highlight?.type === 'new_signing' ? "ring-amber-400/50 shadow-[0_0_30px_rgba(245,158,11,0.3)]" : highlight ? "ring-cyan-400/50 shadow-[0_0_30px_rgba(34,211,238,0.3)]" : "hover:border-[#8b5cf6]/50"
+      )}
     >
+      <AnimatePresence>
+        {highlight && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className={cn(
+              "absolute inset-0 pointer-events-none z-0",
+              highlight.type === 'listed_sale' || highlight.type === 'new_signing' ? "bg-amber-400/10" : "bg-cyan-400/10"
+            )}
+          />
+        )}
+      </AnimatePresence>
+
       <div className={`absolute inset-0 bg-gradient-to-br ${tierColor.replace('text', 'from')}/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+      
+      {highlight && (
+        <div className="absolute top-0 right-0 z-50 p-2">
+          <button 
+            onClick={(e) => { e.stopPropagation(); removeHighlight(player.id); }}
+            className="p-1 rounded-full bg-black/50 hover:bg-black/80 text-white/70 transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
+      {highlight && (
+        <motion.div 
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className={cn(
+            "absolute top-2 left-2 z-50 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border shadow-lg",
+            highlight.type === 'listed_sale' || highlight.type === 'new_signing' 
+              ? "bg-amber-400 text-black border-amber-500" 
+              : "bg-cyan-400 text-black border-cyan-500"
+          )}
+        >
+          {badgeLabels[highlight.type]}
+        </motion.div>
+      )}
       
       <div className="flex justify-between items-start mb-4 relative z-10">
         <div className="flex flex-col gap-2">
