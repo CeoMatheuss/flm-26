@@ -6703,7 +6703,15 @@ export type Database = {
           updated_at?: string | null
           wins?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "world_league_standings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "world_teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       world_league_table: {
         Row: {
@@ -7135,6 +7143,13 @@ export type Database = {
             columns: ["league_id"]
             isOneToOne: false
             referencedRelation: "world_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_player_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "world_players"
             referencedColumns: ["id"]
           },
           {
