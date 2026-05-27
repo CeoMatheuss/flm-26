@@ -8,7 +8,9 @@ const NORMALIZED_POSITIONS: Player['position'][] = ['GOL', 'ZAG', 'LAT', 'VOL', 
 const isAvailableForSquad = (player: Player) => {
   const raw = player as any;
   const status = String(raw.status ?? raw.contractStatus ?? player.squad_status ?? '').toLowerCase();
-  return !raw.isLoaned && !raw.loanedOut && !raw.removed && !raw.inactive && !raw.sold && status !== 'sold' && status !== 'removed';
+  // Jogadores emprestados (isLoaned) DEVEM estar disponíveis para aparecerem na aba "Emprestados" do elenco.
+  // Eles serão filtrados visualmente nas abas de Titulares/Reservas.
+  return !raw.removed && !raw.inactive && !raw.sold && status !== 'sold' && status !== 'removed';
 };
 
 const safePosition = (position: unknown): Player['position'] => (

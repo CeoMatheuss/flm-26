@@ -94,7 +94,7 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
         case 'suspensos':
           return status === 'suspenso';
         case 'emprestados':
-          return status === 'emprestado';
+          return status === 'emprestado' || status === 'recebido-emprestimo';
         default:
           return true;
       }
@@ -127,7 +127,18 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
       pendingSwapId && "ring-4 ring-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.3)] bg-emerald-500/10"
     )}>
       {/* Filters */}
-      <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-end bg-zinc-950/20">
+      <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-950/20">
+        <div className="relative w-full sm:w-64 group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20 group-focus-within:text-emerald-400 transition-colors" />
+          <input 
+            type="text" 
+            placeholder="Buscar jogador..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-white/5 border border-white/5 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-white placeholder:text-white/10 focus:outline-none focus:border-emerald-500/50 focus:bg-white/[0.08] transition-all"
+          />
+        </div>
+
         <div className="flex items-center gap-2">
            <span className="text-[10px] font-black uppercase tracking-widest text-white/20 mr-2">Ordenar por:</span>
            <SortBtn active={sortBy === 'overall'} onClick={() => setSortBy('overall')} label="OVR" />
@@ -138,13 +149,26 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
 
       {/* Table Header */}
       <div className="hidden md:grid grid-cols-12 gap-2 px-6 py-3 bg-zinc-950/40 text-[9px] font-black uppercase tracking-[0.2em] text-white/30 border-b border-white/5 items-center">
-        <div className="col-span-1">#</div>
-        <div className="col-span-1 text-center">OVR</div>
-        <div className="col-span-3">Jogador / Posição</div>
-        <div className="col-span-1 text-center">País</div>
-        <div className="col-span-1 text-center">Idade</div>
-        <div className="col-span-2 text-center">Atributos</div>
-        <div className="col-span-3 text-right">Contrato / Valor</div>
+        {activeTab === 'emprestados' ? (
+          <>
+            <div className="col-span-1">#</div>
+            <div className="col-span-1 text-center">OVR</div>
+            <div className="col-span-3">Jogador / Origem</div>
+            <div className="col-span-2 text-center">Destino</div>
+            <div className="col-span-2 text-center">Duração</div>
+            <div className="col-span-3 text-right">Situação</div>
+          </>
+        ) : (
+          <>
+            <div className="col-span-1">#</div>
+            <div className="col-span-1 text-center">OVR</div>
+            <div className="col-span-3">Jogador / Posição</div>
+            <div className="col-span-1 text-center">País</div>
+            <div className="col-span-1 text-center">Idade</div>
+            <div className="col-span-2 text-center">Atributos</div>
+            <div className="col-span-3 text-right">Contrato / Valor</div>
+          </>
+        )}
       </div>
 
       {/* List Content */}
@@ -220,7 +244,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
 
   const isForSale = player.onTransferList || status === 'lista-transferencia' || highlight?.type === 'listed_sale';
   const isForLoan = player.onLoanList || status === 'lista-emprestimo' || highlight?.type === 'listed_loan';
-  const isLoanedOut = player.isLoaned || status === 'emprestado';
+  const isLoanedOut = (player.isLoaned && !player.isReceivedLoan) || status === 'emprestado';
   const isLoanedIn = player.isReceivedLoan || status === 'recebido-emprestimo';
 
   const badgeLabels: Record<string, string> = {
@@ -335,38 +359,45 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
             <span className="text-sm sm:text-base font-black text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tighter block">
               {player.name}
             </span>
-            <span className="text-[14px] flex items-center gap-1.5 shrink-0">
-              {flagFor((player as any).country || player.nationality)}
-              <button
-                onClick={(e) => {
-                  if (onSwapAction) {
-                    onSwapAction(e);
-                  } else {
-                    e.stopPropagation();
-                    onOpenQuickSwap?.();
-                  }
-                }}
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110 bg-black/20 backdrop-blur-sm border border-white/5",
-                  isPendingSwap && "animate-pulse ring-1 ring-red-500/40 bg-red-500/10"
-                )}
-                title={isPendingSwap ? "Cancelar Troca" : "Substituir Jogador"}
-              >
-                {isPendingSwap ? (
-                  <span className="text-white font-bold">✖</span>
-                ) : (
-                  <ArrowLeftRight className={cn(
-                    "w-4 h-4 transition-colors drop-shadow-sm",
-                    isStarter ? "text-emerald-400" : "text-zinc-400"
-                  )} />
-                )}
-              </button>
-            </span>
+            {activeTab !== 'emprestados' && (
+              <span className="text-[14px] flex items-center gap-1.5 shrink-0">
+                {flagFor((player as any).country || player.nationality)}
+                <button
+                  onClick={(e) => {
+                    if (onSwapAction) {
+                      onSwapAction(e);
+                    } else {
+                      e.stopPropagation();
+                      onOpenQuickSwap?.();
+                    }
+                  }}
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110 bg-black/20 backdrop-blur-sm border border-white/5",
+                    isPendingSwap && "animate-pulse ring-1 ring-red-500/40 bg-red-500/10"
+                  )}
+                  title={isPendingSwap ? "Cancelar Troca" : "Substituir Jogador"}
+                >
+                  {isPendingSwap ? (
+                    <span className="text-white font-bold">✖</span>
+                  ) : (
+                    <ArrowLeftRight className={cn(
+                      "w-4 h-4 transition-colors drop-shadow-sm",
+                      isStarter ? "text-emerald-400" : "text-zinc-400"
+                    )} />
+                  )}
+                </button>
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1">
               <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", getPositionColor(player.position))}>
                {player.position}
              </span>
+             {activeTab === 'emprestados' && (
+               <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest truncate max-w-[120px]">
+                 {player.loanedFrom || 'Dono desconhecido'}
+               </span>
+             )}
              {player.potential && player.potential >= 88 && (
                 <span className="text-[8px] font-black text-amber-400 uppercase tracking-tighter">💎 JOIA</span>
              )}
@@ -423,58 +454,93 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
         </div>
       </div>
 
-      {/* Country (Desktop) */}
-      <div className="hidden sm:block col-span-1 text-center">
-        <span className="text-xl filter drop-shadow-sm">{flagFor((player as any).country || player.nationality)}</span>
-      </div>
-
-      {/* Age */}
-      <div className="hidden sm:block col-span-1 text-center">
-        <span className="text-xs font-bold text-white/60">{player.age}a</span>
-      </div>
-
-      {/* Attributes (Compact Row View) */}
-      <div className="col-span-2 hidden xl:flex items-center justify-center gap-3 overflow-hidden px-1">
-        {attrConfig.slice(0, 3).map(attr => {
-          const { value: val } = getAttrValue(player, attr.from as any);
-          return (
-            <div key={attr.key} className="flex flex-col items-center min-w-[28px] sm:min-w-[32px] shrink-0">
-              <span className="text-[7px] sm:text-[8px] font-black text-white/20 uppercase mb-0.5">{attr.key}</span>
-              <span className={cn(
-                "text-[9px] sm:text-[10px] font-black tabular-nums italic",
-                val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
-              )}>{val}</span>
-            </div>
-          );
-        })}
-        <div className="h-6 w-px bg-white/5 mx-0.5 sm:mx-1 shrink-0" />
-        <div className="shrink-0">
-          <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" onRest={onRest} />
-        </div>
-      </div>
-
-      {/* Contract & Market Value */}
-      <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 overflow-hidden">
-        <div className="flex flex-col items-end shrink-0">
-          <span className="text-[10px] sm:text-[11px] font-black text-white/80 italic whitespace-nowrap">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
-          <span className={cn(
-            "text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-1",
-            (!isLoanedIn && !isLoanedOut && player.contract <= 1) ? "text-red-400 animate-pulse font-black" : "text-white/30"
-          )}>
-            {(!isLoanedIn && !isLoanedOut && player.contract <= 1) && <AlertTriangle className="w-3 h-3" />}
-            {isLoanedIn || isLoanedOut ? `${player.loanWeeksRemaining || 0} SEM (EMP)` : `${player.contract} TEMP`}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="flex flex-col items-end min-w-[80px] sm:min-w-[100px]">
-            <span className={cn(
-              "text-xs sm:text-sm font-black italic leading-none whitespace-nowrap",
-              (!isLoanedIn && !isLoanedOut && player.contract <= 1) ? "text-red-400" : "text-emerald-400"
-            )}>{formatMoney(getPlayerValue(player))}</span>
-            <span className="text-[8px] sm:text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
+      {/* Conditional Middle Columns */}
+      {activeTab === 'emprestados' ? (
+        <>
+          {/* Destination */}
+          <div className="hidden sm:flex col-span-2 items-center justify-center">
+            <span className="text-[11px] font-black text-white uppercase tracking-wider truncate">
+              {player.loanedTo || 'Mercado'}
+            </span>
           </div>
-          
-        </div>
+          {/* Duration */}
+          <div className="hidden sm:flex col-span-2 items-center justify-center">
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-black text-amber-400 italic">
+                {player.loanWeeksRemaining || 0}
+              </span>
+              <span className="text-[7px] font-black text-white/20 uppercase">Semanas restantes</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Country (Desktop) */}
+          <div className="hidden sm:block col-span-1 text-center">
+            <span className="text-xl filter drop-shadow-sm">{flagFor((player as any).country || player.nationality)}</span>
+          </div>
+
+          {/* Age */}
+          <div className="hidden sm:block col-span-1 text-center">
+            <span className="text-xs font-bold text-white/60">{player.age}a</span>
+          </div>
+
+          {/* Attributes (Compact Row View) */}
+          <div className="col-span-2 hidden xl:flex items-center justify-center gap-3 overflow-hidden px-1">
+            {attrConfig.slice(0, 3).map(attr => {
+              const { value: val } = getAttrValue(player, attr.from as any);
+              return (
+                <div key={attr.key} className="flex flex-col items-center min-w-[28px] sm:min-w-[32px] shrink-0">
+                  <span className="text-[7px] sm:text-[8px] font-black text-white/20 uppercase mb-0.5">{attr.key}</span>
+                  <span className={cn(
+                    "text-[9px] sm:text-[10px] font-black tabular-nums italic",
+                    val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
+                  )}>{val}</span>
+                </div>
+              );
+            })}
+            <div className="h-6 w-px bg-white/5 mx-0.5 sm:mx-1 shrink-0" />
+            <div className="shrink-0">
+              <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" onRest={onRest} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Last Column: Contract & Value OR Situation */}
+      <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 overflow-hidden">
+        {activeTab === 'emprestados' ? (
+          <div className="flex flex-col items-end shrink-0">
+            <span className="text-[10px] sm:text-[12px] font-black text-emerald-400 uppercase italic tracking-widest leading-none">
+              {isLoanedIn ? 'REC. EMPRÉSTIMO' : 'EMPRESTADO'}
+            </span>
+            <span className="text-[8px] sm:text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
+              <Clock className="w-2.5 h-2.5" /> Retorno: Fim da Temporada
+            </span>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col items-end shrink-0">
+              <span className="text-[10px] sm:text-[11px] font-black text-white/80 italic whitespace-nowrap">{formatMoney(player.salary)}<span className="text-[9px] opacity-40">/sem</span></span>
+              <span className={cn(
+                "text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-1",
+                (!isLoanedIn && !isLoanedOut && player.contract <= 1) ? "text-red-400 animate-pulse font-black" : "text-white/30"
+              )}>
+                {(!isLoanedIn && !isLoanedOut && player.contract <= 1) && <AlertTriangle className="w-3 h-3" />}
+                {isLoanedIn || isLoanedOut ? `${player.loanWeeksRemaining || 0} SEM (EMP)` : `${player.contract} TEMP`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <div className="flex flex-col items-end min-w-[80px] sm:min-w-[100px]">
+                <span className={cn(
+                  "text-xs sm:text-sm font-black italic leading-none whitespace-nowrap",
+                  (!isLoanedIn && !isLoanedOut && player.contract <= 1) ? "text-red-400" : "text-emerald-400"
+                )}>{formatMoney(getPlayerValue(player))}</span>
+                <span className="text-[8px] sm:text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">Mkt Value</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </motion.button>
   );

@@ -955,15 +955,31 @@ export function useClubState(initialState: any, userId?: string) {
   }, [userId]);
 
   const loanOutPlayer = useCallback((playerId: string, currentSeason: number) => {
-    if (loansOut.length >= 3) { toast.error('Limite de 3 empréstimos atingido!'); return; }
+    if (loansOut.length >= 5) { toast.error('Limite de 5 empréstimos atingido!'); return; }
     setClub(prev => {
       const player = prev.players.find(p => p.id === playerId);
       if (!player) return prev;
       if (prev.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return prev; }
-      if (loanedPlayers.some(l => l.player.id === playerId)) { toast.error('Este jogador já está emprestado!'); return prev; }
-      const loanedOut = { ...player, isLoaned: true, onLoanList: false, squad_status: 'reserve' as const, squadRole: 'reserva' as const };
-      setLoanedPlayers(lp => [...lp, { player: loanedOut, fromClub: 'player', direction: 'out', seasonStart: currentSeason }]);
-      toast.success(`${player.name} emprestado por 1 temporada! O clube receptor paga o salário.`);
+      if (loanedPlayers.some(l => l.player.id === playerId && l.direction === 'out')) { 
+        toast.error('Este jogador já está emprestado!'); 
+        return prev; 
+      }
+      
+      const loanedOutPlayer = { 
+        ...player, 
+        isLoaned: true, 
+        onLoanList: false, 
+        squad_status: 'reserve' as const, 
+        squadRole: 'reserva' as const,
+        loanedFrom: prev.name,
+        loanedTo: 'Clube de Destino', // Placeholder até que seja negociado
+        loanWeeksRemaining: 48 // 1 temporada aprox.
+      };
+
+      setLoanedPlayers(lp => [...lp, { player: loanedOutPlayer, fromClub: prev.name, direction: 'out', seasonStart: currentSeason }]);
+      
+      toast.success(`${player.name} emprestado por 1 temporada!`);
+      
       publishTransferNews('loan_out', {
         playerName: player.name,
         playerPosition: player.position,
@@ -971,26 +987,30 @@ export function useClubState(initialState: any, userId?: string) {
         fromClub: prev.name,
         loanSeasons: 1,
       });
-      // Mantém no elenco com flag isLoaned para aparecer na aba "Emprestados"
-      return { ...prev, players: prev.players.map(p => p.id === playerId ? loanedOut : p) };
+
+      return { ...prev, players: prev.players.map(p => p.id === playerId ? loanedOutPlayer : p) };
     });
   }, [loansOut.length, loanedPlayers, publishTransferNews]);
 
   const loanInPlayer = useCallback((player: Player, currentSeason: number) => {
-    if (loansIn.length >= 3) { toast.error('Limite de 3 empréstimos recebidos atingido!'); return; }
+    if (loansIn.length >= 5) { toast.error('Limite de 5 empréstimos recebidos atingido!'); return; }
     
-    const loanedInPlayer = { 
-      ...player, 
-      squad_status: 'reserve' as const,
-      squadRole: 'reserva' as const,
-      isLoaned: true,
-      isReceivedLoan: true,
-      signedAt: Date.now(),
-      signingType: 'loan_in' as const,
-    };
-    
-    setLoanedPlayers(lp => [...lp, { player: loanedInPlayer, fromClub: 'bot', direction: 'in', seasonStart: currentSeason }]);
     setClub(prev => {
+      const loanedInPlayer = { 
+        ...player, 
+        squad_status: 'reserve' as const,
+        squadRole: 'reserva' as const,
+        isLoaned: true,
+        isReceivedLoan: true,
+        signedAt: Date.now(),
+        signingType: 'loan_in' as const,
+        loanedFrom: player.loanedFrom || 'Clube de Origem',
+        loanedTo: prev.name,
+        loanWeeksRemaining: 48
+      };
+      
+      setLoanedPlayers(lp => [...lp, { player: loanedInPlayer, fromClub: loanedInPlayer.loanedFrom, direction: 'in', seasonStart: currentSeason }]);
+      
       publishTransferNews('loan_in', {
         playerName: player.name,
         playerPosition: player.position,
@@ -998,53 +1018,72 @@ export function useClubState(initialState: any, userId?: string) {
         toClub: prev.name,
         loanSeasons: 1,
       });
+
+      toast.success(`${player.name} chega por empréstimo ao ${prev.name}!`);
+      
       return { ...prev, players: [...prev.players, loanedInPlayer] };
     });
+
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
-    
     window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
     
-    toast.success(`${player.name} emprestado ao seu clube! Você arca com o salário.`);
     return { salary: player.salary };
   }, [loansIn.length, publishTransferNews]);
 
   // ── Finalização silenciosa de empréstimos (chamado após confirmação no servidor) ──
   // Idempotente: ignora se o jogador já está marcado/registrado.
-  const finalizeLoanOut = useCallback((playerId: string, currentSeason: number, fromClubName?: string) => {
+  const finalizeLoanOut = useCallback((playerId: string, currentSeason: number, toClubName?: string) => {
     setClub(prev => {
       const player = prev.players.find(p => p.id === playerId);
       if (!player) return prev;
-      // Já marcado como emprestado? Não faz nada.
+      
       const already = loanedPlayers.some(l => l.player.id === playerId && l.direction === 'out');
       if (already && player.isLoaned) return prev;
-      const loanedOut = { ...player, isLoaned: true, onLoanList: false, squad_status: 'reserve' as const, squadRole: 'reserva' as const };
+
+      const loanedOut = { 
+        ...player, 
+        isLoaned: true, 
+        onLoanList: false, 
+        squad_status: 'reserve' as const, 
+        squadRole: 'reserva' as const,
+        loanedFrom: prev.name,
+        loanedTo: toClubName || 'Clube receptor',
+        loanWeeksRemaining: 48
+      };
+
       if (!already) {
-        setLoanedPlayers(lp => [...lp, { player: loanedOut, fromClub: fromClubName || 'player', direction: 'out', seasonStart: currentSeason }]);
+        setLoanedPlayers(lp => [...lp, { player: loanedOut, fromClub: prev.name, direction: 'out', seasonStart: currentSeason }]);
       }
-      console.log('[loan-finalize-out] player flagged as loaned:', player.name);
+      
+      console.log('[loan-finalize-out] player flagged as loaned:', player.name, 'to', toClubName);
       return { ...prev, players: prev.players.map(p => p.id === playerId ? loanedOut : p) };
     });
   }, [loanedPlayers]);
 
   const finalizeLoanIn = useCallback((player: Player, currentSeason: number, fromClubName?: string) => {
-    const loanedInPlayer = { 
-      ...player, 
-      squad_status: 'reserve' as const,
-      squadRole: 'reserva' as const,
-      isLoaned: true,
-      isReceivedLoan: true,
-      signedAt: Date.now(),
-      signingType: 'loan_in' as const,
-      signedFromClub: fromClubName,
-      loanedFrom: fromClubName,
-    };
-    setLoanedPlayers(lp => {
-      if (lp.some(l => l.player.id === player.id && l.direction === 'in')) return lp;
-      return [...lp, { player: loanedInPlayer, fromClub: fromClubName || 'bot', direction: 'in', seasonStart: currentSeason }];
-    });
     setClub(prev => {
       if (prev.players.some(p => p.id === player.id)) return prev;
-      console.log('[loan-finalize-in] adding player to squad:', player.name);
+
+      const loanedInPlayer = { 
+        ...player, 
+        squad_status: 'reserve' as const,
+        squadRole: 'reserva' as const,
+        isLoaned: true,
+        isReceivedLoan: true,
+        signedAt: Date.now(),
+        signingType: 'loan_in' as const,
+        signedFromClub: fromClubName,
+        loanedFrom: fromClubName || 'Clube de origem',
+        loanedTo: prev.name,
+        loanWeeksRemaining: 48
+      };
+
+      setLoanedPlayers(lp => {
+        if (lp.some(l => l.player.id === player.id && l.direction === 'in')) return lp;
+        return [...lp, { player: loanedInPlayer, fromClub: fromClubName || 'Origem', direction: 'in', seasonStart: currentSeason }];
+      });
+
+      console.log('[loan-finalize-in] adding player to squad:', player.name, 'from', fromClubName);
       return { ...prev, players: [...prev.players, loanedInPlayer] };
     });
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
