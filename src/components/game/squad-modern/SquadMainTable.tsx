@@ -377,12 +377,19 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
                  <Clock className="w-2.5 h-2.5" /> RENOVAR AGORA
                </span>
              )}
-             {isForSale && (
-               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
-                 <Tag className="w-2.5 h-2.5" /> À VENDA
-               </span>
-             )}
-             {isForLoan && (
+              {highlight ? (
+                <span className={cn(
+                  "flex items-center gap-0.5 px-1.5 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest animate-pulse z-10 shadow-sm",
+                  highlight.type === 'listed_sale' || highlight.type === 'new_signing' ? "bg-amber-400 text-black border-amber-500" : "bg-cyan-400 text-black border-cyan-500"
+                )}>
+                  {badgeLabels[highlight.type]}
+                </span>
+              ) : isForSale && (
+                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">
+                  <Tag className="w-2.5 h-2.5" /> À VENDA
+                </span>
+              )}
+              {isForLoan && !highlight && (
                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40 text-[8px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">
                  <ArrowLeftRight className="w-2.5 h-2.5" /> EMPRÉSTIMO
                </span>
