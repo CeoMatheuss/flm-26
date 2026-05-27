@@ -1276,10 +1276,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
           {/* Renovas (Próprios Jogadores) */}
           <div className="space-y-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-emerald-400" /> Renovas Oferecidas
-              <Badge variant="outline" className="text-[9px]">{myRenewals.length}</Badge>
-            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+                <RefreshCw className="h-3.5 w-3.5 text-emerald-300" />
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">Renovas Oferecidas</h3>
+              <Badge variant="outline" className="text-[9px] border-emerald-500/25 bg-emerald-500/10 text-emerald-300">{myRenewals.length}</Badge>
+            </div>
 
             {myRenewals.length === 0 ? (
               <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
