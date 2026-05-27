@@ -953,6 +953,44 @@ export function useClubState(initialState: any, userId?: string) {
     return { salary: player.salary };
   }, [loansIn.length, publishTransferNews]);
 
+  // ── Finalização silenciosa de empréstimos (chamado após confirmação no servidor) ──
+  // Idempotente: ignora se o jogador já está marcado/registrado.
+  const finalizeLoanOut = useCallback((playerId: string, currentSeason: number, fromClubName?: string) => {
+    setClub(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      if (!player) return prev;
+      // Já marcado como emprestado? Não faz nada.
+      const already = loanedPlayers.some(l => l.player.id === playerId && l.direction === 'out');
+      if (already && player.isLoaned) return prev;
+      const loanedOut = { ...player, isLoaned: true, onLoanList: false, squad_status: 'reserve' as const, squadRole: 'reserva' as const };
+      if (!already) {
+        setLoanedPlayers(lp => [...lp, { player: loanedOut, fromClub: fromClubName || 'player', direction: 'out', seasonStart: currentSeason }]);
+      }
+      console.log('[loan-finalize-out] player flagged as loaned:', player.name);
+      return { ...prev, players: prev.players.map(p => p.id === playerId ? loanedOut : p) };
+    });
+  }, [loanedPlayers]);
+
+  const finalizeLoanIn = useCallback((player: Player, currentSeason: number, fromClubName?: string) => {
+    const loanedInPlayer = { 
+      ...player, 
+      squad_status: 'reserve' as const,
+      squadRole: 'reserva' as const,
+      isLoaned: true,
+    };
+    setLoanedPlayers(lp => {
+      if (lp.some(l => l.player.id === player.id && l.direction === 'in')) return lp;
+      return [...lp, { player: loanedInPlayer, fromClub: fromClubName || 'bot', direction: 'in', seasonStart: currentSeason }];
+    });
+    setClub(prev => {
+      if (prev.players.some(p => p.id === player.id)) return prev;
+      console.log('[loan-finalize-in] adding player to squad:', player.name);
+      return { ...prev, players: [...prev.players, loanedInPlayer] };
+    });
+    setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
+    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
+  }, []);
+
   const renameClub = useCallback(async (newName: string) => {
     setClub(prev => ({ ...prev, name: newName }));
     if (userId) {
@@ -1508,7 +1546,7 @@ export function useClubState(initialState: any, userId?: string) {
     transferBudget, salaryBudget, reservaBudget, salaryBudgetRemaining, annualSalaries,
     trainPlayer, setPlayerTrainingFocus, setPlayerTrainingIntensity, restPlayer, restAllPlayers, rotateSquad, buyPlayer, signFreeAgent, renewContract,
     listForSale, sellPlayer, refreshMarket, refreshFreeAgents,
-    loanOutPlayer, loanInPlayer, renameClub, renameStadium, updateShield, setTicketPrice, buildVipBox,
+    loanOutPlayer, loanInPlayer, finalizeLoanOut, finalizeLoanIn, renameClub, renameStadium, updateShield, setTicketPrice, buildVipBox,
     hireScout, fireScout, changeShirtNumber, updateClubProfile, updatePlayers, addPackPlayers, addBonus,
     changePlayerPosition,
     rescindPlayer,

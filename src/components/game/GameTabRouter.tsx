@@ -257,6 +257,8 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
             }
           }}
           onLoanIn={game.loanInPlayer}
+          onLoanFinalizeOut={game.finalizeLoanOut}
+          onLoanFinalizeIn={game.finalizeLoanIn}
           onListedPlayer={() => setActiveTab('market')}
         />
         )}
