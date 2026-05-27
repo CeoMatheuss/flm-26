@@ -477,6 +477,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
 function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNewClub }: { userId: string; userEmail: string; displayName: string; onSignOut: () => void; initialState?: GameState; isNewClub?: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { addHighlight } = usePlayerHighlight();
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [isFounder, setIsFounder] = useState(false);
   const [tutorialCompleted, setTutorialCompleted] = useState(true); // default true to prevent flash
