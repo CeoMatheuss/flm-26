@@ -2,6 +2,7 @@ import { ShieldCrest } from './ShieldCrest';
 import { shieldPropsFromClub, ShieldSourceLike } from './shieldHelpers';
 import { cn } from '@/lib/utils';
 import { Shield } from 'lucide-react';
+import { memo } from 'react';
 
 interface ClubShieldProps {
   club: ShieldSourceLike | null | undefined;
@@ -15,7 +16,7 @@ interface ClubShieldProps {
  * Handles ShieldCrest (V2), Custom Logo (img), and beautiful fallbacks.
  * Replaces the generic football ball icon.
  */
-export function ClubShield({ club, size = 32, className, fallbackText }: ClubShieldProps) {
+export const ClubShield = memo(({ club, size = 32, className, fallbackText }: ClubShieldProps) => {
   // If we have a V2 shield configuration or legacy shield fields
   const hasRenderableShield = !!(club?.shield_config?.pattern || club?.shieldConfig?.pattern || club?.shieldPattern);
   
@@ -72,4 +73,4 @@ export function ClubShield({ club, size = 32, className, fallbackText }: ClubShi
       />
     </div>
   );
-}
+});
