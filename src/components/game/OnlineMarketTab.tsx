@@ -1216,15 +1216,15 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             )}
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-border/20" />
-
           {/* Enviadas */}
           <div className="space-y-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <Send className="h-4 w-4 text-primary" /> Enviadas
-              <Badge variant="outline" className="text-[9px]">{myOffers.length}</Badge>
-            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
+                <Send className="h-3.5 w-3.5 text-blue-300" />
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">Transferências Enviadas</h3>
+              <Badge variant="outline" className="text-[9px] border-blue-500/25 bg-blue-500/10 text-blue-300">{myOffers.length}</Badge>
+            </div>
 
             {myOffers.length === 0 ? (
               <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
