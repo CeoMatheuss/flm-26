@@ -225,6 +225,44 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
     if (data) setLoanListings(data);
   }, []);
 
+  // ── Sincronização de empréstimos finalizados ──
+  // Idempotente: evita aplicar duas vezes. Atualiza estado local quando o servidor
+  // confirma a transferência (status 'accepted'), tanto para vendedor quanto comprador.
+  const processedLoansRef = useRef<Set<string>>(new Set());
+
+  const processFinalizedLoan = useCallback((listing: any) => {
+    if (!listing || !userId) return;
+    if (listing.status !== 'accepted') return;
+    if (processedLoansRef.current.has(listing.id)) return;
+    processedLoansRef.current.add(listing.id);
+
+    try {
+      if (listing.seller_id === userId && listing.player_id) {
+        console.log('[loan-sync] finalizando saída:', listing.player_name);
+        onLoanFinalizeOut?.(listing.player_id, listing.buyer_club_name || undefined);
+      } else if (listing.buyer_id === userId && listing.player_data) {
+        console.log('[loan-sync] finalizando entrada:', listing.player_name);
+        onLoanFinalizeIn?.(listing.player_data as Player, listing.seller_club_name || undefined);
+      }
+    } catch (err) {
+      console.error('[loan-sync] erro ao processar empréstimo:', err);
+      // Remove do set para permitir retry
+      processedLoansRef.current.delete(listing.id);
+    }
+  }, [userId, onLoanFinalizeOut, onLoanFinalizeIn]);
+
+  const syncFinalizedLoans = useCallback(async () => {
+    if (!userId) return;
+    const { data, error } = await supabase
+      .from('loan_listings')
+      .select('*')
+      .eq('status', 'accepted')
+      .or(`seller_id.eq.${userId},buyer_id.eq.${userId}`);
+    if (error) { console.warn('[loan-sync] load error', error); return; }
+    (data || []).forEach(processFinalizedLoan);
+  }, [userId, processFinalizedLoan]);
+
+
   const loadLoanOffers = useCallback(async () => {
     if (!userId) return;
     const [{ data: incoming }, { data: mine }] = await Promise.all([
