@@ -773,7 +773,7 @@ Deno.serve(async (req) => {
           seller_id: listing.seller_id,
           buyer_id: userId,
           buyer_club_name: (clubName || '').slice(0, 50),
-          offered_terms: body.offeredTerms || null,
+          
           offered_salary_payer: validPayer,
           offered_salary_split_pct: validPayer === 'split' ? split : 0,
           offered_loan_fee: fee,
@@ -820,7 +820,7 @@ Deno.serve(async (req) => {
 
       await adminClient.from('loan_offers').update({
         status: 'countered',
-        counter_offered_terms: body.counterOfferedTerms || null,
+        
         counter_salary_payer: validPayer,
         counter_salary_split_pct: validPayer === 'split' ? split : 0,
         counter_loan_fee: fee,
@@ -894,10 +894,10 @@ Deno.serve(async (req) => {
       }
 
       // Determine final terms: counter takes priority if set
-      const finalTerms = offer.counter_offered_terms || offer.offered_terms || {};
-      const finalPayer = finalTerms.salaryPercentageBorrower === 100 ? 'buyer' : (finalTerms.salaryPercentageOwner === 100 ? 'seller' : 'split');
-      const finalSplit = finalTerms.salaryPercentageBorrower || 100;
-      const finalFee = finalTerms.loanFee || 0;
+      const hasCounter = offer.counter_loan_fee !== null && offer.counter_loan_fee !== undefined;
+      const finalPayer = hasCounter ? (offer.counter_salary_payer || 'buyer') : (offer.offered_salary_payer || 'buyer');
+      const finalSplit = hasCounter ? (offer.counter_salary_split_pct || 0) : (offer.offered_salary_split_pct || 0);
+      const finalFee = hasCounter ? Number(offer.counter_loan_fee || 0) : Number(offer.offered_loan_fee || 0);
 
       // Limit 3 loans-in for buyer
       const { count: loansIn } = await adminClient
