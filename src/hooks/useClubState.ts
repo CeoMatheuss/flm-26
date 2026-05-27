@@ -993,20 +993,24 @@ export function useClubState(initialState: any, userId?: string) {
   }, [loansOut.length, loanedPlayers, publishTransferNews]);
 
   const loanInPlayer = useCallback((player: Player, currentSeason: number) => {
-    if (loansIn.length >= 3) { toast.error('Limite de 3 empréstimos recebidos atingido!'); return; }
+    if (loansIn.length >= 5) { toast.error('Limite de 5 empréstimos recebidos atingido!'); return; }
     
-    const loanedInPlayer = { 
-      ...player, 
-      squad_status: 'reserve' as const,
-      squadRole: 'reserva' as const,
-      isLoaned: true,
-      isReceivedLoan: true,
-      signedAt: Date.now(),
-      signingType: 'loan_in' as const,
-    };
-    
-    setLoanedPlayers(lp => [...lp, { player: loanedInPlayer, fromClub: 'bot', direction: 'in', seasonStart: currentSeason }]);
     setClub(prev => {
+      const loanedInPlayer = { 
+        ...player, 
+        squad_status: 'reserve' as const,
+        squadRole: 'reserva' as const,
+        isLoaned: true,
+        isReceivedLoan: true,
+        signedAt: Date.now(),
+        signingType: 'loan_in' as const,
+        loanedFrom: player.loanedFrom || 'Clube de Origem',
+        loanedTo: prev.name,
+        loanWeeksRemaining: 48
+      };
+      
+      setLoanedPlayers(lp => [...lp, { player: loanedInPlayer, fromClub: loanedInPlayer.loanedFrom, direction: 'in', seasonStart: currentSeason }]);
+      
       publishTransferNews('loan_in', {
         playerName: player.name,
         playerPosition: player.position,
@@ -1014,13 +1018,15 @@ export function useClubState(initialState: any, userId?: string) {
         toClub: prev.name,
         loanSeasons: 1,
       });
+
+      toast.success(`${player.name} chega por empréstimo ao ${prev.name}!`);
+      
       return { ...prev, players: [...prev.players, loanedInPlayer] };
     });
+
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
-    
     window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
     
-    toast.success(`${player.name} emprestado ao seu clube! Você arca com o salário.`);
     return { salary: player.salary };
   }, [loansIn.length, publishTransferNews]);
 
