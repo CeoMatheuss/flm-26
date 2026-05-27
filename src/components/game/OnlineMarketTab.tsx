@@ -914,6 +914,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                         canAfford={canAfford}
                         loading={loading}
                         onOffer={() => openOfferDialog(listing)}
+                        onBuyNow={() => buyNow(listing)}
                         onViewSeller={() => setViewingSellerId({ id: listing.seller_id, name: listing.seller_club_name, shield })}
                       />
                     );
