@@ -295,6 +295,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       loadLoanListings();
       loadLoanOffers();
       loadMyRenewals();
+      syncFinalizedLoans();
     });
 
     const ch1 = supabase.channel('transfer-listings')
@@ -306,8 +307,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       .subscribe();
 
     const ch3 = supabase.channel('loan-listings')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_listings' }, () => { loadLoanListings(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_listings' }, (payload: any) => {
+        loadLoanListings();
+        const row = payload?.new;
+        if (row && row.status === 'accepted') processFinalizedLoan(row);
+      })
       .subscribe();
+
 
     const ch4 = supabase.channel('player-negotiations')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'player_negotiations', filter: `user_id=eq.${userId}` }, () => { loadMyRenewals(); })
