@@ -183,6 +183,7 @@ export function PlayerRankingTab() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <RankingScoringInfo mode="players" className="self-start sm:self-auto" />
             <Tabs
               value={category}
               onValueChange={(v) => setCategory(v as Category)}
