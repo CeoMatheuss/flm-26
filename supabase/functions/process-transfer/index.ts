@@ -51,6 +51,56 @@ function rejectionHeadlines(p: { player: string; ovr?: number; to: string }) {
   ]);
 }
 
+
+function calculateAcceptChance(params: {
+  offeredSalary: number;
+  currentSalary: number;
+  reputation: number;
+  age: number;
+  contractYears: number;
+  signingBonus: number;
+  personality: string;
+}) {
+  const { offeredSalary, currentSalary, reputation, age, contractYears, signingBonus, personality } = params;
+  let chance = 0.5;
+
+  // Salary impact (Core rule: >= current salary is usually accepted)
+  const salaryRatio = offeredSalary / Math.max(1, currentSalary);
+  if (salaryRatio >= 1.5) chance += 0.35;
+  else if (salaryRatio >= 1.2) chance += 0.20;
+  else if (salaryRatio >= 1.0) chance += 0.10;
+  else if (salaryRatio >= 0.8) chance -= 0.15;
+  else chance -= 0.40;
+
+  // Reputation impact (Club status)
+  if (reputation >= 80) chance += 0.15;
+  else if (reputation >= 60) chance += 0.05;
+  else if (reputation < 30) chance -= 0.10;
+
+  // Age impact (Younger players are more ambitious, older want stability)
+  if (age <= 22) {
+    if (salaryRatio > 1.2) chance += 0.10; // Ambitious young players
+  } else if (age >= 31) {
+    if (contractYears >= 3) chance += 0.10; // Older players want longer contracts
+  }
+
+  // Contract years
+  if (contractYears >= 3 && contractYears <= 4) chance += 0.05;
+  if (contractYears === 1) chance -= 0.10;
+
+  // Signing bonus (Luvas)
+  if (signingBonus > 0) {
+    chance += Math.min(0.15, (signingBonus / (currentSalary * 12)) * 0.1);
+  }
+
+  // Personality
+  if (personality === 'ambicioso') chance += (salaryRatio > 1.1 ? 0.1 : -0.2);
+  if (personality === 'leal') chance -= 0.2;
+  if (personality === 'festeiro') chance += (signingBonus > 0 ? 0.1 : 0);
+
+  return Math.max(0.05, Math.min(0.99, chance));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
