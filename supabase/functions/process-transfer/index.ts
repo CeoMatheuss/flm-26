@@ -771,24 +771,26 @@ Deno.serve(async (req) => {
         const currentSalary = playerData?.salary || 500;
         const offeredSalary = offer.offered_salary || 0;
         const signingBonus = offer.signing_bonus || 0;
-        const totalBonus = (offer.bonus_goals || 0) + (offer.bonus_assists || 0) + (offer.bonus_games || 0) + (offer.bonus_titles || 0);
+        
+        // Fetch buyer reputation
+        const { data: buyerSave } = await adminClient
+          .from('game_saves')
+          .select('club_data')
+          .eq('user_id', offer.buyer_id)
+          .maybeSingle();
+        
+        const buyerReputation = buyerSave?.club_data?.club?.reputation || 50;
+        const buyerLeague = buyerSave?.club_data?.club?.league_name || 'Desconhecida';
 
-        // Player acceptance logic (same as before)
-        let acceptChance = 0.5;
-        if (offeredSalary >= currentSalary * 1.5) acceptChance += 0.3;
-        else if (offeredSalary >= currentSalary) acceptChance += 0.15;
-        else if (offeredSalary >= currentSalary * 0.8) acceptChance += 0.0;
-        else acceptChance -= 0.2;
-        if (signingBonus > 0) acceptChance += Math.min(0.15, signingBonus / 1000000 * 0.05);
-        if (totalBonus > 0) acceptChance += Math.min(0.1, totalBonus / 500000 * 0.02);
-        const personality = playerData?.personality || 'calmo';
-        if (personality === 'ambicioso') acceptChance += (offeredSalary > currentSalary ? 0.1 : -0.15);
-        if (personality === 'leal') acceptChance -= 0.15;
-        if (personality === 'dedicado') acceptChance += 0.05;
-        const years = offer.offered_contract_years || 2;
-        if (years >= 2 && years <= 3) acceptChance += 0.05;
-        if (years >= 4) acceptChance -= 0.05;
-        acceptChance = Math.max(0.1, Math.min(0.95, acceptChance));
+        const acceptChance = calculateAcceptChance({
+          offeredSalary,
+          currentSalary,
+          reputation: buyerReputation,
+          age: playerData?.age || 25,
+          contractYears: offer.offered_contract_years || 2,
+          signingBonus,
+          personality: playerData?.personality || 'calmo'
+        });
 
         const playerAccepts = Math.random() < acceptChance;
 
