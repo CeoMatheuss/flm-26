@@ -654,8 +654,9 @@ Deno.serve(async (req) => {
           await adminClient.from('newspaper_entries').insert({
             user_id: offer.buyer_id,
             category: 'MERCADO',
-            text: `❌ ${listing.player_name} (OVR ${listing.player_overall}) recusou proposta do ${offer.buyer_club_name}. Negociação frustrada.`,
+            text: rejectionHeadlines({ player: listing.player_name, ovr: listing.player_overall, to: offer.buyer_club_name }),
             is_event: true,
+            metadata: { kind: 'rejection', player_name: listing.player_name, player_overall: listing.player_overall, to_club: offer.buyer_club_name },
           });
         } else {
           // Player accepted! Complete transfer
