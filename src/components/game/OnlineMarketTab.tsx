@@ -123,6 +123,9 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [myOffers, setMyOffers] = useState<TransferOffer[]>([]);
   const [incomingOffers, setIncomingOffers] = useState<TransferOffer[]>([]);
   const [loanListings, setLoanListings] = useState<any[]>([]);
+  const [incomingLoanOffers, setIncomingLoanOffers] = useState<any[]>([]);
+  const [myLoanOffers, setMyLoanOffers] = useState<any[]>([]);
+  const [counterLoanOffer, setCounterLoanOffer] = useState<any | null>(null);
   const [myRenewals, setMyRenewals] = useState<any[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [loading, setLoading] = useState(false);
