@@ -363,72 +363,81 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
             </select>
           </div>
 
-          <ScrollArea className="h-[400px] pr-2">
+          <ScrollArea className="h-[420px] pr-2">
             {filtered.length === 0 ? (
-              <div className="text-center py-10 text-xs text-muted-foreground bg-card/50 rounded-xl border border-border/15">
-                <Globe className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                Nenhum jogador livre encontrado com esses filtros.
+              <div className="text-center py-12 text-xs text-muted-foreground rounded-2xl border border-white/5 bg-black/30">
+                <Globe className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                Nenhum jogador livre encontrado.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {filtered.map(agent => {
                   const hasOffer = !!pendingOffersByAgent[agent.id];
+                  const isRare = agent.visible_stats?.rarity === 'Raro';
                   return (
-                    <Card key={agent.id} className="border-border/20 bg-card/40 hover:bg-card/60 transition-colors overflow-hidden">
-                      <CardContent className="p-3">
+                    <div key={agent.id}
+                      className={`group relative overflow-hidden rounded-xl border bg-gradient-to-br backdrop-blur-sm transition-all hover:scale-[1.01] hover:-translate-y-0.5 ${
+                        isRare
+                          ? 'border-amber-500/30 from-[hsl(40_50%_8%_/_0.6)] to-[hsl(220_45%_8%_/_0.8)] shadow-[0_0_15px_-5px_rgb(251_191_36_/_0.3)]'
+                          : 'border-white/5 from-[hsl(220_45%_8%_/_0.7)] to-[hsl(150_40%_8%_/_0.5)] hover:border-white/15'
+                      }`}>
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${isRare ? 'bg-gradient-to-b from-amber-400 to-amber-600' : 'bg-gradient-to-b from-emerald-400/50 to-emerald-700/30'}`} />
+
+                      <div className="p-3">
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={`text-[9px] px-1 h-5 ${posColors[agent.player_position]}`}>{agent.player_position}</Badge>
-                            <div>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`w-9 h-9 rounded-lg border flex flex-col items-center justify-center shrink-0 ${posColors[agent.player_position]}`}>
+                              <span className="text-[9px] font-black">{agent.player_position}</span>
+                            </div>
+                            <div className="min-w-0">
                               <div className="flex items-center gap-1">
-                                <span className="text-xs font-bold truncate max-w-[120px]">{agent.player_name}</span>
-                                {agent.visible_stats?.rarity === 'Raro' && (
-                                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[8px] h-3.5 px-1">RARO</Badge>
+                                <span className="text-xs font-black truncate">{agent.player_name}</span>
+                                {isRare && (
+                                  <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[8px] h-3.5 px-1 gap-0.5 shrink-0">
+                                    ⭐ RARO
+                                  </Badge>
                                 )}
                               </div>
-                              <p className="text-[9px] text-muted-foreground">{agent.player_age} anos • OVR: {agent.player_overall}</p>
+                              <p className="text-[9px] text-muted-foreground">{agent.player_age} anos</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-[10px] font-bold text-primary">Salário Livre</p>
-                            <p className="text-[8px] text-muted-foreground">Passe Livre</p>
+                          <div className="text-right shrink-0">
+                            <Badge variant="outline" className="text-[8px] gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+                              <Globe className="h-2 w-2" /> Passe Livre
+                            </Badge>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-4 gap-1 mt-2 mb-3">
-                          <div className="bg-accent/30 rounded p-1 text-center">
-                            <p className="text-[8px] text-muted-foreground">Gols</p>
-                            <p className="text-[10px] font-bold">{agent.visible_stats?.goals || 0}</p>
-                          </div>
-                          <div className="bg-accent/30 rounded p-1 text-center">
-                            <p className="text-[8px] text-muted-foreground">Ast</p>
-                            <p className="text-[10px] font-bold">{agent.visible_stats?.assists || 0}</p>
-                          </div>
-                          <div className="bg-accent/30 rounded p-1 text-center">
-                            <p className="text-[8px] text-muted-foreground">Nota</p>
-                            <p className="text-[10px] font-bold">{agent.visible_stats?.avgRating || '-'}</p>
-                          </div>
-                          <div className="bg-accent/30 rounded p-1 text-center">
-                            <p className="text-[8px] text-muted-foreground">Pot</p>
-                            <p className="text-[10px] font-bold text-emerald-400">{agent.visible_stats?.potential || '?'}</p>
-                          </div>
+                        <div className="grid grid-cols-4 gap-1 mt-2.5">
+                          {[
+                            { lbl: 'Gols', val: agent.visible_stats?.goals || 0, icon: '⚽' },
+                            { lbl: 'Assist', val: agent.visible_stats?.assists || 0, icon: '🅰️' },
+                            { lbl: 'Nota', val: agent.visible_stats?.avgRating || '—', icon: '★', accent: 'text-amber-300' },
+                            { lbl: 'Pot', val: agent.visible_stats?.potential || '?', icon: '✨', accent: 'text-emerald-300' },
+                          ].map((s, i) => (
+                            <div key={i} className="rounded-lg p-1.5 bg-black/40 border border-white/5 text-center">
+                              <p className="text-[8px] text-muted-foreground">{s.icon} {s.lbl}</p>
+                              <p className={`text-[11px] font-black leading-none mt-0.5 ${s.accent || ''}`}>{s.val}</p>
+                            </div>
+                          ))}
                         </div>
 
-                        <Button 
-                          size="sm" 
-                          className="w-full h-8 text-[11px] gap-1.5" 
-                          variant={hasOffer ? "secondary" : "default"}
+                        <Button size="sm"
+                          className={`w-full h-9 text-[11px] gap-1.5 mt-2.5 rounded-lg font-black transition-all ${
+                            hasOffer
+                              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/20'
+                              : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-[0_0_15px_-5px_hsl(var(--primary))]'
+                          }`}
                           disabled={hasOffer}
-                          onClick={() => openOfferDialog(agent)}
-                        >
+                          onClick={() => openOfferDialog(agent)}>
                           {hasOffer ? (
-                            <> <Clock className="h-3 w-3" /> Proposta em análise </>
+                            <> <Clock className="h-3.5 w-3.5" /> Em análise </>
                           ) : (
-                            <> <Send className="h-3 w-3" /> Fazer Proposta </>
+                            <> <Send className="h-3.5 w-3.5" /> Fazer Proposta </>
                           )}
                         </Button>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
