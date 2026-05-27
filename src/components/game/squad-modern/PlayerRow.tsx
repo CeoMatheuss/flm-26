@@ -1,7 +1,7 @@
 import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
-import { Heart, Activity, Shield, ChevronRight, Tag, Handshake, ArrowLeftRight, Clock } from 'lucide-react';
+import { Heart, Activity, Shield, ChevronRight, Tag, Handshake, ArrowLeftRight, Clock, Sparkles, Gift, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
@@ -33,6 +33,18 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
   const isForLoan = player.onLoanList || status === 'lista-emprestimo';
   const isLoanedOut = player.isLoaned || status === 'emprestado';
   const isLoanedIn = player.isReceivedLoan || status === 'recebido-emprestimo';
+
+  // Badge "NOVO REFORÇO" - visível por 7 dias após a chegada
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  const isNewSigning = !!player.signedAt && (Date.now() - player.signedAt) < SEVEN_DAYS;
+  const signingTypeLabel: Record<string, { label: string; color: string; bg: string; icon: JSX.Element; tooltip: string }> = {
+    free_agent: { label: 'JOGADOR LIVRE', color: 'text-amber-300', bg: 'bg-amber-500/20', icon: <Gift className="w-2 h-2" />, tooltip: 'Contratado como jogador livre (sem custo de transferência)' },
+    buy_now: { label: 'COMPRA IMEDIATA', color: 'text-teal-300', bg: 'bg-teal-500/20', icon: <Zap className="w-2 h-2" />, tooltip: 'Adquirido via compra imediata no mercado' },
+    auction: { label: 'LEILÃO', color: 'text-fuchsia-300', bg: 'bg-fuchsia-500/20', icon: <Sparkles className="w-2 h-2" />, tooltip: 'Vencido em leilão' },
+    transfer: { label: 'NOVO REFORÇO', color: 'text-sky-300', bg: 'bg-sky-500/20', icon: <Sparkles className="w-2 h-2" />, tooltip: 'Reforço chegou ao elenco' },
+    loan_in: { label: 'NOVO EMPRÉSTIMO', color: 'text-indigo-300', bg: 'bg-indigo-500/20', icon: <Handshake className="w-2 h-2" />, tooltip: 'Chegou por empréstimo' },
+  };
+  const signingMeta = player.signingType ? signingTypeLabel[player.signingType] : signingTypeLabel.transfer;
 
   return (
     <motion.button
@@ -128,6 +140,22 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
             <span className="flex items-center gap-1 text-[8px] font-black text-white/40 uppercase">
               <Clock className="w-2 h-2" /> {player.loanWeeksRemaining} SEM
             </span>
+          )}
+
+          {/* Badge "NOVO REFORÇO" - destaque temporário pós-contratação */}
+          {isNewSigning && signingMeta && (
+            <motion.span
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+              title={signingMeta.tooltip}
+              className={cn(
+                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border',
+                signingMeta.bg, signingMeta.color, 'border-current/30 animate-pulse'
+              )}
+            >
+              {signingMeta.icon} {signingMeta.label}
+            </motion.span>
           )}
         </div>
       </div>

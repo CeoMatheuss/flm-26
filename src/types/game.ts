@@ -144,6 +144,10 @@ export interface Player {
   loanedFrom?: string;
   loanWeeksRemaining?: number;
   isReceivedLoan?: boolean;
+  /** Marca de contratação recente (para badge "NOVO REFORÇO"). */
+  signedAt?: number; // epoch ms
+  signingType?: 'transfer' | 'free_agent' | 'loan_in' | 'auction' | 'buy_now' | 'youth_promotion';
+  signedFromClub?: string;
 }
 
 export interface Scout {

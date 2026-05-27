@@ -694,6 +694,9 @@ export function useClubState(initialState: any, userId?: string) {
         squad_status: 'reserve' as const,
         squadRole: 'reserva' as const,
         contract: 2,
+        signedAt: Date.now(),
+        signingType: (player as any).signingType || 'transfer',
+        signedFromClub: (player as any).signedFromClub || (player as any).currentClubName,
         ...({ contractStatus: 'profissional' } as any)
       };
       
@@ -745,6 +748,8 @@ export function useClubState(initialState: any, userId?: string) {
         contract: Math.floor(Math.random() * 3 + 2),
         squad_status: 'reserve' as const,
         squadRole: 'reserva' as const,
+        signedAt: Date.now(),
+        signingType: 'free_agent',
         ...({ contractStatus: 'profissional' } as any)
       };
       return { ...prev, budget: prev.budget - cost, players: [...prev.players, signedPlayerObj as Player] };
@@ -931,7 +936,10 @@ export function useClubState(initialState: any, userId?: string) {
       ...player, 
       squad_status: 'reserve' as const,
       squadRole: 'reserva' as const,
-      isLoaned: true 
+      isLoaned: true,
+      isReceivedLoan: true,
+      signedAt: Date.now(),
+      signingType: 'loan_in' as const,
     };
     
     setLoanedPlayers(lp => [...lp, { player: loanedInPlayer, fromClub: 'bot', direction: 'in', seasonStart: currentSeason }]);
@@ -977,6 +985,11 @@ export function useClubState(initialState: any, userId?: string) {
       squad_status: 'reserve' as const,
       squadRole: 'reserva' as const,
       isLoaned: true,
+      isReceivedLoan: true,
+      signedAt: Date.now(),
+      signingType: 'loan_in' as const,
+      signedFromClub: fromClubName,
+      loanedFrom: fromClubName,
     };
     setLoanedPlayers(lp => {
       if (lp.some(l => l.player.id === player.id && l.direction === 'in')) return lp;
