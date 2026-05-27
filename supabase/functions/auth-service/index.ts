@@ -240,7 +240,15 @@ serve(async (req) => {
 
     if (action === 'send-code') {
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-      
+      console.log(`[send-code] email=${email}`)
+
+      // Invalida códigos anteriores para evitar confusão
+      await supabaseAdmin
+        .from('auth_verification_codes')
+        .update({ used_at: new Date().toISOString() })
+        .eq('email', email)
+        .is('used_at', null)
+
       const { error: dbError } = await supabaseAdmin
         .from('auth_verification_codes')
         .insert({
@@ -248,35 +256,63 @@ serve(async (req) => {
           code: verificationCode,
           expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString()
         })
-      
-      if (dbError) throw dbError
 
-      const resendKey = Deno.env.get('RESEND_API_KEY')
-      if (resendKey) {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${resendKey}`,
-          },
-          body: JSON.stringify({
-            from: 'Football Life Manager <onboarding@resend.dev>',
-            to: [email],
-            subject: `CÓDIGO DE ACESSO: ${verificationCode} | FLM`,
-            html: PREMIUM_EMAIL_TEMPLATE(
-              'Bem-vindo ao Football Life Manager',
-              'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
-              verificationCode,
-              'Este código expira em 10 minutos por motivos de segurança.'
-            ),
-          }),
-        })
+      if (dbError) {
+        console.error('[send-code] DB insert failed:', dbError)
+        throw dbError
       }
 
-      return new Response(JSON.stringify({ success: true, message: 'Código enviado com sucesso' }), {
+      const resendKey = Deno.env.get('RESEND_API_KEY')
+      let emailSent = false
+      let emailError: string | null = null
+
+      if (resendKey) {
+        try {
+          const resp = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${resendKey}`,
+            },
+            body: JSON.stringify({
+              from: 'Football Life Manager <onboarding@resend.dev>',
+              to: [email],
+              subject: `Seu código FLM: ${verificationCode}`,
+              html: PREMIUM_EMAIL_TEMPLATE(
+                'Bem-vindo ao Football Life Manager',
+                'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
+                verificationCode,
+                'Este código expira em 10 minutos por motivos de segurança.'
+              ),
+            }),
+          })
+          const body = await resp.text()
+          if (!resp.ok) {
+            emailError = `Resend ${resp.status}: ${body}`
+            console.error('[send-code] Resend failed:', emailError)
+          } else {
+            emailSent = true
+            console.log('[send-code] Resend OK')
+          }
+        } catch (e: any) {
+          emailError = e.message
+          console.error('[send-code] Resend threw:', e)
+        }
+      } else {
+        emailError = 'RESEND_API_KEY not configured'
+        console.warn('[send-code]', emailError)
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        emailSent,
+        emailError,
+        message: emailSent ? 'Código enviado com sucesso' : 'Código gerado, mas envio do e-mail falhou',
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+
 
     if (action === 'verify-code') {
       const { data: codeData, error: codeError } = await supabaseAdmin
