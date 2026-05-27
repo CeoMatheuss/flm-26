@@ -141,6 +141,17 @@ export function NewspaperFullPage({ onBack }: Props) {
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
+  // Realtime: atualiza o feed quando novas notícias chegam
+  useEffect(() => {
+    const channel = supabase
+      .channel('newspaper-live-feed')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'newspaper_entries' }, () => {
+        loadEntries();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadEntries]);
+
   const allCategories = [...new Set(entries.map(e => e.category))].filter(Boolean).sort();
   const filteredEntries = categoryFilter ? entries.filter(e => e.category === categoryFilter) : entries;
 
