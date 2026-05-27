@@ -352,7 +352,17 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
               disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword || !acceptedTerms || !acceptedPrivacy}
               className="w-full h-12 font-bold gap-2"
             >
-              {loading ? 'Criando conta...' : 'Criar Conta'} <ChevronRight className="w-4 h-4" />
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Criando conta...</span>
+                </>
+              ) : (
+                <>
+                  <span>Criar Conta</span>
+                  <ChevronRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
 
             <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="w-full text-xs text-muted-foreground gap-1">
