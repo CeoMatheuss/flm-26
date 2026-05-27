@@ -156,30 +156,32 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
 
   const dispatchNotificationAction = useCallback(async (action: any, notificationId: string) => {
     if (!action) return;
+    // Fecha o painel IMEDIATAMENTE para que a navegação seja percebida na hora.
+    if (action.type === 'navigate' || action.type === 'open_modal') {
+      setFullPage(false);
+    }
+    // Dispara navegação ANTES de qualquer await para resposta instantânea.
+    if (action.type === 'navigate') {
+      if (action.payload?.tab) window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: action.payload }));
+      if (action.payload?.club_name) window.dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: action.payload.club_name } }));
+      if (action.payload?.player_name) window.dispatchEvent(new CustomEvent('flm:market-negotiate', { detail: action.payload }));
+    } else if (action.type === 'open_modal') {
+      if (action.payload?.modal === 'match_report' && action.payload?.matchId) {
+        window.dispatchEvent(new CustomEvent('flm:open-match-report', { detail: action.payload.matchId }));
+      }
+    }
     markAsRead(notificationId);
-    switch (action.type) {
-      case 'navigate':
-        if (action.payload.tab) window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: action.payload }));
-        if (action.payload.club_name) window.dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: action.payload.club_name } }));
-        if (action.payload.player_name) window.dispatchEvent(new CustomEvent('flm:market-negotiate', { detail: action.payload }));
-        break;
-      case 'invoke':
-        const { functionName, body } = action.payload;
-        if (functionName) {
-          const loadingToast = toast.loading('Processando...');
-          try {
-            const { data, error } = await supabase.functions.invoke(functionName, { body });
-            toast.dismiss(loadingToast);
-            if (error || data?.error) toast.error(data?.error || 'Erro ao processar');
-            else toast.success(data?.message || 'Sucesso!');
-          } catch (e) { toast.dismiss(loadingToast); toast.error('Erro de conexão'); }
-        }
-        break;
-      case 'open_modal':
-        if (action.payload.modal === 'match_report' && action.payload.matchId) {
-          window.dispatchEvent(new CustomEvent('flm:open-match-report', { detail: action.payload.matchId }));
-        }
-        break;
+    if (action.type === 'invoke') {
+      const { functionName, body } = action.payload || {};
+      if (functionName) {
+        const loadingToast = toast.loading('Processando...');
+        try {
+          const { data, error } = await supabase.functions.invoke(functionName, { body });
+          toast.dismiss(loadingToast);
+          if (error || data?.error) toast.error(data?.error || 'Erro ao processar');
+          else toast.success(data?.message || 'Sucesso!');
+        } catch (e) { toast.dismiss(loadingToast); toast.error('Erro de conexão'); }
+      }
     }
   }, [userId, markAsRead]);
 
