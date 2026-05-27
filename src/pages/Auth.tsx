@@ -372,8 +372,8 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       <div className="flex-1 lg:max-w-lg flex flex-col items-center justify-center p-6 sm:p-8 bg-background relative z-10">
         {/* Logo & Title */}
         <div className="text-center space-y-3 mb-8">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-            <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto flex items-center justify-center">
+            <img src={flmLogo} alt="FLM Logo" className="w-full h-full object-contain drop-shadow-md" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">FLM 26</h1>
           <p className="text-sm text-muted-foreground">Football Life Manager 2026</p>
