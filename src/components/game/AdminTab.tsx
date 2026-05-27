@@ -32,6 +32,7 @@ import { AdminVersionPanel } from './admin/AdminVersionPanel';
 // import { ModerationPanel } from './admin/ModerationPanel';
 import { MaintenanceToggle } from './admin/MaintenanceToggle';
 import { AdminShopMonitor } from './admin/AdminShopMonitor';
+import { ResetCompetitionsPanel } from './admin/ResetCompetitionsPanel';
 
 
 interface PendingUser {
@@ -131,7 +132,7 @@ export function AdminTab({ userId, isFounder }: Props) {
       finance:       ['finance_panel', 'shop_monitor'],
       customization: ['customization_panel'],
       system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
-      maintenance:   ['maintenance', 'direct_msg'],
+      maintenance:   ['maintenance', 'direct_msg', 'reset_competitions'],
       simulation:    ['simulation_panel', 'auto_test'],
     };
     const list = map[activeCategory] || ['users'];
@@ -532,7 +533,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     finance:       ['finance_panel', 'shop_monitor'],
     customization: ['customization_panel'],
     system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
-    maintenance:   ['maintenance', 'direct_msg'],
+    maintenance:   ['maintenance', 'direct_msg', 'reset_competitions'],
     simulation:    ['simulation_panel'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
@@ -559,6 +560,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     finance_panel:     { label: 'Financeiro',     icon: Wallet },
     shop_monitor:      { label: 'Monitor Loja',    icon: ShoppingBag },
     customization_panel:{ label: 'Personalização', icon: Palette },
+    reset_competitions:{ label: 'Reset Competições', icon: RefreshCw },
   };
 
   return (
@@ -866,6 +868,10 @@ export function AdminTab({ userId, isFounder }: Props) {
 
           <TabsContent value="maintenance" className="space-y-3 mt-3">
             <MaintenanceToggle />
+          </TabsContent>
+
+          <TabsContent value="reset_competitions" className="space-y-3 mt-3">
+            <ResetCompetitionsPanel adminUserId={userId} />
           </TabsContent>
 
           <TabsContent value="direct_msg" className="space-y-3 mt-3">

@@ -7437,6 +7437,10 @@ export type Database = {
             }
             Returns: Json
           }
+      admin_reset_real_clubs: {
+        Args: { p_admin_id: string; p_confirmation_token: string }
+        Returns: Json
+      }
       advance_cup_round: { Args: { _cup_id: string }; Returns: undefined }
       advance_cup_winners: {
         Args: { _cup_id: string; _current_phase: string }
