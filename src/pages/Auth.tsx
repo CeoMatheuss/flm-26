@@ -91,18 +91,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (error.message === 'Email not confirmed' || error.message?.includes('Email not confirmed')) {
-        setPendingEmail(email);
-        setStep('verify-email');
-        startResendTimer();
-        toast.info('Email não confirmado. Enviando código de verificação...');
-        // Envia o código customizado em vez do link do Supabase
-        await supabase.functions.invoke('auth-service', {
-          body: { action: 'send-code', email }
-        });
-      } else {
-        toast.error(error.message);
-      }
+      toast.error(error.message);
     }
     setLoading(false);
   };
@@ -144,43 +133,14 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         toast.error(msg || 'Erro ao criar conta. Tente novamente.');
       }
     } else {
-      setPendingEmail(email);
-      setStep('verify-email');
-      startResendTimer();
-      try {
-        const { data, error: fnErr } = await supabase.functions.invoke('auth-service', {
-          body: { action: 'send-code', email }
-        });
-        
-        if (fnErr) {
-          if (fnErr.status === 429) {
-            toast.warning('Aguarde um pouco antes de solicitar um novo código.');
-          } else {
-            throw fnErr;
-          }
-        }
-
-        if (data?.emailSent === false) {
-          const errorMsg = data.details?.error?.message || data.details?.error || '';
-          if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('RESEND_SANDBOX_LIMIT')) {
-            toast.error('Sistema em modo Teste: Como o domínio ainda não foi verificado na Resend, e-mails só podem ser enviados para o administrador (fcmsistemas7@gmail.com). Por favor, verifique seu domínio na Resend para liberar o acesso público.', {
-              duration: 15000,
-              action: {
-                label: 'Suporte',
-                onClick: () => window.open('https://resend.com/domains', '_blank')
-              }
-            });
-          } else {
-            toast.error(`Falha no envio: ${errorMsg || 'Erro desconhecido no serviço de e-mail.'}`, {
-              duration: 10000,
-            });
-          }
-        } else {
-          toast.success('Código enviado! Verifique sua caixa de entrada e spam.');
-        }
-      } catch (e: any) {
-        console.error('Erro ao enviar código:', e);
-        toast.error(`Não conseguimos enviar o código agora. Por favor, tente "Reenviar código" em alguns instantes.`);
+      toast.success('Conta criada com sucesso! Redirecionando...');
+      // Como o auto-confirm está ligado, o usuário já pode logar ou já está logado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.reload();
+      } else {
+        setStep('login');
+        setEmail(email);
       }
     }
     setLoading(false);
