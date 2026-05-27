@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Swords, Users, Play, Loader2, Trophy, Shield, Clock } from 'lucide-react';
+import { Swords, Users, Play, Loader2, Trophy, Shield, Clock, Calendar, BarChart2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchLobbyScreen } from './MatchLobbyScreen';
+import { ChampionshipsTab } from './ChampionshipsTab';
 
 interface Props {
   userId: string;
