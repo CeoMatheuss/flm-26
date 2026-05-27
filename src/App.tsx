@@ -10,6 +10,7 @@ import ReplayPage from "./pages/ReplayPage";
 import NotFound from "./pages/NotFound";
 import TrailerGallery from "./pages/TrailerGallery";
 import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
