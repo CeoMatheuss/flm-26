@@ -695,6 +695,7 @@ function getTacticalExtras(t: any): TacticalExtras {
   const dline = t?.defenseLine || 'media';
   const width = t?.width || 'normal';
   const formation: string = t?.formation || '4-4-2';
+  const intensity: string = t?.intensity || 'equilibrada';
 
   let atkMul = 1, defMul = 1, pressBonus = 0, drainMul = 1;
   let foulBias = 0, penaltyBonus = 0, offsideMul = 1, possessionBias = 0;
@@ -702,45 +703,84 @@ function getTacticalExtras(t: any): TacticalExtras {
 
   // Marcação
   if (marking === 'individual') {
-    defMul *= 1.08; pressBonus += 0.10; drainMul *= 1.08;
-    foulBias += 0.6; penaltyBonus += 0.025;
+    defMul *= 1.12; pressBonus += 0.15; drainMul *= 1.10;
+    foulBias += 0.9; penaltyBonus += 0.035;
   } else if (marking === 'zona') {
-    defMul *= 1.03;
-  } else if (marking === 'mista') {
-    defMul *= 1.05; pressBonus += 0.05;
+    defMul *= 1.04;
+  } else if (marking === 'mista' || marking === 'misto') {
+    defMul *= 1.07; pressBonus += 0.07;
   }
 
   // Linha defensiva
   if (dline === 'alta') {
-    atkMul *= 1.05; defMul *= 0.92; pressBonus += 0.10;
-    offsideMul *= 1.6; drainMul *= 1.05;
+    atkMul *= 1.08; defMul *= 0.88; pressBonus += 0.15;
+    offsideMul *= 1.8; drainMul *= 1.08;
   } else if (dline === 'baixa') {
-    atkMul *= 0.92; defMul *= 1.10; pressBonus -= 0.10;
-    offsideMul *= 0.6; drainMul *= 0.95;
+    atkMul *= 0.88; defMul *= 1.15; pressBonus -= 0.15;
+    offsideMul *= 0.5; drainMul *= 0.92;
   }
 
   // Estilo de passe
   if (passing === 'curto') {
-    possessionBias += 0.06; shortPassBoost += 0.10;
-    atkMul *= 0.97; drainMul *= 0.97;
+    possessionBias += 0.10; shortPassBoost += 0.15;
+    atkMul *= 0.96; drainMul *= 0.96;
   } else if (passing === 'direto') {
-    possessionBias -= 0.05; longShotBoost += 0.12; atkMul *= 1.05;
+    possessionBias -= 0.08; longShotBoost += 0.18; atkMul *= 1.08;
   } else if (passing === 'longo') {
-    possessionBias -= 0.07; longShotBoost += 0.05; crossBoost += 0.15; atkMul *= 1.07;
-    drainMul *= 1.02;
+    possessionBias -= 0.10; longShotBoost += 0.08; crossBoost += 0.22; atkMul *= 1.10;
+    drainMul *= 1.03;
   }
 
   // Largura
   if (width === 'larga') {
-    atkMul *= 1.04; defMul *= 0.97; crossBoost += 0.18;
+    atkMul *= 1.06; defMul *= 0.95; crossBoost += 0.25;
   } else if (width === 'estreita') {
-    atkMul *= 0.97; defMul *= 1.04; shortPassBoost += 0.06;
+    atkMul *= 0.96; defMul *= 1.06; shortPassBoost += 0.10;
   }
 
-  // Formação (impacto sutil — só viés)
-  if (formation.startsWith('5-') || formation === '4-5-1') { defMul *= 1.05; atkMul *= 0.95; }
-  else if (formation === '3-4-3' || formation === '4-3-3' || formation === '4-2-4') { atkMul *= 1.05; defMul *= 0.96; }
-  else if (formation === '4-2-3-1' || formation === '4-3-2-1') { possessionBias += 0.03; }
+  // Formação — impacto FORTE (cada formação tem personalidade clara)
+  switch (formation) {
+    case '4-3-3':       atkMul *= 1.10; defMul *= 0.94; crossBoost += 0.12; break;
+    case '3-4-3':       atkMul *= 1.15; defMul *= 0.86; crossBoost += 0.08; break;
+    case '4-2-4-0':     atkMul *= 1.10; defMul *= 0.92; possessionBias += 0.05; break;
+    case '5-4-1':       atkMul *= 0.82; defMul *= 1.22; possessionBias -= 0.08; break;
+    case '5-3-2':       atkMul *= 0.90; defMul *= 1.18; break;
+    case '4-5-1':       atkMul *= 0.90; defMul *= 1.14; possessionBias += 0.05; break;
+    case '4-1-4-1':     atkMul *= 0.96; defMul *= 1.10; possessionBias += 0.03; break;
+    case '4-2-3-1':     possessionBias += 0.06; atkMul *= 1.04; defMul *= 1.03; break;
+    case '4-3-2-1':     possessionBias += 0.05; atkMul *= 1.05; break;
+    case '3-5-2':       atkMul *= 1.08; defMul *= 0.96; possessionBias += 0.04; break;
+    case '3-4-1-2':     atkMul *= 1.08; defMul *= 0.94; break;
+    case '4-1-2-1-2':   atkMul *= 1.04; defMul *= 1.04; break;
+    case '4-4-1-1':     atkMul *= 1.02; break;
+    default:            /* 4-4-2 baseline */ break;
+  }
+
+  // Intensidade
+  if (intensity === 'baixa') { drainMul *= 0.85; defMul *= 0.96; }
+  else if (intensity === 'agressiva') { drainMul *= 1.15; atkMul *= 1.05; pressBonus += 0.08; foulBias += 0.4; }
+  else if (intensity === 'pressao-maxima') { drainMul *= 1.35; pressBonus += 0.18; atkMul *= 1.08; foulBias += 0.8; }
+
+  // Agregar instruções individuais (até 11 por time) — cada uma adiciona ~2% no eixo
+  const insts: any[] = Array.isArray(t?.playerInstructions) ? t.playerInstructions : [];
+  let nAtk = 0, nDef = 0, nWide = 0, nMan = 0, nSave = 0;
+  for (const pi of insts) {
+    const b = pi?.behavior, i = pi?.instruction;
+    if (b === 'atacar-mais' || b === 'subir-ao-ataque' || i === 'avançar' || i === 'infiltrar') nAtk++;
+    if (b === 'defender-mais' || b === 'ficar-na-defesa' || i === 'recuar' || i === 'manter-posicao') nDef++;
+    if (b === 'ficar-aberto') nWide++;
+    if (i === 'marcar-homem') nMan++;
+    if (i === 'economizar-stamina') nSave++;
+  }
+  // cap effects per category
+  nAtk = Math.min(nAtk, 8); nDef = Math.min(nDef, 8); nWide = Math.min(nWide, 5);
+  nMan = Math.min(nMan, 6); nSave = Math.min(nSave, 6);
+  atkMul *= (1 + nAtk * 0.020) * (1 - nDef * 0.010);
+  defMul *= (1 + nDef * 0.020) * (1 - nAtk * 0.010);
+  crossBoost += nWide * 0.04;
+  pressBonus += nMan * 0.04;
+  drainMul *= (1 + nMan * 0.015) * (1 - nSave * 0.020);
+  foulBias += nMan * 0.15;
 
   return { atkMul, defMul, pressBonus, drainMul, foulBias, penaltyBonus, offsideMul, possessionBias, shortPassBoost, longShotBoost, crossBoost };
 }
@@ -894,10 +934,12 @@ function simulateFullMatch(
   console.log(`[Tactics] HOME mark=${tactics?.marking||'zona'} pass=${tactics?.passingStyle||'misto'} line=${tactics?.defenseLine||'media'} width=${tactics?.width||'normal'} form=${tactics?.formation||'4-4-2'}`);
   console.log(`[Tactics] AWAY mark=${awayTacticsInput?.marking||'zona'} pass=${awayTacticsInput?.passingStyle||'misto'} line=${awayTacticsInput?.defenseLine||'media'} width=${awayTacticsInput?.width||'normal'} form=${awayTacticsInput?.formation||'4-4-2'}`);
 
-  // ── TACTICAL AMPLIFIER (FLM26) ────────────────────────────
-  // Faz cada lever do treinador ter ~20% mais impacto na simulação.
+  // ── TACTICAL AMPLIFIER v2 (FLM26) ─────────────────────────
+  // Cada lever do treinador agora tem ~50% mais impacto na simulação.
   // Mantém a métrica neutra em 1.0; apenas amplia a distância do neutro.
-  const TACTICAL_AMP = 1.20;
+  // Resultado: trocar de retranca para ataque-total muda placar/estatísticas
+  // de forma perceptível, jogo após jogo.
+  const TACTICAL_AMP = 1.50;
   const amp = (v: number) => 1 + (v - 1) * TACTICAL_AMP;
 
   // Tactical impact on simulation (HOME) — uses style table + extras
