@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlayerRankingTab } from './PlayerRankingTab';
+import { RankingScoringInfo } from './RankingScoringInfo';
 
 interface RankingEntry {
   id: string;
@@ -174,6 +175,7 @@ export function RankingTab({}: Props) {
                       {me?.ranking_points || 0}
                     </p>
                   </div>
+                  <RankingScoringInfo mode="clubs" />
                   <Button
                     variant="outline"
                     size="icon"

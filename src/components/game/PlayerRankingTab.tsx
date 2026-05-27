@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RankingScoringInfo } from './RankingScoringInfo';
 
 type Category = 'global' | 'scorers' | 'assists' | 'goalkeepers' | 'youth';
 
@@ -182,6 +183,7 @@ export function PlayerRankingTab() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <RankingScoringInfo mode="players" className="self-start sm:self-auto" />
             <Tabs
               value={category}
               onValueChange={(v) => setCategory(v as Category)}
