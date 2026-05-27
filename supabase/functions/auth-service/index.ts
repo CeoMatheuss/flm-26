@@ -79,7 +79,7 @@ serve(async (req) => {
       }
 
       const resendKey = Deno.env.get('RESEND_API_KEY')
-      // PRIORIDADE: Domínio verificado. Se não houver, usa o domínio atual como fallback (que vai falhar se não verificado)
+      // PRIORIDADE: Domínio verificado.
       const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'no-reply@footballlifemanager.com.br'
       
       let emailSent = false
@@ -87,32 +87,36 @@ serve(async (req) => {
       let apiResponse: any = null
 
       if (resendKey) {
-        // Tenta enviar com o domínio principal
         const sendWithDomain = async (from: string) => {
+          const attemptStart = Date.now()
           console.log(`[send-code] Tentando enviar de: ${from}`)
-          const res = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${resendKey}`,
-            },
-            body: JSON.stringify({
-              from: `Football Life Manager <${from}>`,
-              to: [email],
-              subject: `Código de Acesso: ${verificationCode}`,
-              html: getVerificationEmailTemplate({
-                userName: email.split('@')[0],
-                verificationCode: verificationCode,
-                expirationMinutes: 15,
-                clubName: 'Manager em Pré-Temporada',
-                ipAddress: ipAddress,
-                creationDate: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-                appUrl: 'https://footballlifemanager26.vercel.app'
+          try {
+            const res = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${resendKey}`,
+              },
+              body: JSON.stringify({
+                from: `Football Life Manager <${from}>`,
+                to: [email],
+                subject: `Código de Acesso: ${verificationCode}`,
+                html: getVerificationEmailTemplate({
+                  userName: email.split('@')[0],
+                  verificationCode: verificationCode,
+                  expirationMinutes: 15,
+                  clubName: 'Manager em Pré-Temporada',
+                  ipAddress: ipAddress,
+                  creationDate: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+                  appUrl: 'https://footballlifemanager26.vercel.app'
+                }),
               }),
-            }),
-          })
-          const data = await res.json()
-          return { ok: res.ok, status: res.status, data }
+            })
+            const data = await res.json()
+            return { ok: res.ok, status: res.status, data, duration: Date.now() - attemptStart }
+          } catch (e) {
+            return { ok: false, status: 500, data: { message: e.message }, duration: Date.now() - attemptStart }
+          }
         }
 
         const primaryAttempt = await sendWithDomain(fromEmail)
@@ -126,7 +130,7 @@ serve(async (req) => {
           console.error(`[send-code] Erro no domínio principal (${primaryAttempt.status}):`, finalError)
 
           // Fallback Automático para sandbox se for erro de validação de domínio
-          if (primaryAttempt.status === 403 || primaryAttempt.data?.name === 'validation_error') {
+          if (primaryAttempt.status === 403 || primaryAttempt.data?.name === 'validation_error' || primaryAttempt.data?.message?.includes('not verified')) {
             console.warn('[send-code] Domínio não verificado. Tentando fallback para onboarding@resend.dev (Sandbox)...')
             const fallbackAttempt = await sendWithDomain('onboarding@resend.dev')
             if (fallbackAttempt.ok) {
@@ -143,24 +147,26 @@ serve(async (req) => {
         console.error('[send-code] RESEND_API_KEY não encontrada nas secrets')
       }
 
+      const totalDuration = Date.now() - startTime
+      
       // Atualiza log no banco
       await supabaseAdmin
         .from('auth_verification_codes')
         .update({ 
           delivery_status: emailSent ? 'sent' : 'failed',
-          delivery_error: JSON.stringify(finalError)
+          delivery_error: JSON.stringify(finalError),
+          delivery_time_ms: totalDuration
         })
         .eq('id', insertedCode.id)
 
-      const duration = Date.now() - startTime
-      console.log(`[send-code] Finalizado em ${duration}ms. Sucesso: ${emailSent}`)
+      console.log(`[send-code] Finalizado em ${totalDuration}ms. Sucesso: ${emailSent}`)
 
       return new Response(JSON.stringify({
         success: true,
         emailSent,
         details: {
-          duration,
-          status: apiResponse?.id ? 'sent' : 'error',
+          duration: totalDuration,
+          status: emailSent ? 'sent' : 'error',
           error: emailSent ? null : (finalError?.message || finalError)
         }
       }), {
@@ -176,6 +182,8 @@ serve(async (req) => {
         .eq('code', code)
         .is('used_at', null)
         .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single()
 
       if (codeError || !codeData) {
