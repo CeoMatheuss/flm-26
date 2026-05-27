@@ -304,52 +304,61 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
 
   return (
     <div className="space-y-3">
-      {/* Info banner */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="p-3 flex items-start gap-2">
-          <EyeOff className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-          <div className="text-[11px] text-muted-foreground leading-relaxed">
-            <span className="font-bold text-foreground">Mercado Livre — Atributos ocultos.</span>{' '}
-            Você só vê <span className="text-foreground">nome, idade, posição, gols, assistências e nota média</span>.
-            O OVR e os atributos só serão revelados após assinar. Propostas demoram <strong>7 horas</strong> para serem respondidas.
+      {/* ── PREMIUM BANNER ── */}
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/15 backdrop-blur-xl"
+        style={{ background: 'linear-gradient(135deg, hsl(220 45% 9% / 0.85), hsl(150 50% 10% / 0.55))' }}>
+        <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-amber-500/10 blur-3xl" />
+        <div className="relative p-3 flex items-start gap-3">
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-xl bg-emerald-500/20 blur-md" />
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-700/10 border border-emerald-400/30 flex items-center justify-center">
+              <EyeOff className="h-5 w-5 text-emerald-200" />
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm font-black tracking-tight">Mercado Livre</h2>
+              <Badge variant="outline" className="text-[9px] gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">Atributos Ocultos</Badge>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+              Visíveis: <strong className="text-foreground">nome, idade, posição, gols, assistências, nota</strong>. OVR e atributos revelam-se <strong className="text-emerald-300">após assinatura</strong>. Decisão em <strong className="text-amber-300">7h</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <Tabs defaultValue="available" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full h-9 rounded-xl">
-          <TabsTrigger value="available" className="text-[11px] gap-1.5 rounded-lg">
+        <TabsList className="grid grid-cols-3 w-full h-10 rounded-xl p-1 bg-black/40 border border-white/5">
+          <TabsTrigger value="available" className="text-[11px] gap-1.5 rounded-lg data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-200 data-[state=active]:shadow-[0_0_15px_-5px_hsl(var(--primary))]">
             <Globe className="h-3 w-3" /> Disponíveis
           </TabsTrigger>
-          <TabsTrigger value="active" className="text-[11px] gap-1.5 rounded-lg relative">
+          <TabsTrigger value="active" className="text-[11px] gap-1.5 rounded-lg data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-200 relative">
             <Inbox className="h-3 w-3" /> Ativas
             {activeOffers.length > 0 && (
-              <Badge variant="outline" className="h-4 px-1 text-[8px]">{activeOffers.length}</Badge>
+              <Badge className="h-4 px-1.5 text-[8px] bg-amber-500/25 text-amber-200 border-amber-500/30">{activeOffers.length}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="history" className="text-[11px] gap-1.5 rounded-lg">
+          <TabsTrigger value="history" className="text-[11px] gap-1.5 rounded-lg data-[state=active]:bg-white/10">
             <History className="h-3 w-3" /> Histórico
           </TabsTrigger>
         </TabsList>
 
         {/* ── DISPONÍVEIS ── */}
         <TabsContent value="available" className="mt-3 space-y-3">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Buscar jogador..."
-                className="pl-8 h-8 text-[11px] bg-card/50"
+                className="pl-8 h-9 text-[11px] rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/40"
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
               />
             </div>
-            <select
-              value={posFilter}
-              onChange={e => setPosFilter(e.target.value)}
-              className="h-8 rounded-md border border-input bg-card/50 px-2 text-[10px] outline-none"
-            >
-              <option value="all">Todas Posições</option>
+            <select value={posFilter} onChange={e => setPosFilter(e.target.value)}
+              className="h-9 rounded-xl border border-white/10 bg-black/30 px-3 text-[11px] outline-none focus:border-emerald-500/40 cursor-pointer">
+              <option value="all">Todas Pos.</option>
               {Object.keys(posColors).map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
