@@ -19,7 +19,7 @@ import { useVersionGuard } from '@/hooks/useVersionGuard';
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { initialClub } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
-import { getLeagueTeams } from '@/types/league';
+import { getLeagueTeams, countryNames } from '@/types/league';
 import { defaultInfrastructure, defaultSeason } from '@/types/infrastructure';
 import { generateSponsorOffers } from '@/types/sponsor';
 import { generateMarketPlayers, generateFreeAgents, generateInitialSquad } from '@/utils/playerGenerator';
@@ -151,12 +151,143 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   }, [userId]);
 
   const handleClubCreated = useCallback(async (config: ClubConfig) => {
-    console.log('[club-creation] Iniciando geração automática de elenco para:', config.name);
+    const countryName = countryNames[config.country] || config.country;
+    console.log(`[club-creation] 🚀 Iniciando processo de criação/substituição para: ${config.name} (${countryName})`);
+    
+    // 0. Geração inicial de elenco
     const initialPlayers = generateInitialSquad(config.name, 'starter');
-    console.log(`[club-creation] ${initialPlayers.length} jogadores gerados com sucesso.`);
+    console.log(`[club-creation] 👥 ${initialPlayers.length} jogadores gerados para o elenco inicial.`);
 
+    // 1. Procurar vaga disponível (BOT) para assumir
+    console.log(`[club-creation] 🔍 Procurando BOT disponível em ${countryName}...`);
+    
+    // Tenta encontrar um BOT no país selecionado, preferindo menor força (reputação)
+    const { data: botTeam, error: botSearchErr } = await supabase
+      .from('world_teams')
+      .select('id, name, league_id, strength')
+      .eq('is_bot', true)
+      .eq('country', countryName)
+      .order('strength', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (botSearchErr) {
+      console.error('[club-creation] ❌ Erro ao buscar bot:', botSearchErr);
+    }
+
+    let finalWorldTeamId: string;
+    let replacementId = 'NEW';
+
+    if (botTeam) {
+      finalWorldTeamId = botTeam.id;
+      replacementId = botTeam.id;
+      console.log(`[club-creation] ✅ BOT encontrado para substituição: ${botTeam.name} (ID: ${botTeam.id}, Força: ${botTeam.strength})`);
+      
+      // Assume a vaga do BOT
+      const { error: hijackErr } = await supabase
+        .from('world_teams')
+        .update({
+          user_id: userId,
+          name: config.name,
+          is_bot: false,
+          logo: config.logoUrl,
+          strength: 65,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', botTeam.id);
+
+      if (hijackErr) {
+        console.error('[club-creation] ❌ Erro ao sequestrar vaga do bot:', hijackErr);
+        toast.error('Erro ao assumir vaga do bot. Criando novo registro...');
+        // Fallback: create new if hijack fails (shouldn't happen with correct RLS)
+        const { data: newWT } = await supabase.from('world_teams').insert({
+          user_id: userId, name: config.name, country: countryName, is_bot: false, logo: config.logoUrl, strength: 65
+        }).select().single();
+        finalWorldTeamId = newWT?.id || '';
+      }
+    } else {
+      console.log(`[club-creation] ℹ️ Nenhum BOT disponível em ${countryName}. Criando novo registro no mundo...`);
+      // Verifica se o usuário já tem um world_team (limpeza de segurança)
+      const { data: existingWT } = await supabase.from('world_teams').select('id').eq('user_id', userId).maybeSingle();
+      
+      if (existingWT) {
+        finalWorldTeamId = existingWT.id;
+        await supabase.from('world_teams').update({ name: config.name, logo: config.logoUrl, country: countryName, is_bot: false }).eq('id', finalWorldTeamId);
+      } else {
+        const { data: newWT, error: nwtErr } = await supabase.from('world_teams').insert({
+          user_id: userId, name: config.name, country: countryName, is_bot: false, logo: config.logoUrl, strength: 65
+        }).select().single();
+        
+        if (nwtErr) {
+          console.error('[club-creation] ❌ Erro fatal ao criar registro mundial:', nwtErr);
+          toast.error('Erro ao registrar clube no mundo.');
+          return;
+        }
+        finalWorldTeamId = newWT.id;
+      }
+    }
+
+    // 2. Salvar metadados do clube (UI/Config)
+    console.log('[club-creation] 💾 Salvando configurações do clube...');
+    const clubsPayload = {
+      user_id: userId,
+      name: config.name,
+      country: countryName, // Usar nome completo para consistência
+      stadium_name: config.stadiumName || 'Estádio Municipal',
+      primary_color: config.primaryColor,
+      secondary_color: config.secondaryColor,
+      detail_color: config.detailColor,
+      logo_url: config.logoUrl,
+      fans: 1000,
+      reputation: 65,
+      budget: 1000000,
+      cash: 1000000,
+      shield_config: (config as any).shieldConfig,
+    };
+
+    const { data: clubData, error: clubErr } = await supabase
+      .from('clubs')
+      .upsert(clubsPayload, { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    if (clubErr) {
+      console.error('[club-creation] ❌ ERRO ao salvar metadados do clube:', clubErr);
+      toast.error(`Erro ao registrar clube: ${clubErr.message}`);
+      return;
+    }
+
+    // 3. Vincular jogadores ao worldTeamId (ID real da liga)
+    console.log('[club-creation] ⚽ Vinculando elenco ao ID oficial:', finalWorldTeamId);
+    
+    // Limpar jogadores antigos do BOT ou do usuário
+    await supabase.from('world_players').delete().eq('team_id', finalWorldTeamId);
+
+    const worldPlayersPayload = initialPlayers.map(p => ({
+      team_id: finalWorldTeamId,
+      name: p.name,
+      position: p.position,
+      overall: p.overall,
+      age: p.age,
+      market_value: p.marketValue || 0,
+      potential: p.potential || p.overall + 5,
+      salary: p.salary || 500,
+      attributes: p.attributes as any,
+      stamina: p.stamina || 100,
+      stamina_max: p.stamina_max || 100,
+      morale: p.morale || 70,
+      nationality: p.nationality || countryName,
+      resistance: p.resistance || 50,
+      squad_status: (p.squadRole === 'titular' ? 'starter' : (p.squadRole === 'reserva' ? 'bench' : 'reserve')) as any
+    }));
+
+    const { error: playersErr } = await supabase.from('world_players').insert(worldPlayersPayload);
+    if (playersErr) console.error('[club-creation] ❌ Erro ao salvar jogadores:', playersErr);
+
+    // 4. Preparar estado final do app
     const customClub = {
       ...initialClub,
+      id: finalWorldTeamId, // Usar o ID oficial do mundo
       name: config.name,
       stadiumName: config.stadiumName || 'Arena ' + config.name,
       fans: 1000,
@@ -170,18 +301,15 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       shieldIcon: (config as any).shieldIcon,
       shieldConfig: (config as any).shieldConfig,
       logoUrl: config.logoUrl,
-      country: config.country,
+      country: countryName,
     };
 
-    // Auto-populate clubProfile with foundation data
-    const today = new Date();
-    const foundedDate = today.toLocaleDateString('pt-BR'); // DD/MM/AAAA
     const initialClubProfile = {
       ownerName: displayName || 'Manager',
       instagram: '',
       bio: '',
       foundedSeason: defaultSeason.currentSeason ?? 1,
-      foundedDate,
+      foundedDate: new Date().toLocaleDateString('pt-BR'),
       motto: '',
       trophies: [],
     };
@@ -189,7 +317,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     const newState: GameState = {
       club: customClub,
       tactics: defaultTactics,
-      leagueTeams: getLeagueTeams(config.country, config.name),
+      leagueTeams: [], // Será populado pelo sync real-time ou navegação
       finances: [],
       marketPlayers: generateMarketPlayers(8),
       freeAgents: generateFreeAgents(12),
@@ -203,97 +331,27 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       clubProfile: initialClubProfile,
     };
 
-    // 1. Salvar metadados do clube primeiro para obter o ID
-    console.log('[club-creation] Salvando metadados do clube...');
-    const clubsPayload = {
-      user_id: userId,
-      name: config.name,
-      country: config.country,
-      stadium_name: config.stadiumName || 'Estádio Municipal',
-      primary_color: config.primaryColor,
-      secondary_color: config.secondaryColor,
-      detail_color: config.detailColor,
-      logo_url: config.logoUrl,
-      fans: 1000,
-      reputation: 65,
-      budget: 1000000,
-      cash: 1000000,
-    };
-
-    const { data: clubData, error: clubErr } = await supabase
-      .from('clubs')
-      .upsert(clubsPayload, { onConflict: 'user_id' })
-      .select()
-      .single();
-
-    if (clubErr) {
-      console.error('[club-creation] ERRO ao criar clube:', clubErr);
-      toast.error(`Erro ao registrar clube: ${clubErr.message}`);
-      return;
-    }
-
-    const clubId = clubData.id;
-    console.log('[club-creation] Clube criado com ID:', clubId);
-
-    // 2. Limpar qualquer jogador existente para este clube (Proteção anti-duplicação)
-    await supabase.from('world_players').delete().eq('team_id', clubId);
-
-    // 3. Salvar jogadores no banco de dados (world_players)
-    console.log('[club-creation] Vinculando jogadores ao clube no banco...');
-    const worldPlayersPayload = initialPlayers.map(p => ({
-      team_id: clubId,
-      name: p.name,
-      position: p.position,
-      overall: p.overall,
-      age: p.age,
-      market_value: p.marketValue || 0,
-      potential: p.potential || p.overall + 5,
-      salary: p.salary || 500,
-      attributes: p.attributes as any,
-      stamina: p.stamina || 100,
-      stamina_max: p.stamina_max || 100,
-      morale: p.morale || 70,
-      nationality: p.nationality || 'Brasil',
-      resistance: p.resistance || 50,
-      squad_status: (p.squadRole === 'titular' ? 'starter' : (p.squadRole === 'reserva' ? 'bench' : 'reserve')) as any
-    }));
-
-    const { error: playersErr } = await supabase
-      .from('world_players')
-      .insert(worldPlayersPayload);
-
-    if (playersErr) {
-      console.error('[club-creation] ERRO ao salvar jogadores:', playersErr);
-      // Não bloqueia o fluxo, mas avisa
-    } else {
-      console.log('[club-creation] Jogadores salvos com sucesso no world_players.');
-    }
-
-    // 3. Salvar o estado completo no game_saves para retrocompatibilidade
-    console.log('[club-creation] Salvando estado completo no game_saves...');
+    // Salvar estado completo no game_saves
     const jsonState = JSON.parse(JSON.stringify(newState));
-    const { error: saveErr } = await supabase
-      .from('game_saves')
-      .upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
+    await supabase.from('game_saves').upsert({ user_id: userId, club_data: jsonState }, { onConflict: 'user_id' });
 
-    if (saveErr) {
-      console.error('[club-creation] ERRO ao salvar game_save:', saveErr);
-      toast.error(`Erro ao salvar progresso: ${saveErr.message}`);
-    }
-
-    // 4. Notificação de boas-vindas
+    // 5. Notificação e Log Final
+    console.log(`[club-creation] ✨ Sucesso! Substituição concluída. ID: ${replacementId}`);
+    
     await supabase.from('user_notifications').insert([{
       user_id: userId,
-      icon: '👋',
-      title: 'Bem-vindo ao FLM 26!',
-      message: `Parabéns pela criação do ${config.name}! Seu elenco de ${initialPlayers.length} jogadores foi gerado automaticamente. Boa sorte, Manager!`,
+      icon: '🏆',
+      title: 'Vaga Assumida!',
+      message: botTeam 
+        ? `Você assumiu a vaga do ${botTeam.name} na liga! Seu novo elenco já está pronto.`
+        : `Seu clube ${config.name} foi criado com sucesso no mundo do FLM!`,
       type: 'success',
     }]);
 
     setLoadedState(newState);
     setHasSave(true);
     setIsNewClub(true);
-    toast.success(`${config.name} criado com sucesso! Elenco gerado. 🏆`);
+    toast.success(`${config.name} criado com sucesso! 🏆`);
   }, [userId, displayName]);
 
   if (!gameReady) return <GameLoadingScreen message="Carregando seu clube" subMessage="Preparando dados do jogo" />;
