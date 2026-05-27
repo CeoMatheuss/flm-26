@@ -151,42 +151,71 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       toast.error('As senhas não coincidem');
       return;
     }
+    
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          display_name: displayName.trim() || 'Manager',
-        },
-      },
-    });
-    if (error) {
-      const msg = error.message || '';
-      const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
-      const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
-      if (isDuplicate) {
-        toast.error('Este email já está cadastrado. Tente fazer login.');
-      } else if (isBetaBlock) {
-        toast.error('Email não autorizado no BETA. Solicite acesso primeiro.');
-        setStep('beta-request');
-      } else {
-        toast.error(msg || 'Erro ao criar conta. Tente novamente.');
-      }
-    } else {
-      toast.success('Conta criada com sucesso! Redirecionando...');
-      // Como o auto-confirm está ligado, o usuário já pode logar ou já está logado
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.reload();
-      } else {
-        setStep('login');
-        setEmail(email);
-      }
-    }
-    setLoading(false);
+    const startTime = performance.now();
+    console.log('[Auth] Cadastro iniciado', { email, displayName, timestamp: new Date().toISOString() });
 
+    try {
+      // Timeout de 15 segundos para cadastro (pode demorar mais que login)
+      const signupPromise = supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            display_name: displayName.trim() || 'Manager',
+          },
+        },
+      });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 15000)
+      );
+
+      const result = await Promise.race([signupPromise, timeoutPromise]) as any;
+      const duration = (performance.now() - startTime).toFixed(2);
+
+      if (result.error) {
+        console.error(`[Auth] Falha no cadastro (${duration}ms):`, result.error);
+        const msg = result.error.message || '';
+        const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
+        const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
+        
+        if (isDuplicate) {
+          toast.error('Este email já está cadastrado. Tente fazer login.');
+          setStep('login');
+        } else if (isBetaBlock) {
+          toast.error('Email não autorizado no BETA. Solicite acesso primeiro.');
+          setStep('beta-request');
+        } else {
+          toast.error(msg || 'Erro ao criar conta. Tente novamente.');
+        }
+      } else {
+        console.log(`[Auth] Cadastro bem-sucedido (${duration}ms)`, { user: result.data.user?.id });
+        toast.success('Conta criada com sucesso! Redirecionando...');
+        
+        // Como o auto-confirm está ligado, o usuário já pode logar ou já está logado
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          window.location.reload();
+        } else {
+          setStep('login');
+          setEmail(email);
+        }
+      }
+    } catch (err: any) {
+      const duration = (performance.now() - startTime).toFixed(2);
+      if (err.message === 'TIMEOUT_ERROR') {
+        console.error(`[Auth] Timeout no cadastro (${duration}ms)`);
+        toast.error('O servidor demorou muito para responder o cadastro. Tente novamente.');
+      } else {
+        console.error(`[Auth] Erro inesperado no cadastro (${duration}ms):`, err);
+        toast.error('Erro inesperado ao criar conta. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
 
