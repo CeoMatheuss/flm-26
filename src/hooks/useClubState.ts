@@ -872,6 +872,36 @@ export function useClubState(initialState: any, userId?: string) {
   const loansOut = loanedPlayers.filter(l => l.direction === 'out');
   const loansIn = loanedPlayers.filter(l => l.direction === 'in');
 
+  const publishTransferNews = useCallback(async (
+    kind: Parameters<typeof buildHeadline>[0],
+    ctx: Parameters<typeof buildHeadline>[1],
+  ) => {
+    if (!userId) return;
+    try {
+      const text = buildHeadline(kind, ctx);
+      const importance = computeImportance(ctx);
+      await supabase.from('newspaper_entries').insert({
+        user_id: userId,
+        category: categoryFor(kind),
+        text,
+        is_event: true,
+        importance,
+        metadata: {
+          kind,
+          player_name: ctx.playerName,
+          player_position: ctx.playerPosition,
+          player_overall: ctx.playerOverall,
+          from_club: ctx.fromClub,
+          to_club: ctx.toClub,
+          value: ctx.value,
+          loan_seasons: ctx.loanSeasons,
+        },
+      });
+    } catch (e) {
+      console.warn('[news] failed to publish transfer news', e);
+    }
+  }, [userId]);
+
   const loanOutPlayer = useCallback((playerId: string, currentSeason: number) => {
     if (loansOut.length >= 3) { toast.error('Limite de 3 empréstimos atingido!'); return; }
     setClub(prev => {
@@ -882,10 +912,17 @@ export function useClubState(initialState: any, userId?: string) {
       const loanedOut = { ...player, isLoaned: true, onLoanList: false, squad_status: 'reserve' as const, squadRole: 'reserva' as const };
       setLoanedPlayers(lp => [...lp, { player: loanedOut, fromClub: 'player', direction: 'out', seasonStart: currentSeason }]);
       toast.success(`${player.name} emprestado por 1 temporada! O clube receptor paga o salário.`);
+      publishTransferNews('loan_out', {
+        playerName: player.name,
+        playerPosition: player.position,
+        playerOverall: player.overall,
+        fromClub: prev.name,
+        loanSeasons: 1,
+      });
       // Mantém no elenco com flag isLoaned para aparecer na aba "Emprestados"
       return { ...prev, players: prev.players.map(p => p.id === playerId ? loanedOut : p) };
     });
-  }, [loansOut.length, loanedPlayers]);
+  }, [loansOut.length, loanedPlayers, publishTransferNews]);
 
   const loanInPlayer = useCallback((player: Player, currentSeason: number) => {
     if (loansIn.length >= 3) { toast.error('Limite de 3 empréstimos recebidos atingido!'); return; }
@@ -898,14 +935,23 @@ export function useClubState(initialState: any, userId?: string) {
     };
     
     setLoanedPlayers(lp => [...lp, { player: loanedInPlayer, fromClub: 'bot', direction: 'in', seasonStart: currentSeason }]);
-    setClub(prev => ({ ...prev, players: [...prev.players, loanedInPlayer] }));
+    setClub(prev => {
+      publishTransferNews('loan_in', {
+        playerName: player.name,
+        playerPosition: player.position,
+        playerOverall: player.overall,
+        toClub: prev.name,
+        loanSeasons: 1,
+      });
+      return { ...prev, players: [...prev.players, loanedInPlayer] };
+    });
     setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
     
     window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
     
     toast.success(`${player.name} emprestado ao seu clube! Você arca com o salário.`);
     return { salary: player.salary };
-  }, [loansIn.length]);
+  }, [loansIn.length, publishTransferNews]);
 
   const renameClub = useCallback(async (newName: string) => {
     setClub(prev => ({ ...prev, name: newName }));
