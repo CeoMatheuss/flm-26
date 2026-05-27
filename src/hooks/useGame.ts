@@ -178,6 +178,18 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     }
   }, [clubState.loanInPlayer, infraState.season.currentSeason, financeState.addFinance]);
 
+  // Finalização silenciosa (chamada quando o servidor confirma a transferência de empréstimo).
+  const finalizeLoanOut = useCallback((playerId: string, fromClubName?: string) => {
+    clubState.finalizeLoanOut(playerId, infraState.season.currentSeason, fromClubName);
+  }, [clubState.finalizeLoanOut, infraState.season.currentSeason]);
+
+  const finalizeLoanIn = useCallback((player: Player, fromClubName?: string) => {
+    clubState.finalizeLoanIn(player, infraState.season.currentSeason, fromClubName);
+    if (player.salary) {
+      financeState.addFinance('despesa', 'Empréstimo', player.salary * 12, `Empréstimo recebido: ${player.name}`);
+    }
+  }, [clubState.finalizeLoanIn, infraState.season.currentSeason, financeState.addFinance]);
+
   const upgradeFacility = useCallback((facility: 'trainingCenter' | 'youthAcademy' | 'stadium' | 'physiotherapy') => {
     infraState.upgradeFacility(
       facility,
