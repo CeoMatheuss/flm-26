@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { formatMoney } from '@/lib/formatMoney';
 import { Player } from '@/types/game';
-import { User, DollarSign, Calendar, Gift, Zap, TrendingUp, Handshake, AlertTriangle, CheckCircle2, XCircle, Info, Calculator, UserPlus, Heart } from 'lucide-react';
+import { User, DollarSign, Calendar, Gift, Zap, TrendingUp, Handshake, AlertTriangle, CheckCircle2, XCircle, Info, Calculator, UserPlus, Heart, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
