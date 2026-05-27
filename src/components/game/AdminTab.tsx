@@ -868,6 +868,9 @@ export function AdminTab({ userId, isFounder }: Props) {
 
           <TabsContent value="maintenance" className="space-y-3 mt-3">
             <MaintenanceToggle />
+          </TabsContent>
+
+          <TabsContent value="reset_competitions" className="space-y-3 mt-3">
             <ResetCompetitionsPanel adminUserId={userId} />
           </TabsContent>
 
