@@ -7661,6 +7661,14 @@ export type Database = {
         Args: { _away_goals: number; _home_goals: number; _match_id: string }
         Returns: Json
       }
+      finalize_loan_listing_transfer: {
+        Args: {
+          p_buyer_club_name: string
+          p_buyer_id: string
+          p_listing_id: string
+        }
+        Returns: Json
+      }
       finalize_loan_transfer: {
         Args: { p_buyer_id: string; p_listing_id: string; p_offer_id: string }
         Returns: Json
