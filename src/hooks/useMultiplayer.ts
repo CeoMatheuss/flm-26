@@ -317,8 +317,6 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
 
   // Auto-assign player to a league based on country
   const autoJoinLeague = useCallback(async () => {
-    if (!clubName || !clubCountry || autoJoining || !userId) return;
-  const autoJoinLeague = useCallback(async () => {
     if (!clubName || !clubCountry || !userId) return;
     if (autoJoinInFlightRef.current) return;
     if (autoJoinAttemptedRef.current === userId) return;
