@@ -539,12 +539,66 @@ function generateReport(
 
   const pressing = tactics?.pressing || 'medio';
   const playStyle = tactics?.playStyle || 'equilibrado';
+  const formation = tactics?.formation || '4-4-2';
   const tacticalNotes: string[] = [];
   if (pressing === 'ultra-alto' || pressing === 'alto') {
     tacticalNotes.push(stats.tackles[idx] >= 8 ? 'Pressing alto foi eficaz' : 'Pressing alto não surtiu efeito');
   }
-  if (playStyle === 'ofensivo') tacticalNotes.push(userGoals >= 2 ? 'Estilo ofensivo rendeu gols' : 'Estilo ofensivo deixou a defesa exposta');
+  if (playStyle === 'ofensivo' || playStyle === 'ataque-total') tacticalNotes.push(userGoals >= 2 ? 'Estilo ofensivo rendeu gols' : 'Estilo ofensivo deixou a defesa exposta');
+  if (playStyle === 'retranca-total' || playStyle === 'parking-bus') tacticalNotes.push(oppGoals === 0 ? 'Muralha defensiva funcionou' : 'Retranca furada pelo adversário');
   if (tacticalNotes.length === 0) tacticalNotes.push('Tática equilibrada manteve o time competitivo');
+
+  // ── ANÁLISE TÁTICA POR SETOR ─────────────────────────────
+  const userSide = isUserHome ? 'home' : 'away';
+  const ownPlayers = homePlayers.filter(p => p.team === userSide);
+  const sectorAvg = (positions: string[]) => {
+    const ps = ownPlayers.filter(p => positions.includes(p.position));
+    if (!ps.length) return 6.0;
+    return Math.round((ps.reduce((s, p) => s + p.rating, 0) / ps.length) * 10) / 10;
+  };
+  const defRating = sectorAvg(['GOL', 'ZAG', 'LAT']);
+  const midRating = sectorAvg(['VOL', 'MEI']);
+  const atkRating = sectorAvg(['ATA']);
+  const styleWorked =
+    (playStyle === 'ofensivo' || playStyle === 'ataque-total') ? userGoals >= 2 :
+    (playStyle === 'retranca-total' || playStyle === 'parking-bus' || playStyle === 'defesa-compacta') ? oppGoals <= 1 :
+    (playStyle === 'posse' || playStyle === 'tiki-taka' || playStyle === 'controle-total') ? stats.possession[idx] >= 55 :
+    (playStyle === 'pressao-alta' || playStyle === 'gegenpressing') ? stats.tackles[idx] >= 10 :
+    (playStyle === 'contra-ataque' || playStyle === 'transicao-rapida') ? userGoals >= 1 && stats.possession[idx] < 50 :
+    result === 'win' || result === 'draw';
+  const assistantFeedback = result === 'win'
+    ? (styleWorked ? `Mister, sua leitura do jogo foi cirúrgica. O ${playStyle.replace('-', ' ')} no ${formation} funcionou como planejado.`
+                   : `Vencemos apesar da tática não ter encaixado perfeitamente. Reavalie ${playStyle} para os próximos jogos.`)
+    : result === 'draw'
+      ? `Empate mostra que o ${formation} ${styleWorked ? 'segurou o necessário' : 'não criou o suficiente'}. Talvez ajustar a intensidade ou a largura ajude.`
+      : (styleWorked ? `A tática até funcionou no plano, mas faltou eficiência. Não troque tudo ainda.`
+                     : `Recomendo revisar a postura: ${playStyle} no ${formation} não está rendendo. Considere ${userGoals === 0 ? 'um estilo mais ofensivo' : 'mais solidez defensiva'}.`);
+
+  const tacticalAnalysis = {
+    formation, style: playStyle,
+    styleWorked,
+    sectorEfficiency: { defesa: defRating, meio: midRating, ataque: atkRating },
+    summary: {
+      possession: stats.possession[idx],
+      shots: stats.shots[idx],
+      shotsOnTarget: stats.shotsOnTarget[idx],
+      tackles: stats.tackles[idx],
+      fouls: stats.fouls[idx],
+    },
+    whatWorked: [
+      stats.possession[idx] >= 55 ? `Domínio da posse (${stats.possession[idx]}%)` : null,
+      stats.shotsOnTarget[idx] >= 5 ? `Volume ofensivo (${stats.shotsOnTarget[idx]} no alvo)` : null,
+      oppGoals === 0 ? 'Defesa intransponível (clean sheet)' : null,
+      stats.tackles[idx] >= 10 ? `Pressão recuperou ${stats.tackles[idx]} bolas` : null,
+    ].filter(Boolean) as string[],
+    whatFailed: [
+      stats.possession[idx] < 40 ? `Posse muito baixa (${stats.possession[idx]}%)` : null,
+      stats.shots[idx] <= 3 ? 'Falta de chegada ao ataque' : null,
+      oppGoals >= 3 ? `Defesa exposta (${oppGoals} gols sofridos)` : null,
+      stats.yellowCards[idx] >= 3 ? `Indisciplina (${stats.yellowCards[idx]} amarelos)` : null,
+    ].filter(Boolean) as string[],
+    assistantFeedback,
+  };
 
   // Use público autoritativo da partida quando disponível; nunca random aqui.
   const attendance = typeof attendanceOverride === 'number'
@@ -574,6 +628,7 @@ function generateReport(
       },
       tactical: tacticalNotes,
       tacticalImpact: tacticalImpactFactors || [],
+      tacticalAnalysis,
       impacts: { moraleChange, rankingChange, attendance, revenue: ticketRevenue, fatigue: pressing === 'ultra-alto' ? 12 : pressing === 'alto' ? 8 : 5 },
     },
   };
@@ -695,6 +750,7 @@ function getTacticalExtras(t: any): TacticalExtras {
   const dline = t?.defenseLine || 'media';
   const width = t?.width || 'normal';
   const formation: string = t?.formation || '4-4-2';
+  const intensity: string = t?.intensity || 'equilibrada';
 
   let atkMul = 1, defMul = 1, pressBonus = 0, drainMul = 1;
   let foulBias = 0, penaltyBonus = 0, offsideMul = 1, possessionBias = 0;
@@ -702,45 +758,84 @@ function getTacticalExtras(t: any): TacticalExtras {
 
   // Marcação
   if (marking === 'individual') {
-    defMul *= 1.08; pressBonus += 0.10; drainMul *= 1.08;
-    foulBias += 0.6; penaltyBonus += 0.025;
+    defMul *= 1.12; pressBonus += 0.15; drainMul *= 1.10;
+    foulBias += 0.9; penaltyBonus += 0.035;
   } else if (marking === 'zona') {
-    defMul *= 1.03;
-  } else if (marking === 'mista') {
-    defMul *= 1.05; pressBonus += 0.05;
+    defMul *= 1.04;
+  } else if (marking === 'mista' || marking === 'misto') {
+    defMul *= 1.07; pressBonus += 0.07;
   }
 
   // Linha defensiva
   if (dline === 'alta') {
-    atkMul *= 1.05; defMul *= 0.92; pressBonus += 0.10;
-    offsideMul *= 1.6; drainMul *= 1.05;
+    atkMul *= 1.08; defMul *= 0.88; pressBonus += 0.15;
+    offsideMul *= 1.8; drainMul *= 1.08;
   } else if (dline === 'baixa') {
-    atkMul *= 0.92; defMul *= 1.10; pressBonus -= 0.10;
-    offsideMul *= 0.6; drainMul *= 0.95;
+    atkMul *= 0.88; defMul *= 1.15; pressBonus -= 0.15;
+    offsideMul *= 0.5; drainMul *= 0.92;
   }
 
   // Estilo de passe
   if (passing === 'curto') {
-    possessionBias += 0.06; shortPassBoost += 0.10;
-    atkMul *= 0.97; drainMul *= 0.97;
+    possessionBias += 0.10; shortPassBoost += 0.15;
+    atkMul *= 0.96; drainMul *= 0.96;
   } else if (passing === 'direto') {
-    possessionBias -= 0.05; longShotBoost += 0.12; atkMul *= 1.05;
+    possessionBias -= 0.08; longShotBoost += 0.18; atkMul *= 1.08;
   } else if (passing === 'longo') {
-    possessionBias -= 0.07; longShotBoost += 0.05; crossBoost += 0.15; atkMul *= 1.07;
-    drainMul *= 1.02;
+    possessionBias -= 0.10; longShotBoost += 0.08; crossBoost += 0.22; atkMul *= 1.10;
+    drainMul *= 1.03;
   }
 
   // Largura
   if (width === 'larga') {
-    atkMul *= 1.04; defMul *= 0.97; crossBoost += 0.18;
+    atkMul *= 1.06; defMul *= 0.95; crossBoost += 0.25;
   } else if (width === 'estreita') {
-    atkMul *= 0.97; defMul *= 1.04; shortPassBoost += 0.06;
+    atkMul *= 0.96; defMul *= 1.06; shortPassBoost += 0.10;
   }
 
-  // Formação (impacto sutil — só viés)
-  if (formation.startsWith('5-') || formation === '4-5-1') { defMul *= 1.05; atkMul *= 0.95; }
-  else if (formation === '3-4-3' || formation === '4-3-3' || formation === '4-2-4') { atkMul *= 1.05; defMul *= 0.96; }
-  else if (formation === '4-2-3-1' || formation === '4-3-2-1') { possessionBias += 0.03; }
+  // Formação — impacto FORTE (cada formação tem personalidade clara)
+  switch (formation) {
+    case '4-3-3':       atkMul *= 1.10; defMul *= 0.94; crossBoost += 0.12; break;
+    case '3-4-3':       atkMul *= 1.15; defMul *= 0.86; crossBoost += 0.08; break;
+    case '4-2-4-0':     atkMul *= 1.10; defMul *= 0.92; possessionBias += 0.05; break;
+    case '5-4-1':       atkMul *= 0.82; defMul *= 1.22; possessionBias -= 0.08; break;
+    case '5-3-2':       atkMul *= 0.90; defMul *= 1.18; break;
+    case '4-5-1':       atkMul *= 0.90; defMul *= 1.14; possessionBias += 0.05; break;
+    case '4-1-4-1':     atkMul *= 0.96; defMul *= 1.10; possessionBias += 0.03; break;
+    case '4-2-3-1':     possessionBias += 0.06; atkMul *= 1.04; defMul *= 1.03; break;
+    case '4-3-2-1':     possessionBias += 0.05; atkMul *= 1.05; break;
+    case '3-5-2':       atkMul *= 1.08; defMul *= 0.96; possessionBias += 0.04; break;
+    case '3-4-1-2':     atkMul *= 1.08; defMul *= 0.94; break;
+    case '4-1-2-1-2':   atkMul *= 1.04; defMul *= 1.04; break;
+    case '4-4-1-1':     atkMul *= 1.02; break;
+    default:            /* 4-4-2 baseline */ break;
+  }
+
+  // Intensidade
+  if (intensity === 'baixa') { drainMul *= 0.85; defMul *= 0.96; }
+  else if (intensity === 'agressiva') { drainMul *= 1.15; atkMul *= 1.05; pressBonus += 0.08; foulBias += 0.4; }
+  else if (intensity === 'pressao-maxima') { drainMul *= 1.35; pressBonus += 0.18; atkMul *= 1.08; foulBias += 0.8; }
+
+  // Agregar instruções individuais (até 11 por time) — cada uma adiciona ~2% no eixo
+  const insts: any[] = Array.isArray(t?.playerInstructions) ? t.playerInstructions : [];
+  let nAtk = 0, nDef = 0, nWide = 0, nMan = 0, nSave = 0;
+  for (const pi of insts) {
+    const b = pi?.behavior, i = pi?.instruction;
+    if (b === 'atacar-mais' || b === 'subir-ao-ataque' || i === 'avançar' || i === 'infiltrar') nAtk++;
+    if (b === 'defender-mais' || b === 'ficar-na-defesa' || i === 'recuar' || i === 'manter-posicao') nDef++;
+    if (b === 'ficar-aberto') nWide++;
+    if (i === 'marcar-homem') nMan++;
+    if (i === 'economizar-stamina') nSave++;
+  }
+  // cap effects per category
+  nAtk = Math.min(nAtk, 8); nDef = Math.min(nDef, 8); nWide = Math.min(nWide, 5);
+  nMan = Math.min(nMan, 6); nSave = Math.min(nSave, 6);
+  atkMul *= (1 + nAtk * 0.020) * (1 - nDef * 0.010);
+  defMul *= (1 + nDef * 0.020) * (1 - nAtk * 0.010);
+  crossBoost += nWide * 0.04;
+  pressBonus += nMan * 0.04;
+  drainMul *= (1 + nMan * 0.015) * (1 - nSave * 0.020);
+  foulBias += nMan * 0.15;
 
   return { atkMul, defMul, pressBonus, drainMul, foulBias, penaltyBonus, offsideMul, possessionBias, shortPassBoost, longShotBoost, crossBoost };
 }
@@ -894,10 +989,12 @@ function simulateFullMatch(
   console.log(`[Tactics] HOME mark=${tactics?.marking||'zona'} pass=${tactics?.passingStyle||'misto'} line=${tactics?.defenseLine||'media'} width=${tactics?.width||'normal'} form=${tactics?.formation||'4-4-2'}`);
   console.log(`[Tactics] AWAY mark=${awayTacticsInput?.marking||'zona'} pass=${awayTacticsInput?.passingStyle||'misto'} line=${awayTacticsInput?.defenseLine||'media'} width=${awayTacticsInput?.width||'normal'} form=${awayTacticsInput?.formation||'4-4-2'}`);
 
-  // ── TACTICAL AMPLIFIER (FLM26) ────────────────────────────
-  // Faz cada lever do treinador ter ~20% mais impacto na simulação.
+  // ── TACTICAL AMPLIFIER v2 (FLM26) ─────────────────────────
+  // Cada lever do treinador agora tem ~50% mais impacto na simulação.
   // Mantém a métrica neutra em 1.0; apenas amplia a distância do neutro.
-  const TACTICAL_AMP = 1.20;
+  // Resultado: trocar de retranca para ataque-total muda placar/estatísticas
+  // de forma perceptível, jogo após jogo.
+  const TACTICAL_AMP = 1.50;
   const amp = (v: number) => 1 + (v - 1) * TACTICAL_AMP;
 
   // Tactical impact on simulation (HOME) — uses style table + extras
@@ -1692,6 +1789,67 @@ function simulateFullMatch(
       ballX: 0.3 + rng() * 0.4, ballY: 0.2 + rng() * 0.6,
       description: chosen.desc,
       staminaData, momentPhase,
+    });
+  }
+
+  // ── AI ADAPTIVE TACTICS (FLM26) ─────────────────────────────
+  // O treinador adversário (e o time do usuário em sim totalmente automática)
+  // ajusta a postura em 30', 60' e 75' conforme o placar. Cada ajuste vira:
+  //  1) um evento visível no feed da partida ("Ajuste tático adversário")
+  //  2) um fator no relatório tático pós-jogo
+  //  3) um pequeno empurrão nos modificadores efetivos para a janela seguinte
+  const scoreAt = (mark: number) => {
+    const h = homeGoalMins.filter(m => m <= mark).length
+      + penaltyMins.filter(p => p.team === 'home' && p.isGoal && p.minute <= mark).length;
+    const a = awayGoalMins.filter(m => m <= mark).length
+      + penaltyMins.filter(p => p.team === 'away' && p.isGoal && p.minute <= mark).length;
+    return { h, a };
+  };
+  const awayIsBot = !awayTacticsInput || awayTacticsInput.__auto !== false;
+  const aiAdjustments: Array<{ minute: number; side: 'home'|'away'; label: string; reason: string; atkMul: number; defMul: number }> = [];
+  const planAdjustment = (mark: number) => {
+    const { h, a } = scoreAt(mark);
+    // Bot adversário (away) reage ao placar
+    if (awayIsBot) {
+      if (a < h) {
+        const diff = h - a;
+        const m = Math.min(89, mark + 1 + Math.floor(rng() * 3));
+        const label = diff >= 2 ? 'Adversário parte pra cima desesperado' : 'Adversário se solta no ataque';
+        aiAdjustments.push({ minute: m, side: 'away', label,
+          reason: `Perdendo por ${diff} no min ${mark}: bot aumenta linha, troca por estilo ofensivo.`,
+          atkMul: 1 + 0.08 * diff, defMul: 1 - 0.05 * diff });
+      } else if (a > h) {
+        const diff = a - h;
+        const m = Math.min(89, mark + 1 + Math.floor(rng() * 3));
+        aiAdjustments.push({ minute: m, side: 'away', label: 'Adversário se retranca para segurar',
+          reason: `Vencendo por ${diff} no min ${mark}: bot recua, marca individual, segura ritmo.`,
+          atkMul: 1 - 0.05 * diff, defMul: 1 + 0.10 * diff });
+      }
+    }
+    // Pequeno espelho para o mandante quando jogado contra bot (single-player)
+    if (awayIsBot) {
+      if (h < a) {
+        const diff = a - h;
+        const m = Math.min(89, mark + 2 + Math.floor(rng() * 3));
+        aiAdjustments.push({ minute: m, side: 'home', label: 'Treinador pede mais volume',
+          reason: `Time perdendo por ${diff}: aumenta pressão e leva mais gente à área.`,
+          atkMul: 1 + 0.05 * diff, defMul: 1 - 0.02 * diff });
+      }
+    }
+  };
+  planAdjustment(30); planAdjustment(60); planAdjustment(75);
+  for (const adj of aiAdjustments) {
+    const teamName = adj.side === 'away' ? awayTeam : homeTeam;
+    allPlanned.push({
+      minute: adj.minute, type: 'tactical_adjust', team: adj.side, animType: 'tactic',
+      ballX: 0.5, ballY: 0.5,
+      description: `🧠 AJUSTE TÁTICO — ${teamName}: ${adj.label}. ${adj.reason}`,
+      momentPhase: 'tactical_adjust', priority: 'medium',
+    });
+    tacticalImpactFactors.push({
+      side: adj.side, name: `Ajuste no min ${adj.minute}`,
+      impact: `Atq ${pct((adj.atkMul-1))} / Def ${pct((adj.defMul-1))}`,
+      kind: 'ai_adapt', detail: adj.reason,
     });
   }
 
