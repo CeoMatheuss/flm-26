@@ -63,6 +63,28 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
   // Auto-rotate carousel
   useEffect(() => {
     const timer = setInterval(() => setSlideIndex(i => (i + 1) % slides.length), 4000);
+    
+    // Check for corrupted session on mount
+    const checkSession = async () => {
+      try {
+        const { error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('[Auth] Sessão corrompida detectada, limpando...', error);
+          localStorage.removeItem('supabase.auth.token');
+          // For Lovable Cloud specific key if different
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('lovable'))) {
+              console.log('[Auth] Removendo chave suspeita:', key);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Auth] Erro ao verificar sessão inicial:', e);
+      }
+    };
+    checkSession();
+
     return () => clearInterval(timer);
   }, []);
 
