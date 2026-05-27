@@ -138,13 +138,26 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
 
       {/* Table Header */}
       <div className="hidden md:grid grid-cols-12 gap-2 px-6 py-3 bg-zinc-950/40 text-[9px] font-black uppercase tracking-[0.2em] text-white/30 border-b border-white/5 items-center">
-        <div className="col-span-1">#</div>
-        <div className="col-span-1 text-center">OVR</div>
-        <div className="col-span-3">Jogador / Posição</div>
-        <div className="col-span-1 text-center">País</div>
-        <div className="col-span-1 text-center">Idade</div>
-        <div className="col-span-2 text-center">Atributos</div>
-        <div className="col-span-3 text-right">Contrato / Valor</div>
+        {activeTab === 'emprestados' ? (
+          <>
+            <div className="col-span-1">#</div>
+            <div className="col-span-1 text-center">OVR</div>
+            <div className="col-span-3">Jogador / Origem</div>
+            <div className="col-span-2 text-center">Destino</div>
+            <div className="col-span-2 text-center">Duração</div>
+            <div className="col-span-3 text-right">Situação</div>
+          </>
+        ) : (
+          <>
+            <div className="col-span-1">#</div>
+            <div className="col-span-1 text-center">OVR</div>
+            <div className="col-span-3">Jogador / Posição</div>
+            <div className="col-span-1 text-center">País</div>
+            <div className="col-span-1 text-center">Idade</div>
+            <div className="col-span-2 text-center">Atributos</div>
+            <div className="col-span-3 text-right">Contrato / Valor</div>
+          </>
+        )}
       </div>
 
       {/* List Content */}
