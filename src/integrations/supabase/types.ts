@@ -8203,6 +8203,13 @@ export type Database = {
       }
       validate_world_league: { Args: { p_league_id: string }; Returns: Json }
       version_compare: { Args: { v1: string; v2: string }; Returns: number }
+      watchdog_simulate_world_matches: {
+        Args: { p_batch_size?: number }
+        Returns: {
+          leagues_advanced: number
+          matches_simulated: number
+        }[]
+      }
       world_leagues_apply_fixed_kickoff: { Args: never; Returns: Json }
       world_leagues_kickoff_for: {
         Args: { _country: string; _division: number }
