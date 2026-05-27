@@ -36,6 +36,8 @@ export function WaitingListPanel({ userId, onExploreOtherModes }: Props) {
       .eq('user_id', userId);
 
     if ((memberCount ?? 0) > 0) {
+      // Usuário já está em uma liga → limpa fila órfã e esconde widget
+      await supabase.from('league_waiting_list').delete().eq('user_id', userId);
       setEntry(null);
       setLoading(false);
       return;
