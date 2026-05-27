@@ -336,6 +336,25 @@ export function PlayerRankingTab() {
                       <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-emerald-400" />
                       {Number(r.avg_rating).toFixed(2)}
                     </div>
+                    {(forSale.has(keyOf(p.name, p.age)) || onLoan.has(keyOf(p.name, p.age))) && (
+                      <Badge
+                        className={`mt-2 h-4 px-1.5 text-[9px] font-black gap-0.5 rounded border ${
+                          forSale.has(keyOf(p.name, p.age))
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                        }`}
+                      >
+                        {forSale.has(keyOf(p.name, p.age)) ? (
+                          <>
+                            <Tag className="h-2.5 w-2.5" /> À VENDA
+                          </>
+                        ) : (
+                          <>
+                            <Handshake className="h-2.5 w-2.5" /> EMPRÉSTIMO
+                          </>
+                        )}
+                      </Badge>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
