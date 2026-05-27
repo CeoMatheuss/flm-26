@@ -1322,10 +1322,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
           {/* Empréstimos Recebidos */}
           <div className="space-y-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <ArrowLeftRight className="h-4 w-4 text-cyan-400" /> Empréstimos Recebidos
-              {incomingLoanOffers.length > 0 && <Badge className="bg-cyan-500/15 text-cyan-400 text-[9px]">{incomingLoanOffers.length}</Badge>}
-            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
+                <ArrowLeftRight className="h-3.5 w-3.5 text-cyan-300" />
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">Empréstimos Recebidos</h3>
+              {incomingLoanOffers.length > 0 && <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] animate-pulse">{incomingLoanOffers.length}</Badge>}
+            </div>
 
             {incomingLoanOffers.length === 0 ? (
               <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
