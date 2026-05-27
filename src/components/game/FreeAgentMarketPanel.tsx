@@ -237,13 +237,6 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
     else { toast.info('Proposta cancelada'); loadActiveOffers(); loadHistory(); }
   };
 
-  const openOfferDialog = (agent: FreeAgent) => {
-    // Hidden suggested salary to make it a blind negotiation
-    setOfferAgent(agent);
-    setOfferSalary(1000); // Fixed default instead of revealing agent.player_data.salary
-    setOfferYears(2);
-    setSigningBonus(0);
-  };
 
   // ── Filters ──
   const filtered = useMemo(() => {
