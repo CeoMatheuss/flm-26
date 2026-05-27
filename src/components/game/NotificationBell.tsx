@@ -61,7 +61,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const [fullPage, setFullPage] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
   const [dbNotifications, setDbNotifications] = useState<Array<{
-    id: string; icon: string; title: string; message: string; type: string; category?: string; priority?: string; read_at: string | null; created_at: string; data: any;
+    id: string; icon: string; title: string; message: string; type: string; category?: string; priority?: string; read_at: string | null; created_at: string; data: any; actions: any;
   }>>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [persistedReadKeys, setPersistedReadKeys] = useState<Set<string>>(new Set());
