@@ -375,6 +375,8 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                                 <span className={`text-sm truncate max-w-[120px] md:max-w-none group-hover/row:text-primary transition-colors ${isPlayerTeam ? 'font-black text-primary' : 'font-medium'}`}>
                                   {isPlayerTeam ? clubName : row.world_teams?.name}
                                 </span>
+                                {i === 0 && <span className="text-[8px] font-black text-yellow-500 uppercase tracking-tighter mt-0.5">Mundial</span>}
+                                {i >= 1 && i < 8 && <span className="text-[8px] font-black text-blue-400 uppercase tracking-tighter mt-0.5">Continental</span>}
                                 {isPlayerTeam && <span className="text-[8px] uppercase tracking-tighter text-primary font-bold">Seu Clube</span>}
                               </div>
                             </div>
