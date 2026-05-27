@@ -84,7 +84,7 @@ export function ChampionshipsTab() {
       <div className="space-y-4 animate-in slide-in-from-right duration-300">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => setSelectedLeague(null)} className="gap-2 text-muted-foreground hover:text-white">
-            <ArrowLeft className="h-4 w-4" /> Voltar ao Hub
+            <ArrowLeft className="h-4 w-4" /> Voltar
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-white/10"><Star className="h-4 w-4 text-yellow-500" /></Button>
@@ -119,11 +119,11 @@ export function ChampionshipsTab() {
         </div>
 
         <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-          <TabsList className="bg-slate-950/50 border border-white/5 p-1 h-12 w-full grid grid-cols-4 md:flex md:w-auto">
-            <TabsTrigger value="standings" className="text-xs px-6 data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-100">Tabela</TabsTrigger>
-            <TabsTrigger value="matches" className="text-xs px-6">Jogos</TabsTrigger>
-            <TabsTrigger value="scorers" className="text-xs px-6">Artilharia</TabsTrigger>
-            <TabsTrigger value="stats" className="text-xs px-6">Estatísticas</TabsTrigger>
+          <TabsList className="bg-slate-950/50 border border-white/5 p-1 h-12 w-full flex overflow-x-auto no-scrollbar scrollbar-none md:w-auto">
+            <TabsTrigger value="standings" className="text-xs px-6 flex-shrink-0 data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-100">Tabela</TabsTrigger>
+            <TabsTrigger value="matches" className="text-xs px-6 flex-shrink-0">Jogos</TabsTrigger>
+            <TabsTrigger value="scorers" className="text-xs px-6 flex-shrink-0">Artilharia</TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs px-6 flex-shrink-0">Estatísticas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="standings" className="mt-4">
@@ -231,7 +231,7 @@ export function ChampionshipsTab() {
               <Trophy className="h-6 w-6 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white tracking-tight">Hub Global de Campeonatos</h2>
+              <h2 className="text-2xl font-black text-white tracking-tight">Campeonatos</h2>
               <p className="text-xs text-muted-foreground uppercase font-black tracking-widest mt-1">Explorar competições em tempo real</p>
             </div>
           </div>
@@ -267,6 +267,11 @@ export function ChampionshipsTab() {
               <SelectItem value="Brasil">Brasil</SelectItem>
               <SelectItem value="Inglaterra">Inglaterra</SelectItem>
               <SelectItem value="Espanha">Espanha</SelectItem>
+              <SelectItem value="Alemanha">Alemanha</SelectItem>
+              <SelectItem value="França">França</SelectItem>
+              <SelectItem value="Itália">Itália</SelectItem>
+              <SelectItem value="Portugal">Portugal</SelectItem>
+              <SelectItem value="Argentina">Argentina</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={loadLeagues} className="h-12 bg-emerald-600 hover:bg-emerald-500 font-black uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-emerald-600/20">
@@ -292,13 +297,20 @@ export function ChampionshipsTab() {
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-emerald-600/10 border border-white/5 flex items-center justify-center text-xl shadow-inner">
-                    {league.country === 'Brasil' ? '🇧🇷' : league.country === 'Inglaterra' ? '🏴' : '🇪🇸'}
+                    {league.country === 'Brasil' ? '🇧🇷' : 
+                     league.country === 'Inglaterra' ? '🏴󠁧󠁢󠁥󠁮󠁧󠁿' : 
+                     league.country === 'Espanha' ? '🇪🇸' :
+                     league.country === 'Alemanha' ? '🇩🇪' :
+                     league.country === 'França' ? '🇫🇷' :
+                     league.country === 'Itália' ? '🇮🇹' :
+                     league.country === 'Portugal' ? '🇵🇹' :
+                     league.country === 'Argentina' ? '🇦🇷' : '🌎'}
                   </div>
                   <div>
                     <CardTitle className="text-base font-black text-white group-hover:text-emerald-100 transition-colors">
                       {league.name}
                     </CardTitle>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">{league.country} • Série {league.division}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">{league.country} • Nível {league.level}</p>
                   </div>
                 </div>
               </CardHeader>
@@ -319,21 +331,16 @@ export function ChampionshipsTab() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-[10px] font-black uppercase text-emerald-400/60 pt-2 border-t border-white/5">
-                  <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Temporada {league.season_year}</span>
-                  <span className="group-hover:translate-x-1 transition-transform">Ver Detalhes →</span>
+                
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Acessar Detalhes</span>
+                  <div className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                    <TrendingUp className="h-3 w-3" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
-          
-          {filteredLeagues.length === 0 && (
-            <div className="col-span-full py-20 text-center space-y-4 rounded-3xl border border-dashed border-white/10 bg-white/5">
-               <Trophy className="h-12 w-12 text-muted-foreground/20 mx-auto" />
-               <p className="text-muted-foreground text-sm font-bold">Nenhum campeonato encontrado com esses filtros.</p>
-               <Button variant="outline" size="sm" onClick={() => { setSelectedCountry('all'); setSearchTerm(''); }} className="border-white/10">Limpar Filtros</Button>
-            </div>
-          )}
         </div>
       )}
     </div>
