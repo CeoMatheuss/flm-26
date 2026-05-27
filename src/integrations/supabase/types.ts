@@ -266,6 +266,8 @@ export type Database = {
           attempts: number | null
           code: string
           created_at: string
+          delivery_error: string | null
+          delivery_status: string | null
           email: string
           expires_at: string
           id: string
@@ -276,6 +278,8 @@ export type Database = {
           attempts?: number | null
           code: string
           created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string | null
           email: string
           expires_at?: string
           id?: string
@@ -286,6 +290,8 @@ export type Database = {
           attempts?: number | null
           code?: string
           created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string | null
           email?: string
           expires_at?: string
           id?: string
