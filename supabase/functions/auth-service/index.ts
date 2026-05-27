@@ -129,8 +129,13 @@ serve(async (req) => {
           finalError = primaryAttempt.data
           console.error(`[send-code] Erro no domínio principal (${primaryAttempt.status}):`, finalError)
 
-          // Fallback Automático para sandbox se for erro de validação de domínio
-          if (primaryAttempt.status === 403 || primaryAttempt.data?.name === 'validation_error' || primaryAttempt.data?.message?.includes('not verified') || primaryAttempt.data?.message?.includes('only send testing emails')) {
+          // Fallback Automático para sandbox se for erro de validação de domínio ou 403
+          const isDomainError = primaryAttempt.status === 403 || 
+                                primaryAttempt.data?.name === 'validation_error' || 
+                                primaryAttempt.data?.message?.toLowerCase().includes('not verified') || 
+                                primaryAttempt.data?.message?.toLowerCase().includes('verify your domain')
+
+          if (isDomainError) {
             console.warn('[send-code] Domínio não verificado ou conta em sandbox. Tentando fallback para onboarding@resend.dev...')
             const fallbackAttempt = await sendWithDomain('onboarding@resend.dev')
             if (fallbackAttempt.ok) {
@@ -139,11 +144,13 @@ serve(async (req) => {
             } else {
               console.error('[send-code] Falha total no envio. Ambos domínios falharam.')
               finalError = fallbackAttempt.data
+              
               // Se falhou no sandbox também, o erro costuma ser que o destinatário não é o dono da conta
-              if (fallbackAttempt.data?.message?.includes('only send testing emails')) {
+              if (fallbackAttempt.data?.message?.toLowerCase().includes('only send testing emails')) {
                 finalError = { 
-                  message: 'A conta Resend está em modo Sandbox. No modo Sandbox, você só pode enviar e-mails para o endereço que criou a conta (fcmsistemas7@gmail.com). Para enviar para outros usuários, você PRECISA verificar seu domínio no painel da Resend.',
-                  code: 'RESEND_SANDBOX_LIMIT'
+                  message: 'A conta Resend está em modo Sandbox. No modo Sandbox, e-mails só podem ser enviados para o endereço que criou a conta (fcmsistemas7@gmail.com). Para enviar para outros usuários (Gmail, Outlook, etc), você PRECISA verificar um domínio próprio no painel da Resend.',
+                  code: 'RESEND_SANDBOX_LIMIT',
+                  status: 403
                 }
               }
             }
