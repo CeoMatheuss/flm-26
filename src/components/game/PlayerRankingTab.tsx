@@ -60,6 +60,26 @@ export function PlayerRankingTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category>('global');
+  const [forSale, setForSale] = useState<Set<string>>(new Set());
+  const [onLoan, setOnLoan] = useState<Set<string>>(new Set());
+
+  const keyOf = (name?: string | null, age?: number | null) =>
+    `${(name || '').toLowerCase().trim()}|${age ?? ''}`;
+
+  const fetchMarketStatus = async () => {
+    const [sales, loans] = await Promise.all([
+      supabase
+        .from('transfer_listings')
+        .select('player_name, player_age')
+        .eq('status', 'active'),
+      supabase
+        .from('loan_listings')
+        .select('player_name, player_age')
+        .eq('status', 'active'),
+    ]);
+    setForSale(new Set((sales.data || []).map((r: any) => keyOf(r.player_name, r.player_age))));
+    setOnLoan(new Set((loans.data || []).map((r: any) => keyOf(r.player_name, r.player_age))));
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -83,12 +103,23 @@ export function PlayerRankingTab() {
 
   useEffect(() => {
     fetchData();
+    fetchMarketStatus();
     const channel = supabase
       .channel('player-ranking-rt')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'global_player_ranking' },
         () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transfer_listings' },
+        () => fetchMarketStatus()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'loan_listings' },
+        () => fetchMarketStatus()
       )
       .subscribe();
     return () => {
