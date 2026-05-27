@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 
 import { ShoppingCart, Tag, Send, Check, X, Clock, DollarSign, Gift, Trophy, Target, Swords, AlertTriangle, ArrowLeftRight, RefreshCw, Users, HelpCircle, ArrowLeft, Eye, Search, TrendingUp, Sparkles, Globe, FileText, Timer, EyeOff, Zap, Crown, Handshake, SlidersHorizontal } from 'lucide-react';
@@ -134,6 +135,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [loading, setLoading] = useState(false);
 
   const [offerDialogId, setOfferDialogId] = useState<string | null>(null);
+  const [buyConfirm, setBuyConfirm] = useState<TransferListing | null>(null);
   const [viewingSellerId, setViewingSellerId] = useState<{ id: string; name: string; shield?: any } | null>(null);
   const [posFilter, setPosFilter] = useState('all');
   const [searchText, setSearchText] = useState('');
@@ -400,7 +402,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
     setLoading(false);
   };
 
-  const buyNow = async (listing: TransferListing) => {
+  const buyNow = (listing: TransferListing) => {
     const price = listing.asking_price;
     if (price > tBudget) {
       toast.error(`Verba de transferências insuficiente! Disponível: ${formatMoney(tBudget)}, necessário: ${formatMoney(price)}.`);
@@ -412,8 +414,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       toast.error(`Verba de salários insuficiente! Disponível: ${formatMoney(salaryRemaining)}/ano, salário do jogador custa: ${formatMoney(annualSalary)}/ano.`);
       return;
     }
-    if (!window.confirm(`Comprar ${listing.player_name} (OVR ${listing.player_overall}) por ${formatMoney(price)} agora?\n\nA transferência será concluída imediatamente.`)) return;
+    setBuyConfirm(listing);
+  };
 
+  const confirmBuyNow = async () => {
+    const listing = buyConfirm;
+    if (!listing) return;
+    setBuyConfirm(null);
     setLoading(true);
     const res = await supabase.functions.invoke('process-transfer', {
       body: { action: 'buy-now', listingId: listing.id, clubName },
@@ -421,7 +428,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
     if (res.error || res.data?.error) {
       toast.error(res.data?.error || 'Erro ao concluir compra imediata');
     } else {
-      toast.success(`⚡ ${listing.player_name} adquirido por ${formatMoney(price)}!`);
+      toast.success(`⚡ ${listing.player_name} adquirido por ${formatMoney(listing.asking_price)}!`);
       loadListings(); loadMyOffers();
     }
     setLoading(false);
@@ -1630,6 +1637,105 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
         </div>
       </Tabs>
+
+      {/* 🎯 Beautiful Buy-Now Confirmation */}
+      <Dialog open={!!buyConfirm} onOpenChange={(o) => !o && setBuyConfirm(null)}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-primary/30 bg-gradient-to-br from-background via-background to-primary/5">
+          {buyConfirm && (() => {
+            const l = buyConfirm;
+            const price = l.asking_price;
+            const playerSalary = l.player_data?.salary || 500;
+            const annualSalary = playerSalary * 12;
+            const pos = l.player_position;
+            const posColor =
+              pos === 'GOL' ? 'from-yellow-500 to-amber-600' :
+              pos === 'ZAG' || pos === 'LD' || pos === 'LE' ? 'from-blue-500 to-blue-700' :
+              pos === 'VOL' || pos === 'MC' || pos === 'MD' || pos === 'ME' ? 'from-emerald-500 to-emerald-700' :
+              'from-rose-500 to-rose-700';
+            const ovrTier =
+              l.player_overall >= 85 ? 'text-amber-400 border-amber-400/50 bg-amber-400/10' :
+              l.player_overall >= 75 ? 'text-violet-400 border-violet-400/50 bg-violet-400/10' :
+              l.player_overall >= 65 ? 'text-emerald-400 border-emerald-400/50 bg-emerald-400/10' :
+              'text-muted-foreground border-border bg-muted/30';
+            return (
+              <>
+                {/* Hero header */}
+                <div className={cn("relative px-6 pt-6 pb-5 bg-gradient-to-br text-white overflow-hidden", posColor)}>
+                  <div className="absolute -top-8 -right-8 opacity-10">
+                    <ShoppingCart className="h-32 w-32" />
+                  </div>
+                  <div className="relative flex items-start gap-4">
+                    <div className={cn("h-16 w-16 rounded-2xl border-2 flex flex-col items-center justify-center font-black backdrop-blur-sm bg-white/15 border-white/30")}>
+                      <span className="text-2xl leading-none">{l.player_overall}</span>
+                      <span className="text-[9px] tracking-widest opacity-80 mt-0.5">{pos}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Badge className="bg-white/20 text-white border-0 text-[9px] font-black uppercase tracking-wider mb-1.5">
+                        <Zap className="h-2.5 w-2.5 mr-1" /> Compra Imediata
+                      </Badge>
+                      <DialogTitle className="text-xl font-black leading-tight truncate text-white">
+                        {l.player_name}
+                      </DialogTitle>
+                      <DialogDescription className="text-white/80 text-xs mt-0.5">
+                        {l.player_age} anos · {l.seller_club_name}
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Body */}
+                <div className="px-6 py-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+                      <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Preço</div>
+                      <div className="text-xl font-black text-primary">{formatMoney(price)}</div>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-3">
+                      <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Salário/ano</div>
+                      <div className="text-xl font-black text-foreground">{formatMoney(annualSalary)}</div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <DollarSign className="h-3.5 w-3.5" /> Verba após compra
+                      </span>
+                      <span className="font-bold text-foreground">{formatMoney(tBudget - price)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5" /> Folha restante/ano
+                      </span>
+                      <span className="font-bold text-foreground">{formatMoney(salaryRemaining - annualSalary)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-amber-500/5 border border-amber-500/20 rounded-lg p-2.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    <span>A transferência será concluída <strong className="text-foreground">imediatamente</strong> e não pode ser desfeita.</span>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <DialogFooter className="px-6 pb-5 pt-0 gap-2 sm:gap-2 flex-row">
+                  <Button variant="outline" className="flex-1" onClick={() => setBuyConfirm(null)} disabled={loading}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    className={cn("flex-1 font-bold bg-gradient-to-r text-white border-0 shadow-lg", posColor)}
+                    onClick={confirmBuyNow}
+                    disabled={loading}
+                  >
+                    <Zap className="h-4 w-4 mr-1" />
+                    Confirmar Compra
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
