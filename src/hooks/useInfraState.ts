@@ -206,6 +206,11 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
           const { data, error } = await supabase.functions.invoke('process-youth-generation');
           
           if (error) {
+            // 429 = cooldown ativo (comportamento esperado, não é erro real)
+            const msg = (error as any)?.message || '';
+            if ((error as any)?.context?.status === 429 || msg.includes('429') || msg.toLowerCase().includes('cooldown')) {
+              return;
+            }
             console.error('[Base] Erro ao processar geração:', error);
             return;
           }
