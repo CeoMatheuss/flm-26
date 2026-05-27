@@ -261,6 +261,9 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       id: 'budget', icon: '💰', title: 'Orçamento crítico!',
       message: `~${monthsLeft} meses de salários restantes.`,
       type: 'danger', category: 'Financeiro', priority: 'high', createdAt: new Date(),
+      actions: [
+        { label: 'Abrir Finanças', variant: 'default', onClick: () => window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'finance' } })) }
+      ]
     });
   }
 
