@@ -394,8 +394,6 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                     Aceito os{" "}
                     <Link
                       to="/terms"
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="font-semibold text-primary underline-offset-2 hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -404,8 +402,6 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                     {" "}e a{" "}
                     <Link
                       to="/privacy"
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="font-semibold text-primary underline-offset-2 hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
