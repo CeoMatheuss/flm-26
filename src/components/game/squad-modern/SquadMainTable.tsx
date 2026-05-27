@@ -94,7 +94,7 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
         case 'suspensos':
           return status === 'suspenso';
         case 'emprestados':
-          return status === 'emprestado';
+          return status === 'emprestado' || status === 'recebido-emprestimo';
         default:
           return true;
       }
