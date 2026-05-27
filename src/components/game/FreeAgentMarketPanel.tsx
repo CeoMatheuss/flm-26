@@ -73,9 +73,6 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
   const [historyFilter, setHistoryFilter] = useState<'all' | 'signed' | 'rejected'>('all');
   const [loading, setLoading] = useState(false);
   const [offerAgent, setOfferAgent] = useState<FreeAgent | null>(null);
-  const [offerSalary, setOfferSalary] = useState(500);
-  const [offerYears, setOfferYears] = useState(2);
-  const [signingBonus, setSigningBonus] = useState(0);
   const [now, setNow] = useState(Date.now());
 
   // ── Loaders ──
