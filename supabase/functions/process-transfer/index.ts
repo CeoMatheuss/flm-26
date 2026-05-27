@@ -555,8 +555,23 @@ Deno.serve(async (req) => {
       await adminClient.from('newspaper_entries').insert({
         user_id: listing.seller_id,
         category: 'MERCADO',
-        text: `🤝 ${listing.seller_club_name} aceitou proposta de R$${(offer.offered_price / 1000).toFixed(0)}k do ${offer.buyer_club_name} por ${listing.player_name} (OVR ${listing.player_overall}). Jogador tem 7h para decidir.`,
+        text: negotiationAcceptHeadlines({
+          player: listing.player_name,
+          ovr: listing.player_overall,
+          from: listing.seller_club_name,
+          to: offer.buyer_club_name,
+          money: fmtMoney(offer.offered_price),
+        }),
         is_event: true,
+        importance: newsImportance({ overall: listing.player_overall, value: offer.offered_price }),
+        metadata: {
+          kind: 'negotiation_accepted',
+          player_name: listing.player_name,
+          player_overall: listing.player_overall,
+          from_club: listing.seller_club_name,
+          to_club: offer.buyer_club_name,
+          value: offer.offered_price,
+        },
       });
 
       return new Response(JSON.stringify({
