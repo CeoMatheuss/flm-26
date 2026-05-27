@@ -532,7 +532,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     finance:       ['finance_panel', 'shop_monitor'],
     customization: ['customization_panel'],
     system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
-    maintenance:   ['maintenance', 'direct_msg'],
+    maintenance:   ['maintenance', 'direct_msg', 'reset_competitions'],
     simulation:    ['simulation_panel'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
