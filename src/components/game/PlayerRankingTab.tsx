@@ -371,9 +371,10 @@ export function PlayerRankingTab() {
                 {rest.map((r, idx) => {
                   const pos = idx + 4;
                   const stat = primaryStat(r);
-            const playerKey = keyOf(p.name, p.age);
-            const sale = forSale.has(playerKey);
-            const loan = onLoan.has(playerKey);
+                  const p = r.players!;
+                  const playerKey = keyOf(p.name, p.age);
+                  const sale = forSale.has(playerKey);
+                  const loan = onLoan.has(playerKey);
                   const isYoung = (p.age ?? 99) <= 21;
                   const isHot = Number(r.avg_rating) >= 7.5;
 
