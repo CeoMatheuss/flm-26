@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorldCupTeaser } from './WorldCupTeaser';
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Globe, Trophy, Loader2, UserPlus, Users } from 'lucide-react';
 import { ClubShield } from './ClubShield';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface Props {
   currentCountry?: string;
