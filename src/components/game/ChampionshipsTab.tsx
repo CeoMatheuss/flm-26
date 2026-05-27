@@ -189,32 +189,72 @@ export function ChampionshipsTab() {
                   <TableBody>
                     {leagueData.standings.length === 0 ? (
                       <TableRow><TableCell colSpan={9} className="text-center py-12 text-sm text-muted-foreground">Tabela ainda sendo gerada para esta liga.</TableCell></TableRow>
-                    ) : leagueData.standings.map((team, idx) => (
-                      <TableRow key={team.id} className="border-white/5 hover:bg-white/5 transition-colors group">
-                        <TableCell className={cn("text-center font-black", idx < 4 ? "text-emerald-400" : idx >= 12 ? "text-red-400" : "text-muted-foreground")}>
-                          {idx + 1}
-                        </TableCell>
-                        <TableCell className="flex items-center gap-3 py-4">
-                          <ClubShield club={{ logoUrl: team.world_teams?.logo } as any} size={24} />
-                          <span className="font-bold text-white group-hover:text-emerald-100 transition-colors">{team.world_teams?.name ?? 'Time'}</span>
-                        </TableCell>
-                        <TableCell className="text-center font-black text-emerald-100 bg-emerald-500/5">{team.points}</TableCell>
-                        <TableCell className="text-center">{team.played}</TableCell>
-                        <TableCell className="text-center">{team.wins}</TableCell>
-                        <TableCell className="text-center">{team.draws}</TableCell>
-                        <TableCell className="text-center">{team.losses}</TableCell>
-                        <TableCell className="text-center font-medium">{team.goal_diff}</TableCell>
-                        <TableCell className="text-center hidden md:table-cell">
-                          <div className="flex gap-1 justify-center">
-                            {['V', 'V', 'E', 'D', 'V'].map((f, i) => (
-                              <div key={i} className={cn("w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-black text-white shadow-sm", f === 'V' ? 'bg-emerald-500' : f === 'E' ? 'bg-slate-500' : 'bg-red-500')}>{f}</div>
-                            ))}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    ) : leagueData.standings.map((team, idx) => {
+                      const position = idx + 1;
+                      const isMundial = position === 1;
+                      const isContinental = position >= 2 && position <= 8;
+                      const isRebaixamento = position >= 13;
+
+                      return (
+                        <TableRow key={team.id} className="border-white/5 hover:bg-white/5 transition-colors group relative">
+                          <TableCell className="p-0 w-1">
+                            {isMundial && <div className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500 shadow-[2px_0_10px_rgba(234,179,8,0.3)]" />}
+                            {isContinental && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500/50" />}
+                            {isRebaixamento && <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500/50" />}
+                          </TableCell>
+                          <TableCell className={cn(
+                            "text-center font-black relative z-10", 
+                            isMundial ? "text-yellow-500" : 
+                            isContinental ? "text-blue-400" : 
+                            isRebaixamento ? "text-red-400" : 
+                            "text-muted-foreground"
+                          )}>
+                            {position}
+                          </TableCell>
+                          <TableCell className="flex items-center gap-3 py-4">
+                            <ClubShield club={{ logoUrl: team.world_teams?.logo } as any} size={24} />
+                            <div className="flex flex-col">
+                              <span className="font-bold text-white group-hover:text-emerald-100 transition-colors">
+                                {team.world_teams?.name ?? 'Time'}
+                              </span>
+                              {isMundial && <span className="text-[8px] font-black text-yellow-500 uppercase tracking-tighter mt-0.5">Mundial</span>}
+                              {isContinental && <span className="text-[8px] font-black text-blue-400 uppercase tracking-tighter mt-0.5">Continental</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center font-black text-emerald-100 bg-emerald-500/5">{team.points}</TableCell>
+                          <TableCell className="text-center">{team.played}</TableCell>
+                          <TableCell className="text-center">{team.wins}</TableCell>
+                          <TableCell className="text-center">{team.draws}</TableCell>
+                          <TableCell className="text-center">{team.losses}</TableCell>
+                          <TableCell className="text-center font-medium">{team.goal_diff}</TableCell>
+                          <TableCell className="text-center hidden md:table-cell">
+                            <div className="flex gap-1 justify-center">
+                              {['V', 'V', 'E', 'D', 'V'].map((f, i) => (
+                                <div key={i} className={cn("w-4 h-4 rounded-sm flex items-center justify-center text-[9px] font-black text-white shadow-sm", f === 'V' ? 'bg-emerald-500' : f === 'E' ? 'bg-slate-500' : 'bg-red-500')}>{f}</div>
+                              ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
+                
+                {/* Legenda de Classificação */}
+                <div className="p-4 bg-black/20 border-t border-white/5 flex flex-wrap gap-4 items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-tighter">Mundial</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-tighter">Continental</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-[10px] uppercase font-black text-muted-foreground tracking-tighter">Rebaixamento</span>
+                  </div>
+                </div>
               </Card>
             )}
           </TabsContent>
