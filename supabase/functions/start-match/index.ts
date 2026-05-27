@@ -628,6 +628,7 @@ function generateReport(
       },
       tactical: tacticalNotes,
       tacticalImpact: tacticalImpactFactors || [],
+      tacticalAnalysis,
       impacts: { moraleChange, rankingChange, attendance, revenue: ticketRevenue, fatigue: pressing === 'ultra-alto' ? 12 : pressing === 'alto' ? 8 : 5 },
     },
   };
