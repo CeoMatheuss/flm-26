@@ -679,56 +679,65 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
         {/* ── BROWSE ── */}
         <TabsContent value="browse" className="space-y-3 mt-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <Globe className="h-4 w-4 text-primary" /> Mercado Online
-              <Badge variant="outline" className="text-[9px]">{listings.length}</Badge>
-
-            </h3>
-            <Button variant="outline" size="sm" onClick={loadListings} className="text-xs gap-1.5 h-8 rounded-lg">
-              <RefreshCw className="h-3 w-3" /> Atualizar
-            </Button>
-          </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex-1 min-w-[120px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-8 pl-8 text-xs rounded-lg" />
-            </div>
-             <Select value={posFilter} onValueChange={v => { setPosFilter(v); setCurrentPage(1); }}>
-              <SelectTrigger className="h-8 w-[80px] text-[10px] rounded-lg"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={v => { setSortBy(v); setCurrentPage(1); }}>
-              <SelectTrigger className="h-8 w-[100px] text-[10px] rounded-lg"><SelectValue placeholder="Ordenar" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">Recente</SelectItem>
-                <SelectItem value="ovr_desc">OVR ↓</SelectItem>
-                <SelectItem value="ovr_asc">OVR ↑</SelectItem>
-                <SelectItem value="price_asc">Preço ↑</SelectItem>
-                <SelectItem value="price_desc">Preço ↓</SelectItem>
-                <SelectItem value="age_asc">Idade ↑</SelectItem>
-                <SelectItem value="age_desc">Idade ↓</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Input placeholder="OVR min" type="number" value={ovrMinFilter} onChange={e => { setOvrMinFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[65px] text-[10px] rounded-lg" />
-            <Input placeholder="OVR max" type="number" value={ovrMaxFilter} onChange={e => { setOvrMaxFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[65px] text-[10px] rounded-lg" />
-            <Input placeholder="Idade min" type="number" value={ageMinFilter} onChange={e => { setAgeMinFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[70px] text-[10px] rounded-lg" />
-            <Input placeholder="Idade max" type="number" value={ageMaxFilter} onChange={e => { setAgeMaxFilter(e.target.value); setCurrentPage(1); }} className="h-7 w-[70px] text-[10px] rounded-lg" />
-            {(searchText || posFilter !== 'all' || ovrMinFilter || ovrMaxFilter || ageMinFilter || ageMaxFilter || sortBy !== 'recent') && (
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-[9px] text-destructive" onClick={() => {
-                setSearchText(''); setPosFilter('all'); setOvrMinFilter(''); setOvrMaxFilter('');
-                setAgeMinFilter(''); setAgeMaxFilter(''); setSortBy('recent'); setCurrentPage(1);
-              }}>
-                <X className="h-3 w-3 mr-0.5" /> Limpar
+          {/* Premium header */}
+          <div className="relative overflow-hidden rounded-2xl border border-white/5 p-3 backdrop-blur-sm"
+            style={{ background: 'linear-gradient(135deg, hsl(220 40% 9% / 0.7), hsl(150 50% 8% / 0.5))' }}>
+            <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-amber-500/10 blur-3xl" />
+            <div className="relative flex items-center justify-between gap-2 mb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center">
+                  <Globe className="h-4 w-4 text-emerald-300" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm leading-none">Mercado Global</h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{listings.length} jogadores disponíveis ao vivo</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={loadListings} className="text-xs gap-1.5 h-8 rounded-lg border-white/10 hover:border-white/20 hover:bg-white/5">
+                <RefreshCw className={cn('h-3 w-3', isLoadingListings && 'animate-spin')} /> Atualizar
               </Button>
-            )}
+            </div>
+
+            <div className="relative flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[160px]">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input placeholder="Buscar jogador ou clube..." value={searchText} onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }} className="h-9 pl-8 text-xs rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/40" />
+              </div>
+              <Select value={posFilter} onValueChange={v => { setPosFilter(v); setCurrentPage(1); }}>
+                <SelectTrigger className="h-9 w-[90px] text-[11px] rounded-xl bg-black/30 border-white/10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas pos.</SelectItem>
+                  {['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={v => { setSortBy(v); setCurrentPage(1); }}>
+                <SelectTrigger className="h-9 w-[120px] text-[11px] rounded-xl bg-black/30 border-white/10"><SlidersHorizontal className="h-3 w-3 mr-1" /><SelectValue placeholder="Ordenar" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Recente</SelectItem>
+                  <SelectItem value="ovr_desc">OVR ↓</SelectItem>
+                  <SelectItem value="ovr_asc">OVR ↑</SelectItem>
+                  <SelectItem value="price_asc">Preço ↑</SelectItem>
+                  <SelectItem value="price_desc">Preço ↓</SelectItem>
+                  <SelectItem value="age_asc">Idade ↑</SelectItem>
+                  <SelectItem value="age_desc">Idade ↓</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="relative flex items-center gap-1.5 flex-wrap mt-2">
+              <Input placeholder="OVR min" type="number" value={ovrMinFilter} onChange={e => { setOvrMinFilter(e.target.value); setCurrentPage(1); }} className="h-8 w-[72px] text-[10px] rounded-lg bg-black/30 border-white/10" />
+              <Input placeholder="OVR max" type="number" value={ovrMaxFilter} onChange={e => { setOvrMaxFilter(e.target.value); setCurrentPage(1); }} className="h-8 w-[72px] text-[10px] rounded-lg bg-black/30 border-white/10" />
+              <Input placeholder="Idade min" type="number" value={ageMinFilter} onChange={e => { setAgeMinFilter(e.target.value); setCurrentPage(1); }} className="h-8 w-[78px] text-[10px] rounded-lg bg-black/30 border-white/10" />
+              <Input placeholder="Idade max" type="number" value={ageMaxFilter} onChange={e => { setAgeMaxFilter(e.target.value); setCurrentPage(1); }} className="h-8 w-[78px] text-[10px] rounded-lg bg-black/30 border-white/10" />
+              {(searchText || posFilter !== 'all' || ovrMinFilter || ovrMaxFilter || ageMinFilter || ageMaxFilter || sortBy !== 'recent') && (
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-[10px] text-destructive hover:bg-destructive/10" onClick={() => {
+                  setSearchText(''); setPosFilter('all'); setOvrMinFilter(''); setOvrMaxFilter('');
+                  setAgeMinFilter(''); setAgeMaxFilter(''); setSortBy('recent'); setCurrentPage(1);
+                }}>
+                  <X className="h-3 w-3 mr-0.5" /> Limpar
+                </Button>
+              )}
+            </div>
           </div>
 
           {isLoadingListings && listings.length === 0 ? (
