@@ -162,12 +162,16 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
 
         if (data?.emailSent === false) {
           const errorMsg = data.details?.error?.message || data.details?.error || '';
-          if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('only send testing emails')) {
-            toast.error('Conta em Sandbox: A Resend só permite enviar e-mails para fcmsistemas7@gmail.com. Verifique seu domínio na Resend para liberar envios gerais.', {
-              duration: 10000,
+          if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('RESEND_SANDBOX_LIMIT')) {
+            toast.error('Sistema em modo Teste: Como o domínio ainda não foi verificado na Resend, e-mails só podem ser enviados para o administrador (fcmsistemas7@gmail.com). Por favor, verifique seu domínio na Resend para liberar o acesso público.', {
+              duration: 15000,
+              action: {
+                label: 'Suporte',
+                onClick: () => window.open('https://resend.com/domains', '_blank')
+              }
             });
           } else {
-            toast.error('Erro de Entrega: O domínio footballlifemanager.com.br não está verificado na Resend. Verifique o DNS (SPF, DKIM) no painel da Resend.', {
+            toast.error(`Falha no envio: ${errorMsg || 'Erro desconhecido no serviço de e-mail.'}`, {
               duration: 10000,
             });
           }
@@ -235,12 +239,12 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         }
       } else if (data?.emailSent === false) {
         const errorMsg = data.details?.error?.message || data.details?.error || '';
-        if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain')) {
-          toast.error('A conta de e-mail está em modo de teste (Sandbox). No momento, e-mails só podem ser enviados para o administrador. Verifique o domínio na Resend.', {
-            duration: 6000
+        if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('RESEND_SANDBOX_LIMIT')) {
+          toast.error('A conta de e-mail está em modo de teste (Sandbox). No momento, e-mails só podem ser enviados para o administrador (fcmsistemas7@gmail.com). Verifique o domínio na Resend para liberar envios gerais.', {
+            duration: 10000
           });
         } else {
-          toast.warning('Falha ao entregar e-mail. Verifique se o endereço está correto ou tente novamente.');
+          toast.warning(`Falha ao entregar e-mail: ${errorMsg || 'Tente novamente.'}`);
         }
       } else {
         toast.success('Novo código enviado com sucesso!');
