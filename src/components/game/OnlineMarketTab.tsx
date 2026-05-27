@@ -933,29 +933,34 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
         {/* ── LOANS ── */}
         <TabsContent value="loans" className="space-y-3 mt-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <ArrowLeftRight className="h-4 w-4 text-primary" /> 
-              Empréstimos Online
-              <button 
-                onClick={() => {
-                  setNegotiateLoan({
-                    player_name: "Guia de Empréstimos",
-                    player_position: "?",
-                    player_age: 0,
-                    player_overall: 0,
-                    salary: 0,
-                    _isHelpOnly: true
-                  });
-                }}
-                className="p-1 rounded-full hover:bg-white/10 transition-colors"
-              >
-                <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
-              </button>
-            </h3>
-            <Button variant="outline" size="sm" onClick={loadLoanListings} className="text-xs gap-1.5 h-8 rounded-lg">
-              <RefreshCw className="h-3 w-3" /> Atualizar
-            </Button>
+          {/* ── PREMIUM HEADER ── */}
+          <div className="relative overflow-hidden rounded-2xl border border-cyan-500/20 backdrop-blur-xl"
+            style={{ background: 'linear-gradient(135deg, hsl(190 50% 9% / 0.75), hsl(220 45% 8% / 0.85))' }}>
+            <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-cyan-500/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-sky-500/10 blur-3xl" />
+            <div className="relative p-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 rounded-xl bg-cyan-500/30 blur-md" />
+                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-700/10 border border-cyan-400/40 flex items-center justify-center">
+                    <Handshake className="h-5 w-5 text-cyan-200" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-black tracking-tight">Empréstimos Online</h2>
+                    <button onClick={() => setNegotiateLoan({ player_name: "Guia de Empréstimos", player_position: "?", player_age: 0, player_overall: 0, salary: 0, _isHelpOnly: true })}
+                      className="w-5 h-5 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center transition">
+                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">1 temporada · receptor paga 100% do salário</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={loadLoanListings} className="h-8 text-[10px] gap-1.5 rounded-lg border-white/10 hover:border-cyan-500/40 hover:bg-cyan-500/5">
+                <RefreshCw className="h-3 w-3" /> Atualizar
+              </Button>
+            </div>
           </div>
 
           {/* Public loan marketplace */}
@@ -978,10 +983,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             const hasFilters = loanPosFilter !== 'all' || loanOvrMin || loanOvrMax || loanAgeMin || loanAgeMax || loanSalaryMax;
             return (
               <div className="space-y-2">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Jogadores disponíveis para empréstimo</p>
-                <div className="flex flex-wrap gap-1.5 items-center rounded-lg p-2" style={{ background: 'hsl(var(--card))' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black text-cyan-300/80 uppercase tracking-wider">Disponíveis no Mercado</p>
+                  <Badge variant="outline" className="text-[9px] border-cyan-500/25 bg-cyan-500/10 text-cyan-300">{filtered.length}</Badge>
+                </div>
+                <div className="flex flex-wrap gap-1.5 items-center rounded-xl p-2 border border-white/5 bg-black/30 backdrop-blur-sm">
                   <Select value={loanPosFilter} onValueChange={setLoanPosFilter}>
-                    <SelectTrigger className="h-7 w-[80px] text-[10px] rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 w-[85px] text-[10px] rounded-lg bg-black/40 border-white/10"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas pos.</SelectItem>
                       <SelectItem value="GOL">GOL</SelectItem>
@@ -992,13 +1000,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                       <SelectItem value="ATA">ATA</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input placeholder="OVR min" type="number" value={loanOvrMin} onChange={e => setLoanOvrMin(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
-                  <Input placeholder="OVR max" type="number" value={loanOvrMax} onChange={e => setLoanOvrMax(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
-                  <Input placeholder="Idade min" type="number" value={loanAgeMin} onChange={e => setLoanAgeMin(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
-                  <Input placeholder="Idade max" type="number" value={loanAgeMax} onChange={e => setLoanAgeMax(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
-                  <Input placeholder="Sal. max (k)" type="number" value={loanSalaryMax} onChange={e => setLoanSalaryMax(e.target.value)} className="h-7 w-[90px] text-[10px] rounded-lg" />
+                  <Input placeholder="OVR min" type="number" value={loanOvrMin} onChange={e => setLoanOvrMin(e.target.value)} className="h-8 w-[70px] text-[10px] rounded-lg bg-black/40 border-white/10" />
+                  <Input placeholder="OVR max" type="number" value={loanOvrMax} onChange={e => setLoanOvrMax(e.target.value)} className="h-8 w-[70px] text-[10px] rounded-lg bg-black/40 border-white/10" />
+                  <Input placeholder="Idade min" type="number" value={loanAgeMin} onChange={e => setLoanAgeMin(e.target.value)} className="h-8 w-[75px] text-[10px] rounded-lg bg-black/40 border-white/10" />
+                  <Input placeholder="Idade max" type="number" value={loanAgeMax} onChange={e => setLoanAgeMax(e.target.value)} className="h-8 w-[75px] text-[10px] rounded-lg bg-black/40 border-white/10" />
+                  <Input placeholder="Sal. max (k)" type="number" value={loanSalaryMax} onChange={e => setLoanSalaryMax(e.target.value)} className="h-8 w-[95px] text-[10px] rounded-lg bg-black/40 border-white/10" />
                   {hasFilters && (
-                    <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => {
+                    <Button size="sm" variant="ghost" className="h-8 text-[10px] rounded-lg hover:bg-white/5" onClick={() => {
                       setLoanPosFilter('all'); setLoanOvrMin(''); setLoanOvrMax(''); setLoanAgeMin(''); setLoanAgeMax(''); setLoanSalaryMax('');
                     }}>
                       <X className="h-3 w-3 mr-1" /> Limpar
