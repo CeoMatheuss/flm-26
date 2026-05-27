@@ -955,15 +955,31 @@ export function useClubState(initialState: any, userId?: string) {
   }, [userId]);
 
   const loanOutPlayer = useCallback((playerId: string, currentSeason: number) => {
-    if (loansOut.length >= 3) { toast.error('Limite de 3 empréstimos atingido!'); return; }
+    if (loansOut.length >= 5) { toast.error('Limite de 5 empréstimos atingido!'); return; }
     setClub(prev => {
       const player = prev.players.find(p => p.id === playerId);
       if (!player) return prev;
       if (prev.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return prev; }
-      if (loanedPlayers.some(l => l.player.id === playerId)) { toast.error('Este jogador já está emprestado!'); return prev; }
-      const loanedOut = { ...player, isLoaned: true, onLoanList: false, squad_status: 'reserve' as const, squadRole: 'reserva' as const };
-      setLoanedPlayers(lp => [...lp, { player: loanedOut, fromClub: 'player', direction: 'out', seasonStart: currentSeason }]);
-      toast.success(`${player.name} emprestado por 1 temporada! O clube receptor paga o salário.`);
+      if (loanedPlayers.some(l => l.player.id === playerId && l.direction === 'out')) { 
+        toast.error('Este jogador já está emprestado!'); 
+        return prev; 
+      }
+      
+      const loanedOutPlayer = { 
+        ...player, 
+        isLoaned: true, 
+        onLoanList: false, 
+        squad_status: 'reserve' as const, 
+        squadRole: 'reserva' as const,
+        loanedFrom: prev.name,
+        loanedTo: 'Clube de Destino', // Placeholder até que seja negociado
+        loanWeeksRemaining: 48 // 1 temporada aprox.
+      };
+
+      setLoanedPlayers(lp => [...lp, { player: loanedOutPlayer, fromClub: prev.name, direction: 'out', seasonStart: currentSeason }]);
+      
+      toast.success(`${player.name} emprestado por 1 temporada!`);
+      
       publishTransferNews('loan_out', {
         playerName: player.name,
         playerPosition: player.position,
@@ -971,8 +987,8 @@ export function useClubState(initialState: any, userId?: string) {
         fromClub: prev.name,
         loanSeasons: 1,
       });
-      // Mantém no elenco com flag isLoaned para aparecer na aba "Emprestados"
-      return { ...prev, players: prev.players.map(p => p.id === playerId ? loanedOut : p) };
+
+      return { ...prev, players: prev.players.map(p => p.id === playerId ? loanedOutPlayer : p) };
     });
   }, [loansOut.length, loanedPlayers, publishTransferNews]);
 
