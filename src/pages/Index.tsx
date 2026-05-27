@@ -59,6 +59,8 @@ const Index = () => {
 function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: string; onSignOut: () => void }) {
   const [loadedState, setLoadedState] = useState<GameState | undefined>(undefined);
   const [gameReady, setGameReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [hasSave, setHasSave] = useState(false);
   const [isNewClub, setIsNewClub] = useState(false);
   const [isBankrupt, setIsBankrupt] = useState(false);
