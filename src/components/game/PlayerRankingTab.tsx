@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RankingScoringInfo } from './RankingScoringInfo';
 
 type Category = 'global' | 'scorers' | 'assists' | 'goalkeepers' | 'youth';
 
