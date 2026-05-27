@@ -187,14 +187,16 @@ export function ChampionshipsTab() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {leagueData.standings.map((team, idx) => (
+                    {leagueData.standings.length === 0 ? (
+                      <TableRow><TableCell colSpan={9} className="text-center py-12 text-sm text-muted-foreground">Tabela ainda sendo gerada para esta liga.</TableCell></TableRow>
+                    ) : leagueData.standings.map((team, idx) => (
                       <TableRow key={team.id} className="border-white/5 hover:bg-white/5 transition-colors group">
                         <TableCell className={cn("text-center font-black", idx < 4 ? "text-emerald-400" : idx >= 12 ? "text-red-400" : "text-muted-foreground")}>
                           {idx + 1}
                         </TableCell>
                         <TableCell className="flex items-center gap-3 py-4">
                           <ClubShield club={{ logoUrl: team.world_teams?.logo } as any} size={24} />
-                          <span className="font-bold text-white group-hover:text-emerald-100 transition-colors">{team.world_teams?.name}</span>
+                          <span className="font-bold text-white group-hover:text-emerald-100 transition-colors">{team.world_teams?.name ?? 'Time'}</span>
                         </TableCell>
                         <TableCell className="text-center font-black text-emerald-100 bg-emerald-500/5">{team.points}</TableCell>
                         <TableCell className="text-center">{team.played}</TableCell>
