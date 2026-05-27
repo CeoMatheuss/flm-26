@@ -47,7 +47,7 @@ const posColors: Record<string, string> = {
   GOL: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   ZAG: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
   LAT: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
-  VOL: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  VOL: 'bg-teal-500/15 text-teal-400 border-teal-500/30',
   MEI: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
   ATA: 'bg-red-500/15 text-red-400 border-red-500/30',
 };
@@ -293,9 +293,9 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
     switch (status) {
       case 'pending': return { label: '⏳ Pendente', className: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
       case 'counter_salary': return { label: '💰 Contraproposta', className: 'bg-blue-500/15 text-blue-400 border-blue-500/30' };
-      case 'accepted': return { label: '✅ Aceita', className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
+      case 'accepted': return { label: '✅ Aceita', className: 'bg-teal-500/15 text-teal-400 border-teal-500/30' };
       case 'signed':
-      case 'accepted_completed': return { label: '✅ Assinado', className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
+      case 'accepted_completed': return { label: '✅ Assinado', className: 'bg-teal-500/15 text-teal-400 border-teal-500/30' };
       case 'rejected': return { label: '❌ Recusado', className: 'bg-red-500/15 text-red-400 border-red-500/30' };
       case 'cancelled': return { label: '🚫 Cancelado', className: 'bg-muted text-muted-foreground border-border' };
       case 'expired': return { label: '⌛ Expirado', className: 'bg-orange-500/15 text-orange-400 border-orange-500/30' };
@@ -306,24 +306,24 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
   return (
     <div className="space-y-3">
       {/* ── PREMIUM BANNER ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/15 backdrop-blur-xl"
+      <div className="relative overflow-hidden rounded-2xl border border-teal-500/15 backdrop-blur-xl"
         style={{ background: 'linear-gradient(135deg, hsl(220 45% 9% / 0.85), hsl(150 50% 10% / 0.55))' }}>
-        <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-teal-500/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-amber-500/10 blur-3xl" />
         <div className="relative p-3 flex items-start gap-3">
           <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-xl bg-emerald-500/20 blur-md" />
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-700/5 border border-emerald-400/30 flex items-center justify-center">
-              <EyeOff className="h-5 w-5 text-emerald-200" />
+            <div className="absolute inset-0 rounded-xl bg-teal-500/20 blur-md" />
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500/15 to-teal-700/5 border border-teal-400/30 flex items-center justify-center">
+              <EyeOff className="h-5 w-5 text-teal-200" />
             </div>
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-sm font-black tracking-tight">Mercado Livre</h2>
-              <Badge variant="outline" className="text-[9px] gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">Atributos Ocultos</Badge>
+              <Badge variant="outline" className="text-[9px] gap-1 border-teal-500/30 bg-teal-500/10 text-teal-300">Atributos Ocultos</Badge>
             </div>
             <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
-              Visíveis: <strong className="text-foreground">nome, idade, posição, gols, assistências, nota</strong>. OVR e atributos revelam-se <strong className="text-emerald-300">após assinatura</strong>. Decisão em <strong className="text-amber-300">7h</strong>.
+              Visíveis: <strong className="text-foreground">nome, idade, posição, gols, assistências, nota</strong>. OVR e atributos revelam-se <strong className="text-teal-300">após assinatura</strong>. Decisão em <strong className="text-amber-300">7h</strong>.
             </p>
           </div>
         </div>
@@ -331,7 +331,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
 
       <Tabs defaultValue="available" className="w-full">
         <TabsList className="grid grid-cols-3 w-full h-10 rounded-xl p-1 bg-black/40 border border-white/5">
-          <TabsTrigger value="available" className="text-[11px] gap-1.5 rounded-lg data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-200 data-[state=active]:shadow-[0_0_15px_-5px_hsl(var(--primary))]">
+          <TabsTrigger value="available" className="text-[11px] gap-1.5 rounded-lg data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-200 data-[state=active]:shadow-[0_0_15px_-5px_hsl(var(--primary))]">
             <Globe className="h-3 w-3" /> Disponíveis
           </TabsTrigger>
           <TabsTrigger value="active" className="text-[11px] gap-1.5 rounded-lg data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-200 relative">
@@ -352,13 +352,13 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Buscar jogador..."
-                className="pl-8 h-9 text-[11px] rounded-xl bg-black/30 border-white/10 focus-visible:border-emerald-500/20"
+                className="pl-8 h-9 text-[11px] rounded-xl bg-black/30 border-white/10 focus-visible:border-teal-500/20"
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
               />
             </div>
             <select value={posFilter} onChange={e => setPosFilter(e.target.value)}
-              className="h-9 rounded-xl border border-white/10 bg-black/30 px-3 text-[11px] outline-none focus:border-emerald-500/20 cursor-pointer">
+              className="h-9 rounded-xl border border-white/10 bg-black/30 px-3 text-[11px] outline-none focus:border-teal-500/20 cursor-pointer">
               <option value="all">Todas Pos.</option>
               {Object.keys(posColors).map(p => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -382,7 +382,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
                           ? 'border-amber-500/30 from-[hsl(40_50%_8%_/_0.6)] to-[hsl(220_45%_8%_/_0.8)] shadow-[0_0_15px_-5px_rgb(251_191_36_/_0.3)]'
                           : 'border-white/5 from-[hsl(220_45%_8%_/_0.7)] to-[hsl(150_40%_8%_/_0.5)] hover:border-white/15'
                       }`}>
-                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${isRare ? 'bg-gradient-to-b from-amber-400 to-amber-600' : 'bg-gradient-to-b from-emerald-400/50 to-emerald-700/30'}`} />
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${isRare ? 'bg-gradient-to-b from-amber-400 to-amber-600' : 'bg-gradient-to-b from-teal-400/50 to-teal-700/30'}`} />
 
                       <div className="p-3">
                         <div className="flex items-start justify-between gap-2">
@@ -403,7 +403,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <Badge variant="outline" className="text-[8px] gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+                            <Badge variant="outline" className="text-[8px] gap-1 border-teal-500/30 bg-teal-500/10 text-teal-300">
                               <Globe className="h-2 w-2" /> Passe Livre
                             </Badge>
                           </div>
@@ -414,7 +414,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
                             { lbl: 'Gols', val: agent.visible_stats?.goals || 0, icon: '⚽' },
                             { lbl: 'Assist', val: agent.visible_stats?.assists || 0, icon: '🅰️' },
                             { lbl: 'Nota', val: agent.visible_stats?.avgRating || '—', icon: '★', accent: 'text-amber-300' },
-                            { lbl: 'Pot', val: agent.visible_stats?.potential || '?', icon: '✨', accent: 'text-emerald-300' },
+                            { lbl: 'Pot', val: agent.visible_stats?.potential || '?', icon: '✨', accent: 'text-teal-300' },
                           ].map((s, i) => (
                             <div key={i} className="rounded-lg p-1.5 bg-black/40 border border-white/5 text-center">
                               <p className="text-[8px] text-muted-foreground">{s.icon} {s.lbl}</p>
@@ -427,7 +427,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
                           className={`w-full h-9 text-[11px] gap-1.5 mt-2.5 rounded-lg font-black transition-all ${
                             hasOffer
                               ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/20'
-                              : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-[0_0_15px_-5px_hsl(var(--primary))]'
+                              : 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white shadow-[0_0_15px_-5px_hsl(var(--primary))]'
                           }`}
                           disabled={hasOffer}
                           onClick={() => openOfferDialog(agent)}>
@@ -483,7 +483,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
                       </div>
                     )}
                     {offer.status === 'accepted' && (
-                      <Button size="sm" className="h-7 text-[10px] px-2 gap-1 bg-emerald-500 hover:bg-emerald-600" onClick={() => completeSigning(offer)} disabled={loading}>
+                      <Button size="sm" className="h-7 text-[10px] px-2 gap-1 bg-teal-500 hover:bg-teal-600" onClick={() => completeSigning(offer)} disabled={loading}>
                         <CheckCircle className="h-3 w-3" /> Finalizar
                       </Button>
                     )}
@@ -567,13 +567,13 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
 
       {/* Offer Dialog */}
       <Dialog open={!!offerAgent} onOpenChange={(o) => !o && setOfferAgent(null)}>
-        <DialogContent className="max-w-md border-emerald-500/20 bg-gradient-to-br from-[hsl(220_45%_8%)] to-[hsl(150_45%_7%)] backdrop-blur-2xl">
+        <DialogContent className="max-w-md border-teal-500/20 bg-gradient-to-br from-[hsl(220_45%_8%)] to-[hsl(150_45%_7%)] backdrop-blur-2xl">
           <DialogHeader>
             <DialogTitle className="text-sm flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                <Send className="h-3.5 w-3.5 text-emerald-300" />
+              <div className="w-7 h-7 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center">
+                <Send className="h-3.5 w-3.5 text-teal-300" />
               </div>
-              Proposta para <span className="text-emerald-300">{offerAgent?.player_name}</span>
+              Proposta para <span className="text-teal-300">{offerAgent?.player_name}</span>
             </DialogTitle>
             <DialogDescription className="text-[10px] flex items-center gap-1.5 mt-1">
               <EyeOff className="h-3 w-3 text-amber-300" />
@@ -585,10 +585,10 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
             <div className="rounded-xl p-3 border border-white/5 bg-black/40 space-y-2">
               <label className="text-[11px] font-bold flex items-center gap-1.5">💰 Salário mensal</label>
               <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value) || 100))}
-                className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-emerald-500/20" />
+                className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-teal-500/20" />
               <div className="flex items-center justify-between text-[10px]">
                 <span className="text-muted-foreground">Anual: <strong className="text-foreground">{formatMoney(offerSalary * 12)}</strong></span>
-                <span className={cn("font-bold", offerSalary * 12 > salaryBudgetRemaining ? "text-red-400" : "text-emerald-300")}>
+                <span className={cn("font-bold", offerSalary * 12 > salaryBudgetRemaining ? "text-red-400" : "text-teal-300")}>
                   Verba: {formatMoney(salaryBudgetRemaining)}
                 </span>
               </div>
@@ -602,7 +602,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
                   <button key={y} onClick={() => setOfferYears(y)}
                     className={cn("h-10 rounded-lg text-xs font-black transition border",
                       offerYears === y
-                        ? "bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border-emerald-500/25 text-emerald-200 shadow-[0_0_15px_-5px_hsl(var(--primary))]"
+                        ? "bg-gradient-to-br from-teal-500/15 to-teal-500/5 border-teal-500/25 text-teal-200 shadow-[0_0_15px_-5px_hsl(var(--primary))]"
                         : "bg-black/40 border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
                     )}>
                     {y}a
@@ -639,7 +639,7 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
           <DialogFooter className="gap-2">
             <Button variant="ghost" className="rounded-lg" onClick={() => setOfferAgent(null)}>Cancelar</Button>
             <Button onClick={sendOffer} disabled={loading}
-              className="rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-black gap-1.5 shadow-[0_0_20px_-5px_hsl(var(--primary))]">
+              className="rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white font-black gap-1.5 shadow-[0_0_20px_-5px_hsl(var(--primary))]">
               <Send className="h-4 w-4" /> Enviar Proposta
             </Button>
           </DialogFooter>
