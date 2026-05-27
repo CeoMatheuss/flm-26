@@ -92,14 +92,11 @@ const LeagueStandingsMini = memo(({ userId }: { userId?: string }) => {
 });
 
 
-function GlobalRankingMini({ userId }: { userId?: string }) {
-  const [me, setMe] = useState<any>(null);
-  const [pos, setPos] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!userId) return;
-    const load = async () => {
+const GlobalRankingMini = memo(({ userId }: { userId?: string }) => {
+  const { data: rankingData, isLoading } = useQuery({
+    queryKey: ['global-ranking-mini', userId],
+    queryFn: async () => {
+      if (!userId) return null;
       const { data: all } = await supabase
         .from('global_ranking')
         .select('*')
@@ -108,17 +105,20 @@ function GlobalRankingMini({ userId }: { userId?: string }) {
       if (all) {
         const index = all.findIndex(r => r.user_id === userId);
         if (index >= 0) {
-          setMe(all[index]);
-          setPos(index + 1);
+          return { me: all[index], pos: index + 1 };
         }
       }
-      setLoading(false);
-    };
-    load();
-  }, [userId]);
+      return null;
+    },
+    enabled: !!userId,
+    staleTime: 60000,
+  });
+
+  const me = rankingData?.me;
+  const pos = rankingData?.pos;
 
 
-  if (loading || !me) return null;
+  if (isLoading || !me) return null;
 
 
 
@@ -164,7 +164,7 @@ function GlobalRankingMini({ userId }: { userId?: string }) {
       </CardContent>
     </Card>
   );
-}
+});
 
 interface Props {
   club: Club;
