@@ -247,60 +247,89 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <Card className="border-purple-500/30 bg-gradient-to-r from-purple-500/5 via-indigo-500/5 to-blue-500/5">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Gavel className="h-5 w-5 text-purple-400" />
-            Leilão de Jogadores
-          </CardTitle>
-          <p className="text-[11px] text-muted-foreground">
-            Encerramento global: <strong>Todos os Domingos às 17:00</strong>. Lances nos minutos finais estendem o leilão em +10 min (anti-snipe). Limite financeiro: 80% do saldo.
-          </p>
-        </CardHeader>
-        {!isPremium && (
-          <CardContent className="pt-0 pb-3">
-            <div className="bg-yellow-500/10 rounded-lg p-2 flex items-center gap-2 text-[10px] text-yellow-400">
-              <Crown className="h-3.5 w-3.5 shrink-0" />
-              <span>Você pode colocar jogadores em leilão, mas precisa ser <strong>Premium</strong> para dar lances.</span>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+      {/* ── PREMIUM HERO ── */}
+      <div className="relative overflow-hidden rounded-2xl border border-purple-500/20 backdrop-blur-xl"
+        style={{ background: 'linear-gradient(135deg, hsl(270 50% 10% / 0.7), hsl(220 45% 8% / 0.85), hsl(150 50% 10% / 0.5))' }}>
+        <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-purple-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-amber-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent 0 14px, white 14px 15px)' }} />
 
-      {/* Create Auction */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Colocar Jogador em Leilão</CardTitle>
-          <p className="text-[10px] text-muted-foreground">Jogadores elegíveis: 60+ OVR, até 35 anos. Preço inicial calculado automaticamente.</p>
-        </CardHeader>
-        <CardContent>
+        <div className="relative p-4">
+          <div className="flex items-start gap-3">
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 rounded-2xl bg-purple-500/30 blur-lg" />
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/40 to-purple-700/20 border border-purple-400/40 flex items-center justify-center">
+                <Gavel className="h-6 w-6 text-purple-200" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base font-black tracking-tight">Leilão Global</h2>
+                <Badge variant="outline" className="text-[9px] gap-1 border-purple-500/30 bg-purple-500/10 text-purple-300">
+                  <Sparkles className="h-2.5 w-2.5" /> AO VIVO
+                </Badge>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                Encerramento <strong className="text-purple-300">Domingo às 17:00</strong>. Anti-snipe +10min nos minutos finais. Limite: <strong className="text-amber-300">80% do saldo</strong>.
+              </p>
+            </div>
+          </div>
+
+          {!isPremium && (
+            <div className="mt-3 flex items-center gap-2 rounded-xl p-2.5 border border-amber-500/25 bg-amber-500/[0.06]">
+              <Crown className="h-4 w-4 text-amber-300 shrink-0" />
+              <p className="text-[10px] text-amber-200/90">
+                Você pode <strong>leiloar jogadores</strong>, mas precisa ser <strong className="text-amber-300">Premium</strong> para dar lances.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── CREATE AUCTION ── */}
+      <div className="rounded-2xl border border-white/5 bg-black/30 backdrop-blur-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black">Colocar em Leilão</h3>
+              <p className="text-[9px] text-muted-foreground">60+ OVR · até 35 anos · preço auto</p>
+            </div>
+          </div>
+          <Badge variant="outline" className="text-[9px] border-white/10 bg-white/5">{eligiblePlayers.length} elegíveis</Badge>
+        </div>
+        <div className="p-3">
           {eligiblePlayers.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">Nenhum jogador elegível (60+ OVR, ≤35 anos)</p>
+            <p className="text-[11px] text-muted-foreground text-center py-6">Nenhum jogador elegível</p>
           ) : (
-            <ScrollArea className="max-h-[200px]">
-              <div className="space-y-1.5">
+            <ScrollArea className="max-h-[220px]">
+              <div className="space-y-1.5 pr-2">
                 {eligiblePlayers.map(p => {
                   const startPrice = computeStartPrice(p);
+                  const rarity = getRarityByOverall(p.overall);
+                  const rarityRing = rarity === 'lendario' ? 'ring-amber-400/40' : rarity === 'epico' ? 'ring-purple-400/40' : rarity === 'raro' ? 'ring-blue-400/40' : 'ring-white/10';
                   return (
-                    <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Badge variant="outline" className="text-[9px] px-1.5 shrink-0">{p.overall} OVR</Badge>
+                    <div key={p.id} className={`group flex items-center justify-between gap-2 p-2.5 rounded-xl bg-black/40 border border-white/5 hover:border-white/15 hover:bg-black/50 transition ring-1 ${rarityRing}`}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-700/10 border border-purple-500/25 flex items-center justify-center shrink-0">
+                          <span className="text-xs font-black text-purple-200">{p.overall}</span>
+                        </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate">{p.name}</p>
-                          <p className="text-[9px] text-muted-foreground">{p.position} • {p.age || 25} anos</p>
+                          <p className="text-xs font-bold truncate">{p.name}</p>
+                          <p className="text-[9px] text-muted-foreground">{p.position} • {p.age || 25}a</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[9px] text-muted-foreground">início {fmtMoney(startPrice)}</span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-6 px-2 text-[9px]"
-                          onClick={() => handleCreateAuction(p)}
-                          disabled={loading}
-                        >
-                          Leiloar
+                        <div className="text-right">
+                          <p className="text-[8px] text-muted-foreground uppercase tracking-wider">Início</p>
+                          <p className="text-[10px] font-black text-emerald-300 leading-none">{fmtMoney(startPrice)}</p>
+                        </div>
+                        <Button size="sm" className="h-7 px-2.5 text-[10px] rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white font-bold gap-1"
+                          onClick={() => handleCreateAuction(p)} disabled={loading}>
+                          <Gavel className="h-3 w-3" /> Leiloar
                         </Button>
                       </div>
                     </div>
@@ -309,22 +338,25 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
               </div>
             </ScrollArea>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Active Auctions */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-purple-400" />
-            Leilões Ativos ({auctions.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* ── ACTIVE AUCTIONS ── */}
+      <div className="rounded-2xl border border-white/5 bg-black/30 backdrop-blur-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-purple-500/15 border border-purple-500/25 flex items-center justify-center">
+              <TrendingUp className="h-3.5 w-3.5 text-purple-300" />
+            </div>
+            <h3 className="text-xs font-black">Leilões Ativos</h3>
+          </div>
+          <Badge variant="outline" className="text-[9px] border-purple-500/25 bg-purple-500/10 text-purple-300">{auctions.length}</Badge>
+        </div>
+        <div className="p-3">
           {auctions.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-6">Nenhum leilão ativo no momento.</p>
+            <p className="text-[11px] text-muted-foreground text-center py-8">Nenhum leilão ativo no momento.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
               {auctions.map(a => {
                 const inc = minIncrement(a.current_bid);
                 const minNextBid = a.current_bidder_id ? a.current_bid + inc : a.min_price;
@@ -332,141 +364,167 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
                 const isMyBid = a.current_bidder_id === userId;
                 const closing = isCloseToEnd(a.expires_at);
                 const rarityStyle = getRarityStyles(a.rarity);
+                const rarityLabel = a.rarity.charAt(0).toUpperCase() + a.rarity.slice(1);
+                const rarityBadge = a.rarity === 'lendario' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : a.rarity === 'epico' ? 'bg-purple-500/15 text-purple-300 border-purple-500/30' : a.rarity === 'raro' ? 'bg-blue-500/15 text-blue-300 border-blue-500/30' : 'bg-white/5 text-muted-foreground border-white/10';
                 return (
-                  <Card key={a.id} className={`overflow-hidden transition-all duration-300 ${rarityStyle} ${isMyBid ? 'ring-2 ring-green-500/50' : isMyAuction ? 'ring-2 ring-purple-500/50' : ''} ${closing ? 'animate-pulse ring-2 ring-red-500/50' : ''}`}>
-                    <CardContent className="p-3">
-                      {closing && (
-                        <div className="absolute top-2 right-2 flex items-center gap-1 animate-bounce">
-                          <Badge variant="destructive" className="text-[8px] h-4 py-0">FINALIZANDO</Badge>
+                  <div key={a.id} className={`relative overflow-hidden rounded-xl border p-3 transition-all ${rarityStyle} ${isMyBid ? 'ring-2 ring-emerald-500/50' : isMyAuction ? 'ring-2 ring-purple-500/50' : ''} ${closing ? 'ring-2 ring-red-500/60' : ''}`}>
+                    {closing && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <Badge className="text-[8px] h-4 px-1.5 bg-red-500 text-white animate-pulse border-0">🔥 FINALIZANDO</Badge>
+                      </div>
+                    )}
+
+                    <div className="flex items-start gap-2.5">
+                      {/* OVR badge */}
+                      <div className="relative shrink-0">
+                        <div className="absolute inset-0 rounded-xl bg-purple-500/30 blur-md opacity-50" />
+                        <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/30 to-purple-700/10 border border-purple-400/40 flex flex-col items-center justify-center">
+                          <span className="text-base font-black text-purple-100 leading-none">{a.player_overall}</span>
+                          <span className="text-[8px] text-purple-300/80 font-bold mt-0.5">OVR</span>
                         </div>
-                      )}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                            <Badge className="text-[8px] px-1 py-0 h-4 bg-purple-500/20 text-purple-300 border-purple-500/30">
-                              {a.player_overall} OVR
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-sm font-black truncate">{a.player_name}</span>
+                          {a.is_system && (
+                            <Badge className="text-[8px] h-4 px-1 bg-amber-500/15 text-amber-300 border-amber-500/30">
+                              <Sparkles className="h-2 w-2 mr-0.5" /> ADM
                             </Badge>
-                            <span className="text-xs font-bold truncate">{a.player_name}</span>
-                            <span className="text-[9px] text-muted-foreground">({a.player_age} anos)</span>
-                            {a.is_system && (
-                              <Badge className="text-[8px] px-1 py-0 h-4 bg-amber-500/15 text-amber-300 border-amber-500/30">
-                                <Sparkles className="h-2.5 w-2.5 mr-0.5" /> ADM
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 text-[9px] text-muted-foreground flex-wrap">
-                            <span className="flex items-center gap-0.5"><User className="h-2.5 w-2.5" /> {a.seller_club_name}</span>
-                            <span className={`flex items-center gap-0.5 ${closing ? 'text-orange-400 font-semibold' : ''}`}>
-                              <Clock className="h-2.5 w-2.5" /> {getTimeLeft(a.expires_at)}
-                            </span>
-                            <span className="text-[8px] opacity-70">fim {fmtDateShort(a.expires_at)}</span>
-                          </div>
-                        </div>
-
-                        <div className="text-right shrink-0">
-                          <p className="text-[9px] text-muted-foreground">Lance atual</p>
-                          <p className="text-sm font-black text-purple-400">{fmtMoney(a.current_bid)}</p>
-                          {a.current_bidder_name && (
-                            <p className="text-[8px] text-muted-foreground">por {a.current_bidder_name}</p>
                           )}
+                          <Badge variant="outline" className={`text-[8px] h-4 px-1 ${rarityBadge}`}>{rarityLabel}</Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-1 flex-wrap">
+                          <span className="px-1.5 py-0.5 rounded bg-white/5">{a.player_age}a</span>
+                          <span className="flex items-center gap-0.5 truncate"><User className="h-2.5 w-2.5" /> {a.seller_club_name}</span>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30 gap-2 flex-wrap">
-                        <p className="text-[9px] text-muted-foreground">
-                          Próximo mín: <span className="font-bold text-foreground">{fmtMoney(minNextBid)}</span> (+{fmtMoney(inc)})
+                    {/* Current bid + timer */}
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="rounded-lg p-2 bg-black/40 border border-purple-500/20">
+                        <p className="text-[8px] text-muted-foreground uppercase tracking-wider">Lance atual</p>
+                        <p className="text-sm font-black bg-gradient-to-r from-purple-300 to-purple-400 bg-clip-text text-transparent leading-none mt-0.5">{fmtMoney(a.current_bid)}</p>
+                        {a.current_bidder_name && (
+                          <p className="text-[8px] text-muted-foreground mt-1 truncate">por {a.current_bidder_name}</p>
+                        )}
+                      </div>
+                      <div className={`rounded-lg p-2 bg-black/40 border ${closing ? 'border-red-500/40' : 'border-white/10'}`}>
+                        <p className="text-[8px] text-muted-foreground uppercase tracking-wider">Termina em</p>
+                        <p className={`text-sm font-black leading-none mt-0.5 flex items-center gap-1 ${closing ? 'text-red-300 animate-pulse' : 'text-foreground'}`}>
+                          <Clock className="h-3 w-3" /> {getTimeLeft(a.expires_at)}
                         </p>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 px-2 text-[9px]"
-                            onClick={() => {
-                              setHistoryOpenId(a.id);
-                              loadHistory(a.id);
-                            }}
-                          >
-                            <History className="h-3 w-3 mr-1" /> Histórico
-                          </Button>
-                          {!isMyAuction && (
-                            <Button
-                              size="sm"
-                              className="h-6 px-3 text-[9px] font-bold bg-purple-500 hover:bg-purple-600 text-white"
-                              onClick={() => openBidDialog(a)}
-                              disabled={loading || !isPremium}
-                            >
-                              {isPremium ? (<><Gavel className="h-3 w-3 mr-1" /> Dar Lance</>) : (<><Crown className="h-3 w-3 mr-1" /> Premium</>)}
-                            </Button>
-                          )}
-                          {isMyAuction && (
-                            <Badge variant="outline" className="text-[8px] text-purple-400 border-purple-500/30">Seu leilão</Badge>
-                          )}
-                          {isMyBid && !isMyAuction && (
-                            <Badge className="text-[8px] bg-green-500/20 text-green-400 border-green-500/30 ml-1">Seu lance</Badge>
-                          )}
-                        </div>
+                        <p className="text-[8px] text-muted-foreground mt-1 truncate">fim {fmtDateShort(a.expires_at)}</p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    {/* Footer actions */}
+                    <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-[9px] text-muted-foreground">
+                        Próx. mín: <span className="font-black text-foreground">{fmtMoney(minNextBid)}</span>
+                        <span className="text-emerald-400"> (+{fmtMoney(inc)})</span>
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-[9px] rounded-lg hover:bg-white/5"
+                          onClick={() => { setHistoryOpenId(a.id); loadHistory(a.id); }}>
+                          <History className="h-3 w-3 mr-1" /> Histórico
+                        </Button>
+                        {!isMyAuction && (
+                          <Button size="sm"
+                            className={`h-7 px-3 text-[10px] rounded-lg font-black gap-1 ${
+                              isPremium
+                                ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white shadow-[0_0_15px_-4px_rgb(168_85_247)]'
+                                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20'
+                            }`}
+                            onClick={() => openBidDialog(a)} disabled={loading || !isPremium}>
+                            {isPremium ? (<><Gavel className="h-3 w-3" /> Dar Lance</>) : (<><Crown className="h-3 w-3" /> Premium</>)}
+                          </Button>
+                        )}
+                        {isMyAuction && (
+                          <Badge variant="outline" className="text-[8px] text-purple-300 border-purple-500/30 bg-purple-500/5">Seu leilão</Badge>
+                        )}
+                        {isMyBid && !isMyAuction && (
+                          <Badge className="text-[8px] bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Seu lance</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Bid Dialog */}
       <Dialog open={!!bidDialogId} onOpenChange={(v) => { if (!v) setBidDialogId(null); }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm border-purple-500/20 bg-gradient-to-br from-[hsl(270_45%_8%)] to-[hsl(220_45%_6%)] backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base flex items-center gap-2">
-              <Gavel className="h-4 w-4 text-purple-400" /> Dar lance em {dialogAuction?.player_name}
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                <Gavel className="h-3.5 w-3.5 text-purple-300" />
+              </div>
+              Dar lance em <span className="text-purple-300">{dialogAuction?.player_name}</span>
             </DialogTitle>
           </DialogHeader>
           {dialogAuction && (
             <div className="space-y-3">
-              <div className="text-xs text-muted-foreground">
-                Lance atual: <span className="font-bold text-foreground">{fmtMoney(dialogAuction.current_bid)}</span><br />
-                Mínimo permitido: <span className="font-bold text-purple-400">{fmtMoney(dialogMinBid)}</span> (incremento: {fmtMoney(dialogIncrement)})
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg p-2.5 bg-black/40 border border-white/10">
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Lance atual</p>
+                  <p className="text-sm font-black mt-0.5">{fmtMoney(dialogAuction.current_bid)}</p>
+                </div>
+                <div className="rounded-lg p-2.5 bg-purple-500/10 border border-purple-500/25">
+                  <p className="text-[9px] text-purple-300/80 uppercase tracking-wider">Mín. permitido</p>
+                  <p className="text-sm font-black text-purple-200 mt-0.5">{fmtMoney(dialogMinBid)}</p>
+                </div>
               </div>
+
               <div>
-                <label className="text-xs font-semibold mb-1 block">Seu lance (R$)</label>
-                <Input
-                  type="number"
-                  step={dialogIncrement}
-                  min={dialogMinBid}
-                  value={bidAmount}
+                <label className="text-[11px] font-bold flex items-center justify-between mb-1.5">
+                  <span>Seu lance</span>
+                  <span className="text-[9px] text-muted-foreground">incremento {fmtMoney(dialogIncrement)}</span>
+                </label>
+                <Input type="number" step={dialogIncrement} min={dialogMinBid} value={bidAmount}
                   onChange={(e) => setBidAmount(parseInt(e.target.value || '0', 10))}
-                  className="h-9"
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">Equivalente a {fmtMoney(bidAmount)}</p>
+                  className="h-11 text-base font-black rounded-lg bg-black/40 border-white/10 focus-visible:border-purple-500/50 text-purple-200" />
               </div>
+
               <div className="flex flex-wrap gap-1">
                 {[1, 2, 3, 5].map(m => {
                   const v = dialogMinBid + (m - 1) * dialogIncrement;
                   return (
-                    <Button key={m} size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => setBidAmount(v)}>
+                    <button key={m} onClick={() => setBidAmount(v)}
+                      className={`flex-1 h-8 text-[10px] rounded-md border font-bold transition ${
+                        bidAmount === v ? 'bg-purple-500/20 border-purple-500/50 text-purple-200' : 'bg-white/[0.03] border-white/10 text-muted-foreground hover:bg-white/10'
+                      }`}>
                       {fmtMoney(v)}
-                    </Button>
+                    </button>
                   );
                 })}
               </div>
-              <p className="text-[10px] text-muted-foreground">
-                Seu orçamento: {fmtMoney(budget)} • Lance máx (80%): <span className="font-semibold text-amber-400">{fmtMoney(Math.floor(budget * 0.8))}</span>
-              </p>
+
+              <div className="rounded-lg p-2 bg-black/30 border border-white/5 text-[10px] text-muted-foreground flex items-center justify-between">
+                <span>Orçamento: <strong className="text-foreground">{fmtMoney(budget)}</strong></span>
+                <span>Máx (80%): <strong className="text-amber-300">{fmtMoney(Math.floor(budget * 0.8))}</strong></span>
+              </div>
+
               {bidAmount > Math.floor(budget * 0.8) && (
-                <div className="p-2 rounded bg-red-500/10 border border-red-500/30 animate-shake">
-                  <p className="text-[10px] text-red-400 font-bold flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" /> Lance excede o limite financeiro permitido (80%).
+                <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30">
+                  <p className="text-[10px] text-red-300 font-bold flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Lance excede o limite de 80% do orçamento.
                   </p>
                 </div>
               )}
             </div>
           )}
-          <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setBidDialogId(null)} disabled={loading}>Cancelar</Button>
-            <Button size="sm" className="bg-purple-500 hover:bg-purple-600" onClick={submitBid} disabled={loading}>
-              <Gavel className="h-3 w-3 mr-1" /> Confirmar Lance
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" size="sm" className="rounded-lg" onClick={() => setBidDialogId(null)} disabled={loading}>Cancelar</Button>
+            <Button size="sm" onClick={submitBid} disabled={loading}
+              className="rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white font-black gap-1.5 shadow-[0_0_20px_-5px_rgb(168_85_247)]">
+              <Gavel className="h-3.5 w-3.5" /> Confirmar Lance
+              <Sparkles className="h-3 w-3" />
             </Button>
           </DialogFooter>
         </DialogContent>
