@@ -1,4 +1,5 @@
 import { Tabs } from '@/components/ui/tabs';
+import { PlayerHighlightProvider, usePlayerHighlight } from '@/contexts/PlayerHighlightContext';
 import { GameHeader } from '@/components/game/GameHeader';
 import { GameMenu } from '@/components/game/GameMenu';
 import { GameNavBar } from '@/components/game/GameNavBar';
@@ -53,10 +54,15 @@ const Index = () => {
   if (!session) return <AuthPage />;
   
 
-  return <GameApp userId={session.user.id} userEmail={session.user.email || ''} onSignOut={signOut} />;
+  return (
+    <PlayerHighlightProvider>
+      <GameApp userId={session.user.id} userEmail={session.user.email || ''} onSignOut={signOut} />
+    </PlayerHighlightProvider>
+  );
 };
 
 function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: string; onSignOut: () => void }) {
+  const { addHighlight } = usePlayerHighlight();
   const [loadedState, setLoadedState] = useState<GameState | undefined>(undefined);
   const [gameReady, setGameReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -482,7 +488,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [marketSubTab, setMarketSubTab] = useState('browse');
-  const [signingPlayer, setSigningPlayer] = useState<{ name: string; position: string; overall: number; age: number; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
+  const [signingPlayer, setSigningPlayer] = useState<{ id?: string; name: string; position: string; overall: number; age: number; signingType?: string; eventType?: 'signing' | 'renewal' | 'loan'; extraInfo?: string } | null>(null);
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [pendingAwardsSeason, setPendingAwardsSeason] = useState<number | null>(null);
   const [viewingClubName, setViewedClubName] = useState<string | null>(searchParams.get('name'));
@@ -632,6 +638,12 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
 
   // Check tutorial completed status — auto-show ONLY if user definitely hasn't finished it.
   // Default state is `true` (tutorialCompleted) to prevent flashing while loading.
+  useEffect(() => {
+    if (signingPlayer?.id) {
+      addHighlight(signingPlayer.id, signingPlayer.signingType === 'loan_in' ? 'listed_loan' : 'new_signing');
+    }
+  }, [signingPlayer?.id, addHighlight]);
+
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
@@ -1164,6 +1176,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           onClose={() => setPendingAwardsSeason(null)}
         />
       )}
+      {/* Celebratory Modal — Modificado para disparar o Destaque Visual */}
       <PlayerSigningModal
         open={!!signingPlayer}
         onClose={() => setSigningPlayer(null)}
@@ -1217,7 +1230,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           </ErrorBoundary>
         </Tabs>
       </main>
-    </div>
+      </div>
   );
 }
 
