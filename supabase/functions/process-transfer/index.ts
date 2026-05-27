@@ -5,6 +5,52 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// ============================================================
+// Manchetes variadas + importância para o Diário do Futebol
+// ============================================================
+function fmtMoney(v?: number) {
+  if (!v || v <= 0) return '';
+  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(0)}k`;
+  return `R$ ${v}`;
+}
+function pickOne<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+function newsImportance(opts: { overall?: number; value?: number; isInternational?: boolean }) {
+  let level = 1;
+  if ((opts.overall ?? 0) >= 78 || (opts.value ?? 0) >= 5_000_000) level = 2;
+  if ((opts.overall ?? 0) >= 85 || (opts.value ?? 0) >= 20_000_000) level = 3;
+  if (opts.isInternational) level = Math.min(3, level + 1);
+  return level;
+}
+function buyNowHeadlines(p: { player: string; ovr?: number; from: string; to: string; money: string }) {
+  return pickOne([
+    `⚡ COMPRA IMEDIATA! ${p.to} fatura ${p.player} (OVR ${p.ovr}) junto ao ${p.from} por ${p.money}`,
+    `⚡ Sem rodeios: ${p.to} ativa cláusula e leva ${p.player} (OVR ${p.ovr}) do ${p.from} por ${p.money}`,
+    `⚡ ${p.player} é do ${p.to}! Operação relâmpago tira o jogador do ${p.from} por ${p.money}`,
+    `⚡ ${p.from} aceita ${p.money} e libera ${p.player} para o ${p.to} em compra imediata`,
+  ]);
+}
+function saleHeadlines(p: { player: string; pos?: string; ovr?: number; from: string; to: string; money: string }) {
+  return pickOne([
+    `✅ CONFIRMADO! ${p.player} (${p.pos}, OVR ${p.ovr}) é vendido pelo ${p.from} ao ${p.to} por ${p.money}`,
+    `✍️ ${p.to} anuncia a contratação de ${p.player} (OVR ${p.ovr}) por ${p.money}`,
+    `🤝 Negócio fechado: ${p.player} troca o ${p.from} pelo ${p.to} (${p.money})`,
+    `🔥 ${p.player} deixa o ${p.from} rumo ao ${p.to} em acordo de ${p.money}`,
+  ]);
+}
+function negotiationAcceptHeadlines(p: { player: string; ovr?: number; from: string; to: string; money: string }) {
+  return pickOne([
+    `🤝 ${p.from} aceitou proposta de ${p.money} do ${p.to} por ${p.player} (OVR ${p.ovr}). Jogador tem 7h para decidir.`,
+    `📝 Mesa de negociação: ${p.from} dá sinal verde para ${p.money} do ${p.to} por ${p.player}. Faltam só palavras finais do atleta.`,
+  ]);
+}
+function rejectionHeadlines(p: { player: string; ovr?: number; to: string }) {
+  return pickOne([
+    `❌ ${p.player} (OVR ${p.ovr}) recusou proposta do ${p.to}. Negociação frustrada.`,
+    `🚫 Empresário travou: ${p.player} diz não ao ${p.to} e segue no clube atual.`,
+  ]);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
