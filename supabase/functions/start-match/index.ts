@@ -539,12 +539,66 @@ function generateReport(
 
   const pressing = tactics?.pressing || 'medio';
   const playStyle = tactics?.playStyle || 'equilibrado';
+  const formation = tactics?.formation || '4-4-2';
   const tacticalNotes: string[] = [];
   if (pressing === 'ultra-alto' || pressing === 'alto') {
     tacticalNotes.push(stats.tackles[idx] >= 8 ? 'Pressing alto foi eficaz' : 'Pressing alto não surtiu efeito');
   }
-  if (playStyle === 'ofensivo') tacticalNotes.push(userGoals >= 2 ? 'Estilo ofensivo rendeu gols' : 'Estilo ofensivo deixou a defesa exposta');
+  if (playStyle === 'ofensivo' || playStyle === 'ataque-total') tacticalNotes.push(userGoals >= 2 ? 'Estilo ofensivo rendeu gols' : 'Estilo ofensivo deixou a defesa exposta');
+  if (playStyle === 'retranca-total' || playStyle === 'parking-bus') tacticalNotes.push(oppGoals === 0 ? 'Muralha defensiva funcionou' : 'Retranca furada pelo adversário');
   if (tacticalNotes.length === 0) tacticalNotes.push('Tática equilibrada manteve o time competitivo');
+
+  // ── ANÁLISE TÁTICA POR SETOR ─────────────────────────────
+  const userSide = isUserHome ? 'home' : 'away';
+  const ownPlayers = homePlayers.filter(p => p.team === userSide);
+  const sectorAvg = (positions: string[]) => {
+    const ps = ownPlayers.filter(p => positions.includes(p.position));
+    if (!ps.length) return 6.0;
+    return Math.round((ps.reduce((s, p) => s + p.rating, 0) / ps.length) * 10) / 10;
+  };
+  const defRating = sectorAvg(['GOL', 'ZAG', 'LAT']);
+  const midRating = sectorAvg(['VOL', 'MEI']);
+  const atkRating = sectorAvg(['ATA']);
+  const styleWorked =
+    (playStyle === 'ofensivo' || playStyle === 'ataque-total') ? userGoals >= 2 :
+    (playStyle === 'retranca-total' || playStyle === 'parking-bus' || playStyle === 'defesa-compacta') ? oppGoals <= 1 :
+    (playStyle === 'posse' || playStyle === 'tiki-taka' || playStyle === 'controle-total') ? stats.possession[idx] >= 55 :
+    (playStyle === 'pressao-alta' || playStyle === 'gegenpressing') ? stats.tackles[idx] >= 10 :
+    (playStyle === 'contra-ataque' || playStyle === 'transicao-rapida') ? userGoals >= 1 && stats.possession[idx] < 50 :
+    result === 'win' || result === 'draw';
+  const assistantFeedback = result === 'win'
+    ? (styleWorked ? `Mister, sua leitura do jogo foi cirúrgica. O ${playStyle.replace('-', ' ')} no ${formation} funcionou como planejado.`
+                   : `Vencemos apesar da tática não ter encaixado perfeitamente. Reavalie ${playStyle} para os próximos jogos.`)
+    : result === 'draw'
+      ? `Empate mostra que o ${formation} ${styleWorked ? 'segurou o necessário' : 'não criou o suficiente'}. Talvez ajustar a intensidade ou a largura ajude.`
+      : (styleWorked ? `A tática até funcionou no plano, mas faltou eficiência. Não troque tudo ainda.`
+                     : `Recomendo revisar a postura: ${playStyle} no ${formation} não está rendendo. Considere ${userGoals === 0 ? 'um estilo mais ofensivo' : 'mais solidez defensiva'}.`);
+
+  const tacticalAnalysis = {
+    formation, style: playStyle,
+    styleWorked,
+    sectorEfficiency: { defesa: defRating, meio: midRating, ataque: atkRating },
+    summary: {
+      possession: stats.possession[idx],
+      shots: stats.shots[idx],
+      shotsOnTarget: stats.shotsOnTarget[idx],
+      tackles: stats.tackles[idx],
+      fouls: stats.fouls[idx],
+    },
+    whatWorked: [
+      stats.possession[idx] >= 55 ? `Domínio da posse (${stats.possession[idx]}%)` : null,
+      stats.shotsOnTarget[idx] >= 5 ? `Volume ofensivo (${stats.shotsOnTarget[idx]} no alvo)` : null,
+      oppGoals === 0 ? 'Defesa intransponível (clean sheet)' : null,
+      stats.tackles[idx] >= 10 ? `Pressão recuperou ${stats.tackles[idx]} bolas` : null,
+    ].filter(Boolean) as string[],
+    whatFailed: [
+      stats.possession[idx] < 40 ? `Posse muito baixa (${stats.possession[idx]}%)` : null,
+      stats.shots[idx] <= 3 ? 'Falta de chegada ao ataque' : null,
+      oppGoals >= 3 ? `Defesa exposta (${oppGoals} gols sofridos)` : null,
+      stats.yellowCards[idx] >= 3 ? `Indisciplina (${stats.yellowCards[idx]} amarelos)` : null,
+    ].filter(Boolean) as string[],
+    assistantFeedback,
+  };
 
   // Use público autoritativo da partida quando disponível; nunca random aqui.
   const attendance = typeof attendanceOverride === 'number'
