@@ -80,8 +80,9 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   // 🔄 Reconstrói elenco completo: profissionais + juniores + banco + tática.
   useEffect(() => {
     if (clubState.club.players.length === 0 && infraState.youthProspects.length === 0) return;
-
-    const rebuiltPlayers = rebuildClubSquad(clubState.club.players, infraState.youthProspects, tactics.formation);
+    
+    // Pass infrastructure to correctly filter youth players based on Academy existence
+    const rebuiltPlayers = rebuildClubSquad(clubState.club.players, infraState.youthProspects, tactics.formation, infraState.infrastructure);
     const rebuiltTactics = syncTacticsWithSquad(tactics, rebuiltPlayers);
     
     // Check if anything actually changed to prevent infinite loops

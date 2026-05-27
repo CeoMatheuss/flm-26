@@ -82,7 +82,7 @@ const attrLabels: Record<string, { label: string; icon: string }> = {
 };
 
 const STARTERS_COUNT = 11;
-const BENCH_COUNT = 7;
+const BENCH_COUNT = 11;
 
 function getOvrColor(val: number) {
   if (val >= 80) return { text: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', glow: 'shadow-[0_0_20px_-5px_rgba(16,185,129,0.5)]' };

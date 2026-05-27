@@ -39,7 +39,7 @@ export const youthProspectToPlayer = (prospect: YouthProspect): Player => ({
   contractStatus: prospect.contractStatus ?? 'base',
 } as Player & { contractStatus: string });
 
-export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspect[], formation: TacticsConfig['formation']) => {
+export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspect[], formation: TacticsConfig['formation'], infrastructure?: any) => {
   if (!players || !Array.isArray(players)) return [];
   
   const byId = new Map<string, Player>();
@@ -55,8 +55,9 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
     } as Player);
   });
 
-  // 2. Process youth prospects (only if not already in players by ID)
-  if (youthProspects && Array.isArray(youthProspects)) {
+  // 2. Process youth prospects only IF club has youth academy (level >= 1)
+  const hasYouthAcademy = infrastructure?.youthAcademy?.level >= 1;
+  if (hasYouthAcademy && youthProspects && Array.isArray(youthProspects)) {
     youthProspects.forEach(prospect => {
       if (byId.has(prospect.id)) return;
       const player = youthProspectToPlayer(prospect);
@@ -75,20 +76,25 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
      return autoLineup(all, formation);
   }
 
-  // 4. Balanced separation: Ensure clear division
+  // 4. Rule: Max 11 on Bench. Rest goes to 'Reserve' (Fora).
+  // Priority: 1. Starters, 2. Bench, 3. Reserve
   const finalStarters = all.filter(p => p.squad_status === 'starter').sort((a,b) => b.overall - a.overall).slice(0, 11);
   const remaining = all.filter(p => !finalStarters.find(s => s.id === p.id));
   
-  // Players explicitly in bench (squad_status === 'bench')
-  const bench = remaining.filter(p => p.squad_status === 'bench').sort((a,b) => b.overall - a.overall);
+  // Split remaining into Bench (max 11) and Reserve (Fora)
+  const explicitBench = remaining.filter(p => p.squad_status === 'bench').sort((a,b) => b.overall - a.overall);
   const others = remaining.filter(p => p.squad_status !== 'bench').sort((a,b) => b.overall - a.overall);
+  
+  const combinedRemaining = [...explicitBench, ...others];
+  const finalBench = combinedRemaining.slice(0, 11);
+  const finalReserves = combinedRemaining.slice(11);
 
   // Re-assign squad_status to ensure consistency
   finalStarters.forEach(p => p.squad_status = 'starter');
-  bench.forEach(p => p.squad_status = 'bench');
-  others.forEach(p => p.squad_status = 'reserve');
+  finalBench.forEach(p => p.squad_status = 'bench');
+  finalReserves.forEach(p => p.squad_status = 'reserve');
 
-  return [...finalStarters, ...bench, ...others];
+  return [...finalStarters, ...finalBench, ...finalReserves];
 };
 
 export const squadsDiffer = (a: Player[], b: Player[]) => {

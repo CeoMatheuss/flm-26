@@ -28,7 +28,9 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
 
   const starters = useMemo(() => players.filter(p => p.squad_status === 'starter'), [players]);
   const reserves = useMemo(() => players.filter(p => p.squad_status === 'bench'), [players]);
-  const youth = useMemo(() => players.filter(p => !['starter', 'bench'].includes(p.squad_status || '')), [players]);
+  const out = useMemo(() => players.filter(p => p.squad_status === 'reserve'), [players]);
+  const youth = useMemo(() => players.filter(p => !!(p as any).isYouth && (p as any).contractStatus === 'base'), [players]);
+
 
   const handlePlayerSelect = (player: Player) => {
     if (!selectedPlayerA) {
@@ -120,12 +122,14 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
 
         <div className="p-4">
           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 h-12 bg-black/40 border border-white/5 p-1.5 rounded-xl mb-6 shadow-inner">
+            <TabsList className="w-full grid grid-cols-5 h-12 bg-black/40 border border-white/5 p-1.5 rounded-xl mb-6 shadow-inner">
               <TabsTrigger value="all" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Todos</TabsTrigger>
               <TabsTrigger value="starters" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Titulares</TabsTrigger>
               <TabsTrigger value="reserves" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Reservas</TabsTrigger>
+              <TabsTrigger value="out" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Fora</TabsTrigger>
               <TabsTrigger value="youth" className="text-[10px] font-black uppercase tracking-tighter rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Base</TabsTrigger>
             </TabsList>
+
 
             <ScrollArea className="h-[400px] pr-4">
               <TabsContent value="all" className="mt-0">
@@ -137,9 +141,13 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
               <TabsContent value="reserves" className="mt-0">
                 {reserves.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => <PlayerRow key={p.id} player={p} />)}
               </TabsContent>
+              <TabsContent value="out" className="mt-0">
+                {out.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => <PlayerRow key={p.id} player={p} />)}
+              </TabsContent>
               <TabsContent value="youth" className="mt-0">
                 {youth.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => <PlayerRow key={p.id} player={p} />)}
               </TabsContent>
+
             </ScrollArea>
           </Tabs>
         </div>
