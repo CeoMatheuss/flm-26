@@ -315,15 +315,31 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
 
   // Auto-assign player to a league based on country
   const autoJoinLeague = useCallback(async () => {
-    if (!clubName || !clubCountry || autoJoining) return;
+    if (!clubName || !clubCountry || autoJoining || !userId) return;
     setAutoJoining(true);
-    const loadingToast = toast.loading('Entrando na Liga...', {
-      description: `Buscando vaga no país: ${clubCountry}...`
-    });
-    
+
     try {
+      // 🚫 Já está inscrito em alguma liga? Não exibe toast, não tenta de novo.
+      const { count: existingMember } = await supabase
+        .from('league_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      if ((existingMember ?? 0) > 0) {
+        console.log('[LeagueRegistration] User already enrolled in a league. Skipping auto-join.');
+        // Limpa qualquer entrada órfã na fila de espera
+        await supabase.from('league_waiting_list').delete().eq('user_id', userId);
+        await loadLeagues();
+        setAutoJoining(false);
+        return;
+      }
+
+      const loadingToast = toast.loading('Entrando na Liga...', {
+        description: `Buscando vaga no país: ${clubCountry}...`
+      });
+
       console.log(`[LeagueRegistration] Attempting auto-join for user ${userId} in ${clubCountry}`);
-      
+
       const { data: leagueId, error } = await supabase.rpc('auto_assign_league', {
         _user_id: userId,
         _club_name: clubName,
@@ -339,11 +355,11 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
 
       if (leagueId) {
         console.log(`[LeagueRegistration] Successfully assigned to league: ${leagueId}`);
-        toast.success('Clube inscrito com sucesso!', { 
+        toast.success('Clube inscrito com sucesso!', {
           id: loadingToast,
           description: 'Você já está ativo na liga e participando da temporada.'
         });
-        
+
         const { data: league } = await supabase
           .from('multiplayer_leagues')
           .select('*')
@@ -363,7 +379,6 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
       }
     } catch (e) {
       console.error('[LeagueRegistration] Auto-join exception:', e);
-      toast.error('Falha crítica ao entrar na liga', { id: loadingToast });
     }
     setAutoJoining(false);
   }, [userId, clubName, clubCountry, autoJoining, loadLeagues, enterLeague]);
