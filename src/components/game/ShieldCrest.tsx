@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import heraldicAnimalsSprite from '@/assets/heraldic-animals.png';
 import heraldicSymbolsSprite from '@/assets/heraldic-symbols.png';
 import heraldicParrot from '@/assets/heraldic-parrot.png';
@@ -1201,4 +1201,4 @@ export function ShieldCrest({
       )}
     </svg>
   );
-}
+});
