@@ -282,34 +282,6 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const unreadCount = notifications.filter(n => !isRead(n)).length;
   const urgentCount = notifications.filter(n => (n.type === 'danger' || n.actions) && !isRead(n)).length;
 
-  const markAsRead = async (id: string) => {
-    setPersistedReadKeys(prev => new Set(prev).add(id));
-    if (id.startsWith('db-')) {
-      const dbId = id.replace('db-', '');
-      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).eq('id', dbId);
-    }
-    // Persist to DB so it survives logout
-    await supabase.from('notification_read_state').upsert(
-      { user_id: userId, notification_key: id, read_at: new Date().toISOString() },
-      { onConflict: 'user_id,notification_key' }
-    );
-  };
-
-  const markAllAsRead = async () => {
-    const allIds = notifications.map(n => n.id);
-    setPersistedReadKeys(new Set([...persistedReadKeys, ...allIds]));
-    const dbIds = dbNotifications.filter(d => !d.read_at).map(d => d.id);
-    if (dbIds.length > 0) {
-      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).in('id', dbIds);
-    }
-    // Persist all keys to DB
-    if (allIds.length > 0) {
-      await supabase.from('notification_read_state').upsert(
-        allIds.map(key => ({ user_id: userId, notification_key: key, read_at: new Date().toISOString() })),
-        { onConflict: 'user_id,notification_key' }
-      );
-    }
-  };
 
   return (
     <div className="relative">
