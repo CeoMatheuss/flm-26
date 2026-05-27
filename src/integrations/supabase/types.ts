@@ -8046,6 +8046,7 @@ export type Database = {
       }
       redistribute_beginners: { Args: { _country: string }; Returns: undefined }
       refresh_scout_market: { Args: never; Returns: undefined }
+      regenerate_missing_league_calendars: { Args: never; Returns: number }
       reject_beta_request: { Args: { _request_id: string }; Returns: undefined }
       replace_bot_with_player:
         | {
