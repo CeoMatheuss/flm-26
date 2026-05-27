@@ -6861,7 +6861,10 @@ export type Database = {
           prizes_paid: boolean | null
           season_month: number | null
           season_year: number | null
+          status: string | null
           tier_level: number | null
+          total_matchdays: number | null
+          total_slots: number | null
           winner_processed: boolean | null
         }
         Insert: {
@@ -6881,7 +6884,10 @@ export type Database = {
           prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
+          status?: string | null
           tier_level?: number | null
+          total_matchdays?: number | null
+          total_slots?: number | null
           winner_processed?: boolean | null
         }
         Update: {
@@ -6901,7 +6907,10 @@ export type Database = {
           prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
+          status?: string | null
           tier_level?: number | null
+          total_matchdays?: number | null
+          total_slots?: number | null
           winner_processed?: boolean | null
         }
         Relationships: [
@@ -7321,6 +7330,36 @@ export type Database = {
         }
         Relationships: []
       }
+      world_system_config: {
+        Row: {
+          created_at: string | null
+          current_season: number
+          global_round: number
+          id: string
+          last_processed_at: string | null
+          settings: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_season?: number
+          global_round?: number
+          id?: string
+          last_processed_at?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_season?: number
+          global_round?: number
+          id?: string
+          last_processed_at?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       world_teams: {
         Row: {
           country: string | null
@@ -7557,6 +7596,10 @@ export type Database = {
         Args: { _cup_id: string }
         Returns: undefined
       }
+      batch_simulate_matches: {
+        Args: { p_match_ids: string[] }
+        Returns: undefined
+      }
       batch_upsert_player_stats: {
         Args: {
           _comp_id: string
@@ -7743,6 +7786,10 @@ export type Database = {
       }
       fix_league_forcefully: { Args: { p_league_id: string }; Returns: Json }
       fix_world_leagues_kickoffs: { Args: never; Returns: undefined }
+      fix_world_match_schedules: {
+        Args: { p_league_id: string; p_target_time: string }
+        Returns: undefined
+      }
       force_advance_league_round: {
         Args: { _is_world?: boolean; _league_id: string }
         Returns: undefined
@@ -7818,6 +7865,7 @@ export type Database = {
       }
       get_current_season_day: { Args: never; Returns: number }
       get_division_start_time: { Args: { div_level: number }; Returns: string }
+      get_global_server_round: { Args: never; Returns: number }
       get_league_match_time: {
         Args: { division_level: number }
         Returns: string
