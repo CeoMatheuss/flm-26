@@ -168,40 +168,39 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
   }, []);
 
   // ── Actions ──
-  const sendOffer = async () => {
+  const sendOffer = async (data: NegotiationData) => {
     if (!offerAgent) return;
-    if (offerSalary <= 0) { toast.error('Defina um salário'); return; }
-    if (signingBonus > transferBudget) {
-      toast.error(`Luvas excedem sua verba de transferências (${formatMoney(transferBudget)} disponível).`);
-      return;
-    }
-    const annualSalary = offerSalary * 12;
-    if (annualSalary > salaryBudgetRemaining) {
-      toast.error(`Salário anual (${formatMoney(annualSalary)}) excede sua verba de salários disponível.`);
-      return;
-    }
-
+    
     setLoading(true);
     const res = await supabase.functions.invoke('process-free-agent', {
       body: {
         action: 'make-offer',
         agentId: offerAgent.id,
-        offeredSalary: offerSalary,
-        contractYears: offerYears,
-        signingBonus,
+        offeredSalary: data.offeredSalary,
+        contractYears: data.contractYears,
+        signingBonus: data.signingBonus,
         clubName,
         transferBudgetAvailable: transferBudget,
       },
     });
     setLoading(false);
+    
     if (res.error || res.data?.error) {
       toast.error(res.data?.error || 'Erro ao enviar proposta');
     } else {
-      toast.success(`Proposta enviada para ${offerAgent.player_name}! Aguarde 7h.`);
+      if (res.data?.isAutoAccept) {
+        toast.success(`✅ ${offerAgent.player_name} aceitou a proposta imediatamente!`);
+      } else {
+        toast.success(`⏳ Proposta enviada para ${offerAgent.player_name}! Aguarde 7h.`);
+      }
       setOfferAgent(null);
       loadActiveOffers();
       loadHistory();
     }
+  };
+
+  const openOfferDialog = (agent: FreeAgent) => {
+    setOfferAgent(agent);
   };
 
   const acceptCounter = async (offer: FreeAgentOffer) => {
