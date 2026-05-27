@@ -26,6 +26,7 @@ import { useLiveMatchGuard } from './LiveMatchGuard';
 import { LoanNegotiationModal } from './LoanNegotiationModal';
 import { LoanTerms } from '@/types/loan';
 import { PremiumListingCard } from './market/PremiumListingCard';
+import { NegotiationModal, NegotiationData } from './market/NegotiationModal';
 
 interface TransferListing {
   id: string;
