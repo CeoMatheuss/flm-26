@@ -286,12 +286,13 @@ serve(async (req) => {
                 from: `Football Life Manager <${fromEmail}>`,
                 to: [email],
                 subject: `Seu código FLM: ${verificationCode}`,
-                html: PREMIUM_EMAIL_TEMPLATE(
-                  'Bem-vindo ao Football Life Manager',
-                  'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
-                  verificationCode,
-                  'Este código expira em 10 minutos por motivos de segurança.'
-                ),
+                html: getVerificationEmailTemplate({
+                  userName: email.split('@')[0],
+                  verificationCode: verificationCode,
+                  expirationMinutes: 10,
+                  clubName: 'Seu Clube FLM',
+                  ipAddress: req.headers.get('x-forwarded-for') || 'Acesso Remoto'
+                }),
               }),
             })
 
@@ -406,13 +407,13 @@ serve(async (req) => {
               from: 'Football Life Manager <onboarding@resend.dev>',
               to: [user.email],
               subject: 'BEM-VINDO AO CAMPO, MANAGER | FOOTBALL LIFE MANAGER',
-              html: PREMIUM_EMAIL_TEMPLATE(
-                'Bem-vindo ao Football Life Manager',
-                'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
-                Math.floor(100000 + Math.random() * 900000).toString(),
-                'Digite este código dentro do Football Life Manager para acessar sua conta.',
-                'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=1200'
-              ),
+              html: getVerificationEmailTemplate({
+                userName: user.email?.split('@')[0] || 'Manager',
+                verificationCode: Math.floor(100000 + Math.random() * 900000).toString(),
+                expirationMinutes: 10,
+                clubName: 'Elenco de Teste',
+                ipAddress: 'Broadcast System'
+              }),
             }),
           })
           return { email: user.email, status: res.status }
