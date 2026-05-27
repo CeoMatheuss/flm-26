@@ -443,35 +443,58 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
         </div>
       </div>
 
-      {/* Country (Desktop) */}
-      <div className="hidden sm:block col-span-1 text-center">
-        <span className="text-xl filter drop-shadow-sm">{flagFor((player as any).country || player.nationality)}</span>
-      </div>
-
-      {/* Age */}
-      <div className="hidden sm:block col-span-1 text-center">
-        <span className="text-xs font-bold text-white/60">{player.age}a</span>
-      </div>
-
-      {/* Attributes (Compact Row View) */}
-      <div className="col-span-2 hidden xl:flex items-center justify-center gap-3 overflow-hidden px-1">
-        {attrConfig.slice(0, 3).map(attr => {
-          const { value: val } = getAttrValue(player, attr.from as any);
-          return (
-            <div key={attr.key} className="flex flex-col items-center min-w-[28px] sm:min-w-[32px] shrink-0">
-              <span className="text-[7px] sm:text-[8px] font-black text-white/20 uppercase mb-0.5">{attr.key}</span>
-              <span className={cn(
-                "text-[9px] sm:text-[10px] font-black tabular-nums italic",
-                val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
-              )}>{val}</span>
+      {/* Conditional Middle Columns */}
+      {activeTab === 'emprestados' ? (
+        <>
+          {/* Destination */}
+          <div className="hidden sm:flex col-span-2 items-center justify-center">
+            <span className="text-[11px] font-black text-white uppercase tracking-wider truncate">
+              {player.loanedTo || 'Mercado'}
+            </span>
+          </div>
+          {/* Duration */}
+          <div className="hidden sm:flex col-span-2 items-center justify-center">
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-black text-amber-400 italic">
+                {player.loanWeeksRemaining || 0}
+              </span>
+              <span className="text-[7px] font-black text-white/20 uppercase">Semanas restantes</span>
             </div>
-          );
-        })}
-        <div className="h-6 w-px bg-white/5 mx-0.5 sm:mx-1 shrink-0" />
-        <div className="shrink-0">
-          <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" onRest={onRest} />
-        </div>
-      </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Country (Desktop) */}
+          <div className="hidden sm:block col-span-1 text-center">
+            <span className="text-xl filter drop-shadow-sm">{flagFor((player as any).country || player.nationality)}</span>
+          </div>
+
+          {/* Age */}
+          <div className="hidden sm:block col-span-1 text-center">
+            <span className="text-xs font-bold text-white/60">{player.age}a</span>
+          </div>
+
+          {/* Attributes (Compact Row View) */}
+          <div className="col-span-2 hidden xl:flex items-center justify-center gap-3 overflow-hidden px-1">
+            {attrConfig.slice(0, 3).map(attr => {
+              const { value: val } = getAttrValue(player, attr.from as any);
+              return (
+                <div key={attr.key} className="flex flex-col items-center min-w-[28px] sm:min-w-[32px] shrink-0">
+                  <span className="text-[7px] sm:text-[8px] font-black text-white/20 uppercase mb-0.5">{attr.key}</span>
+                  <span className={cn(
+                    "text-[9px] sm:text-[10px] font-black tabular-nums italic",
+                    val >= 80 ? 'text-emerald-400' : val >= 60 ? 'text-sky-400' : 'text-red-400'
+                  )}>{val}</span>
+                </div>
+              );
+            })}
+            <div className="h-6 w-px bg-white/5 mx-0.5 sm:mx-1 shrink-0" />
+            <div className="shrink-0">
+              <MiniStat value={player.stamina} icon={<Activity className="w-3 h-3" />} color="text-emerald-400" label="FIS" onRest={onRest} />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Contract & Market Value */}
       <div className="col-span-11 sm:col-span-3 flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 overflow-hidden">
