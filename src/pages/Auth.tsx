@@ -371,20 +371,33 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                 )}
               </div>
 
-              <div className="flex items-start gap-2 pt-1">
+              <label
+                htmlFor="terms"
+                className={`group flex items-center gap-3 rounded-xl border px-3.5 py-3 cursor-pointer select-none transition-all ${
+                  acceptedTerms
+                    ? 'border-primary/50 bg-primary/5 shadow-[0_0_0_1px_hsl(var(--primary)/0.2)]'
+                    : 'border-border/60 bg-muted/30 hover:border-primary/30 hover:bg-muted/50'
+                }`}
+              >
                 <Checkbox
                   id="terms"
                   checked={acceptedTerms}
                   onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                  className="mt-0.5 shrink-0"
+                  className="shrink-0 h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
-                <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
-                  Você aceita os{" "}
-                  <Link to="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline hover:text-primary/80">
-                    termos de uso
+                <span className="text-xs text-foreground/80 leading-snug">
+                  Eu li e concordo com os{" "}
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-primary underline-offset-2 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Termos de Uso
                   </Link>
-                </label>
-              </div>
+                </span>
+              </label>
             </div>
 
             <Button
