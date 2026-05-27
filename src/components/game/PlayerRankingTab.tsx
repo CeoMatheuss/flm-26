@@ -9,6 +9,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 type Category = 'global' | 'scorers' | 'assists' | 'goalkeepers';
 
+const GK_POSITIONS = ['Goleiro', 'GOL', 'GK'];
+const isGoalkeeper = (pos?: string | null) => !!pos && GK_POSITIONS.includes(pos);
+
 interface Row {
   id: string;
   player_id: string;
@@ -25,7 +28,7 @@ interface Row {
     overall: number;
     age: number;
     nationality: string;
-    clubs?: { name: string; logo_url: string | null; shield_config: any } | null;
+    clubs?: { name: string; logo: string | null } | null;
   } | null;
 }
 
@@ -37,19 +40,20 @@ export function PlayerRankingTab() {
 
   const fetchData = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('global_player_ranking')
       .select(`
         id, player_id, ranking_points, total_goals, total_assists,
         total_clean_sheets, penalties_saved, avg_rating,
         players:world_players (
           id, name, position, overall, age, nationality,
-          clubs:world_teams ( name, logo_url, shield_config )
+          clubs:world_teams ( name, logo )
         )
       `)
       .order('ranking_points', { ascending: false })
       .limit(500);
 
+    if (error) console.error('[PlayerRanking] fetch error:', error);
     setRows((data as any[]) || []);
     setLoading(false);
   };
@@ -72,9 +76,9 @@ export function PlayerRankingTab() {
 
     // Filtro de categoria
     if (category === 'goalkeepers') {
-      filtered = filtered.filter((r) => r.players?.position === 'Goleiro');
+      filtered = filtered.filter((r) => isGoalkeeper(r.players?.position));
     } else if (category !== 'global') {
-      filtered = filtered.filter((r) => r.players?.position !== 'Goleiro');
+      filtered = filtered.filter((r) => !isGoalkeeper(r.players?.position));
     }
 
     // Ordenação + critérios de desempate
