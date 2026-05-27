@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Swords, Users, Play, Loader2, Trophy, Shield, Clock } from 'lucide-react';
+import { Swords, Users, Play, Loader2, Trophy, Shield, Clock, Calendar, BarChart2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { OnlineFriendliesTab } from './OnlineFriendliesTab';
 import { MatchLobbyScreen } from './MatchLobbyScreen';
+import { ChampionshipsTab } from './ChampionshipsTab';
 
 interface Props {
   userId: string;
@@ -153,12 +154,15 @@ export function MatchesTab({
           <Card className="bg-gradient-to-br from-primary/5 via-card to-background border-primary/20 overflow-hidden">
             <CardContent className="p-0">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-2 w-full h-12 bg-muted/30 rounded-none border-b border-border/50">
+                <TabsList className="grid grid-cols-3 w-full h-12 bg-muted/30 rounded-none border-b border-border/50">
                   <TabsTrigger value="bot" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
                     <Users className="h-4 w-4" /> Desafiar BOT
                   </TabsTrigger>
                   <TabsTrigger value="online" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
                     <Shield className="h-4 w-4" /> Matchmaking Online
+                  </TabsTrigger>
+                  <TabsTrigger value="leagues" className="flex-1 gap-2 py-3 data-[state=active]:bg-background">
+                    <Trophy className="h-4 w-4" /> Campeonatos
                   </TabsTrigger>
                 </TabsList>
 
@@ -222,6 +226,10 @@ export function MatchesTab({
                     tactics={tactics}
                     fans={fans}
                   />
+                </TabsContent>
+
+                <TabsContent value="leagues" className="p-4 mt-0">
+                  <ChampionshipsTab />
                 </TabsContent>
               </Tabs>
             </CardContent>
