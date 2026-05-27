@@ -91,9 +91,9 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       setHasSave(false);
 
       try {
-        const saveRes = await withTimeout(
+        const saveRes = await withTimeout(Promise.resolve(
           supabase.from('game_saves').select('club_data').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-        );
+        ));
 
         if (cancelled) return;
         if (saveRes.error) throw saveRes.error;
@@ -184,11 +184,12 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
 
     window.addEventListener('flm:force-resync', handleForceResync);
 
-    return () => { 
+    return () => {
+      cancelled = true;
       supabase.removeChannel(channel); 
       window.removeEventListener('flm:force-resync', handleForceResync);
     };
-  }, [userId]);
+  }, [userId, loadAttempt]);
 
   const handleClubCreated = useCallback(async (config: ClubConfig) => {
     const countryName = countryNames[config.country] || config.country;
