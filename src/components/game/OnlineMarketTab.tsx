@@ -252,6 +252,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       loadMyOffers();
       loadIncomingOffers();
       loadLoanListings();
+      loadLoanOffers();
       loadMyRenewals();
     });
 
@@ -271,17 +272,22 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       .on('postgres_changes', { event: '*', schema: 'public', table: 'player_negotiations', filter: `user_id=eq.${userId}` }, () => { loadMyRenewals(); })
       .subscribe();
 
-    const backupInterval = setInterval(loadListings, 30000); // 1 min backup refresh
+    const ch5 = supabase.channel('loan-offers')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_offers' }, () => { loadLoanOffers(); })
+      .subscribe();
 
-    return () => { 
-      supabase.removeChannel(ch1); 
-      supabase.removeChannel(ch2); 
+    const backupInterval = setInterval(loadListings, 30000);
+
+    return () => {
+      supabase.removeChannel(ch1);
+      supabase.removeChannel(ch2);
       supabase.removeChannel(ch3);
       supabase.removeChannel(ch4);
+      supabase.removeChannel(ch5);
       clearInterval(backupInterval);
     };
 
-  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, loadMyRenewals, resolveDecisions, userId]);
+  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, loadLoanOffers, loadMyRenewals, resolveDecisions, userId]);
 
   const listPlayer = async (player: Player) => {
     setLoading(true);
