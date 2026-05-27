@@ -7936,6 +7936,10 @@ export type Database = {
         Returns: undefined
       }
       rebuild_league_v6: { Args: never; Returns: undefined }
+      recalc_player_ranking: {
+        Args: { p_player_id: string }
+        Returns: undefined
+      }
       recalculate_league_table_from_matches: {
         Args: { p_league_id: string }
         Returns: undefined
