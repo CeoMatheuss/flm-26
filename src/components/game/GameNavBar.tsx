@@ -1,10 +1,9 @@
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, Newspaper, Users, Target, Trophy, Globe } from 'lucide-react';
+import { LayoutDashboard, Newspaper, Users, Target, Trophy } from 'lucide-react';
 
 export function GameNavBar() {
   return (
     <div className="flex-1 flex items-center gap-1.5 overflow-hidden">
-      {/* Aba Fixa: Itens essenciais que devem estar sempre visíveis */}
       <TabsList className="flex shrink-0 h-auto gap-0.5 bg-card/60 backdrop-blur-sm p-1 border border-border/20 rounded-xl">
         <TabsTrigger value="dashboard" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5 min-w-[58px] sm:min-w-[65px] flex-1 basis-0">
           <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -27,14 +26,7 @@ export function GameNavBar() {
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Liga</span>
         </TabsTrigger>
       </TabsList>
-
-      {/* Aba Rolável: Itens secundários que podem ser acessados via scroll lateral */}
-      <TabsList className="flex-1 flex overflow-x-auto h-auto gap-0.5 bg-card/60 backdrop-blur-sm p-1 border border-border/20 rounded-xl scrollbar-none no-scrollbar">
-        <TabsTrigger value="championships" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5 min-w-[85px] flex-1">
-          <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
-          <span className="text-[9px] sm:text-xs leading-tight font-medium">Campeonatos</span>
-        </TabsTrigger>
-      </TabsList>
     </div>
   );
 }
+
