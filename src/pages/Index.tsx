@@ -635,6 +635,12 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   // Check tutorial completed status — auto-show ONLY if user definitely hasn't finished it.
   // Default state is `true` (tutorialCompleted) to prevent flashing while loading.
   useEffect(() => {
+    if (signingPlayer?.id) {
+      addHighlight(signingPlayer.id, signingPlayer.signingType === 'loan_in' ? 'listed_loan' : 'new_signing');
+    }
+  }, [signingPlayer?.id, addHighlight]);
+
+  useEffect(() => {
     if (!userId) return;
     let cancelled = false;
     const checkTutorial = async () => {
@@ -1168,12 +1174,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         />
       )}
       {/* Celebratory Modal — Modificado para disparar o Destaque Visual */}
-      <useEffect(() => {
-        if (signingPlayer?.id) {
-          addHighlight(signingPlayer.id, signingPlayer.signingType === 'loan_in' ? 'listed_loan' : 'new_signing');
-        }
-      }, [signingPlayer?.id, addHighlight]);
-
       <PlayerSigningModal
         open={!!signingPlayer}
         onClose={() => setSigningPlayer(null)}
