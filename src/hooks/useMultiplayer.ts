@@ -227,6 +227,8 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
   const [leagueSquads, setLeagueSquads] = useState<LeagueSquad[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoJoining, setAutoJoining] = useState(false);
+  const autoJoinAttemptedRef = useRef<string | null>(null);
+  const autoJoinInFlightRef = useRef(false);
 
   // Load user's leagues
   const loadLeagues = useCallback(async () => {
