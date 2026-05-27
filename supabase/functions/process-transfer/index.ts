@@ -743,14 +743,26 @@ Deno.serve(async (req) => {
             type: 'success',
           });
 
-          // Newspaper: transfer completed
-          const priceStr = offer.offered_price >= 1000000 ? `R$${(offer.offered_price / 1000000).toFixed(1)}M` : `R$${(offer.offered_price / 1000).toFixed(0)}k`;
-          await adminClient.from('newspaper_entries').insert({
-            user_id: listing.seller_id,
-            category: 'TRANSFERÊNCIA',
-            text: `✅ CONFIRMADO! ${listing.player_name} (${listing.player_position}, OVR ${listing.player_overall}) foi vendido pelo ${listing.seller_club_name} para o ${offer.buyer_club_name} por ${priceStr}.`,
-            is_event: true,
+          // Newspaper: transfer completed — manchete variada + DESTAQUE para grandes negociações
+          const priceStr = fmtMoney(offer.offered_price);
+          const saleMeta = {
+            kind: 'sale',
+            player_name: listing.player_name,
+            player_position: listing.player_position,
+            player_overall: listing.player_overall,
+            from_club: listing.seller_club_name,
+            to_club: offer.buyer_club_name,
+            value: offer.offered_price,
+          };
+          const saleImp = newsImportance({ overall: listing.player_overall, value: offer.offered_price });
+          const headline = saleHeadlines({
+            player: listing.player_name, pos: listing.player_position, ovr: listing.player_overall,
+            from: listing.seller_club_name, to: offer.buyer_club_name, money: priceStr,
           });
+          await adminClient.from('newspaper_entries').insert([
+            { user_id: listing.seller_id, category: 'TRANSFERÊNCIA', text: headline, is_event: true, importance: saleImp, metadata: saleMeta },
+            { user_id: offer.buyer_id,    category: 'CONTRATAÇÃO',   text: headline, is_event: true, importance: saleImp, metadata: saleMeta },
+          ]);
 
           const fominhaRisk = (offer.bonus_goals || 0) > 50000 ? 0.3 : (offer.bonus_goals || 0) > 20000 ? 0.15 : 0;
         }
