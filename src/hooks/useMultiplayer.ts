@@ -378,17 +378,20 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
 
       if (error) {
         console.error('[LeagueRegistration] Auto-assign error:', error);
-        toast.error('Erro ao entrar na liga automaticamente', { id: loadingToast });
+        if (loadingToast) toast.error('Erro ao entrar na liga automaticamente', { id: loadingToast });
         setAutoJoining(false);
         return;
       }
 
       if (leagueId) {
         console.log(`[LeagueRegistration] Successfully assigned to league: ${leagueId}`);
-        toast.success('Clube inscrito com sucesso!', {
-          id: loadingToast,
-          description: 'Você já está ativo na liga e participando da temporada.'
-        });
+        if (loadingToast) {
+          toast.success('Clube inscrito com sucesso!', {
+            id: loadingToast,
+            description: 'Você já está ativo na liga e participando da temporada.'
+          });
+        }
+        try { localStorage.setItem(joinNoticeKey, '1'); } catch { /* ignore */ }
 
         const { data: league } = await supabase
           .from('multiplayer_leagues')
@@ -402,10 +405,12 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
         }
       } else {
         console.log('[LeagueRegistration] No immediate space or bots available. Added to waiting list.');
-        toast.info('Inscrito na fila de espera', {
-          id: loadingToast,
-          description: 'Ligas cheias no momento. Você entrará assim que abrir uma vaga.'
-        });
+        if (loadingToast) {
+          toast.info('Inscrito na fila de espera', {
+            id: loadingToast,
+            description: 'Ligas cheias no momento. Você entrará assim que abrir uma vaga.'
+          });
+        }
       }
     } catch (e) {
       console.error('[LeagueRegistration] Auto-join exception:', e);
