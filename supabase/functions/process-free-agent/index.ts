@@ -350,22 +350,43 @@ Deno.serve(async (req) => {
       for (const offer of pending) {
         const agent = (offer as any).free_agents_market;
         const player = agent.player_data;
-        const salaryFloor = calcPlayerSalaryFloor(player);
+        
+        // Fetch buyer reputation
+        const { data: buyerSave } = await adminClient
+          .from('game_saves')
+          .select('club_data')
+          .eq('user_id', offer.buyer_id)
+          .maybeSingle();
+        
+        const reputation = buyerSave?.club_data?.club?.reputation || 50;
 
+        const acceptChance = calculateFreeAgentAcceptChance({
+          offeredSalary: offer.offered_salary,
+          currentSalary: player.salary || 500,
+          reputation,
+          age: player.age || 25,
+          contractYears: offer.offered_contract_years || 2,
+          signingBonus: offer.signing_bonus || 0,
+          personality: player.personality || 'calmo'
+        });
+
+        const playerAccepts = Math.random() < acceptChance;
+        const salaryFloor = player.salary || 500;
         const ratio = (offer.offered_salary || 0) / Math.max(1, salaryFloor);
+        
         let outcome: 'accepted' | 'rejected' | 'counter_salary' = 'rejected';
         let counterSalary: number | null = null;
         let reason: string | null = null;
 
-        if (ratio >= 1.0) {
+        if (playerAccepts) {
           outcome = 'accepted';
         } else if (ratio >= 0.7) {
           outcome = 'counter_salary';
-          counterSalary = Math.floor(salaryFloor * 1.05);
-          reason = `Empresário pede R$${counterSalary}/mês para fechar.`;
+          counterSalary = Math.floor(salaryFloor * 1.15);
+          reason = `Empresário de ${player.name}: O jogador gostou do projeto mas pede R$${counterSalary}/mês.`;
         } else {
           outcome = 'rejected';
-          reason = `Salário oferecido (R$${offer.offered_salary}) muito abaixo do mínimo aceitável (R$${salaryFloor}).`;
+          reason = `Salário oferecido (R$${offer.offered_salary}) muito baixo para um jogador do nível de ${player.name}.`;
         }
 
         if (outcome === 'accepted') {
