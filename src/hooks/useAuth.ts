@@ -12,26 +12,26 @@ export function useAuth() {
     console.log('[useAuth] Verificando sessão inicial...');
     
     try {
-      // Timeout de 5s para getSession
+      // Timeout super curto de 4s para getSession (se falhar, o Index.tsx lida com isso)
       const sessionPromise = supabase.auth.getSession();
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT_GET_SESSION')), 5000)
+        setTimeout(() => reject(new Error('TIMEOUT_GET_SESSION')), 4000)
       );
 
-      const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-      
+      const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
       const duration = (performance.now() - startTime).toFixed(2);
       
-      if (error) {
-        console.error(`[useAuth] Erro ao carregar sessão (${duration}ms):`, error);
-        // Se houver erro de rede, não limpamos nada, apenas falhamos silenciosamente para tentar novamente via onAuthStateChange
-      } else {
-        console.log(`[useAuth] Sessão carregada com sucesso (${duration}ms):`, session?.user?.id || 'nenhuma');
+      if (result && result.data) {
+        const { session } = result.data;
+        console.log(`[useAuth] Sessão carregada (${duration}ms):`, session?.user?.id || 'nenhuma');
         setSession(session);
+      } else if (result && result.error) {
+        console.error(`[useAuth] Erro na API de sessão (${duration}ms):`, result.error);
+        // Em caso de erro 504 ou 500, tentamos manter o que temos ou falhar graciosamente
       }
     } catch (err: any) {
       const duration = (performance.now() - startTime).toFixed(2);
-      console.warn(`[useAuth] Falha/Timeout ao verificar sessão (${duration}ms):`, err.message);
+      console.warn(`[useAuth] Falha/Timeout ao verificar sessão (${duration}ms). Servidor possivelmente lento.`);
     } finally {
       setLoading(false);
     }

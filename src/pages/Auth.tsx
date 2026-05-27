@@ -11,8 +11,9 @@ import { toast } from 'sonner';
 import {
   Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
   Mail, ArrowLeft, CheckCircle2, Clock, RefreshCw,
-  ChevronRight, Eye, EyeOff, UserPlus, LogIn, ShieldCheck, Loader2
+  ChevronRight, Eye, EyeOff, UserPlus, LogIn, ShieldCheck, Loader2, Activity
 } from 'lucide-react';
+import { DiagnosticOverlay } from '@/components/auth/DiagnosticOverlay';
 import { BetaAccessRequestForm } from '@/components/auth/BetaAccessRequestForm';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
@@ -59,6 +60,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
 
   const [step, setStep] = useState<AuthStep>(initialStep);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   // Auto-rotate carousel
   useEffect(() => {
@@ -113,22 +115,24 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     const startTime = performance.now();
     console.log('[Auth] 🚀 Iniciando tentativa de login...', { email, timestamp: new Date().toISOString() });
     
-    // Proteção contra travamento do botão (reset forçado após 12s)
+    // Proteção ultra-agressiva contra travamento do botão (reset forçado após 8s)
     const buttonSafetyTimeout = setTimeout(() => {
       if (loading) {
-        console.warn('[Auth] ⚠️ Botão de login travado! Forçando reset do estado.');
+        console.warn('[Auth] ⚠️ LOGIN TRAVADO NO BOTÃO! Forçando reset.');
         setLoading(false);
-        toast.error('O login está demorando mais que o esperado. Tente novamente.');
+        toast.error('O sistema de autenticação está instável ou lento. Tentando diagnóstico...');
+        // Tenta limpar sessão local se estiver travado
+        supabase.auth.signOut().catch(() => {});
       }
-    }, 12000);
+    }, 8000);
 
     try {
-      console.log('[Auth] 📡 Enviando credenciais para o Supabase...');
+      console.log('[Auth] 📡 Verificando conexão com Supabase Auth...');
       
-      // Timeout de 10 segundos para a requisição
+      // Timeout de 7 segundos para a requisição (mais curto para falhar rápido e permitir retry)
       const loginPromise = supabase.auth.signInWithPassword({ email, password });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 10000)
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 7000)
       );
 
       const result = await Promise.race([loginPromise, timeoutPromise]) as any;
@@ -138,52 +142,64 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         console.error(`[Auth] ❌ Falha no login (${duration}ms):`, result.error);
         
         let message = 'Falha ao entrar. Verifique seus dados.';
+        const errorMsg = result.error.message || '';
+        
         if (result.error.status === 400) {
-          if (result.error.message.includes('Invalid login credentials')) {
+          if (errorMsg.includes('Invalid login credentials')) {
             message = 'Email ou senha incorretos.';
-          } else if (result.error.message.includes('Email not confirmed')) {
-            message = 'Por favor, confirme seu email antes de entrar.';
+          } else if (errorMsg.includes('Email not confirmed')) {
+            message = 'Confirme seu email para entrar.';
           }
         } else if (result.error.status === 429) {
-          message = 'Muitas tentativas. Tente novamente em alguns minutos.';
+          message = 'Muitas tentativas. Aguarde um momento.';
+        } else if (errorMsg.includes('Database error') || result.error.status === 500 || result.error.status === 504) {
+          message = 'O banco de dados está sobrecarregado (Erro 504). Tente novamente em instantes.';
         } else if (!window.navigator.onLine) {
-          message = 'Você parece estar offline. Verifique sua internet.';
+          message = 'Sem conexão com a internet.';
         }
         
         toast.error(message);
-        setLoading(false); // Reset imediato em caso de erro conhecido
+        setLoading(false);
       } else {
-        console.log(`[Auth] ✅ Login bem-sucedido (${duration}ms)`, { 
+        console.log(`[Auth] ✅ Autenticação Supabase OK (${duration}ms)`, { 
           userId: result.data.user?.id,
           session: !!result.data.session 
         });
         
-        toast.success('Login realizado! Entrando no clube...');
+        toast.success('Login aceito! Carregando dados do clube...');
         
-        // Em vez de window.location.href, vamos confiar no onAuthStateChange do useAuth
-        // Mas se não redirecionar em 2s, forçamos um reload
-        setTimeout(() => {
-          console.log('[Auth] Verificando se o sistema redirecionou...');
-          if (window.location.pathname !== '/') {
-            console.log('[Auth] Forçando redirecionamento para Home');
-            window.location.href = '/';
-          }
-        }, 2000);
+        // Persistir que logamos com sucesso para ajudar o Index.tsx a saber que deve insistir
+        localStorage.setItem('flm:last-login-success', Date.now().toString());
+
+        // Forçamos o carregamento da sessão no context
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+           console.log('[Auth] Sessão confirmada. Redirecionando...');
+           window.location.href = '/';
+        } else {
+           console.warn('[Auth] Sessão não encontrada após login com sucesso. Forçando reload.');
+           window.location.reload();
+        }
       }
     } catch (err: any) {
-      const duration = (performance.now() - startTime).toFixed(2);
-      if (err.message === 'TIMEOUT_ERROR') {
-        console.error(`[Auth] ⏳ Timeout no login (${duration}ms)`);
-        toast.error('O servidor demorou muito para responder. Verifique sua conexão.');
-      } else {
-        console.error(`[Auth] 💥 Erro inesperado (${duration}ms):`, err);
-        toast.error('Erro inesperado no sistema. Tente novamente.');
-      }
+      const durationMs = performance.now() - startTime;
+      const duration = durationMs.toFixed(2);
       setLoading(false);
+      
+      if (err.message === 'TIMEOUT_ERROR') {
+        console.error(`[Auth] ⏳ Timeout Crítico no servidor (${duration}ms)`);
+        toast.error('O servidor de autenticação não respondeu a tempo (Timeout).');
+        
+        // Tenta um "Soft Reset" se o timeout persistir
+        if (durationMs > 6500) {
+          console.log('[Auth] Sugerindo limpeza de sessão local...');
+        }
+      } else {
+        console.error(`[Auth] 💥 Erro de sistema (${duration}ms):`, err);
+        toast.error('Erro de conexão com o banco de dados.');
+      }
     } finally {
       clearTimeout(buttonSafetyTimeout);
-      // Não colocamos setLoading(false) aqui se o login foi bem sucedido, 
-      // pois queremos manter o estado de "Entrando..." até que o Index.tsx desmonte este componente
     }
   };
 
@@ -588,7 +604,19 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
             ))}
           </div>
           <p className="text-[9px] text-center text-muted-foreground/50 mt-4">FLM 26 © 2026</p>
+          {/* Link para diagnóstico técnico em caso de falha */}
+          <div className="mt-8 pt-6 border-t border-border/10 flex justify-center">
+            <button 
+              onClick={() => setShowDiagnostics(true)}
+              className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/40 hover:text-primary transition-colors uppercase tracking-widest"
+            >
+              <Activity className="w-3 h-3" />
+              Diagnóstico do Sistema
+            </button>
+          </div>
         </div>
+        
+        {showDiagnostics && <DiagnosticOverlay onClose={() => setShowDiagnostics(false)} />}
       </div>
     </div>
   );

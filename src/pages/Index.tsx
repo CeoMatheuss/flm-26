@@ -50,15 +50,37 @@ import { PurchaseSuccessOverlay } from '@/components/game/PurchaseSuccessOverlay
 
 const Index = () => {
   const { session, loading, signOut, refreshSession } = useAuth();
+  const [authStuck, setAuthStuck] = useState(false);
+
+  // Detector de carregamento infinito de Auth
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setAuthStuck(true);
+      }, 7000);
+      return () => clearTimeout(timer);
+    } else {
+      setAuthStuck(false);
+    }
+  }, [loading]);
   
-  if (loading) {
+  if (loading && !authStuck) {
     return (
       <GameLoadingScreen 
         message="Conectando ao servidor" 
-        subMessage="Verificando sua sessão ativa..." 
+        subMessage="Validando credenciais..." 
+      />
+    );
+  }
+
+  if (authStuck) {
+    return (
+      <GameLoadingScreen 
+        message="Servidor Lento" 
+        subMessage="O banco de dados está demorando para responder. Deseja tentar novamente?" 
         onRetry={() => {
-          console.log('[Index] Forçando recarregamento da sessão...');
-          refreshSession?.();
+          console.log('[Index] Forçando recarregamento manual...');
+          window.location.reload();
         }}
       />
     );
