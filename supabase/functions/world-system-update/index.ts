@@ -6,23 +6,23 @@ const corsHeaders = {
 };
 
 const MASTER_COUNTRIES = [
-  { code: "BR", name: "Brasil", flag: "🇧🇷" },
-  { code: "EN", name: "Inglaterra", flag: "🏴" },
-  { code: "ES", name: "Espanha", flag: "🇪🇸" },
-  { code: "IT", name: "Itália", flag: "🇮🇹" },
-  { code: "DE", name: "Alemanha", flag: "🇩🇪" },
-  { code: "FR", name: "França", flag: "🇫🇷" },
-  { code: "PT", name: "Portugal", flag: "🇵🇹" },
-  { code: "AR", name: "Argentina", flag: "🇦🇷" },
-  { code: "NL", name: "Holanda", flag: "🇳🇱" },
-  { code: "BE", name: "Bélgica", flag: "🇧🇪" },
-  { code: "TR", name: "Turquia", flag: "🇹🇷" },
-  { code: "UY", name: "Uruguai", flag: "🇺🇾" },
-  { code: "CO", name: "Colômbia", flag: "🇨🇴" },
-  { code: "MX", name: "México", flag: "🇲🇽" },
-  { code: "US", name: "Estados Unidos", flag: "🇺🇸" },
-  { code: "SA", name: "Arábia Saudita", flag: "🇸🇦" },
-  { code: "JP", name: "Japão", flag: "🇯🇵" },
+  { code: "BR", name: "Brasil", d1_name: "Brasileirão Série A", flag: "🇧🇷" },
+  { code: "EN", name: "Inglaterra", d1_name: "Premier League", flag: "🏴" },
+  { code: "ES", name: "Espanha", d1_name: "LaLiga", flag: "🇪🇸" },
+  { code: "IT", name: "Itália", d1_name: "Serie A TIM", flag: "🇮🇹" },
+  { code: "DE", name: "Alemanha", d1_name: "Bundesliga", flag: "🇩🇪" },
+  { code: "FR", name: "França", d1_name: "Ligue 1", flag: "🇫🇷" },
+  { code: "PT", name: "Portugal", d1_name: "Liga Portugal", flag: "🇵🇹" },
+  { code: "AR", name: "Argentina", d1_name: "Liga Profesional", flag: "🇦🇷" },
+  { code: "NL", name: "Holanda", d1_name: "Eredivisie", flag: "🇳🇱" },
+  { code: "BE", name: "Bélgica", d1_name: "Jupiler Pro League", flag: "🇧🇪" },
+  { code: "TR", name: "Turquia", d1_name: "Süper Lig", flag: "🇹🇷" },
+  { code: "UY", name: "Uruguai", d1_name: "Primera División", flag: "🇺🇾" },
+  { code: "CO", name: "Colômbia", d1_name: "Primera A", flag: "🇨🇴" },
+  { code: "MX", name: "México", d1_name: "Liga MX", flag: "🇲🇽" },
+  { code: "US", name: "Estados Unidos", d1_name: "MLS", flag: "🇺🇸" },
+  { code: "SA", name: "Arábia Saudita", d1_name: "Saudi Pro League", flag: "🇸🇦" },
+  { code: "JP", name: "Japão", d1_name: "J1 League", flag: "🇯🇵" },
 ];
 
 const SCHEDULE_TIMES = {
@@ -59,20 +59,20 @@ Deno.serve(async (req) => {
       errors: []
     };
 
-    // --- PHASE 1: Activate All D1s ---
+    // --- PHASE 1: Ensure All D1s are Active and Exist ---
     for (const country of MASTER_COUNTRIES) {
       const { data: existingD1 } = await sb.from("world_leagues")
-        .select("id")
+        .select("id, name, active")
         .eq("country", country.name)
         .eq("division_level", 1)
         .eq("season_year", currentSeason)
         .maybeSingle();
 
       if (!existingD1) {
-        console.log(`Activating D1 for ${country.name}`);
+        console.log(`Re-activating D1 for ${country.name}: ${country.d1_name}`);
         const { data: newLeague, error: lErr } = await sb.from("world_leagues").insert({
           country: country.name,
-          name: `${country.name} - Série A`,
+          name: country.d1_name,
           division_level: 1,
           tier_level: 1,
           active: true,
@@ -89,8 +89,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Fill with bots (logic omitted for brevity, should be implemented if needed)
-        // For now we assume generate_world_league_calendar creates the matches
+        // Fill with bots if needed
         await sb.rpc("generate_world_league_calendar", { 
           p_league_id: newLeague.id,
           p_start_date: new Date().toISOString(),
@@ -98,11 +97,15 @@ Deno.serve(async (req) => {
         });
         
         summary.leagues_activated++;
+      } else if (!existingD1.active) {
+        console.log(`Activating existing D1 for ${country.name}`);
+        await sb.from("world_leagues").update({ active: true, status: "active" }).eq("id", existingD1.id);
+        summary.leagues_activated++;
       }
     }
 
-    // --- PHASE 2: Reorganize Divisions (Remove empty lower ones) ---
-    // Logic remains the same
+    // --- PHASE 2: Dynamic Reorganization (ONLY FOR D2+) ---
+    // Rule: D1 is NEVER deactivated. Lower divisions removed only if empty of human players.
     const { data: lowerLeagues } = await sb.from("world_leagues")
       .select("id, name, country, division_level")
       .gt("division_level", 1);
@@ -122,7 +125,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- PHASE 3: Catch-up Simulation (Using Batch RPC) ---
+    // --- PHASE 3: Catch-up Simulation (Sync with Global Round) ---
     const { data: behindLeagues } = await sb.from("world_leagues")
       .select("id, name, current_round")
       .eq("active", true)
@@ -130,6 +133,7 @@ Deno.serve(async (req) => {
 
     if (behindLeagues) {
       for (const league of behindLeagues) {
+        console.log(`Syncing ${league.name} to round ${globalRound}`);
         const { data: matches } = await sb.from("world_matches")
           .select("id")
           .eq("league_id", league.id)
@@ -138,7 +142,7 @@ Deno.serve(async (req) => {
 
         if (matches && matches.length > 0) {
           const ids = matches.map(m => m.id);
-          // Process in sub-batches of 100 to avoid long transactions
+          // Process in sub-batches
           for (let i = 0; i < ids.length; i += 100) {
             const batch = ids.slice(i, i + 100);
             await sb.rpc("batch_simulate_matches", { p_match_ids: batch });
@@ -148,11 +152,15 @@ Deno.serve(async (req) => {
           await sb.from("world_leagues").update({ current_round: globalRound }).eq("id", league.id);
           await sb.rpc("sync_world_league_standings", { _league_id: league.id });
           summary.leagues_synced++;
+        } else {
+          // If no matches found but round is behind, just update the round counter
+          await sb.from("world_leagues").update({ current_round: globalRound }).eq("id", league.id);
+          summary.leagues_synced++;
         }
       }
     }
 
-    // --- PHASE 4: Fix Schedules (Fixed times per division) ---
+    // --- PHASE 4: Fix Schedules and Ensure Correct Times ---
     const { data: activeLeagues } = await sb.from("world_leagues")
       .select("id, division_level")
       .eq("active", true);
