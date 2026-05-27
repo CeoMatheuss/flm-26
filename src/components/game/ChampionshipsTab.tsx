@@ -84,11 +84,11 @@ export function ChampionshipsTab() {
       <div className="space-y-4 animate-in slide-in-from-right duration-300">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => setSelectedLeague(null)} className="gap-2 text-muted-foreground hover:text-white">
-            <ArrowLeft className="h-4 w-4" /> Voltar ao Hub
+            <ArrowLeft className="h-4 w-4" /> Voltar
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-white/10"><Star className="h-4 w-4 text-yellow-500" /></Button>
-            <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-white/10"><Info className="h-4 w-4 text-indigo-400" /></Button>
+            <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-white/10"><Info className="h-4 w-4 text-emerald-400" /></Button>
           </div>
         </div>
 
@@ -98,12 +98,12 @@ export function ChampionshipsTab() {
             <Trophy className="h-32 w-32" />
           </div>
           <div className="relative flex items-center gap-6">
-            <div className="w-20 h-20 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-3xl shadow-2xl shadow-indigo-500/20">
-              <Trophy className="h-10 w-10 text-indigo-400" />
+            <div className="w-20 h-20 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-3xl shadow-2xl shadow-emerald-500/20">
+              <Trophy className="h-10 w-10 text-emerald-400" />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[10px] uppercase font-black">Liga Oficial</Badge>
+                <Badge className="bg-emerald-500/20 text-emerald-100 border-emerald-500/30 text-[10px] uppercase font-black">Liga Oficial</Badge>
                 <Badge variant="outline" className="border-white/10 text-[10px]">{selectedLeague.country}</Badge>
               </div>
               <h1 className="text-3xl font-black text-white tracking-tighter">{selectedLeague.name}</h1>
@@ -119,16 +119,16 @@ export function ChampionshipsTab() {
         </div>
 
         <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-          <TabsList className="bg-slate-950/50 border border-white/5 p-1 h-12 w-full grid grid-cols-4 md:flex md:w-auto">
-            <TabsTrigger value="standings" className="text-xs px-6 data-[state=active]:bg-indigo-600/20 data-[state=active]:text-indigo-300">Tabela</TabsTrigger>
-            <TabsTrigger value="matches" className="text-xs px-6">Jogos</TabsTrigger>
-            <TabsTrigger value="scorers" className="text-xs px-6">Artilharia</TabsTrigger>
-            <TabsTrigger value="stats" className="text-xs px-6">Estatísticas</TabsTrigger>
+          <TabsList className="bg-slate-950/50 border border-white/5 p-1 h-12 w-full flex overflow-x-auto no-scrollbar scrollbar-none md:w-auto">
+            <TabsTrigger value="standings" className="text-xs px-6 flex-shrink-0 data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-100">Tabela</TabsTrigger>
+            <TabsTrigger value="matches" className="text-xs px-6 flex-shrink-0">Jogos</TabsTrigger>
+            <TabsTrigger value="scorers" className="text-xs px-6 flex-shrink-0">Artilharia</TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs px-6 flex-shrink-0">Estatísticas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="standings" className="mt-4">
             {loadingDetails ? (
-              <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-indigo-500" /></div>
+              <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-emerald-500" /></div>
             ) : (
               <Card className="bg-slate-900/40 border-white/5 overflow-hidden">
                 <Table>
@@ -148,14 +148,14 @@ export function ChampionshipsTab() {
                   <TableBody>
                     {leagueData.standings.map((team, idx) => (
                       <TableRow key={team.id} className="border-white/5 hover:bg-white/5 transition-colors group">
-                        <TableCell className={cn("text-center font-black", idx < 4 ? "text-indigo-400" : idx >= 12 ? "text-red-400" : "text-muted-foreground")}>
+                        <TableCell className={cn("text-center font-black", idx < 4 ? "text-emerald-400" : idx >= 12 ? "text-red-400" : "text-muted-foreground")}>
                           {idx + 1}
                         </TableCell>
                         <TableCell className="flex items-center gap-3 py-4">
                           <ClubShield club={{ logoUrl: team.world_teams?.logo } as any} size={24} />
-                          <span className="font-bold text-white group-hover:text-indigo-300 transition-colors">{team.world_teams?.name}</span>
+                          <span className="font-bold text-white group-hover:text-emerald-100 transition-colors">{team.world_teams?.name}</span>
                         </TableCell>
-                        <TableCell className="text-center font-black text-indigo-300 bg-indigo-500/5">{team.points}</TableCell>
+                        <TableCell className="text-center font-black text-emerald-100 bg-emerald-500/5">{team.points}</TableCell>
                         <TableCell className="text-center">{team.played}</TableCell>
                         <TableCell className="text-center">{team.wins}</TableCell>
                         <TableCell className="text-center">{team.draws}</TableCell>
@@ -178,17 +178,17 @@ export function ChampionshipsTab() {
 
           <TabsContent value="matches" className="mt-4 space-y-3">
              {leagueData.matches.map((m) => (
-               <div key={m.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-900/60 border border-white/5 hover:border-indigo-500/30 transition-all group">
+               <div key={m.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-900/60 border border-white/5 hover:border-emerald-500/30 transition-all group">
                  <div className="flex-1 flex items-center justify-end gap-3 text-right">
-                   <span className="text-sm font-bold text-white group-hover:text-indigo-200">{m.home_team?.name}</span>
+                   <span className="text-sm font-bold text-white group-hover:text-emerald-200">{m.home_team?.name}</span>
                    <ClubShield club={{ logoUrl: m.home_team?.logo } as any} size={24} />
                  </div>
-                 <div className="mx-6 px-4 py-1.5 rounded-lg bg-black/40 border border-white/10 text-lg font-black text-indigo-400 min-w-[80px] text-center">
+                 <div className="mx-6 px-4 py-1.5 rounded-lg bg-black/40 border border-white/10 text-lg font-black text-emerald-400 min-w-[80px] text-center">
                     {m.status === 'finished' ? `${m.home_goals} - ${m.away_goals}` : <span className="text-xs uppercase tracking-widest text-muted-foreground">VS</span>}
                  </div>
                  <div className="flex-1 flex items-center justify-start gap-3">
                    <ClubShield club={{ logoUrl: m.away_team?.logo } as any} size={24} />
-                   <span className="text-sm font-bold text-white group-hover:text-indigo-200">{m.away_team?.name}</span>
+                   <span className="text-sm font-bold text-white group-hover:text-emerald-200">{m.away_team?.name}</span>
                  </div>
                </div>
              ))}
@@ -200,14 +200,14 @@ export function ChampionshipsTab() {
                  {leagueData.scorers.map((s, i) => (
                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5">
                      <div className="flex items-center gap-4">
-                       <span className="text-lg font-black text-indigo-500/50 w-6">#{i+1}</span>
+                       <span className="text-lg font-black text-emerald-500/50 w-6">#{i+1}</span>
                        <div>
                          <p className="font-bold text-white text-sm">{s.world_players?.name}</p>
                          <p className="text-[10px] text-muted-foreground uppercase font-black">{s.world_teams?.name}</p>
                        </div>
                      </div>
                      <div className="text-right">
-                       <p className="text-xl font-black text-indigo-400">{s.goals}</p>
+                       <p className="text-xl font-black text-emerald-400">{s.goals}</p>
                        <p className="text-[9px] text-muted-foreground uppercase">Gols</p>
                      </div>
                    </div>
@@ -222,22 +222,22 @@ export function ChampionshipsTab() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-6 p-8 rounded-3xl bg-gradient-to-br from-indigo-950/60 via-slate-900 to-black border border-white/10 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 blur-[100px] -mr-32 -mt-32 rounded-full" />
+      <div className="flex flex-col gap-6 p-8 rounded-3xl bg-gradient-to-br from-emerald-950/60 via-slate-900 to-black border border-white/10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/10 blur-[100px] -mr-32 -mt-32 rounded-full" />
         
         <div className="flex items-center justify-between relative">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-indigo-600/20 border border-indigo-500/30">
-              <Trophy className="h-6 w-6 text-indigo-400" />
+            <div className="p-3 rounded-2xl bg-emerald-600/20 border border-emerald-500/30">
+              <Trophy className="h-6 w-6 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white tracking-tight">Hub Global de Campeonatos</h2>
+              <h2 className="text-2xl font-black text-white tracking-tight">Campeonatos</h2>
               <p className="text-xs text-muted-foreground uppercase font-black tracking-widest mt-1">Explorar competições em tempo real</p>
             </div>
           </div>
           <div className="hidden md:flex gap-2">
             <div className="text-right pr-4 border-r border-white/10">
-              <p className="text-xl font-black text-indigo-400">{leagues.length}</p>
+              <p className="text-xl font-black text-emerald-400">{leagues.length}</p>
               <p className="text-[9px] text-muted-foreground uppercase font-black">Ligas Ativas</p>
             </div>
             <div className="text-right pl-4">
@@ -249,17 +249,17 @@ export function ChampionshipsTab() {
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
           <div className="md:col-span-2 relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-indigo-400 transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-emerald-400 transition-colors" />
             <Input 
               placeholder="Ex: Premier League, Brasileirão..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-12 bg-black/40 border-white/10 focus-visible:ring-indigo-500/50 rounded-xl"
+              className="pl-10 h-12 bg-black/40 border-white/10 focus-visible:ring-emerald-500/50 rounded-xl"
             />
           </div>
           <Select value={selectedCountry} onValueChange={(v) => { setSelectedCountry(v); loadLeagues(); }}>
             <SelectTrigger className="h-12 bg-black/40 border-white/10 rounded-xl">
-              <Globe className="h-4 w-4 mr-2 text-indigo-400" />
+              <Globe className="h-4 w-4 mr-2 text-emerald-400" />
               <SelectValue placeholder="País" />
             </SelectTrigger>
             <SelectContent className="bg-slate-900 border-white/10">
@@ -267,9 +267,14 @@ export function ChampionshipsTab() {
               <SelectItem value="Brasil">Brasil</SelectItem>
               <SelectItem value="Inglaterra">Inglaterra</SelectItem>
               <SelectItem value="Espanha">Espanha</SelectItem>
+              <SelectItem value="Alemanha">Alemanha</SelectItem>
+              <SelectItem value="França">França</SelectItem>
+              <SelectItem value="Itália">Itália</SelectItem>
+              <SelectItem value="Portugal">Portugal</SelectItem>
+              <SelectItem value="Argentina">Argentina</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={loadLeagues} className="h-12 bg-indigo-600 hover:bg-indigo-500 font-black uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-indigo-600/20">
+          <Button onClick={loadLeagues} className="h-12 bg-emerald-600 hover:bg-emerald-500 font-black uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-emerald-600/20">
             <Filter className="h-4 w-4 mr-2" /> Filtrar
           </Button>
         </div>
@@ -277,7 +282,7 @@ export function ChampionshipsTab() {
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 gap-4">
-          <Loader2 className="animate-spin h-10 w-10 text-indigo-500" />
+          <Loader2 className="animate-spin h-10 w-10 text-emerald-500" />
           <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Sincronizando Base Mundial...</p>
         </div>
       ) : (
@@ -286,19 +291,26 @@ export function ChampionshipsTab() {
             <Card 
               key={league.id} 
               onClick={() => loadLeagueDetails(league)}
-              className="group hover:border-indigo-500/50 transition-all cursor-pointer bg-slate-900/40 border-white/5 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/5 rounded-2xl overflow-hidden"
+              className="group hover:border-emerald-500/50 transition-all cursor-pointer bg-slate-900/40 border-white/5 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/5 rounded-2xl overflow-hidden"
             >
-              <div className="h-1.5 w-full bg-indigo-600/20 group-hover:bg-indigo-500 transition-colors" />
+              <div className="h-1.5 w-full bg-emerald-600/20 group-hover:bg-emerald-500 transition-colors" />
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-600/10 border border-white/5 flex items-center justify-center text-xl shadow-inner">
-                    {league.country === 'Brasil' ? '🇧🇷' : league.country === 'Inglaterra' ? '🏴' : '🇪🇸'}
+                  <div className="w-12 h-12 rounded-xl bg-emerald-600/10 border border-white/5 flex items-center justify-center text-xl shadow-inner">
+                    {league.country === 'Brasil' ? '🇧🇷' : 
+                     league.country === 'Inglaterra' ? '🏴󠁧󠁢󠁥󠁮󠁧󠁿' : 
+                     league.country === 'Espanha' ? '🇪🇸' :
+                     league.country === 'Alemanha' ? '🇩🇪' :
+                     league.country === 'França' ? '🇫🇷' :
+                     league.country === 'Itália' ? '🇮🇹' :
+                     league.country === 'Portugal' ? '🇵🇹' :
+                     league.country === 'Argentina' ? '🇦🇷' : '🌎'}
                   </div>
                   <div>
-                    <CardTitle className="text-base font-black text-white group-hover:text-indigo-300 transition-colors">
+                    <CardTitle className="text-base font-black text-white group-hover:text-emerald-100 transition-colors">
                       {league.name}
                     </CardTitle>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">{league.country} • Série {league.division}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">{league.country} • Nível {league.level}</p>
                   </div>
                 </div>
               </CardHeader>
@@ -319,21 +331,16 @@ export function ChampionshipsTab() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-[10px] font-black uppercase text-indigo-400/60 pt-2 border-t border-white/5">
-                  <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Temporada {league.season_year}</span>
-                  <span className="group-hover:translate-x-1 transition-transform">Ver Detalhes →</span>
+                
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Acessar Detalhes</span>
+                  <div className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                    <TrendingUp className="h-3 w-3" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
-          
-          {filteredLeagues.length === 0 && (
-            <div className="col-span-full py-20 text-center space-y-4 rounded-3xl border border-dashed border-white/10 bg-white/5">
-               <Trophy className="h-12 w-12 text-muted-foreground/20 mx-auto" />
-               <p className="text-muted-foreground text-sm font-bold">Nenhum campeonato encontrado com esses filtros.</p>
-               <Button variant="outline" size="sm" onClick={() => { setSelectedCountry('all'); setSearchTerm(''); }} className="border-white/10">Limpar Filtros</Button>
-            </div>
-          )}
         </div>
       )}
     </div>

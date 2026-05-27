@@ -391,4 +391,13 @@
   .animate-goal-glow {
     animation: goalGlowPulse 1.2s ease-in-out infinite;
   }
+
+  /* Utility to hide scrollbars while keeping functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
