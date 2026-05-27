@@ -28,11 +28,12 @@ export interface PremiumListingCardProps {
   canAfford: boolean;
   loading?: boolean;
   onOffer: () => void;
+  onBuyNow?: () => void;
   onViewSeller: () => void;
 }
 
 export const PremiumListingCard = memo(function PremiumListingCard({
-  listing, isOwn, canAfford, loading, onOffer, onViewSeller,
+  listing, isOwn, canAfford, loading, onOffer, onBuyNow, onViewSeller,
 }: PremiumListingCardProps) {
   const pd = listing.player_data || {};
   const shield = listing.seller_shield as any;
