@@ -219,18 +219,29 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       });
       
       if (error) {
-        if (error.status === 429) {
+        // Trata erro de status 429 (Muitas solicitações)
+        const status = (error as any).status;
+        if (status === 429) {
           toast.warning('Aguarde um minuto para reenviar.');
         } else {
-          toast.error('Erro ao reenviar código. Tente novamente em instantes.');
+          console.error('Erro invoke:', error);
+          toast.error('Erro ao reenviar código. O serviço de autenticação encontrou um problema.');
         }
       } else if (data?.emailSent === false) {
-        toast.warning('Falha ao entregar e-mail. Verifique se o endereço está correto ou tente novamente.');
+        const errorMsg = data.details?.error?.message || data.details?.error || '';
+        if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain')) {
+          toast.error('A conta de e-mail está em modo de teste (Sandbox). No momento, e-mails só podem ser enviados para o administrador. Verifique o domínio na Resend.', {
+            duration: 6000
+          });
+        } else {
+          toast.warning('Falha ao entregar e-mail. Verifique se o endereço está correto ou tente novamente.');
+        }
       } else {
         toast.success('Novo código enviado com sucesso!');
         startResendTimer();
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Erro catch:', err);
       toast.error('Erro de conexão ao reenviar código.');
     } finally {
       setLoading(false);

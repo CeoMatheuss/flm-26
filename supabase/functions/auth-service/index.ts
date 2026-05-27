@@ -130,15 +130,22 @@ serve(async (req) => {
           console.error(`[send-code] Erro no domínio principal (${primaryAttempt.status}):`, finalError)
 
           // Fallback Automático para sandbox se for erro de validação de domínio
-          if (primaryAttempt.status === 403 || primaryAttempt.data?.name === 'validation_error' || primaryAttempt.data?.message?.includes('not verified')) {
-            console.warn('[send-code] Domínio não verificado. Tentando fallback para onboarding@resend.dev (Sandbox)...')
+          if (primaryAttempt.status === 403 || primaryAttempt.data?.name === 'validation_error' || primaryAttempt.data?.message?.includes('not verified') || primaryAttempt.data?.message?.includes('only send testing emails')) {
+            console.warn('[send-code] Domínio não verificado ou conta em sandbox. Tentando fallback para onboarding@resend.dev...')
             const fallbackAttempt = await sendWithDomain('onboarding@resend.dev')
             if (fallbackAttempt.ok) {
               emailSent = true
-              console.log('[send-code] Envio bem-sucedido via Sandbox (Apenas para admin)')
+              console.log('[send-code] Envio bem-sucedido via Sandbox (Apenas para o email da conta Resend)')
             } else {
               console.error('[send-code] Falha total no envio. Ambos domínios falharam.')
               finalError = fallbackAttempt.data
+              // Se falhou no sandbox também, o erro costuma ser que o destinatário não é o dono da conta
+              if (fallbackAttempt.data?.message?.includes('only send testing emails')) {
+                finalError = { 
+                  message: 'A conta Resend está em modo Sandbox. No modo Sandbox, você só pode enviar e-mails para o endereço que criou a conta (fcmsistemas7@gmail.com). Para enviar para outros usuários, você PRECISA verificar seu domínio no painel da Resend.',
+                  code: 'RESEND_SANDBOX_LIMIT'
+                }
+              }
             }
           }
         }
