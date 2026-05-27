@@ -1,5 +1,5 @@
 import { Tabs } from '@/components/ui/tabs';
-import { PlayerHighlightProvider } from '@/contexts/PlayerHighlightContext';
+import { PlayerHighlightProvider, usePlayerHighlight } from '@/contexts/PlayerHighlightContext';
 import { GameHeader } from '@/components/game/GameHeader';
 import { GameMenu } from '@/components/game/GameMenu';
 import { GameNavBar } from '@/components/game/GameNavBar';
