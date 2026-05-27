@@ -1737,6 +1737,67 @@ function simulateFullMatch(
     });
   }
 
+  // ── AI ADAPTIVE TACTICS (FLM26) ─────────────────────────────
+  // O treinador adversário (e o time do usuário em sim totalmente automática)
+  // ajusta a postura em 30', 60' e 75' conforme o placar. Cada ajuste vira:
+  //  1) um evento visível no feed da partida ("Ajuste tático adversário")
+  //  2) um fator no relatório tático pós-jogo
+  //  3) um pequeno empurrão nos modificadores efetivos para a janela seguinte
+  const scoreAt = (mark: number) => {
+    const h = homeGoalMins.filter(m => m <= mark).length
+      + penaltyMins.filter(p => p.team === 'home' && p.isGoal && p.minute <= mark).length;
+    const a = awayGoalMins.filter(m => m <= mark).length
+      + penaltyMins.filter(p => p.team === 'away' && p.isGoal && p.minute <= mark).length;
+    return { h, a };
+  };
+  const awayIsBot = !awayTacticsInput || awayTacticsInput.__auto !== false;
+  const aiAdjustments: Array<{ minute: number; side: 'home'|'away'; label: string; reason: string; atkMul: number; defMul: number }> = [];
+  const planAdjustment = (mark: number) => {
+    const { h, a } = scoreAt(mark);
+    // Bot adversário (away) reage ao placar
+    if (awayIsBot) {
+      if (a < h) {
+        const diff = h - a;
+        const m = Math.min(89, mark + 1 + Math.floor(rng() * 3));
+        const label = diff >= 2 ? 'Adversário parte pra cima desesperado' : 'Adversário se solta no ataque';
+        aiAdjustments.push({ minute: m, side: 'away', label,
+          reason: `Perdendo por ${diff} no min ${mark}: bot aumenta linha, troca por estilo ofensivo.`,
+          atkMul: 1 + 0.08 * diff, defMul: 1 - 0.05 * diff });
+      } else if (a > h) {
+        const diff = a - h;
+        const m = Math.min(89, mark + 1 + Math.floor(rng() * 3));
+        aiAdjustments.push({ minute: m, side: 'away', label: 'Adversário se retranca para segurar',
+          reason: `Vencendo por ${diff} no min ${mark}: bot recua, marca individual, segura ritmo.`,
+          atkMul: 1 - 0.05 * diff, defMul: 1 + 0.10 * diff });
+      }
+    }
+    // Pequeno espelho para o mandante quando jogado contra bot (single-player)
+    if (awayIsBot) {
+      if (h < a) {
+        const diff = a - h;
+        const m = Math.min(89, mark + 2 + Math.floor(rng() * 3));
+        aiAdjustments.push({ minute: m, side: 'home', label: 'Treinador pede mais volume',
+          reason: `Time perdendo por ${diff}: aumenta pressão e leva mais gente à área.`,
+          atkMul: 1 + 0.05 * diff, defMul: 1 - 0.02 * diff });
+      }
+    }
+  };
+  planAdjustment(30); planAdjustment(60); planAdjustment(75);
+  for (const adj of aiAdjustments) {
+    const teamName = adj.side === 'away' ? awayTeam : homeTeam;
+    allPlanned.push({
+      minute: adj.minute, type: 'tactical_adjust', team: adj.side, animType: 'tactic',
+      ballX: 0.5, ballY: 0.5,
+      description: `🧠 AJUSTE TÁTICO — ${teamName}: ${adj.label}. ${adj.reason}`,
+      momentPhase: 'tactical_adjust', priority: 'medium',
+    });
+    tacticalImpactFactors.push({
+      side: adj.side, name: `Ajuste no min ${adj.minute}`,
+      impact: `Atq ${pct((adj.atkMul-1))} / Def ${pct((adj.defMul-1))}`,
+      kind: 'ai_adapt', detail: adj.reason,
+    });
+  }
+
   // ── FINAL ASSEMBLY ──────────────────────────────────────────
   allPlanned.sort((a, b) => a.minute - b.minute);
 
