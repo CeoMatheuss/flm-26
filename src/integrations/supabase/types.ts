@@ -7665,10 +7665,24 @@ export type Database = {
         Args: { p_buyer_id: string; p_listing_id: string; p_offer_id: string }
         Returns: Json
       }
-      finalize_player_transfer: {
-        Args: { p_buyer_id: string; p_listing_id: string; p_offer_id: string }
-        Returns: Json
-      }
+      finalize_player_transfer:
+        | {
+            Args: {
+              p_buyer_id: string
+              p_listing_id: string
+              p_offer_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_buyer_club_name?: string
+              p_buyer_id: string
+              p_listing_id: string
+              p_offer_id: string
+            }
+            Returns: Json
+          }
       finalize_stale_live_matches: { Args: never; Returns: number }
       finish_national_cup_award_continental: {
         Args: { _cup_id: string }
