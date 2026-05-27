@@ -11,8 +11,9 @@ import { toast } from 'sonner';
 import {
   Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
   Mail, ArrowLeft, CheckCircle2, Clock, RefreshCw,
-  ChevronRight, Eye, EyeOff, UserPlus, LogIn, ShieldCheck, Loader2
+  ChevronRight, Eye, EyeOff, UserPlus, LogIn, ShieldCheck, Loader2, Activity
 } from 'lucide-react';
+import { DiagnosticOverlay } from '@/components/auth/DiagnosticOverlay';
 import { BetaAccessRequestForm } from '@/components/auth/BetaAccessRequestForm';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
@@ -59,6 +60,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
 
   const [step, setStep] = useState<AuthStep>(initialStep);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   // Auto-rotate carousel
   useEffect(() => {
@@ -602,7 +604,19 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
             ))}
           </div>
           <p className="text-[9px] text-center text-muted-foreground/50 mt-4">FLM 26 © 2026</p>
+          {/* Link para diagnóstico técnico em caso de falha */}
+          <div className="mt-8 pt-6 border-t border-border/10 flex justify-center">
+            <button 
+              onClick={() => setShowDiagnostics(true)}
+              className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/40 hover:text-primary transition-colors uppercase tracking-widest"
+            >
+              <Activity className="w-3 h-3" />
+              Diagnóstico do Sistema
+            </button>
+          </div>
         </div>
+        
+        {showDiagnostics && <DiagnosticOverlay onClose={() => setShowDiagnostics(false)} />}
       </div>
     </div>
   );
