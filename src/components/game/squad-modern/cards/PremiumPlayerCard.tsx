@@ -1,10 +1,11 @@
 import { Player } from '@/types/game';
-import { motion } from 'framer-motion';
-import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown, Sparkles, Tag, Handshake, ArrowLeftRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Zap, Heart, Shield, TrendingUp, Star, Award, MapPin, ArrowUp, ArrowDown, Sparkles, Tag, Handshake, ArrowLeftRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ovrTier, getPositionColor, flagFor, getPlayerStatus, statusMeta } from '../squadHelpers';
 import { useAttributeEvolution } from '../useAttributeEvolution';
 import { PotentialTier, potentialTierInfo } from '@/types/infrastructure';
+import { usePlayerHighlight } from '@/contexts/PlayerHighlightContext';
 import swapIcon from '@/assets/swap-icon.png';
 
 interface Props {
@@ -16,9 +17,19 @@ interface Props {
 }
 
 export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpenQuickSwap }: Props) {
+  const { highlights, removeHighlight } = usePlayerHighlight();
+  const highlight = highlights[player.id];
+  
   const tier = ovrTier(player.overall);
   const status = getPlayerStatus(player, isStarter);
   const sm = statusMeta[status] || statusMeta.reserva;
+
+  const badgeLabels: Record<string, string> = {
+    new_signing: 'NOVO REFORÇO',
+    listed_loan: 'DISPONÍVEL P/ EMPRÉSTIMO',
+    transferred: 'TRANSFERIDO',
+    listed_sale: 'À VENDA'
+  };
   
   const deltas = useAttributeEvolution([player]);
   const overallDelta = deltas[player.id]?.overall || 0;
@@ -31,15 +42,56 @@ export function PremiumPlayerCard({ player, isStarter, selected, onClick, onOpen
       className={cn(
         'relative w-full min-h-[240px] sm:min-h-[280px] rounded-2xl sm:rounded-[1.5rem] overflow-hidden group transition-all duration-300',
         'border-2 shadow-2xl',
-        (player as any).rarity && (player as any).rarity !== 'Comum'
-          ? (player as any).rarity === 'Craque geracional' ? 'border-amber-400 shadow-amber-400/20' :
-            (player as any).rarity === 'Promessa' ? 'border-cyan-400 shadow-cyan-400/20' :
-            'border-blue-400 shadow-blue-400/20'
-          : selected 
-            ? 'border-emerald-500 shadow-emerald-500/20' 
-            : 'border-white/10 hover:border-white/30 bg-zinc-900/40 backdrop-blur-md'
+        highlight 
+          ? (highlight.type === 'listed_sale' || highlight.type === 'new_signing' ? 'border-amber-400 shadow-amber-400/50 ring-2 ring-amber-400 ring-offset-2 ring-offset-zinc-950 z-50' : 'border-cyan-400 shadow-cyan-400/50 ring-2 ring-cyan-400 ring-offset-2 ring-offset-zinc-950 z-50')
+          : (player as any).rarity && (player as any).rarity !== 'Comum'
+            ? (player as any).rarity === 'Craque geracional' ? 'border-amber-400 shadow-amber-400/20' :
+              (player as any).rarity === 'Promessa' ? 'border-cyan-400 shadow-cyan-400/20' :
+              'border-blue-400 shadow-blue-400/20'
+            : selected 
+              ? 'border-emerald-500 shadow-emerald-500/20' 
+              : 'border-white/10 hover:border-white/30 bg-zinc-900/40 backdrop-blur-md'
       )}
     >
+      <AnimatePresence>
+        {highlight && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.1, 0.3, 0.1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className={cn(
+              "absolute inset-0 pointer-events-none z-0",
+              highlight.type === 'listed_sale' || highlight.type === 'new_signing' ? "bg-amber-400" : "bg-cyan-400"
+            )}
+          />
+        )}
+      </AnimatePresence>
+
+      {highlight && (
+        <div className="absolute top-2 right-2 z-50">
+          <button 
+            onClick={(e) => { e.stopPropagation(); removeHighlight(player.id); }}
+            className="p-1 rounded-full bg-black/50 hover:bg-black/80 text-white/70 transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
+      {highlight && (
+        <motion.div 
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className={cn(
+            "absolute top-12 right-2 z-50 px-2 py-0.5 rounded-lg text-[7px] font-black uppercase tracking-widest border shadow-lg",
+            highlight.type === 'listed_sale' || highlight.type === 'new_signing' 
+              ? "bg-amber-400 text-black border-amber-500" 
+              : "bg-cyan-400 text-black border-cyan-500"
+          )}
+        >
+          {badgeLabels[highlight.type]}
+        </motion.div>
+      )}
       {/* Dynamic Background Gradient */}
       <div className={cn(
         'absolute inset-0 bg-gradient-to-br opacity-20 group-hover:opacity-30 transition-opacity',

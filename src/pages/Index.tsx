@@ -1,4 +1,5 @@
 import { Tabs } from '@/components/ui/tabs';
+import { PlayerHighlightProvider } from '@/contexts/PlayerHighlightContext';
 import { GameHeader } from '@/components/game/GameHeader';
 import { GameMenu } from '@/components/game/GameMenu';
 import { GameNavBar } from '@/components/game/GameNavBar';
@@ -1088,7 +1089,8 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const showAdmin = isAdminRole;
 
   return (
-    <div className="min-h-screen bg-background">
+    <PlayerHighlightProvider>
+      <div className="min-h-screen bg-background">
       {/* Club Profile Detail Modal — instantâneo via QuickClubProfile (clubs + world_teams) */}
       <Dialog open={!!viewingClubName} onOpenChange={(open) => !open && handleClubViewClose()}>
         <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background border-border max-h-[90vh] flex flex-col">
