@@ -87,6 +87,34 @@ export function useClubState(initialState: any, userId?: string) {
     loadActiveListings();
   }, [userId]);
 
+  // Sync state with initialState from parent (useful for server-side updates)
+  useEffect(() => {
+    if (!initialState) return;
+    
+    // Only update if something changed to avoid unnecessary re-renders
+    if (initialState.club && JSON.stringify(initialState.club) !== JSON.stringify(club)) {
+      console.log('[useClubState] Syncing club from official state');
+      setClub(initialState.club);
+    }
+    
+    if (initialState.marketPlayers && JSON.stringify(initialState.marketPlayers) !== JSON.stringify(marketPlayers)) {
+      setMarketPlayers(initialState.marketPlayers);
+    }
+    
+    if (initialState.freeAgents && JSON.stringify(initialState.freeAgents) !== JSON.stringify(freeAgents)) {
+      setFreeAgents(initialState.freeAgents);
+    }
+    
+    if (initialState.loanedPlayers && JSON.stringify(initialState.loanedPlayers) !== JSON.stringify(loanedPlayers)) {
+      setLoanedPlayers(initialState.loanedPlayers);
+    }
+    
+    if (initialState.clubProfile && JSON.stringify(initialState.clubProfile) !== JSON.stringify(clubProfile)) {
+      setClubProfile(initialState.clubProfile);
+    }
+  }, [initialState]);
+
+
   // ── V3: Auto-gerador de olheiros (1 a cada 7 dias) e refresh do staff (15 dias) ──
   useEffect(() => {
     const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
