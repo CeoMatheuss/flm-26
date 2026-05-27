@@ -398,6 +398,8 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     listForSale: clubState.listForSale,
     loanOutPlayer,
     loanInPlayer,
+    finalizeLoanOut,
+    finalizeLoanIn,
     setPlayerTrainingFocus: clubState.setPlayerTrainingFocus,
     setPlayerTrainingIntensity: clubState.setPlayerTrainingIntensity,
     changeShirtNumber: clubState.changeShirtNumber,
