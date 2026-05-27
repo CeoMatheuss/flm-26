@@ -52,13 +52,13 @@ function groupByTime(notifications: Notification[]): { label: string; items: Not
   return groups.filter(g => g.items.length > 0);
 }
 
-const typeStyles: Record<string, { border: string; dot: string; glow: string; text: string }> = {
-  danger: { border: 'border-l-red-500', dot: 'bg-red-500', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.2)]', text: 'text-red-500' },
-  warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.2)]', text: 'text-amber-500' },
-  info: { border: 'border-l-blue-500', dot: 'bg-blue-500', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]', text: 'text-blue-500' },
-  success: { border: 'border-l-emerald-500', dot: 'bg-emerald-500', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.2)]', text: 'text-emerald-500' },
-  special: { border: 'border-l-purple-500', dot: 'bg-purple-500', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]', text: 'text-purple-400' },
-  premium: { border: 'border-l-cyan-400', dot: 'bg-cyan-400', glow: 'shadow-[0_0_25px_rgba(34,211,238,0.5)]', text: 'text-cyan-400' },
+const typeStyles: Record<string, { border: string; dot: string; glow: string; text: string; bg: string }> = {
+  danger: { border: 'border-l-red-500', dot: 'bg-red-500', glow: 'shadow-[0_0_20px_rgba(239,68,68,0.25)]', text: 'text-red-500', bg: 'bg-red-500/5' },
+  warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', glow: 'shadow-[0_0_20px_rgba(245,158,11,0.25)]', text: 'text-amber-500', bg: 'bg-amber-500/5' },
+  info: { border: 'border-l-blue-500', dot: 'bg-blue-500', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.25)]', text: 'text-blue-500', bg: 'bg-blue-500/5' },
+  success: { border: 'border-l-emerald-500', dot: 'bg-emerald-500', glow: 'shadow-[0_0_20px_rgba(16,185,129,0.25)]', text: 'text-emerald-500', bg: 'bg-emerald-500/5' },
+  special: { border: 'border-l-purple-500', dot: 'bg-purple-500', glow: 'shadow-[0_0_25px_rgba(168,85,247,0.4)]', text: 'text-purple-400', bg: 'bg-purple-500/10' },
+  premium: { border: 'border-l-cyan-400', dot: 'bg-cyan-400', glow: 'shadow-[0_0_30px_rgba(34,211,238,0.5)]', text: 'text-cyan-400', bg: 'bg-cyan-400/10' },
 };
 
 const categoryIcons: Record<string, any> = {
