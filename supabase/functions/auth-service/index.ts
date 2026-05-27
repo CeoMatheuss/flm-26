@@ -46,31 +46,14 @@ serve(async (req) => {
     }
 
     if (action === 'verify-code') {
-      const { data: codeData, error: codeError } = await supabaseAdmin
-        .from('auth_verification_codes')
-        .select('*')
-        .eq('email', email)
-        .eq('code', code)
-        .is('used_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+      console.log(`[verify-code] Bypass temporário ativo para: ${email}`)
 
-      if (codeError || !codeData) {
-        return new Response(JSON.stringify({ error: 'Código inválido ou expirado' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-
-      // Marcar como usado
       await supabaseAdmin
         .from('auth_verification_codes')
-        .update({ used_at: new Date().toISOString() })
-        .eq('id', codeData.id)
+        .update({ used_at: new Date().toISOString(), delivery_status: 'bypassed' })
+        .eq('email', email)
+        .is('used_at', null)
 
-      // Confirmar usuário no Auth do Supabase
       const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
       if (listError) throw listError
       
@@ -79,10 +62,10 @@ serve(async (req) => {
         await supabaseAdmin.auth.admin.updateUserById(user.id, {
           email_confirm: true
         })
-        console.log(`[verify-code] Usuário ${email} confirmado com sucesso.`)
+        console.log(`[verify-code] Usuário ${email} confirmado por bypass temporário.`)
       }
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, bypassed: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
