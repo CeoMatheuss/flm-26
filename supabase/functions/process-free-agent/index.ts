@@ -114,6 +114,35 @@ function generateFreeAgentPlayer() {
   };
 }
 
+
+function calculateFreeAgentAcceptChance(params: {
+  offeredSalary: number;
+  currentSalary: number;
+  reputation: number;
+  age: number;
+  contractYears: number;
+  signingBonus: number;
+  personality: string;
+}) {
+  const { offeredSalary, currentSalary, reputation, age, contractYears, signingBonus, personality } = params;
+  let chance = 0.5;
+
+  const salaryRatio = offeredSalary / Math.max(1, currentSalary);
+  if (salaryRatio >= 1.4) chance += 0.35;
+  else if (salaryRatio >= 1.1) chance += 0.20;
+  else if (salaryRatio >= 0.95) chance += 0.10;
+  else if (salaryRatio >= 0.8) chance -= 0.15;
+  else chance -= 0.40;
+
+  if (reputation >= 70) chance += 0.15;
+  if (age >= 32 && contractYears >= 3) chance += 0.15;
+  if (signingBonus > currentSalary * 2) chance += 0.10;
+
+  if (personality === 'ambicioso') chance += (salaryRatio > 1.2 ? 0.1 : -0.2);
+  
+  return Math.max(0.05, Math.min(0.99, chance));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
