@@ -1381,17 +1381,29 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 setNegotiateLoan(null);
                 return;
               }
-              const res = await supabase.functions.invoke('process-transfer', {
-                body: {
-                  action: 'loan-offer-create',
-                  listingId: negotiateLoan.id,
-                  clubName,
-                  offeredTerms: terms,
-                }
-              });
-              if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao enviar proposta');
-              else toast.success(`Proposta de empréstimo enviada para ${negotiateLoan.player_name}!`);
-              setNegotiateLoan(null);
+              const borrowerPct = Math.min(100, Math.max(0, Number(terms.salaryPercentageBorrower) || 0));
+              const offeredSalaryPayer = borrowerPct >= 100 ? 'buyer' : borrowerPct <= 0 ? 'seller' : 'split';
+              const payload = {
+                action: 'loan-offer-create',
+                listingId: negotiateLoan.id,
+                clubName,
+                offeredSalaryPayer,
+                offeredSalarySplitPct: borrowerPct,
+                offeredLoanFee: Math.max(0, Number(terms.loanFee) || 0),
+                message: '',
+              };
+              console.log('[loan-offer-create] payload', payload);
+              const res = await supabase.functions.invoke('process-transfer', { body: payload });
+              console.log('[loan-offer-create] response', res);
+              if (res.error || res.data?.error) {
+                const msg = res.data?.error || res.error?.message || 'Erro ao enviar proposta';
+                console.error('[loan-offer-create] failed:', msg, res);
+                toast.error(msg);
+              } else {
+                toast.success(`Proposta de empréstimo enviada para ${negotiateLoan.player_name}!`);
+                setNegotiateLoan(null);
+                loadLoanOffers();
+              }
             }}
             loading={loading}
           />
