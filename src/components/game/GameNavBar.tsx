@@ -22,10 +22,6 @@ export function GameNavBar() {
           <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Táticas</span>
         </TabsTrigger>
-        <TabsTrigger value="championships" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5 min-w-[85px] flex-1">
-          <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
-          <span className="text-[9px] sm:text-xs leading-tight font-medium">Campeonatos</span>
-        </TabsTrigger>
       </TabsList>
 
       {/* Aba Rolável: Itens secundários que podem ser acessados via scroll lateral */}
@@ -33,6 +29,10 @@ export function GameNavBar() {
         <TabsTrigger value="league" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5 min-w-[65px] flex-1">
           <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
           <span className="text-[9px] sm:text-xs leading-tight font-medium">Liga</span>
+        </TabsTrigger>
+        <TabsTrigger value="championships" className="nav-tab flex flex-col items-center gap-0.5 py-1.5 sm:py-2.5 min-w-[85px] flex-1">
+          <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
+          <span className="text-[9px] sm:text-xs leading-tight font-medium">Campeonatos</span>
         </TabsTrigger>
       </TabsList>
     </div>
