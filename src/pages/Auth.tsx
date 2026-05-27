@@ -55,9 +55,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(initialEmail);
-  const [verificationCode, setVerificationCode] = useState('');
 
-  const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>(initialStep);
   const [slideIndex, setSlideIndex] = useState(0);
 
@@ -67,13 +65,6 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (resendTimer <= 0) return;
-    const interval = setInterval(() => setResendTimer(prev => prev - 1), 1000);
-    return () => clearInterval(interval);
-  }, [resendTimer]);
-
-  const startResendTimer = useCallback(() => setResendTimer(RESEND_COOLDOWN), []);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -147,83 +138,6 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
 
   };
 
-  const handleVerifyCode = async () => {
-    if (verificationCode.length !== 6) {
-      toast.error('O código deve ter 6 dígitos');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('auth-service', {
-        body: { action: 'verify-code', email: pendingEmail, code: verificationCode }
-      });
-
-      if (error || data?.error) throw new Error(error?.message || data?.error);
-
-      toast.success('Conta verificada com sucesso!');
-      
-      // Tenta atualizar a sessão local para refletir a confirmação
-      await supabase.auth.refreshSession();
-      
-      // Se já houver uma sessão (caso de redirecionamento do Index), recarrega a página
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.email_confirmed_at) {
-        window.location.reload();
-      } else {
-        setStep('login');
-        setEmail(pendingEmail);
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao verificar código');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendVerification = useCallback(async () => {
-    if (resendTimer > 0) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('auth-service', {
-        body: { action: 'send-code', email: pendingEmail }
-      });
-      
-      if (error) {
-        // Trata erro de status 429 (Muitas solicitações)
-        const status = (error as any).status;
-        if (status === 429) {
-          toast.warning('Aguarde um minuto para reenviar.');
-        } else {
-          console.error('Erro invoke:', error);
-          toast.error('Erro ao reenviar código. O serviço de autenticação encontrou um problema.');
-        }
-      } else if (data?.emailSent === false) {
-        const errorMsg = data.details?.error?.message || data.details?.error || '';
-        if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('RESEND_SANDBOX_LIMIT')) {
-          toast.error('A conta de e-mail está em modo de teste (Sandbox). No momento, e-mails só podem ser enviados para o administrador (fcmsistemas7@gmail.com). Verifique o domínio na Resend para liberar envios gerais.', {
-            duration: 10000
-          });
-        } else {
-          toast.warning(`Falha ao entregar e-mail: ${errorMsg || 'Tente novamente.'}`);
-        }
-      } else {
-        toast.success('Novo código enviado com sucesso!');
-        startResendTimer();
-      }
-    } catch (err: any) {
-      console.error('Erro catch:', err);
-      toast.error('Erro de conexão ao reenviar código.');
-    } finally {
-      setLoading(false);
-    }
-  }, [pendingEmail, resendTimer, startResendTimer]);
-
-  // Envia código automaticamente se cair direto na verificação (vindo do Index)
-  useEffect(() => {
-    if (step === 'verify-email' && pendingEmail && resendTimer === 0 && initialStep === 'verify-email') {
-      handleResendVerification();
-    }
-  }, [step, pendingEmail, resendTimer, initialStep, handleResendVerification]);
 
   // ── Carousel component ──
   const CarouselPanel = ({ className = '' }: { className?: string }) => (
