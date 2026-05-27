@@ -76,9 +76,9 @@ export function PlayerRankingTab() {
 
     // Filtro de categoria
     if (category === 'goalkeepers') {
-      filtered = filtered.filter((r) => r.players?.position === 'Goleiro');
+      filtered = filtered.filter((r) => isGoalkeeper(r.players?.position));
     } else if (category !== 'global') {
-      filtered = filtered.filter((r) => r.players?.position !== 'Goleiro');
+      filtered = filtered.filter((r) => !isGoalkeeper(r.players?.position));
     }
 
     // Ordenação + critérios de desempate
