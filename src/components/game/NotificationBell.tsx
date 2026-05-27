@@ -127,6 +127,50 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     loadInvites();
   };
 
+  const dispatchNotificationAction = useCallback(async (action: any, notificationId: string) => {
+    if (!action) return;
+
+    // Mark as read immediately when an action is clicked
+    markAsRead(notificationId);
+
+    switch (action.type) {
+      case 'navigate':
+        if (action.payload.tab) {
+          window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: action.payload }));
+        }
+        if (action.payload.club_name) {
+          window.dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: action.payload.club_name } }));
+        }
+        if (action.payload.player_name) {
+           // Custom event for market negotiation or specific player view
+           window.dispatchEvent(new CustomEvent('flm:market-negotiate', { detail: action.payload }));
+        }
+        break;
+      case 'invoke':
+        const { functionName, body } = action.payload;
+        if (functionName) {
+          const loadingToast = toast.loading('Processando...');
+          try {
+            const { data, error } = await supabase.functions.invoke(functionName, { body });
+            toast.dismiss(loadingToast);
+            if (error || data?.error) toast.error(data?.error || 'Erro ao processar');
+            else toast.success(data?.message || 'Sucesso!');
+          } catch (e) {
+            toast.dismiss(loadingToast);
+            toast.error('Erro de conexão');
+          }
+        }
+        break;
+      case 'open_modal':
+        if (action.payload.modal === 'match_report' && action.payload.matchId) {
+          // This is handled via state in NotificationFullPage if match_db_id is in data,
+          // but we can also trigger it here via a custom event if needed.
+          window.dispatchEvent(new CustomEvent('flm:open-match-report', { detail: action.payload.matchId }));
+        }
+        break;
+    }
+  }, [userId, markAsRead]);
+
   // Build notifications list — only dynamic/relevant ones
   const notifications: Notification[] = [];
 
@@ -150,9 +194,16 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   });
 
   dbNotifications.forEach(dbN => {
-    const typeMap: Record<string, 'warning' | 'info' | 'danger' | 'success'> = {
-      warning: 'warning', info: 'info', danger: 'danger', success: 'success',
+    const typeMap: Record<string, any> = {
+      warning: 'warning', info: 'info', danger: 'danger', success: 'success', special: 'special', premium: 'premium'
     };
+
+    const actions = Array.isArray(dbN.actions) ? dbN.actions.map((act: any) => ({
+      label: act.label,
+      variant: (act.variant as any) || 'default',
+      onClick: () => dispatchNotificationAction(act, `db-${dbN.id}`)
+    })) : undefined;
+
     notifications.push({
       id: `db-${dbN.id}`,
       icon: dbN.icon,
@@ -163,6 +214,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       priority: (dbN.priority as any) || 'medium',
       createdAt: new Date(dbN.created_at),
       data: dbN.data ?? null,
+      actions
     });
   });
 
