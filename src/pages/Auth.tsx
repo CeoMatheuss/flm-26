@@ -372,38 +372,68 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                 )}
               </div>
 
-              <label
-                htmlFor="terms"
-                className={`group flex items-center gap-3 rounded-xl border px-3.5 py-3 cursor-pointer select-none transition-all ${
-                  acceptedTerms
-                    ? 'border-primary/50 bg-primary/5 shadow-[0_0_0_1px_hsl(var(--primary)/0.2)]'
-                    : 'border-border/60 bg-muted/30 hover:border-primary/30 hover:bg-muted/50'
-                }`}
-              >
-                <Checkbox
-                  id="terms"
-                  checked={acceptedTerms}
-                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                  className="shrink-0 h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                />
-                <span className="text-xs text-foreground/80 leading-snug">
-                  Eu li e concordo com os{" "}
-                  <Link
-                    to="/terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-primary underline-offset-2 hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Termos de Uso
-                  </Link>
-                </span>
-              </label>
+              <div className="space-y-2">
+                <label
+                  htmlFor="terms"
+                  className={`group flex items-center gap-3 rounded-xl border px-3.5 py-3 cursor-pointer select-none transition-all ${
+                    acceptedTerms
+                      ? 'border-primary/50 bg-primary/5 shadow-[0_0_0_1px_hsl(var(--primary)/0.2)]'
+                      : 'border-border/60 bg-muted/30 hover:border-primary/30 hover:bg-muted/50'
+                  }`}
+                >
+                  <Checkbox
+                    id="terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                    className="shrink-0 h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <span className="text-xs text-foreground/80 leading-snug">
+                    Eu li e concordo com os{" "}
+                    <Link
+                      to="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-primary underline-offset-2 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Termos de Uso
+                    </Link>
+                  </span>
+                </label>
+
+                <label
+                  htmlFor="privacy"
+                  className={`group flex items-center gap-3 rounded-xl border px-3.5 py-3 cursor-pointer select-none transition-all ${
+                    acceptedPrivacy
+                      ? 'border-primary/50 bg-primary/5 shadow-[0_0_0_1px_hsl(var(--primary)/0.2)]'
+                      : 'border-border/60 bg-muted/30 hover:border-primary/30 hover:bg-muted/50'
+                  }`}
+                >
+                  <Checkbox
+                    id="privacy"
+                    checked={acceptedPrivacy}
+                    onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
+                    className="shrink-0 h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <span className="text-xs text-foreground/80 leading-snug">
+                    Eu li e concordo com a{" "}
+                    <Link
+                      to="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-primary underline-offset-2 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Política de Privacidade
+                    </Link>
+                  </span>
+                </label>
+              </div>
             </div>
 
             <Button
               onClick={handleSignup}
-              disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword || !acceptedTerms}
+              disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword || !acceptedTerms || !acceptedPrivacy}
               className="w-full h-12 font-bold gap-2"
             >
               {loading ? 'Criando conta...' : 'Criar Conta'} <ChevronRight className="w-4 h-4" />
