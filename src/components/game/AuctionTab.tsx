@@ -459,56 +459,72 @@ export function AuctionTab({ userId, clubName, players, budget, isPremium, onSel
 
       {/* Bid Dialog */}
       <Dialog open={!!bidDialogId} onOpenChange={(v) => { if (!v) setBidDialogId(null); }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm border-purple-500/20 bg-gradient-to-br from-[hsl(270_45%_8%)] to-[hsl(220_45%_6%)] backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base flex items-center gap-2">
-              <Gavel className="h-4 w-4 text-purple-400" /> Dar lance em {dialogAuction?.player_name}
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                <Gavel className="h-3.5 w-3.5 text-purple-300" />
+              </div>
+              Dar lance em <span className="text-purple-300">{dialogAuction?.player_name}</span>
             </DialogTitle>
           </DialogHeader>
           {dialogAuction && (
             <div className="space-y-3">
-              <div className="text-xs text-muted-foreground">
-                Lance atual: <span className="font-bold text-foreground">{fmtMoney(dialogAuction.current_bid)}</span><br />
-                Mínimo permitido: <span className="font-bold text-purple-400">{fmtMoney(dialogMinBid)}</span> (incremento: {fmtMoney(dialogIncrement)})
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg p-2.5 bg-black/40 border border-white/10">
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Lance atual</p>
+                  <p className="text-sm font-black mt-0.5">{fmtMoney(dialogAuction.current_bid)}</p>
+                </div>
+                <div className="rounded-lg p-2.5 bg-purple-500/10 border border-purple-500/25">
+                  <p className="text-[9px] text-purple-300/80 uppercase tracking-wider">Mín. permitido</p>
+                  <p className="text-sm font-black text-purple-200 mt-0.5">{fmtMoney(dialogMinBid)}</p>
+                </div>
               </div>
+
               <div>
-                <label className="text-xs font-semibold mb-1 block">Seu lance (R$)</label>
-                <Input
-                  type="number"
-                  step={dialogIncrement}
-                  min={dialogMinBid}
-                  value={bidAmount}
+                <label className="text-[11px] font-bold flex items-center justify-between mb-1.5">
+                  <span>Seu lance</span>
+                  <span className="text-[9px] text-muted-foreground">incremento {fmtMoney(dialogIncrement)}</span>
+                </label>
+                <Input type="number" step={dialogIncrement} min={dialogMinBid} value={bidAmount}
                   onChange={(e) => setBidAmount(parseInt(e.target.value || '0', 10))}
-                  className="h-9"
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">Equivalente a {fmtMoney(bidAmount)}</p>
+                  className="h-11 text-base font-black rounded-lg bg-black/40 border-white/10 focus-visible:border-purple-500/50 text-purple-200" />
               </div>
+
               <div className="flex flex-wrap gap-1">
                 {[1, 2, 3, 5].map(m => {
                   const v = dialogMinBid + (m - 1) * dialogIncrement;
                   return (
-                    <Button key={m} size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => setBidAmount(v)}>
+                    <button key={m} onClick={() => setBidAmount(v)}
+                      className={`flex-1 h-8 text-[10px] rounded-md border font-bold transition ${
+                        bidAmount === v ? 'bg-purple-500/20 border-purple-500/50 text-purple-200' : 'bg-white/[0.03] border-white/10 text-muted-foreground hover:bg-white/10'
+                      }`}>
                       {fmtMoney(v)}
-                    </Button>
+                    </button>
                   );
                 })}
               </div>
-              <p className="text-[10px] text-muted-foreground">
-                Seu orçamento: {fmtMoney(budget)} • Lance máx (80%): <span className="font-semibold text-amber-400">{fmtMoney(Math.floor(budget * 0.8))}</span>
-              </p>
+
+              <div className="rounded-lg p-2 bg-black/30 border border-white/5 text-[10px] text-muted-foreground flex items-center justify-between">
+                <span>Orçamento: <strong className="text-foreground">{fmtMoney(budget)}</strong></span>
+                <span>Máx (80%): <strong className="text-amber-300">{fmtMoney(Math.floor(budget * 0.8))}</strong></span>
+              </div>
+
               {bidAmount > Math.floor(budget * 0.8) && (
-                <div className="p-2 rounded bg-red-500/10 border border-red-500/30 animate-shake">
-                  <p className="text-[10px] text-red-400 font-bold flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" /> Lance excede o limite financeiro permitido (80%).
+                <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30">
+                  <p className="text-[10px] text-red-300 font-bold flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Lance excede o limite de 80% do orçamento.
                   </p>
                 </div>
               )}
             </div>
           )}
-          <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setBidDialogId(null)} disabled={loading}>Cancelar</Button>
-            <Button size="sm" className="bg-purple-500 hover:bg-purple-600" onClick={submitBid} disabled={loading}>
-              <Gavel className="h-3 w-3 mr-1" /> Confirmar Lance
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" size="sm" className="rounded-lg" onClick={() => setBidDialogId(null)} disabled={loading}>Cancelar</Button>
+            <Button size="sm" onClick={submitBid} disabled={loading}
+              className="rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white font-black gap-1.5 shadow-[0_0_20px_-5px_rgb(168_85_247)]">
+              <Gavel className="h-3.5 w-3.5" /> Confirmar Lance
+              <Sparkles className="h-3 w-3" />
             </Button>
           </DialogFooter>
         </DialogContent>
