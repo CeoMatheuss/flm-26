@@ -268,6 +268,7 @@ export type Database = {
           created_at: string
           delivery_error: string | null
           delivery_status: string | null
+          delivery_time_ms: number | null
           email: string
           expires_at: string
           id: string
@@ -280,6 +281,7 @@ export type Database = {
           created_at?: string
           delivery_error?: string | null
           delivery_status?: string | null
+          delivery_time_ms?: number | null
           email: string
           expires_at?: string
           id?: string
@@ -292,6 +294,7 @@ export type Database = {
           created_at?: string
           delivery_error?: string | null
           delivery_status?: string | null
+          delivery_time_ms?: number | null
           email?: string
           expires_at?: string
           id?: string
