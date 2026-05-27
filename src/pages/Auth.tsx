@@ -161,10 +161,16 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         }
 
         if (data?.emailSent === false) {
-          console.error('Erro de envio:', data.details);
-          toast.error('Erro de Entrega: O domínio footballlifemanager.com.br não está verificado na Resend. E-mails para domínios externos (Gmail, etc) estão bloqueados até que o DNS (SPF, DKIM, DMARC) seja configurado.', {
-            duration: 10000,
-          });
+          const errorMsg = data.details?.error?.message || data.details?.error || '';
+          if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('only send testing emails')) {
+            toast.error('Conta em Sandbox: A Resend só permite enviar e-mails para fcmsistemas7@gmail.com. Verifique seu domínio na Resend para liberar envios gerais.', {
+              duration: 10000,
+            });
+          } else {
+            toast.error('Erro de Entrega: O domínio footballlifemanager.com.br não está verificado na Resend. Verifique o DNS (SPF, DKIM) no painel da Resend.', {
+              duration: 10000,
+            });
+          }
         } else {
           toast.success('Código enviado! Verifique sua caixa de entrada e spam.');
         }
@@ -219,18 +225,29 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       });
       
       if (error) {
-        if (error.status === 429) {
+        // Trata erro de status 429 (Muitas solicitações)
+        const status = (error as any).status;
+        if (status === 429) {
           toast.warning('Aguarde um minuto para reenviar.');
         } else {
-          toast.error('Erro ao reenviar código. Tente novamente em instantes.');
+          console.error('Erro invoke:', error);
+          toast.error('Erro ao reenviar código. O serviço de autenticação encontrou um problema.');
         }
       } else if (data?.emailSent === false) {
-        toast.warning('Falha ao entregar e-mail. Verifique se o endereço está correto ou tente novamente.');
+        const errorMsg = data.details?.error?.message || data.details?.error || '';
+        if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain')) {
+          toast.error('A conta de e-mail está em modo de teste (Sandbox). No momento, e-mails só podem ser enviados para o administrador. Verifique o domínio na Resend.', {
+            duration: 6000
+          });
+        } else {
+          toast.warning('Falha ao entregar e-mail. Verifique se o endereço está correto ou tente novamente.');
+        }
       } else {
         toast.success('Novo código enviado com sucesso!');
         startResendTimer();
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Erro catch:', err);
       toast.error('Erro de conexão ao reenviar código.');
     } finally {
       setLoading(false);
