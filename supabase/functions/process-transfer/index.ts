@@ -5,6 +5,52 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// ============================================================
+// Manchetes variadas + importância para o Diário do Futebol
+// ============================================================
+function fmtMoney(v?: number) {
+  if (!v || v <= 0) return '';
+  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(0)}k`;
+  return `R$ ${v}`;
+}
+function pickOne<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+function newsImportance(opts: { overall?: number; value?: number; isInternational?: boolean }) {
+  let level = 1;
+  if ((opts.overall ?? 0) >= 78 || (opts.value ?? 0) >= 5_000_000) level = 2;
+  if ((opts.overall ?? 0) >= 85 || (opts.value ?? 0) >= 20_000_000) level = 3;
+  if (opts.isInternational) level = Math.min(3, level + 1);
+  return level;
+}
+function buyNowHeadlines(p: { player: string; ovr?: number; from: string; to: string; money: string }) {
+  return pickOne([
+    `⚡ COMPRA IMEDIATA! ${p.to} fatura ${p.player} (OVR ${p.ovr}) junto ao ${p.from} por ${p.money}`,
+    `⚡ Sem rodeios: ${p.to} ativa cláusula e leva ${p.player} (OVR ${p.ovr}) do ${p.from} por ${p.money}`,
+    `⚡ ${p.player} é do ${p.to}! Operação relâmpago tira o jogador do ${p.from} por ${p.money}`,
+    `⚡ ${p.from} aceita ${p.money} e libera ${p.player} para o ${p.to} em compra imediata`,
+  ]);
+}
+function saleHeadlines(p: { player: string; pos?: string; ovr?: number; from: string; to: string; money: string }) {
+  return pickOne([
+    `✅ CONFIRMADO! ${p.player} (${p.pos}, OVR ${p.ovr}) é vendido pelo ${p.from} ao ${p.to} por ${p.money}`,
+    `✍️ ${p.to} anuncia a contratação de ${p.player} (OVR ${p.ovr}) por ${p.money}`,
+    `🤝 Negócio fechado: ${p.player} troca o ${p.from} pelo ${p.to} (${p.money})`,
+    `🔥 ${p.player} deixa o ${p.from} rumo ao ${p.to} em acordo de ${p.money}`,
+  ]);
+}
+function negotiationAcceptHeadlines(p: { player: string; ovr?: number; from: string; to: string; money: string }) {
+  return pickOne([
+    `🤝 ${p.from} aceitou proposta de ${p.money} do ${p.to} por ${p.player} (OVR ${p.ovr}). Jogador tem 7h para decidir.`,
+    `📝 Mesa de negociação: ${p.from} dá sinal verde para ${p.money} do ${p.to} por ${p.player}. Faltam só palavras finais do atleta.`,
+  ]);
+}
+function rejectionHeadlines(p: { player: string; ovr?: number; to: string }) {
+  return pickOne([
+    `❌ ${p.player} (OVR ${p.ovr}) recusou proposta do ${p.to}. Negociação frustrada.`,
+    `🚫 Empresário travou: ${p.player} diz não ao ${p.to} e segue no clube atual.`,
+  ]);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -407,13 +453,31 @@ Deno.serve(async (req) => {
         },
       ]);
 
-      // 10) Jornal
-      await adminClient.from('newspaper_entries').insert({
-        user_id: listing.seller_id,
-        category: 'TRANSFERÊNCIA',
-        text: `⚡ COMPRA IMEDIATA! ${listing.player_name} (${listing.player_position}, OVR ${listing.player_overall}) foi adquirido pelo ${(buyerClubName || 'novo clube')} junto ao ${listing.seller_club_name} por ${priceStr}.`,
-        is_event: true,
-      });
+      // 10) Jornal — manchete variada + importância (DESTAQUE)
+      {
+        const buyNowMeta = {
+          kind: 'buy_now',
+          player_name: listing.player_name,
+          player_position: listing.player_position,
+          player_overall: listing.player_overall,
+          from_club: listing.seller_club_name,
+          to_club: buyerClubName || 'novo clube',
+          value: price,
+        };
+        const buyNowImportance = newsImportance({ overall: listing.player_overall, value: price });
+        const headline = buyNowHeadlines({
+          player: listing.player_name,
+          ovr: listing.player_overall,
+          from: listing.seller_club_name,
+          to: buyerClubName || 'novo clube',
+          money: priceStr,
+        });
+        // Notícia pro vendedor e pro comprador (cada um vê no próprio feed)
+        await adminClient.from('newspaper_entries').insert([
+          { user_id: listing.seller_id, category: 'TRANSFERÊNCIA', text: headline, is_event: true, importance: buyNowImportance, metadata: buyNowMeta },
+          { user_id: userId,            category: 'TRANSFERÊNCIA', text: headline, is_event: true, importance: buyNowImportance, metadata: buyNowMeta },
+        ]);
+      }
 
       return new Response(JSON.stringify({
         success: true,
@@ -491,8 +555,23 @@ Deno.serve(async (req) => {
       await adminClient.from('newspaper_entries').insert({
         user_id: listing.seller_id,
         category: 'MERCADO',
-        text: `🤝 ${listing.seller_club_name} aceitou proposta de R$${(offer.offered_price / 1000).toFixed(0)}k do ${offer.buyer_club_name} por ${listing.player_name} (OVR ${listing.player_overall}). Jogador tem 7h para decidir.`,
+        text: negotiationAcceptHeadlines({
+          player: listing.player_name,
+          ovr: listing.player_overall,
+          from: listing.seller_club_name,
+          to: offer.buyer_club_name,
+          money: fmtMoney(offer.offered_price),
+        }),
         is_event: true,
+        importance: newsImportance({ overall: listing.player_overall, value: offer.offered_price }),
+        metadata: {
+          kind: 'negotiation_accepted',
+          player_name: listing.player_name,
+          player_overall: listing.player_overall,
+          from_club: listing.seller_club_name,
+          to_club: offer.buyer_club_name,
+          value: offer.offered_price,
+        },
       });
 
       return new Response(JSON.stringify({
@@ -575,8 +654,9 @@ Deno.serve(async (req) => {
           await adminClient.from('newspaper_entries').insert({
             user_id: offer.buyer_id,
             category: 'MERCADO',
-            text: `❌ ${listing.player_name} (OVR ${listing.player_overall}) recusou proposta do ${offer.buyer_club_name}. Negociação frustrada.`,
+            text: rejectionHeadlines({ player: listing.player_name, ovr: listing.player_overall, to: offer.buyer_club_name }),
             is_event: true,
+            metadata: { kind: 'rejection', player_name: listing.player_name, player_overall: listing.player_overall, to_club: offer.buyer_club_name },
           });
         } else {
           // Player accepted! Complete transfer
@@ -663,14 +743,26 @@ Deno.serve(async (req) => {
             type: 'success',
           });
 
-          // Newspaper: transfer completed
-          const priceStr = offer.offered_price >= 1000000 ? `R$${(offer.offered_price / 1000000).toFixed(1)}M` : `R$${(offer.offered_price / 1000).toFixed(0)}k`;
-          await adminClient.from('newspaper_entries').insert({
-            user_id: listing.seller_id,
-            category: 'TRANSFERÊNCIA',
-            text: `✅ CONFIRMADO! ${listing.player_name} (${listing.player_position}, OVR ${listing.player_overall}) foi vendido pelo ${listing.seller_club_name} para o ${offer.buyer_club_name} por ${priceStr}.`,
-            is_event: true,
+          // Newspaper: transfer completed — manchete variada + DESTAQUE para grandes negociações
+          const priceStr = fmtMoney(offer.offered_price);
+          const saleMeta = {
+            kind: 'sale',
+            player_name: listing.player_name,
+            player_position: listing.player_position,
+            player_overall: listing.player_overall,
+            from_club: listing.seller_club_name,
+            to_club: offer.buyer_club_name,
+            value: offer.offered_price,
+          };
+          const saleImp = newsImportance({ overall: listing.player_overall, value: offer.offered_price });
+          const headline = saleHeadlines({
+            player: listing.player_name, pos: listing.player_position, ovr: listing.player_overall,
+            from: listing.seller_club_name, to: offer.buyer_club_name, money: priceStr,
           });
+          await adminClient.from('newspaper_entries').insert([
+            { user_id: listing.seller_id, category: 'TRANSFERÊNCIA', text: headline, is_event: true, importance: saleImp, metadata: saleMeta },
+            { user_id: offer.buyer_id,    category: 'CONTRATAÇÃO',   text: headline, is_event: true, importance: saleImp, metadata: saleMeta },
+          ]);
 
           const fominhaRisk = (offer.bonus_goals || 0) > 50000 ? 0.3 : (offer.bonus_goals || 0) > 20000 ? 0.15 : 0;
         }
