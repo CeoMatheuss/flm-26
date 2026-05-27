@@ -933,29 +933,34 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
         {/* ── LOANS ── */}
         <TabsContent value="loans" className="space-y-3 mt-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <ArrowLeftRight className="h-4 w-4 text-primary" /> 
-              Empréstimos Online
-              <button 
-                onClick={() => {
-                  setNegotiateLoan({
-                    player_name: "Guia de Empréstimos",
-                    player_position: "?",
-                    player_age: 0,
-                    player_overall: 0,
-                    salary: 0,
-                    _isHelpOnly: true
-                  });
-                }}
-                className="p-1 rounded-full hover:bg-white/10 transition-colors"
-              >
-                <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
-              </button>
-            </h3>
-            <Button variant="outline" size="sm" onClick={loadLoanListings} className="text-xs gap-1.5 h-8 rounded-lg">
-              <RefreshCw className="h-3 w-3" /> Atualizar
-            </Button>
+          {/* ── PREMIUM HEADER ── */}
+          <div className="relative overflow-hidden rounded-2xl border border-cyan-500/20 backdrop-blur-xl"
+            style={{ background: 'linear-gradient(135deg, hsl(190 50% 9% / 0.75), hsl(220 45% 8% / 0.85))' }}>
+            <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-cyan-500/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-sky-500/10 blur-3xl" />
+            <div className="relative p-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 rounded-xl bg-cyan-500/30 blur-md" />
+                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-700/10 border border-cyan-400/40 flex items-center justify-center">
+                    <Handshake className="h-5 w-5 text-cyan-200" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-black tracking-tight">Empréstimos Online</h2>
+                    <button onClick={() => setNegotiateLoan({ player_name: "Guia de Empréstimos", player_position: "?", player_age: 0, player_overall: 0, salary: 0, _isHelpOnly: true })}
+                      className="w-5 h-5 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center transition">
+                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">1 temporada · receptor paga 100% do salário</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={loadLoanListings} className="h-8 text-[10px] gap-1.5 rounded-lg border-white/10 hover:border-cyan-500/40 hover:bg-cyan-500/5">
+                <RefreshCw className="h-3 w-3" /> Atualizar
+              </Button>
+            </div>
           </div>
 
           {/* Public loan marketplace */}
@@ -978,10 +983,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             const hasFilters = loanPosFilter !== 'all' || loanOvrMin || loanOvrMax || loanAgeMin || loanAgeMax || loanSalaryMax;
             return (
               <div className="space-y-2">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Jogadores disponíveis para empréstimo</p>
-                <div className="flex flex-wrap gap-1.5 items-center rounded-lg p-2" style={{ background: 'hsl(var(--card))' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black text-cyan-300/80 uppercase tracking-wider">Disponíveis no Mercado</p>
+                  <Badge variant="outline" className="text-[9px] border-cyan-500/25 bg-cyan-500/10 text-cyan-300">{filtered.length}</Badge>
+                </div>
+                <div className="flex flex-wrap gap-1.5 items-center rounded-xl p-2 border border-white/5 bg-black/30 backdrop-blur-sm">
                   <Select value={loanPosFilter} onValueChange={setLoanPosFilter}>
-                    <SelectTrigger className="h-7 w-[80px] text-[10px] rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 w-[85px] text-[10px] rounded-lg bg-black/40 border-white/10"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas pos.</SelectItem>
                       <SelectItem value="GOL">GOL</SelectItem>
@@ -992,13 +1000,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                       <SelectItem value="ATA">ATA</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input placeholder="OVR min" type="number" value={loanOvrMin} onChange={e => setLoanOvrMin(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
-                  <Input placeholder="OVR max" type="number" value={loanOvrMax} onChange={e => setLoanOvrMax(e.target.value)} className="h-7 w-[65px] text-[10px] rounded-lg" />
-                  <Input placeholder="Idade min" type="number" value={loanAgeMin} onChange={e => setLoanAgeMin(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
-                  <Input placeholder="Idade max" type="number" value={loanAgeMax} onChange={e => setLoanAgeMax(e.target.value)} className="h-7 w-[70px] text-[10px] rounded-lg" />
-                  <Input placeholder="Sal. max (k)" type="number" value={loanSalaryMax} onChange={e => setLoanSalaryMax(e.target.value)} className="h-7 w-[90px] text-[10px] rounded-lg" />
+                  <Input placeholder="OVR min" type="number" value={loanOvrMin} onChange={e => setLoanOvrMin(e.target.value)} className="h-8 w-[70px] text-[10px] rounded-lg bg-black/40 border-white/10" />
+                  <Input placeholder="OVR max" type="number" value={loanOvrMax} onChange={e => setLoanOvrMax(e.target.value)} className="h-8 w-[70px] text-[10px] rounded-lg bg-black/40 border-white/10" />
+                  <Input placeholder="Idade min" type="number" value={loanAgeMin} onChange={e => setLoanAgeMin(e.target.value)} className="h-8 w-[75px] text-[10px] rounded-lg bg-black/40 border-white/10" />
+                  <Input placeholder="Idade max" type="number" value={loanAgeMax} onChange={e => setLoanAgeMax(e.target.value)} className="h-8 w-[75px] text-[10px] rounded-lg bg-black/40 border-white/10" />
+                  <Input placeholder="Sal. max (k)" type="number" value={loanSalaryMax} onChange={e => setLoanSalaryMax(e.target.value)} className="h-8 w-[95px] text-[10px] rounded-lg bg-black/40 border-white/10" />
                   {hasFilters && (
-                    <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => {
+                    <Button size="sm" variant="ghost" className="h-8 text-[10px] rounded-lg hover:bg-white/5" onClick={() => {
                       setLoanPosFilter('all'); setLoanOvrMin(''); setLoanOvrMax(''); setLoanAgeMin(''); setLoanAgeMax(''); setLoanSalaryMax('');
                     }}>
                       <X className="h-3 w-3 mr-1" /> Limpar
@@ -1011,48 +1019,49 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                     Nenhum jogador disponível {hasFilters ? 'com esses filtros.' : 'no momento.'}
                   </div>
                 ) : (
-                  <div className="space-y-1.5">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     {filtered.map(l => {
                       const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
                       return (
-                        <div
-                          key={l.id}
-                          className="group relative rounded-xl overflow-hidden border-2 border-dashed border-cyan-500/40 hover:border-cyan-400/80 hover:shadow-[0_0_22px_-6px_hsl(190_85%_55%/0.55)] transition-all duration-300 animate-fade-in"
-                          style={{ background: 'hsl(var(--card))' }}
-                        >
-                          {/* Diagonal stripe banner */}
-                          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-cyan-500 via-sky-300 to-cyan-500" />
+                        <div key={l.id}
+                          className="group relative rounded-xl overflow-hidden border border-cyan-500/25 backdrop-blur-sm hover:border-cyan-400/60 hover:shadow-[0_0_25px_-8px_hsl(190_85%_55%/0.6)] hover:-translate-y-0.5 transition-all duration-300"
+                          style={{ background: 'linear-gradient(135deg, hsl(190 40% 9% / 0.6), hsl(220 45% 8% / 0.85))' }}>
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 to-sky-600" />
                           <div className="absolute top-0 right-0 z-10">
-                            <div className="px-2 py-0.5 text-[8px] font-black tracking-widest uppercase rounded-bl-lg shadow-lg bg-cyan-500 text-cyan-950 flex items-center gap-1">
-                              <Handshake className="h-2.5 w-2.5" /> Empréstimo
+                            <div className="px-2 py-0.5 text-[8px] font-black tracking-widest uppercase rounded-bl-lg bg-gradient-to-r from-cyan-500 to-sky-500 text-cyan-950 flex items-center gap-1 shadow-lg">
+                              <Handshake className="h-2.5 w-2.5" /> Loan
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2.5 p-3 pt-3.5">
-                            <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border} shrink-0`}>
-                              <span className={`text-sm font-black ${getOvrColor(l.player_overall)}`}>{l.player_overall}</span>
-                              <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{l.player_position}</span>
+                          <div className="flex items-start gap-2.5 p-3">
+                            <div className="relative shrink-0">
+                              <div className="absolute inset-0 rounded-xl bg-cyan-500/20 blur-sm" />
+                              <div className={`relative w-11 h-11 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+                                <span className={`text-sm font-black ${getOvrColor(l.player_overall)} leading-none`}>{l.player_overall}</span>
+                                <span className={`text-[7px] font-bold ${pos.text} mt-0.5`}>{l.player_position}</span>
+                              </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold truncate">{l.player_name}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">
-                                {l.player_age} anos • <span className="text-primary">{l.seller_club_name}</span>
+                              <p className="text-xs font-black truncate">{l.player_name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                {l.player_age}a • <span className="text-cyan-300">{l.seller_club_name}</span>
                               </p>
-                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[9px] font-bold text-cyan-300">
-                                  <DollarSign className="h-2.5 w-2.5" /> R${((l.salary || 0) / 1000).toFixed(1)}k/mês
+                              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[9px] font-black text-cyan-200">
+                                  <DollarSign className="h-2.5 w-2.5" /> {((l.salary || 0) / 1000).toFixed(1)}k
                                 </span>
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/30 text-[9px] font-bold text-sky-300">
-                                  <Timer className="h-2.5 w-2.5" /> 1 temporada
-                                </span>
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/30 border border-border/30 text-[9px] font-semibold text-muted-foreground">
-                                  Salário 100% pago pelo cessionário
+                                  <Timer className="h-2.5 w-2.5" /> 1 temp
                                 </span>
                               </div>
                             </div>
-                            <Button size="sm" className="h-8 px-2.5 text-[10px] rounded-lg gap-1 bg-cyan-600 hover:bg-cyan-500 text-white" disabled={loading} onClick={() => setNegotiateLoan(l)}>
-                              <Handshake className="h-3 w-3" /> Negociar
+                            <Button size="sm" disabled={loading} onClick={() => setNegotiateLoan(l)}
+                              className="h-9 px-3 text-[10px] rounded-lg gap-1.5 font-black bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-cyan-950 shadow-[0_0_15px_-5px_rgb(6_182_212)] shrink-0">
+                              <Handshake className="h-3.5 w-3.5" /> Negociar
                             </Button>
+                          </div>
+                          <div className="px-3 pb-2.5 -mt-1 text-[9px] text-muted-foreground/80">
+                            Salário 100% pago pelo cessionário durante o empréstimo
                           </div>
                         </div>
                       );
@@ -1064,60 +1073,95 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           })()}
 
           {loanListings.filter(l => l.seller_id === userId).length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Seus jogadores no mercado de empréstimo</p>
-              {loanListings.filter(l => l.seller_id === userId).map(l => (
-                <div key={l.id} className="rounded-xl border border-cyan-500/20 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[l.player_position]?.bg || 'bg-muted/30'} ${posColors[l.player_position]?.text || ''}`}>{l.player_position}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate">{l.player_name}</p>
-                    <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-amber-300/80 uppercase tracking-wider">Seus anúncios ativos</p>
+              <div className="space-y-1.5">
+                {loanListings.filter(l => l.seller_id === userId).map(l => (
+                  <div key={l.id} className="rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/[0.06] to-transparent backdrop-blur-sm p-3 flex items-center gap-2.5">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black ${posColors[l.player_position]?.bg || 'bg-muted/30'} ${posColors[l.player_position]?.text || ''}`}>{l.player_position}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black truncate">{l.player_name}</p>
+                      <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
+                    </div>
+                    <Badge className="text-[8px] bg-amber-500/15 text-amber-300 border-amber-500/30">📣 Anunciado</Badge>
+                    <Button size="sm" variant="ghost" className="h-8 px-2 text-[9px] rounded-lg hover:bg-red-500/15 hover:text-red-300" onClick={async () => {
+                      const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-delist', listingId: l.id } });
+                      if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
+                      else { toast.success('Retirado!'); loadLoanListings(); }
+                    }}>
+                      <X className="h-3 w-3 mr-0.5" /> Retirar
+                    </Button>
                   </div>
-                  <Button size="sm" variant="destructive" className="h-7 px-2.5 text-[9px] rounded-lg" onClick={async () => {
-                    const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-delist', listingId: l.id } });
-                    if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
-                    else { toast.success('Retirado!'); loadLoanListings(); }
-                  }}>
-                    <X className="h-3 w-3 mr-0.5" /> Retirar
-                  </Button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Active loans (only outgoing) */}
           {loanedPlayers.filter(l => l.direction === 'out').length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Empréstimos cedidos ativos</p>
-              {loanedPlayers.filter(l => l.direction === 'out').map((loan, i) => (
-                <div key={i} className="rounded-xl border border-cyan-500/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[loan.player.position]?.bg || 'bg-muted/30'} ${posColors[loan.player.position]?.text || ''}`}>{loan.player.position}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate">{loan.player.name}</p>
-                    <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • {loan.player.age}a</p>
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-orange-300/80 uppercase tracking-wider">Empréstimos cedidos ativos</p>
+              <div className="space-y-1.5">
+                {loanedPlayers.filter(l => l.direction === 'out').map((loan, i) => (
+                  <div key={i} className="rounded-xl border border-orange-500/20 bg-gradient-to-r from-orange-500/[0.06] to-transparent backdrop-blur-sm p-3 flex items-center gap-2.5">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black ${posColors[loan.player.position]?.bg || 'bg-muted/30'} ${posColors[loan.player.position]?.text || ''}`}>{loan.player.position}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black truncate">{loan.player.name}</p>
+                      <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • {loan.player.age}a</p>
+                    </div>
+                    <Badge className="text-[8px] bg-orange-500/15 text-orange-300 border-orange-500/30">↗ Cedido</Badge>
                   </div>
-                  <Badge className="text-[8px] bg-orange-500/15 text-orange-400 border-orange-500/30">↗ Cedido</Badge>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
           {loanListings.filter(l => l.seller_id === userId).length === 0 && loanedPlayers.filter(l => l.direction === 'out').length === 0 && (
-            <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
-              <ArrowLeftRight className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              Você ainda não cedeu nenhum jogador. Vá em <span className="text-foreground font-semibold">Elenco</span> para emprestar.
+            <div className="text-center py-10 text-xs text-muted-foreground rounded-2xl border border-white/5 bg-black/30">
+              <ArrowLeftRight className="h-10 w-10 mx-auto mb-2 opacity-30" />
+              Você ainda não cedeu nenhum jogador.<br />
+              <span className="text-foreground/80">Vá em <strong>Elenco</strong> para emprestar.</span>
             </div>
           )}
         </TabsContent>
 
         {/* ── PROPOSTAS (recebidas + enviadas) ── */}
         <TabsContent value="offers" className="space-y-4 mt-3">
+          {/* ── PREMIUM HERO ── */}
+          <div className="relative overflow-hidden rounded-2xl border border-amber-500/15 backdrop-blur-xl"
+            style={{ background: 'linear-gradient(135deg, hsl(40 50% 9% / 0.7), hsl(220 45% 8% / 0.85))' }}>
+            <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-amber-500/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="relative p-3 flex items-center gap-3">
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-xl bg-amber-500/30 blur-md" />
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-700/10 border border-amber-400/40 flex items-center justify-center">
+                  <Send className="h-5 w-5 text-amber-200" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-sm font-black tracking-tight">Central de Propostas</h2>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Recebidas · Enviadas · Renovas · Empréstimos</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {incomingOffers.length > 0 && (
+                  <Badge className="text-[9px] bg-red-500/20 text-red-300 border-red-500/30 animate-pulse">{incomingOffers.length} novas</Badge>
+                )}
+                {incomingLoanOffers.length > 0 && (
+                  <Badge className="text-[9px] bg-cyan-500/20 text-cyan-300 border-cyan-500/30">{incomingLoanOffers.length} empréstimo</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Recebidas */}
           <div className="space-y-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              📩 Recebidas
-              {incomingOffers.length > 0 && <Badge className="bg-destructive/15 text-destructive text-[9px]">{incomingOffers.length}</Badge>}
-            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+                <span className="text-[11px]">📩</span>
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">Transferências Recebidas</h3>
+              {incomingOffers.length > 0 && <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-[9px]">{incomingOffers.length}</Badge>}
+            </div>
 
             {incomingOffers.length === 0 ? (
               <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
@@ -1172,15 +1216,15 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             )}
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-border/20" />
-
           {/* Enviadas */}
           <div className="space-y-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <Send className="h-4 w-4 text-primary" /> Enviadas
-              <Badge variant="outline" className="text-[9px]">{myOffers.length}</Badge>
-            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
+                <Send className="h-3.5 w-3.5 text-blue-300" />
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">Transferências Enviadas</h3>
+              <Badge variant="outline" className="text-[9px] border-blue-500/25 bg-blue-500/10 text-blue-300">{myOffers.length}</Badge>
+            </div>
 
             {myOffers.length === 0 ? (
               <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
@@ -1232,10 +1276,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
           {/* Renovas (Próprios Jogadores) */}
           <div className="space-y-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-emerald-400" /> Renovas Oferecidas
-              <Badge variant="outline" className="text-[9px]">{myRenewals.length}</Badge>
-            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+                <RefreshCw className="h-3.5 w-3.5 text-emerald-300" />
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">Renovas Oferecidas</h3>
+              <Badge variant="outline" className="text-[9px] border-emerald-500/25 bg-emerald-500/10 text-emerald-300">{myRenewals.length}</Badge>
+            </div>
 
             {myRenewals.length === 0 ? (
               <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
@@ -1275,10 +1322,13 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
 
           {/* Empréstimos Recebidos */}
           <div className="space-y-2">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <ArrowLeftRight className="h-4 w-4 text-cyan-400" /> Empréstimos Recebidos
-              {incomingLoanOffers.length > 0 && <Badge className="bg-cyan-500/15 text-cyan-400 text-[9px]">{incomingLoanOffers.length}</Badge>}
-            </h3>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
+                <ArrowLeftRight className="h-3.5 w-3.5 text-cyan-300" />
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">Empréstimos Recebidos</h3>
+              {incomingLoanOffers.length > 0 && <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-[9px] animate-pulse">{incomingLoanOffers.length}</Badge>}
+            </div>
 
             {incomingLoanOffers.length === 0 ? (
               <div className="text-center py-6 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
