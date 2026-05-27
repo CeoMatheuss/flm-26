@@ -160,21 +160,11 @@ Deno.serve(async (req) => {
     if (activeLeagues) {
       for (const league of activeLeagues) {
         const targetTime = SCHEDULE_TIMES[league.division_level as keyof typeof SCHEDULE_TIMES] || "21:00:00";
-        
-        // This query updates the time of all future scheduled matches to match the fixed division time
-        // We use a raw SQL approach via RPC for efficiency if needed, but here we do a simple update
-        const { data: updated } = await sb.from("world_matches")
-          .update({ 
-            // We only want to update the TIME part, not the date.
-            // PostgreSQL trick: (scheduled_at::date + '21:00:00'::time)
-            // But we need to use a format compatible with Supabase update
-          })
-          .eq("league_id", league.id)
-          .eq("status", "scheduled");
-          
-        // Actually, a better way to fix schedules is to update the 'scheduled_at' column 
-        // to have the correct time for all future rounds.
-        // We will call a helper RPC for this.
+        await sb.rpc("fix_world_match_schedules", { 
+          p_league_id: league.id, 
+          p_target_time: targetTime 
+        });
+        summary.schedules_fixed++;
       }
     }
 
