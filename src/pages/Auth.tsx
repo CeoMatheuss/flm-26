@@ -377,58 +377,42 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                   ? 'border-primary/50 bg-primary/5 shadow-[0_0_0_1px_hsl(var(--primary)/0.2)]'
                   : 'border-border/60 bg-muted/30'
               }`}>
-                <p className="text-[11px] font-medium text-foreground/70 mb-2.5 uppercase tracking-wider">
-                  Para criar sua conta
-                </p>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="terms"
-                    className="group flex items-center gap-3 cursor-pointer select-none"
-                  >
-                    <Checkbox
-                      id="terms"
-                      checked={acceptedTerms}
-                      onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                      className="shrink-0 h-4 w-4 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                    />
-                    <span className="text-xs text-foreground/80 leading-snug">
-                      Aceito os{" "}
-                      <Link
-                        to="/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-primary underline-offset-2 hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Termos de Uso
-                      </Link>
-                    </span>
-                  </label>
-
-                  <label
-                    htmlFor="privacy"
-                    className="group flex items-center gap-3 cursor-pointer select-none"
-                  >
-                    <Checkbox
-                      id="privacy"
-                      checked={acceptedPrivacy}
-                      onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
-                      className="shrink-0 h-4 w-4 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                    />
-                    <span className="text-xs text-foreground/80 leading-snug">
-                      Aceito a{" "}
-                      <Link
-                        to="/privacy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-primary underline-offset-2 hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Política de Privacidade
-                      </Link>
-                    </span>
-                  </label>
-                </div>
+                <label
+                  htmlFor="terms"
+                  className="group flex items-center gap-3 cursor-pointer select-none"
+                >
+                  <Checkbox
+                    id="terms"
+                    checked={acceptedTerms && acceptedPrivacy}
+                    onCheckedChange={(checked) => {
+                      setAcceptedTerms(checked === true);
+                      setAcceptedPrivacy(checked === true);
+                    }}
+                    className="shrink-0 h-4 w-4 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <span className="text-xs text-foreground/80 leading-snug">
+                    Aceito os{" "}
+                    <Link
+                      to="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-primary underline-offset-2 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Termos de Uso
+                    </Link>
+                    {" "}e a{" "}
+                    <Link
+                      to="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-primary underline-offset-2 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Política de Privacidade
+                    </Link>
+                  </span>
+                </label>
               </div>
             </div>
 
