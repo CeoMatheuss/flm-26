@@ -6573,6 +6573,33 @@ export type Database = {
         }
         Relationships: []
       }
+      world_league_config: {
+        Row: {
+          country: string
+          division_name: string
+          id: string
+          match_time: string
+          max_teams: number | null
+          tier_level: number
+        }
+        Insert: {
+          country: string
+          division_name: string
+          id?: string
+          match_time: string
+          max_teams?: number | null
+          tier_level: number
+        }
+        Update: {
+          country?: string
+          division_name?: string
+          id?: string
+          match_time?: string
+          max_teams?: number | null
+          tier_level?: number
+        }
+        Relationships: []
+      }
       world_league_news: {
         Row: {
           category: string | null
@@ -6825,6 +6852,8 @@ export type Database = {
           current_round: number | null
           division: number | null
           division_level: number | null
+          division_name: string | null
+          division_number: number | null
           id: string
           is_finished: boolean | null
           max_teams: number | null
@@ -6832,6 +6861,7 @@ export type Database = {
           prizes_paid: boolean | null
           season_month: number | null
           season_year: number | null
+          tier_level: number | null
           winner_processed: boolean | null
         }
         Insert: {
@@ -6842,6 +6872,8 @@ export type Database = {
           current_round?: number | null
           division?: number | null
           division_level?: number | null
+          division_name?: string | null
+          division_number?: number | null
           id?: string
           is_finished?: boolean | null
           max_teams?: number | null
@@ -6849,6 +6881,7 @@ export type Database = {
           prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
+          tier_level?: number | null
           winner_processed?: boolean | null
         }
         Update: {
@@ -6859,6 +6892,8 @@ export type Database = {
           current_round?: number | null
           division?: number | null
           division_level?: number | null
+          division_name?: string | null
+          division_number?: number | null
           id?: string
           is_finished?: boolean | null
           max_teams?: number | null
@@ -6866,6 +6901,7 @@ export type Database = {
           prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
+          tier_level?: number | null
           winner_processed?: boolean | null
         }
         Relationships: [
@@ -7755,6 +7791,14 @@ export type Database = {
         | { Args: never; Returns: undefined }
         | { Args: { p_club_id: string; p_pack_id: string }; Returns: string }
       generate_weekly_scout: { Args: never; Returns: undefined }
+      generate_world_league_calendar: {
+        Args: {
+          p_league_id: string
+          p_match_time: string
+          p_start_date: string
+        }
+        Returns: undefined
+      }
       get_auction_start_price: { Args: { ovr: number }; Returns: number }
       get_available_league_for_country: {
         Args: { p_country_id: string }
