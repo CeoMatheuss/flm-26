@@ -3,12 +3,13 @@ import { Player } from '@/types/game';
 import { formatMoney } from '@/lib/formatMoney';
 import { getPlayerValue } from '@/utils/playerGenerator';
 import { getDynamicOverall, getAdaptationLevel, getAdaptationColor } from '@/utils/positionUtils';
-import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle, Tag, Handshake, ArrowLeftRight } from 'lucide-react';
+import { Heart, Activity, Shield, ChevronRight, ArrowUp, ArrowDown, Search, Filter, Clock, AlertTriangle, Tag, Handshake, ArrowLeftRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAttributeEvolution } from './useAttributeEvolution';
 import { supabase } from '@/integrations/supabase/client';
 import swapIcon from '@/assets/swap-icon.png';
+import { usePlayerHighlight } from '@/contexts/PlayerHighlightContext';
 import {
   PlayerStatus,
   statusMeta,
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSelect, activeTab, userId, onRest, pendingSwapId, onOpenQuickSwap }: Props) {
+  const { highlights, removeHighlight } = usePlayerHighlight();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'overall' | 'name' | 'age' | 'value'>('overall');
   const [negotiations, setNegotiations] = useState<Record<string, boolean>>({});
@@ -97,7 +99,13 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
           return true;
       }
     }).sort((a, b) => {
-      // Regra de Ouro: Organização fixa por posição
+      // Regra de Ouro 0: Destaques temporários no topo
+      const isAHighlighted = !!highlights[a.id];
+      const isBHighlighted = !!highlights[b.id];
+      if (isAHighlighted && !isBHighlighted) return -1;
+      if (!isAHighlighted && isBHighlighted) return 1;
+
+      // Regra de Ouro 1: Organização fixa por posição
       const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
       const posA = posOrder.indexOf(a.position);
       const posB = posOrder.indexOf(b.position);
@@ -111,7 +119,7 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
       if (sortBy === 'value') return getPlayerValue(b) - getPlayerValue(a);
       return 0;
     });
-  }, [players, starterIds, activeTab, search, sortBy, negotiations]);
+  }, [players, starterIds, activeTab, search, sortBy, negotiations, highlights]);
 
   return (
     <div className={cn(
@@ -202,16 +210,25 @@ function SortBtn({ active, label, onClick }: { active: boolean; label: string; o
 }
 
 function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected, onClick, onSwapAction, isPendingSwap, canBeSwapped, onRest, activeTab, onOpenQuickSwap }: { player: Player; idx: number; isStarter: boolean; isNegotiating?: boolean; delta: number; selected: boolean; onClick: () => void; onSwapAction?: (e: any) => void; isPendingSwap?: boolean; canBeSwapped?: boolean; onRest: () => void; activeTab?: string; onOpenQuickSwap?: () => void }) {
+  const { highlights, removeHighlight } = usePlayerHighlight();
+  const highlight = highlights[player.id];
   const tier = ovrTier(player.overall);
   const value = getPlayerValue(player);
 
   const status = getPlayerStatus(player, isStarter, isNegotiating);
   const sm = statusMeta[status] || statusMeta.reserva;
 
-  const isForSale = player.onTransferList || status === 'lista-transferencia';
-  const isForLoan = player.onLoanList || status === 'lista-emprestimo';
+  const isForSale = player.onTransferList || status === 'lista-transferencia' || highlight?.type === 'listed_sale';
+  const isForLoan = player.onLoanList || status === 'lista-emprestimo' || highlight?.type === 'listed_loan';
   const isLoanedOut = player.isLoaned || status === 'emprestado';
   const isLoanedIn = player.isReceivedLoan || status === 'recebido-emprestimo';
+
+  const badgeLabels: Record<string, string> = {
+    new_signing: 'NOVO REFORÇO',
+    listed_loan: 'DISPONÍVEL P/ EMPRÉSTIMO',
+    transferred: 'TRANSFERIDO',
+    listed_sale: 'À VENDA'
+  };
 
   // Badge "NOVO REFORÇO" - destaque temporário (7 dias)
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
@@ -234,15 +251,39 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
       onClick={onClick}
       className={cn(
         "w-full text-left rounded-2xl border flex flex-col sm:grid sm:grid-cols-12 sm:items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3 transition-all duration-300 group relative overflow-hidden min-h-[80px]",
-        selected 
-          ? (isPendingSwap ? "bg-primary/20 border-primary ring-2 ring-primary/50 animate-pulse" : "bg-emerald-500/10 border-emerald-500/30 shadow-xl")
-          : (canBeSwapped ? "bg-white/[0.05] border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10"),
-        isForSale && "border-emerald-500/40 bg-emerald-500/[0.03] shadow-[inset_0_0_30px_rgba(16,185,129,0.05)]",
-        isForLoan && "border-cyan-500/40 bg-cyan-500/[0.03]",
+        highlight
+          ? (highlight.type === 'listed_sale' || highlight.type === 'new_signing' ? "bg-amber-400/10 border-amber-400 ring-2 ring-amber-400/50 z-50 shadow-[0_0_30px_rgba(245,158,11,0.2)]" : "bg-cyan-400/10 border-cyan-400 ring-2 ring-cyan-400/50 z-50 shadow-[0_0_30px_rgba(34,211,238,0.2)]")
+          : selected 
+            ? (isPendingSwap ? "bg-primary/20 border-primary ring-2 ring-primary/50 animate-pulse" : "bg-emerald-500/10 border-emerald-500/30 shadow-xl")
+            : (canBeSwapped ? "bg-white/[0.05] border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10"),
+        isForSale && !highlight && "border-emerald-500/40 bg-emerald-500/[0.03] shadow-[inset_0_0_30px_rgba(16,185,129,0.05)]",
+        isForLoan && !highlight && "border-cyan-500/40 bg-cyan-500/[0.03]",
         isLoanedIn && "border-indigo-500/40 bg-indigo-500/[0.03]",
         isLoanedOut && "border-zinc-500/40 bg-zinc-500/[0.03] opacity-80"
       )}
     >
+      {highlight && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.2, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className={cn(
+            "absolute inset-0 pointer-events-none z-0",
+            highlight.type === 'listed_sale' || highlight.type === 'new_signing' ? "bg-amber-400" : "bg-cyan-400"
+          )}
+        />
+      )}
+
+      {highlight && (
+        <div className="absolute top-1 right-1 z-50">
+          <button 
+            onClick={(e) => { e.stopPropagation(); removeHighlight(player.id); }}
+            className="p-1 rounded-full bg-black/50 hover:bg-black/80 text-white/70 transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
       {/* Decorative Glow & Visual Identity */}
       {(isForSale || isForLoan || isLoanedIn) && (
         <div className={cn(
