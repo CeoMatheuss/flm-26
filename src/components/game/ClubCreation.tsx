@@ -400,8 +400,8 @@ export function ClubCreation({ userId, onComplete }: Props) {
                     <span className="flex items-center gap-1">
                       {status.locked && <Lock className="h-3 w-3 text-destructive" />}
                       {status.bonus > 0 && <Gift className="h-3 w-3 text-emerald-500" />}
-                      <span className="text-[10px] text-muted-foreground">{status.players} managers</span>
                     </span>
+
                   </span>
                   {countryOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                 </button>
@@ -443,9 +443,8 @@ export function ClubCreation({ userId, onComplete }: Props) {
                                     <Gift className="h-2.5 w-2.5 mr-0.5" /> +{(s.bonus / 1000).toFixed(0)}K
                                   </Badge>
                                 )}
-                                <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-                                  <Users className="h-2.5 w-2.5" /> {s.players}
-                                </span>
+
+
                               </span>
                             </button>
                           );
