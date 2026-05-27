@@ -1,58 +1,55 @@
 import { TabsContent } from '@/components/ui/tabs';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card, CardContent } from '@/components/ui/card';
-import { DashboardTab } from '@/components/game/DashboardTab';
-import { TacticsTab } from '@/components/game/TacticsTab';
-import { PhysioTab } from '@/components/game/PhysioTab';
-import { MultiplayerTab } from '@/components/game/MultiplayerTab';
-import { OnlineMarketTab } from '@/components/game/OnlineMarketTab';
-import { NewspaperFullPage } from '@/components/game/NewspaperFullPage';
-import { ChampionshipsTab } from '@/components/game/ChampionshipsTab';
-import { ScoutsTab } from '@/components/game/ScoutsTab';
-
-
-import { MatchesTab } from '@/components/game/MatchesTab';
-import { FinanceTab } from '@/components/game/FinanceTab';
-import { InfrastructureTab } from '@/components/game/InfrastructureTab';
-import { TrainingCenterTab } from '@/components/game/TrainingCenterTab';
-import { StadiumTab } from '@/components/game/StadiumTab';
-import { YouthAcademyTab } from '@/components/game/YouthAcademyTab';
-
-import { FansTab } from '@/components/game/FansTab';
-import { MembersTab } from '@/components/game/MembersTab';
-import { InfrastructureWrapper } from '@/components/game/InfrastructureWrapper';
-import { GlobalChatTab } from '@/components/game/GlobalChatTab';
-import { AuctionTab } from '@/components/game/AuctionTab';
-import { UniformsTab } from '@/components/game/UniformsTab';
-import { AchievementsTab } from '@/components/game/AchievementsTab';
-import { ClubProfileTab } from '@/components/game/ClubProfileTab';
-import { CTRoomsTab } from '@/components/game/CTRoomsTab';
-import { TrophiesTab } from '@/components/game/TrophiesTab';
-import { TournamentExpandedView } from '@/components/game/TournamentDashboardCard';
-import { RankingTab } from '@/components/game/RankingTab';
-import { SettingsTab } from '@/components/game/SettingsTab';
-import { ClubSettingsTab } from '@/components/game/ClubSettingsTab';
-import { RulesTab } from '@/components/game/RulesTab';
-import { CopasTab } from './CopasTab';
-import { WorldLeagues } from './WorldLeagues';
-import { WorldCupTab } from './WorldCupTab';
-import { ContinentalTab } from './ContinentalTab';
-
-
-import { AdminTab } from '@/components/game/AdminTab';
-import { PacotinhosTab } from '@/components/game/PacotinhosTab';
-import { LojaFLM } from '@/components/game/LojaFLM';
-import { SupportTab } from '@/components/game/SupportTab';
-import { TermsTab } from "@/components/game/TermsTab";
-import { SquadModernLayout } from "./squad-modern/SquadModernLayout";
 import { getStadiumCapacity } from '@/types/infrastructure';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useState, useMemo } from 'react';
-import { Lock } from 'lucide-react';
-import { LeagueTab } from './LeagueTab';
+import { useState, useMemo, lazy, Suspense } from 'react';
+import { Lock, Loader2 } from 'lucide-react';
 import type { useGame } from '@/hooks/useGame';
 import type { useMultiplayer } from '@/hooks/useMultiplayer';
+
+// Lazy load heavy components
+const DashboardTab = lazy(() => import('@/components/game/DashboardTab').then(m => ({ default: m.DashboardTab })));
+const TacticsTab = lazy(() => import('@/components/game/TacticsTab').then(m => ({ default: m.TacticsTab })));
+const PhysioTab = lazy(() => import('@/components/game/PhysioTab').then(m => ({ default: m.PhysioTab })));
+const MultiplayerTab = lazy(() => import('@/components/game/MultiplayerTab').then(m => ({ default: m.MultiplayerTab })));
+const OnlineMarketTab = lazy(() => import('@/components/game/OnlineMarketTab').then(m => ({ default: m.OnlineMarketTab })));
+const NewspaperFullPage = lazy(() => import('@/components/game/NewspaperFullPage').then(m => ({ default: m.NewspaperFullPage })));
+const ChampionshipsTab = lazy(() => import('@/components/game/ChampionshipsTab').then(m => ({ default: m.ChampionshipsTab })));
+const ScoutsTab = lazy(() => import('@/components/game/ScoutsTab').then(m => ({ default: m.ScoutsTab })));
+const MatchesTab = lazy(() => import('@/components/game/MatchesTab').then(m => ({ default: m.MatchesTab })));
+const FinanceTab = lazy(() => import('@/components/game/FinanceTab').then(m => ({ default: m.FinanceTab })));
+const InfrastructureTab = lazy(() => import('@/components/game/InfrastructureTab').then(m => ({ default: m.InfrastructureTab })));
+const TrainingCenterTab = lazy(() => import('@/components/game/TrainingCenterTab').then(m => ({ default: m.TrainingCenterTab })));
+const StadiumTab = lazy(() => import('@/components/game/StadiumTab').then(m => ({ default: m.StadiumTab })));
+const YouthAcademyTab = lazy(() => import('@/components/game/YouthAcademyTab').then(m => ({ default: m.YouthAcademyTab })));
+const FansTab = lazy(() => import('@/components/game/FansTab').then(m => ({ default: m.FansTab })));
+const MembersTab = lazy(() => import('@/components/game/MembersTab').then(m => ({ default: m.MembersTab })));
+const InfrastructureWrapper = lazy(() => import('@/components/game/InfrastructureWrapper').then(m => ({ default: m.InfrastructureWrapper })));
+const GlobalChatTab = lazy(() => import('@/components/game/GlobalChatTab').then(m => ({ default: m.GlobalChatTab })));
+const AuctionTab = lazy(() => import('@/components/game/AuctionTab').then(m => ({ default: m.AuctionTab })));
+const UniformsTab = lazy(() => import('@/components/game/UniformsTab').then(m => ({ default: m.UniformsTab })));
+const AchievementsTab = lazy(() => import('@/components/game/AchievementsTab').then(m => ({ default: m.AchievementsTab })));
+const ClubProfileTab = lazy(() => import('@/components/game/ClubProfileTab').then(m => ({ default: m.ClubProfileTab })));
+const CTRoomsTab = lazy(() => import('@/components/game/CTRoomsTab').then(m => ({ default: m.CTRoomsTab })));
+const TrophiesTab = lazy(() => import('@/components/game/TrophiesTab').then(m => ({ default: m.TrophiesTab })));
+const RankingTab = lazy(() => import('@/components/game/RankingTab').then(m => ({ default: m.RankingTab })));
+const SettingsTab = lazy(() => import('@/components/game/SettingsTab').then(m => ({ default: m.SettingsTab })));
+const ClubSettingsTab = lazy(() => import('@/components/game/ClubSettingsTab').then(m => ({ default: m.ClubSettingsTab })));
+const RulesTab = lazy(() => import('@/components/game/RulesTab').then(m => ({ default: m.RulesTab })));
+const CopasTab = lazy(() => import('./CopasTab').then(m => ({ default: m.CopasTab })));
+const WorldLeagues = lazy(() => import('./WorldLeagues').then(m => ({ default: m.WorldLeagues })));
+const WorldCupTab = lazy(() => import('./WorldCupTab').then(m => ({ default: m.WorldCupTab })));
+const ContinentalTab = lazy(() => import('./ContinentalTab').then(m => ({ default: m.ContinentalTab })));
+const AdminTab = lazy(() => import('@/components/game/AdminTab').then(m => ({ default: m.AdminTab })));
+const PacotinhosTab = lazy(() => import('@/components/game/PacotinhosTab').then(m => ({ default: m.PacotinhosTab })));
+const LojaFLM = lazy(() => import('@/components/game/LojaFLM').then(m => ({ default: m.LojaFLM })));
+const SupportTab = lazy(() => import('@/components/game/SupportTab').then(m => ({ default: m.SupportTab })));
+const TermsTab = lazy(() => import("@/components/game/TermsTab").then(m => ({ default: m.TermsTab })));
+const SquadModernLayout = lazy(() => import("./squad-modern/SquadModernLayout").then(m => ({ default: m.SquadModernLayout })));
+const LeagueTab = lazy(() => import('./LeagueTab').then(m => ({ default: m.LeagueTab })));
+
 
 interface GameTabRouterProps {
   game: ReturnType<typeof useGame>;
@@ -101,8 +98,14 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
     </Card>
   );
 
+  const TabLoading = () => (
+    <div className="flex h-[400px] w-full items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+    </div>
+  );
+
   return (
-    <>
+    <Suspense fallback={<TabLoading />}>
       <TabsContent value="dashboard">
         {isTabBlocked('dashboard') ? <BlockedMessage /> : (
           <DashboardTab 
@@ -529,6 +532,6 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       {showAdmin && (
         <TabsContent value="admin"><AdminTab userId={userId} isFounder={isFounder} /></TabsContent>
       )}
-    </>
+    </Suspense>
   );
 }
