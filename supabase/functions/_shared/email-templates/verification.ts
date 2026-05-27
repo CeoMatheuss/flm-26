@@ -10,14 +10,17 @@ export const getVerificationEmailTemplate = (params: {
   clubName?: string;
   creationDate?: string;
   ipAddress?: string;
+  appUrl?: string;
 }) => {
   const { 
     userName, 
     verificationCode, 
+    verificationCode, 
     expirationMinutes, 
     clubName = 'Seu Clube', 
     creationDate = new Date().toLocaleString('pt-BR'),
-    ipAddress = 'Indisponível'
+    ipAddress = 'Indisponível',
+    appUrl = 'https://footballlifemanager26.vercel.app'
   } = params;
 
   // Banner image: Stadium background with manager/players feel
@@ -273,10 +276,12 @@ export const getVerificationEmailTemplate = (params: {
     <div class="container">
       <!-- Header -->
       <div class="header-banner">
-        <div class="logo-container">
-          <div class="logo-text">FOOTBALL</div>
-          <div class="logo-main">LIFE <span>MANAGER</span></div>
-        </div>
+        <a href="${appUrl}" style="text-decoration: none;">
+          <div class="logo-container">
+            <div class="logo-text">FOOTBALL</div>
+            <div class="logo-main">LIFE <span>MANAGER</span></div>
+          </div>
+        </a>
         <div class="welcome-text">Pronto para a Temporada?</div>
       </div>
 

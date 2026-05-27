@@ -287,7 +287,7 @@ serve(async (req) => {
       }
 
       const resendKey = Deno.env.get('RESEND_API_KEY')
-      const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'no-reply@footballlifemanager.com.br'
+      const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'no-reply@footballlifemanager26.vercel.app'
       let emailSent = false
       let emailError: string | null = null
 
@@ -317,7 +317,8 @@ serve(async (req) => {
                   verificationCode: verificationCode,
                   expirationMinutes: 10,
                   clubName: 'Seu Clube FLM',
-                  ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] || 'Indisponível'
+                  ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] || 'Indisponível',
+                  appUrl: 'https://footballlifemanager26.vercel.app'
                 }),
               }),
             })
@@ -348,7 +349,8 @@ serve(async (req) => {
                       verificationCode: verificationCode,
                       expirationMinutes: 10,
                       clubName: 'Acesso de Teste (Sandbox)',
-                      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] || 'Indisponível'
+                      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] || 'Indisponível',
+                      appUrl: 'https://footballlifemanager26.vercel.app'
                     }),
                   }),
                 })
