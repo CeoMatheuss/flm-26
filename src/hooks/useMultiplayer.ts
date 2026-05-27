@@ -326,10 +326,29 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
         .eq('user_id', userId);
 
       if ((existingMember ?? 0) > 0) {
-        console.log('[LeagueRegistration] User already enrolled in a league. Skipping auto-join.');
+        console.log('[LeagueRegistration] User already enrolled in a league. Auto-entering it.');
         // Limpa qualquer entrada órfã na fila de espera
         await supabase.from('league_waiting_list').delete().eq('user_id', userId);
         await loadLeagues();
+
+        // 🔁 Garante que a UI carregue a liga onde o jogador REALMENTE está,
+        // não uma liga antiga que ficou em cache no estado.
+        const { data: myMembership } = await supabase
+          .from('league_members')
+          .select('league_id')
+          .eq('user_id', userId)
+          .limit(1)
+          .maybeSingle();
+
+        if (myMembership?.league_id) {
+          const { data: league } = await supabase
+            .from('multiplayer_leagues')
+            .select('*')
+            .eq('id', myMembership.league_id)
+            .maybeSingle();
+          if (league) await enterLeague(league as unknown as MultiplayerLeague);
+        }
+
         setAutoJoining(false);
         return;
       }
