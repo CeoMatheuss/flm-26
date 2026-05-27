@@ -128,16 +128,18 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       
 
       <TabsContent value="matches">
-        <MatchesTab
-          clubName={game.club.name}
-          stadiumName={game.club.stadiumName}
-          players={game.club.players}
-          teamStrength={game.club.reputation}
-          tactics={game.tactics}
-          userId={userId}
-          stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)}
-          fans={game.club.fans}
-        />
+        {isTabBlocked('matches') ? <BlockedMessage /> : (
+          <MatchesTab
+            clubName={game.club.name}
+            stadiumName={game.club.stadiumName}
+            players={game.club.players}
+            teamStrength={game.club.reputation}
+            tactics={game.tactics}
+            userId={userId}
+            stadiumCapacity={getStadiumCapacity(game.infrastructure.stadium.level)}
+            fans={game.club.fans}
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="squad" className="m-0 h-full">
@@ -175,25 +177,27 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         {isTabBlocked('leagues') ? <BlockedMessage /> : <LeagueTab clubName={game.club.name} country={game.club.country} clubPlayers={game.club.players} />}
       </TabsContent>
       <TabsContent value="copas">
-        <CopasTab userId={userId} />
+        {isTabBlocked('copas') ? <BlockedMessage /> : <CopasTab userId={userId} />}
       </TabsContent>
       <TabsContent value="worldcup">
-        <WorldCupTab userId={userId} />
+        {isTabBlocked('worldcup') ? <BlockedMessage /> : <WorldCupTab userId={userId} />}
       </TabsContent>
 
       <TabsContent value="continental">
-        <ContinentalTab club={game.club} />
+        {isTabBlocked('continental') ? <BlockedMessage /> : <ContinentalTab club={game.club} />}
       </TabsContent>
 
       <TabsContent value="world">
-        <WorldLeagues 
-          userId={userId}
-          rating={game.ranking} 
-          rankingHistory={game.rankingHistory} 
-          clubName={game.club.name} 
-          stats={game.club.stats} 
-          season={game.season?.currentSeason ?? 1} 
-        />
+        {isTabBlocked('world') ? <BlockedMessage /> : (
+          <WorldLeagues 
+            userId={userId}
+            rating={game.ranking} 
+            rankingHistory={game.rankingHistory} 
+            clubName={game.club.name} 
+            stats={game.club.stats} 
+            season={game.season?.currentSeason ?? 1} 
+          />
+        )}
       </TabsContent>
       <TabsContent value="scouts">{isTabBlocked('scouts') ? <BlockedMessage /> : <ScoutsTab userId={userId} budget={game.club.budget} />}</TabsContent>
       <TabsContent value="pacotinhos">
@@ -282,23 +286,25 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
       </TabsContent>
 
       <TabsContent value="physio">
-        <PhysioTab players={game.club.players} />
+        {isTabBlocked('physio') ? <BlockedMessage /> : <PhysioTab players={game.club.players} />}
       </TabsContent>
       
       
       <TabsContent value="fans">
-        <FansTab club={game.club} winStreak={winStreak} loseStreak={0} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />
+        {isTabBlocked('fans') ? <BlockedMessage /> : <FansTab club={game.club} winStreak={winStreak} loseStreak={0} stadiumLevel={game.infrastructure.stadium.level} ticketPrice={game.club.ticketPrice || 30} />}
       </TabsContent>
       
       <TabsContent value="members">
-        <MembersTab 
-          totalFans={game.club.fans || 1000} 
-          reputation={game.club.reputation || 50} 
-          totalMembersFromDB={game.club.total_members}
-          wins={game.club.stats?.wins ?? 0} 
-          draws={game.club.stats?.draws ?? 0} 
-          losses={game.club.stats?.losses ?? 0} 
-        />
+        {isTabBlocked('members') ? <BlockedMessage /> : (
+          <MembersTab 
+            totalFans={game.club.fans || 1000} 
+            reputation={game.club.reputation || 50} 
+            totalMembersFromDB={game.club.total_members}
+            wins={game.club.stats?.wins ?? 0} 
+            draws={game.club.stats?.draws ?? 0} 
+            losses={game.club.stats?.losses ?? 0} 
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="training">
@@ -478,29 +484,31 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
       
-      <TabsContent value="settings"><SettingsTab /></TabsContent>
-      <TabsContent value="uniforms"><UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} onSave={() => {}} uniformsUnlocked={!!game.clubProfile?.uniformsUnlocked} /></TabsContent>
+      <TabsContent value="settings">{isTabBlocked('settings') ? <BlockedMessage /> : <SettingsTab />}</TabsContent>
+      <TabsContent value="uniforms">{isTabBlocked('uniforms') ? <BlockedMessage /> : <UniformsTab primaryColor={game.club.primaryColor} secondaryColor={game.club.secondaryColor} onSave={() => {}} uniformsUnlocked={!!game.clubProfile?.uniformsUnlocked} />}</TabsContent>
       
       
       
-      <TabsContent value="achievements"><AchievementsTab achievements={game.achievements} /></TabsContent>
+      <TabsContent value="achievements">{isTabBlocked('achievements') ? <BlockedMessage /> : <AchievementsTab achievements={game.achievements} />}</TabsContent>
       
       <TabsContent value="clubprofile">
-        <ClubProfileTab
-          club={game.club}
-          season={game.season.currentSeason}
-          profile={game.clubProfile}
-          onSave={game.updateClubProfile}
-          onRenameClub={game.renameClub}
-          onRenameStadium={game.renameStadium}
-          onUpdateShield={game.updateShield}
-        />
+        {isTabBlocked('clubprofile') ? <BlockedMessage /> : (
+          <ClubProfileTab
+            club={game.club}
+            season={game.season.currentSeason}
+            profile={game.clubProfile}
+            onSave={game.updateClubProfile}
+            onRenameClub={game.renameClub}
+            onRenameStadium={game.renameStadium}
+            onUpdateShield={game.updateShield}
+          />
+        )}
       </TabsContent>
       
-      <TabsContent value="trophies"><TrophiesTab trophies={game.clubProfile?.trophies || []} /></TabsContent>
-      <TabsContent value="ranking"><RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} /></TabsContent>
-      <TabsContent value="support"><SupportTab userId={userId} displayName={displayName} /></TabsContent>
-      <TabsContent value="terms"><TermsTab /></TabsContent>
+      <TabsContent value="trophies">{isTabBlocked('trophies') ? <BlockedMessage /> : <TrophiesTab trophies={game.clubProfile?.trophies || []} />}</TabsContent>
+      <TabsContent value="ranking">{isTabBlocked('ranking') ? <BlockedMessage /> : <RankingTab rating={game.ranking} rankingHistory={game.rankingHistory} clubName={game.club.name} stats={game.club.stats} season={game.season.currentSeason} />}</TabsContent>
+      <TabsContent value="support">{isTabBlocked('support') ? <BlockedMessage /> : <SupportTab userId={userId} displayName={displayName} />}</TabsContent>
+      <TabsContent value="terms">{isTabBlocked('terms') ? <BlockedMessage /> : <TermsTab />}</TabsContent>
       <TabsContent value="shop">
         {isTabBlocked('shop') ? <BlockedMessage /> : (
           <LojaFLM 
