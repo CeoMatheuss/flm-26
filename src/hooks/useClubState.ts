@@ -87,6 +87,34 @@ export function useClubState(initialState: any, userId?: string) {
     loadActiveListings();
   }, [userId]);
 
+  // Sync state with initialState from parent (useful for server-side updates)
+  useEffect(() => {
+    if (!initialState) return;
+    
+    // Only update if something changed to avoid unnecessary re-renders
+    if (initialState.club && JSON.stringify(initialState.club) !== JSON.stringify(club)) {
+      console.log('[useClubState] Syncing club from official state');
+      setClub(initialState.club);
+    }
+    
+    if (initialState.marketPlayers && JSON.stringify(initialState.marketPlayers) !== JSON.stringify(marketPlayers)) {
+      setMarketPlayers(initialState.marketPlayers);
+    }
+    
+    if (initialState.freeAgents && JSON.stringify(initialState.freeAgents) !== JSON.stringify(freeAgents)) {
+      setFreeAgents(initialState.freeAgents);
+    }
+    
+    if (initialState.loanedPlayers && JSON.stringify(initialState.loanedPlayers) !== JSON.stringify(loanedPlayers)) {
+      setLoanedPlayers(initialState.loanedPlayers);
+    }
+    
+    if (initialState.clubProfile && JSON.stringify(initialState.clubProfile) !== JSON.stringify(clubProfile)) {
+      setClubProfile(initialState.clubProfile);
+    }
+  }, [initialState]);
+
+
   // ── V3: Auto-gerador de olheiros (1 a cada 7 dias) e refresh do staff (15 dias) ──
   useEffect(() => {
     const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
@@ -678,122 +706,141 @@ export function useClubState(initialState: any, userId?: string) {
   }, []);
 
 
-  const buyPlayer = useCallback((player: Player) => {
+  const buyPlayer = useCallback(async (player: Player) => {
     const value = getPlayerValue(player);
-    let boughtPlayerObj: Player | null = null;
-
-    setClub(prev => {
-      if (prev.budget < value) return prev;
-      if (prev.players.find(p => p.id === player.id)) {
-        toast.error('Este jogador já faz parte do seu elenco!');
-        return prev;
-      }
-      
-      boughtPlayerObj = { 
-        ...player, 
-        squad_status: 'reserve' as const,
-        squadRole: 'reserva' as const,
-        contract: 2,
-        signedAt: Date.now(),
-        signingType: (player as any).signingType || 'transfer',
-        signedFromClub: (player as any).signedFromClub || (player as any).currentClubName,
-        ...({ contractStatus: 'profissional' } as any)
-      };
-      
-      return { ...prev, budget: prev.budget - value, players: [...prev.players, boughtPlayerObj as Player] };
-    });
-
-    if (userId && boughtPlayerObj) {
-      const pObj = boughtPlayerObj as Player;
-      const persist = async () => {
-        try {
-          const { data: saveData } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
-          if (saveData?.club_data) {
-            const state = saveData.club_data as any;
-            state.club.budget = (state.club.budget || 0) - value;
-            state.club.players = [...(state.club.players || []), pObj];
-            await supabase.from('game_saves').update({ club_data: state }).eq('user_id', userId);
-            await supabase.from('clubs').update({ budget: state.club.budget }).eq('user_id', userId);
-            
-            const { data: clubRef } = await supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle();
-            if (clubRef) {
-              await supabase.from('world_players').update({ 
-                team_id: clubRef.id, 
-                squad_status: 'reserve' 
-              }).eq('name', pObj.name).eq('overall', pObj.overall);
-            }
-          }
-        } catch (err) {
-          console.error('[buyPlayer] Erro na persistência:', err);
-        }
-      };
-      persist();
+    
+    // Check local budget first for instant feedback
+    if (club.budget < value) {
+      toast.error('Orçamento insuficiente!');
+      return null;
     }
 
-    setMarketPlayers(prev => prev.filter(p => p.id !== player.id));
-    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
-    return { value };
-  }, [userId]);
+    if (club.players.find(p => p.id === player.id)) {
+      toast.error('Este jogador já faz parte do seu elenco!');
+      return null;
+    }
 
-  const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
+    const loadingToast = toast.loading(`Contratando ${player.name}...`);
+
+    try {
+      // 1. Get listing ID for this player
+      const { data: listings } = await supabase
+        .from('transfer_listings')
+        .select('id')
+        .eq('player_name', player.name)
+        .eq('status', 'active')
+        .limit(1);
+
+      if (!listings || listings.length === 0) {
+        toast.dismiss(loadingToast);
+        toast.error('Este jogador não está mais disponível no mercado.');
+        return null;
+      }
+
+      const listingId = listings[0].id;
+
+      // 2. Execute atomic RPC
+      const { data: rpcData, error } = await supabase.rpc('finalize_player_transfer', {
+        p_listing_id: listingId,
+        p_offer_id: null, // Buy now
+        p_buyer_id: userId,
+        p_buyer_club_name: club.name
+      });
+
+      const result = rpcData as any;
+
+      if (error || !result?.success) {
+        throw new Error(error?.message || result?.error || 'Erro ao processar transferência');
+      }
+
+
+      toast.dismiss(loadingToast);
+      toast.success(`${player.name} contratado com sucesso!`);
+      
+      // The state will be updated automatically via Realtime
+      window.dispatchEvent(new CustomEvent('flm:force-resync'));
+      
+      return { value };
+    } catch (err: any) {
+      toast.dismiss(loadingToast);
+      toast.error(`Falha na contratação: ${err.message}`);
+      console.error('[buyPlayer] Erro:', err);
+      return null;
+    }
+  }, [userId, club.budget, club.players, club.name]);
+
+  const signFreeAgent = useCallback(async (player: Player, offeredSalary?: number) => {
     const salary = offeredSalary || Math.floor(player.overall * 200 + player.age * 100);
     const cost = salary * 3;
-    let signedPlayerObj: Player | null = null;
 
-    setClub(prev => {
-      if (prev.players.find(p => p.id === player.id)) return prev;
-      signedPlayerObj = { 
-        ...player, 
-        salary, 
-        contract: Math.floor(Math.random() * 3 + 2),
-        squad_status: 'reserve' as const,
-        squadRole: 'reserva' as const,
-        signedAt: Date.now(),
-        signingType: 'free_agent',
-        ...({ contractStatus: 'profissional' } as any)
-      };
-      return { ...prev, budget: prev.budget - cost, players: [...prev.players, signedPlayerObj as Player] };
-    });
-
-    if (userId && signedPlayerObj) {
-      const pObj = signedPlayerObj as Player;
-      const persist = async () => {
-        try {
-          const { data: saveData } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
-          if (saveData?.club_data) {
-            const state = saveData.club_data as any;
-            state.club.budget = (state.club.budget || 0) - cost;
-            state.club.players = [...(state.club.players || []), pObj];
-            await supabase.from('game_saves').update({ club_data: state }).eq('user_id', userId);
-            
-            const { data: clubRef } = await supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle();
-            if (clubRef) {
-              await supabase.from('world_players').insert([{
-                team_id: clubRef.id,
-                name: pObj.name,
-                position: pObj.position,
-                overall: pObj.overall,
-                age: pObj.age,
-                market_value: pObj.marketValue || 0,
-                salary: pObj.salary || 500,
-                attributes: pObj.attributes as any,
-                nationality: pObj.nationality || 'Brasil',
-                squad_status: 'reserve'
-              }]);
-            }
-          }
-        } catch (err) {
-          console.error('[signFreeAgent] Erro na persistência:', err);
-        }
-      };
-      persist();
+    if (club.budget < cost) {
+      toast.error('Orçamento insuficiente para pagar luvas e assinatura!');
+      return null;
     }
 
-    setFreeAgents(prev => prev.filter(p => p.id !== player.id));
-    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
-    toast.success(`${player.name} assinou! Salário: R$${(salary / 1000).toFixed(0)}k/mês`);
-    return { salary };
-  }, [userId]);
+    const loadingToast = toast.loading(`Finalizando contratação de ${player.name}...`);
+
+    try {
+      // 1. Get offer ID
+      const { data: offers } = await supabase
+        .from('free_agent_offers')
+        .select('id')
+        .eq('buyer_id', userId)
+        .eq('status', 'accepted')
+        .limit(5);
+      
+      let offerId = null;
+      
+      // Search for the specific player in the accepted offers
+      if (offers && offers.length > 0) {
+        const { data: agents } = await supabase
+          .from('free_agents_market')
+          .select('id')
+          .eq('player_name', player.name)
+          .maybeSingle();
+          
+        if (agents) {
+          const matchingOffer = offers.find((o: any) => o.agent_id === agents.id);
+          if (matchingOffer) offerId = matchingOffer.id;
+        }
+      }
+
+      
+      if (!offerId && offers?.[0]) offerId = offers[0].id;
+
+      if (!offerId) {
+        toast.dismiss(loadingToast);
+        toast.error('Nenhuma proposta aceita encontrada para este jogador.');
+        return null;
+      }
+
+      // 2. Execute atomic RPC
+      const { data: rpcData, error } = await supabase.rpc('finalize_free_agent_signing', {
+        p_offer_id: offerId,
+        p_buyer_id: userId
+      });
+
+      const result = rpcData as any;
+
+      if (error || !result?.success) {
+        throw new Error(error?.message || result?.error || 'Erro ao processar assinatura');
+      }
+
+
+      toast.dismiss(loadingToast);
+      toast.success(`${player.name} assinou com o clube!`);
+      
+      window.dispatchEvent(new CustomEvent('flm:force-resync'));
+      
+      return { salary };
+    } catch (err: any) {
+      toast.dismiss(loadingToast);
+      toast.error(`Falha na assinatura: ${err.message}`);
+      console.error('[signFreeAgent] Erro:', err);
+      return null;
+    }
+  }, [userId, club.budget, club.name]);
+
 
   const renewContract = useCallback(async (playerId: string, newSalary: number, newDuration?: number) => {
     const duration = newDuration || 2;

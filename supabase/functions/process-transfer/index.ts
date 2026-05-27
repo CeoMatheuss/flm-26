@@ -395,44 +395,40 @@ Deno.serve(async (req) => {
         responded_at: now.toISOString(),
       }).eq('listing_id', listing.id).eq('status', 'pending').neq('id', syntheticOffer?.id || '00000000-0000-0000-0000-000000000000');
 
-      // 6) Transfer log
-      await adminClient.from('transfer_log').insert({
-        player_name: listing.player_name,
-        player_overall: listing.player_overall,
-        from_user_id: listing.seller_id,
-        to_user_id: userId,
-        from_club_name: listing.seller_club_name,
-        to_club_name: (buyerClubName || '').slice(0, 50),
-        price,
-        salary: playerSalary,
-        transfer_type: 'sale',
+      // 6) Finaliza a transferência via RPC robusto (atômico)
+      const { data: rpcResult, error: rpcError } = await adminClient.rpc('finalize_player_transfer', {
+        p_listing_id: listingId,
+        p_offer_id: null,
+        p_buyer_id: userId,
+        p_buyer_club_name: (buyerClubName || '').slice(0, 50)
       });
 
-      // 7) Atualiza save do comprador (adiciona jogador + debita verba)
-      const newPlayer = {
-        ...playerData,
-        salary: playerSalary,
-        contract: contractYears,
-        squad_status: 'reserve',
-        squadRole: 'reserva',
-        onTransferList: false,
-        isLoaned: false,
-      };
-      if (!buyerData.club.players.some((p: any) => p.id === newPlayer.id)) {
-        buyerData.club.players.push(newPlayer);
-        buyerData.club.budget = buyerBudget - price;
-        await adminClient.from('game_saves').update({ club_data: buyerData }).eq('user_id', userId);
+      if (rpcError || !rpcResult?.success) {
+        console.error('RPC Error (buy-now):', rpcError || rpcResult?.error);
+        return new Response(JSON.stringify({ error: 'Erro crítico ao processar transferência. Tente novamente.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // 8) Atualiza save do vendedor (remove jogador + credita verba)
-      const { data: sellerSave } = await adminClient
-        .from('game_saves').select('club_data').eq('user_id', listing.seller_id).maybeSingle();
-      if (sellerSave?.club_data) {
-        const sellerData: any = sellerSave.club_data;
-        sellerData.club.players = (sellerData.club.players || []).filter((p: any) => p.id !== playerData.id);
-        sellerData.club.budget = Number(sellerData.club.budget || 0) + price;
-        await adminClient.from('game_saves').update({ club_data: sellerData }).eq('user_id', listing.seller_id);
-      }
+      const newPlayer = rpcResult.player;
+
+      // 7) Notificações
+      const priceStr = price >= 1000000 ? `R$${(price / 1000000).toFixed(1)}M` : `R$${(price / 1000).toFixed(0)}k`;
+      await adminClient.from('user_notifications').insert([
+        {
+          user_id: userId,
+          icon: '⚡',
+          title: `Compra Imediata concluída!`,
+          message: `${listing.player_name} (OVR ${listing.player_overall}) agora faz parte do seu clube por ${priceStr}.`,
+          type: 'success',
+        },
+        {
+          user_id: listing.seller_id,
+          icon: '💰',
+          title: `${listing.player_name} foi comprado!`,
+          message: `${listing.player_name} foi vendido para ${(buyerClubName || 'um rival').slice(0, 50)} por ${priceStr}.`,
+          type: 'success',
+        }
+      ]);
+
 
       // 9) Notificações
       const priceStr = price >= 1000000 ? `R$${(price / 1000000).toFixed(1)}M` : `R$${(price / 1000).toFixed(0)}k`;
@@ -682,49 +678,21 @@ Deno.serve(async (req) => {
             responded_at: now.toISOString(),
           }).eq('listing_id', listing.id).eq('status', 'pending').neq('id', offer.id);
 
-          // Log transfer
-          await adminClient.from('transfer_log').insert({
-            player_name: listing.player_name,
-            player_overall: listing.player_overall,
-            from_user_id: listing.seller_id,
-            to_user_id: offer.buyer_id,
-            from_club_name: listing.seller_club_name,
-            to_club_name: offer.buyer_club_name,
-            price: offer.offered_price,
-            salary: offer.offered_salary,
-            transfer_type: 'sale',
+          // 🔄 Finalização robusta via RPC (atômico)
+          const { data: rpcResult, error: rpcError } = await adminClient.rpc('finalize_player_transfer', {
+            p_listing_id: listing.id,
+            p_offer_id: offer.id,
+            p_buyer_id: offer.buyer_id
           });
 
-          // 🔄 Sincronização definitiva: Adicionar jogador ao elenco do comprador no game_saves
-          const { data: save } = await adminClient.from('game_saves').select('club_data').eq('user_id', offer.buyer_id).maybeSingle();
-          if (save?.club_data) {
-            const clubData = save.club_data as any;
-            const newPlayer = {
-              ...playerData,
-              salary: offer.offered_salary,
-              contract: offer.offered_contract_years,
-              squad_status: 'reserve',
-              squadRole: 'reserva',
-              onTransferList: false,
-              isLoaned: false
-            };
-            
-            // Anti-duplicação no save
-            if (!clubData.club.players.some((p: any) => p.id === newPlayer.id)) {
-              clubData.club.players.push(newPlayer);
-              clubData.club.budget = (clubData.club.budget || 0) - offer.offered_price;
-              await adminClient.from('game_saves').update({ club_data: clubData }).eq('user_id', offer.buyer_id);
-            }
+          if (rpcError || !rpcResult?.success) {
+            console.error('RPC Error (accept):', rpcError || rpcResult?.error);
+            // Even if it fails, we continue with notifications if the log was already inserted,
+            // but here we should ideally stop. However, finalize_player_transfer handles the log too.
+            // So we just skip if RPC failed.
+            continue; 
           }
 
-          // 🔄 Remover jogador do elenco do vendedor no game_saves
-          const { data: sellerSave } = await adminClient.from('game_saves').select('club_data').eq('user_id', listing.seller_id).maybeSingle();
-          if (sellerSave?.club_data) {
-            const sellerData = sellerSave.club_data as any;
-            sellerData.club.players = sellerData.club.players.filter((p: any) => p.id !== playerData.id);
-            sellerData.club.budget = (sellerData.club.budget || 0) + offer.offered_price;
-            await adminClient.from('game_saves').update({ club_data: sellerData }).eq('user_id', listing.seller_id);
-          }
 
           // Notify both
           await adminClient.from('user_notifications').insert({
@@ -895,14 +863,18 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Limite de 3 empréstimos recebidos atingido.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      const now = new Date();
+      // 🔄 Finalização robusta via RPC (atômico)
+      const { data: rpcResult, error: rpcError } = await adminClient.rpc('finalize_loan_listing_transfer', {
+        p_listing_id: listingId,
+        p_buyer_id: userId,
+        p_buyer_club_name: (clubName || 'Um clube').slice(0, 50)
+      });
 
-      await adminClient.from('loan_listings').update({
-        status: 'accepted',
-        buyer_id: userId,
-        buyer_club_name: (clubName || '').slice(0, 50),
-        accepted_at: now.toISOString(),
-      }).eq('id', listingId);
+      if (rpcError || !rpcResult?.success) {
+        console.error('RPC Error (loan-accept):', rpcError || rpcResult?.error);
+        return new Response(JSON.stringify({ error: 'Erro crítico ao processar empréstimo. Tente novamente.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
 
       // Create journal entry
       await adminClient.from('journal_updates').insert({

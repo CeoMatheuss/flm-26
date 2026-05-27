@@ -434,12 +434,27 @@ Deno.serve(async (req) => {
         contract: offer.offered_contract_years,
       };
 
-      // Remove from pool
-      await adminClient.from('free_agents_market').delete().eq('id', agent.id);
-      // Mark offer completed
-      await adminClient.from('free_agent_offers').update({ status: 'completed', resolved_at: new Date().toISOString() }).eq('id', offerId);
+      // 🔄 Finalização robusta via RPC (atômico)
+      const { data: rpcResult, error: rpcError } = await adminClient.rpc('finalize_free_agent_signing', {
+        p_offer_id: offerId,
+        p_buyer_id: userId
+      });
 
-      return json({ success: true, player, salary: offer.offered_salary, contractYears: offer.offered_contract_years, signingBonus: offer.signing_bonus || 0 });
+      if (rpcError || !rpcResult?.success) {
+        console.error('RPC Error (complete-signing):', rpcError || rpcResult?.error);
+        return json({ error: 'Erro crítico ao finalizar contratação. Tente novamente.' }, 500);
+      }
+
+      const finalizedPlayer = rpcResult.player;
+
+      return json({ 
+        success: true, 
+        player: finalizedPlayer, 
+        salary: offer.offered_salary, 
+        contractYears: offer.offered_contract_years, 
+        signingBonus: offer.signing_bonus || 0 
+      });
+
     }
 
     // ═══════════════════════════════════════════

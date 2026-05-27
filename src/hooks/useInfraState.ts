@@ -499,28 +499,30 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
         contract: 3, gamesPlayed: 0, trainingProgress: 0, personality: prospect.personality,
         isYouth: true, squadRole: 'reserva', squad_status: 'reserve',
-        ...({ contractStatus: 'profissional' } as any),
+        contractStatus: 'profissional',
         marketValue: prospect.marketValue, potential: prospect.potential,
       };
       
       addPlayerToClub(promotedPlayer);
       
-      // 🚀 Persistência Imediata
+      // 🚀 Persistência Atômica e Robusta
       if (userId) {
         const persist = async () => {
           try {
-            await supabase.from('youth_prospects').update({ contract_status: 'profissional' }).eq('id', youthId);
+            const { data: rpcData, error } = await supabase.rpc('promote_youth_to_pro', {
+              p_user_id: userId,
+              p_youth_id: youthId,
+              p_player_data: promotedPlayer
+            });
             
-            const { data: saveData } = await supabase.from('game_saves').select('club_data').eq('user_id', userId).maybeSingle();
-            if (saveData?.club_data) {
-              const state = saveData.club_data as any;
-              state.club.players = [...(state.club.players || []), promotedPlayer];
-              if (state.youthProspects) {
-                state.youthProspects = state.youthProspects.filter((p: any) => p.id !== youthId);
-              }
-              await supabase.from('game_saves').update({ club_data: state }).eq('user_id', userId);
+            const result = rpcData as any;
+            if (error || !result?.success) {
+              console.error('[promoteYouth] RPC Error:', error || result?.error);
+              toast.error('Erro ao salvar promoção no servidor.');
+              return;
             }
-            
+
+            // Sync World Players table
             const { data: clubRef } = await supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle();
             if (clubRef) {
               await supabase.from('world_players').insert([{
@@ -536,20 +538,18 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
                 squad_status: 'reserve'
               }]);
             }
+
+            toast.success(`${prospect.name} agora é profissional!`);
+            window.dispatchEvent(new CustomEvent('flm:force-resync'));
           } catch (err) {
-            console.error('[promoteYouth] Erro na sincronização:', err);
+            console.error('[promoteYouth] Erro na persistência:', err);
           }
         };
         persist();
       }
 
-      setYouthPromotedCount((c: number) => c + 1);
-      toast.success(`${prospect.name} promovido ao time principal!`);
-      
       return prev.filter(p => p.id !== youthId);
     });
-    
-    window.dispatchEvent(new CustomEvent('flm:refresh-club-data'));
   }, [userId]);
 
   const handlePromotionDecision = useCallback((
