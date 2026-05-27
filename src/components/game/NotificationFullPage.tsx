@@ -52,13 +52,13 @@ function groupByTime(notifications: Notification[]): { label: string; items: Not
   return groups.filter(g => g.items.length > 0);
 }
 
-const typeStyles: Record<string, { border: string; dot: string; glow: string; text: string }> = {
-  danger: { border: 'border-l-red-500', dot: 'bg-red-500', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.2)]', text: 'text-red-500' },
-  warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.2)]', text: 'text-amber-500' },
-  info: { border: 'border-l-blue-500', dot: 'bg-blue-500', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]', text: 'text-blue-500' },
-  success: { border: 'border-l-emerald-500', dot: 'bg-emerald-500', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.2)]', text: 'text-emerald-500' },
-  special: { border: 'border-l-purple-500', dot: 'bg-purple-500', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.4)]', text: 'text-purple-400' },
-  premium: { border: 'border-l-cyan-400', dot: 'bg-cyan-400', glow: 'shadow-[0_0_25px_rgba(34,211,238,0.5)]', text: 'text-cyan-400' },
+const typeStyles: Record<string, { border: string; dot: string; glow: string; text: string; bg: string }> = {
+  danger: { border: 'border-l-red-500', dot: 'bg-red-500', glow: 'shadow-[0_0_20px_rgba(239,68,68,0.25)]', text: 'text-red-500', bg: 'bg-red-500/5' },
+  warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', glow: 'shadow-[0_0_20px_rgba(245,158,11,0.25)]', text: 'text-amber-500', bg: 'bg-amber-500/5' },
+  info: { border: 'border-l-blue-500', dot: 'bg-blue-500', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.25)]', text: 'text-blue-500', bg: 'bg-blue-500/5' },
+  success: { border: 'border-l-emerald-500', dot: 'bg-emerald-500', glow: 'shadow-[0_0_20px_rgba(16,185,129,0.25)]', text: 'text-emerald-500', bg: 'bg-emerald-500/5' },
+  special: { border: 'border-l-purple-500', dot: 'bg-purple-500', glow: 'shadow-[0_0_25px_rgba(168,85,247,0.4)]', text: 'text-purple-400', bg: 'bg-purple-500/10' },
+  premium: { border: 'border-l-cyan-400', dot: 'bg-cyan-400', glow: 'shadow-[0_0_30px_rgba(34,211,238,0.5)]', text: 'text-cyan-400', bg: 'bg-cyan-400/10' },
 };
 
 const categoryIcons: Record<string, any> = {
@@ -212,68 +212,70 @@ export function NotificationFullPage({ notifications, isRead, onMarkRead, onMark
                     return (
                       <div
                         key={n.id}
-                        className={`group relative overflow-hidden rounded-2xl border border-white/5 bg-[#121215] hover:bg-[#1a1a1e] transition-all duration-300 cursor-pointer ${style.glow} ${read && !n.actions ? 'opacity-50 grayscale-[0.5]' : ''}`}
+                        className={`group relative overflow-hidden rounded-2xl border border-white/5 bg-[#121215] hover:bg-[#1a1a1e] transition-all duration-300 cursor-pointer ${style.glow} ${read && !n.actions ? 'opacity-60 grayscale-[0.3]' : ''} ${!read ? style.bg : ''}`}
                         onClick={() => handleClickNotification(n)}
                       >
                         {/* Status bar with animation */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${style.dot} group-hover:w-2 transition-all`} />
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${!read ? style.dot : 'bg-zinc-800'} group-hover:w-1.5 transition-all`} />
                         
                         <div className="p-4 sm:p-5 flex items-start gap-5 relative">
-                          <div className={`relative flex items-center justify-center h-14 w-14 rounded-2xl border border-white/5 bg-black shadow-inner shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3`}>
-                            <CatIcon className={`h-6 w-6 ${style.text}`} />
-                            {isPremium && (
-                              <div className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-primary rounded-full border-[3px] border-[#121215] animate-pulse" />
+                          <div className={`relative flex items-center justify-center h-12 w-12 rounded-xl border border-white/5 bg-black shadow-inner shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2`}>
+                            <CatIcon className={`h-5 w-5 ${style.text}`} />
+                            {isPremium && !read && (
+                              <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border-2 border-[#121215] animate-pulse" />
                             )}
                           </div>
 
                           <div className="flex-1 min-w-0 pt-0.5">
-                            <div className="flex items-center justify-between gap-4 mb-1.5">
+                            <div className="flex items-center justify-between gap-4 mb-1">
                               <div className="flex items-center gap-2 min-w-0">
-                                <h4 className={`text-sm font-black uppercase italic truncate tracking-tight ${!read ? 'text-white' : 'text-zinc-400'}`}>
+                                <h4 className={`text-sm font-black uppercase italic truncate tracking-tight ${!read ? 'text-white' : 'text-zinc-500'}`}>
                                   {n.title}
                                 </h4>
                                 {!read && <div className={`h-1.5 w-1.5 rounded-full ${style.dot} shadow-[0_0_8px_currentColor]`} />}
                               </div>
-                              <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap">{timeAgo(n.createdAt)}</span>
+                              <span className="text-[10px] font-bold text-muted-foreground/60 whitespace-nowrap">{timeAgo(n.createdAt)}</span>
                             </div>
 
-                            <p className="text-xs text-zinc-400 leading-relaxed font-medium line-clamp-2">
+                            <p className={`text-xs leading-relaxed font-medium line-clamp-2 ${!read ? 'text-zinc-300' : 'text-zinc-500'}`}>
                               {n.message}
                             </p>
 
-                            {n.category && (
-                              <div className="mt-3 flex flex-wrap items-center gap-2">
-                                <Badge variant="outline" className="bg-white/5 border-white/10 text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant="outline" className="bg-white/5 border-white/10 text-[8px] font-black uppercase tracking-widest px-1.5 py-0">
                                   {n.category}
                                 </Badge>
-                                {isPremium && (
-                                  <Badge className="bg-primary/20 text-primary border-primary/20 text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
+                                {isPremium && !read && (
+                                  <Badge className="bg-primary/20 text-primary border-primary/20 text-[8px] font-black uppercase tracking-widest px-1.5 py-0">
                                     Urgente
                                   </Badge>
                                 )}
                               </div>
-                            )}
 
-                            {n.actions && (
-                              <div className="flex gap-3 mt-4">
-                                {n.actions.map((action, i) => (
-                                  <Button
-                                    key={i}
-                                    size="sm"
-                                    variant={action.variant}
-                                    className={`h-9 px-5 text-[10px] font-black uppercase tracking-wider italic rounded-xl transition-all active:scale-95 ${
-                                      action.variant === 'default'
-                                        ? 'bg-primary hover:bg-primary/90 text-black shadow-[0_0_20px_rgba(255,255,255,0.1)]'
-                                        : 'bg-red-600 hover:bg-red-700 text-white'
-                                    }`}
-                                    onClick={(e) => { e.stopPropagation(); action.onClick(); }}
-                                    disabled={respondingId !== null}
-                                  >
-                                    {action.label}
-                                  </Button>
-                                ))}
-                              </div>
-                            )}
+                              {n.actions && (
+                                <div className="flex gap-2">
+                                  {n.actions.map((action, i) => (
+                                    <Button
+                                      key={i}
+                                      size="sm"
+                                      variant={action.variant === 'destructive' ? 'destructive' : 'default'}
+                                      className={`h-8 px-4 text-[9px] font-black uppercase tracking-wider italic rounded-lg transition-all active:scale-95 ${
+                                        action.variant === 'default'
+                                          ? 'bg-primary hover:bg-white text-black hover:text-black shadow-[0_4px_12px_rgba(0,0,0,0.3)]'
+                                          : action.variant === 'destructive'
+                                          ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_4px_12px_rgba(220,38,38,0.3)]'
+                                          : 'bg-zinc-800 hover:bg-zinc-700 text-white'
+                                      }`}
+                                      onClick={(e) => { e.stopPropagation(); action.onClick(); }}
+                                      disabled={respondingId !== null}
+                                    >
+                                      {action.label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -545,6 +545,10 @@ Deno.serve(async (req) => {
         title: `${listing.player_name} está decidindo!`,
         message: `O ${listing.seller_club_name} aceitou sua proposta por ${listing.player_name}! O jogador tem 7 horas para decidir. Resultado até ${deadline.toLocaleString('pt-BR')}.`,
         type: 'info',
+        category: 'Transferências',
+        actions: [
+          { label: 'Ver Proposta', type: 'navigate', payload: { tab: 'market', subtab: 'offers' } }
+        ]
       });
 
       // Create newspaper entry about the negotiation
@@ -644,6 +648,12 @@ Deno.serve(async (req) => {
             title: `Empresário de ${listing.player_name} respondeu`,
             message: agentMessage,
             type: 'warning',
+            category: 'Transferências',
+            priority: 'high',
+            actions: [
+              { label: 'Renegociar', type: 'navigate', payload: { tab: 'market', subtab: 'browse', listing_id: listing.id, player_name: listing.player_name } },
+              { label: 'Ver Mercado', type: 'navigate', payload: { tab: 'market' } }
+            ]
           });
 
           // Newspaper: player rejected
@@ -701,6 +711,12 @@ Deno.serve(async (req) => {
             title: `${listing.player_name} aceitou!`,
             message: `${listing.player_name} aceitou sua proposta e agora faz parte do ${offer.buyer_club_name}! Salário: R$${offer.offered_salary}/mês, contrato de ${offer.offered_contract_years} ano(s).`,
             type: 'success',
+            category: 'Transferências',
+            priority: 'ultra',
+            actions: [
+              { label: 'Ir para Elenco', type: 'navigate', payload: { tab: 'squad' } },
+              { label: 'Ver Táticas', type: 'navigate', payload: { tab: 'tactics' } }
+            ]
           });
 
           await adminClient.from('user_notifications').insert({
@@ -709,6 +725,10 @@ Deno.serve(async (req) => {
             title: `${listing.player_name} vendido!`,
             message: `${listing.player_name} aceitou a proposta do ${offer.buyer_club_name} por R$${(offer.offered_price / 1000).toFixed(0)}k.`,
             type: 'success',
+            category: 'Transferências',
+            actions: [
+              { label: 'Ver Finanças', type: 'navigate', payload: { tab: 'finance' } }
+            ]
           });
 
           // Newspaper: transfer completed — manchete variada + DESTAQUE para grandes negociações

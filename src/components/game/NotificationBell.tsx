@@ -11,17 +11,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { NotificationFullPage } from './NotificationFullPage';
 
+export interface NotificationAction {
+  label: string;
+  icon?: string; // Icon name or emoji
+  type: 'navigate' | 'invoke' | 'open_modal';
+  payload: any;
+  variant?: 'default' | 'destructive' | 'outline';
+}
+
 export interface Notification {
   id: string;
   icon: string;
   title: string;
   message: string;
-  type: 'warning' | 'info' | 'danger' | 'success';
-  category?: 'Jogos' | 'Transferências' | 'Financeiro' | 'Copa' | 'Liga' | 'Clube';
+  type: 'warning' | 'info' | 'danger' | 'success' | 'special' | 'premium';
+  category?: 'Jogos' | 'Transferências' | 'Financeiro' | 'Copa' | 'Liga' | 'Clube' | 'Eventos' | 'Premium';
   priority?: 'low' | 'medium' | 'high' | 'ultra';
   createdAt: Date;
-  actions?: { label: string; icon: React.ReactNode; variant: 'default' | 'destructive'; onClick: () => void }[];
-  /** Optional structured payload (e.g. { match_db_id } for match_report notifications). */
+  actions?: { label: string; icon?: React.ReactNode; variant: 'default' | 'destructive' | 'outline'; onClick: () => void }[];
+  /** Optional structured payload. */
   data?: Record<string, any> | null;
 }
 
@@ -53,7 +61,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const [fullPage, setFullPage] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<FriendlyInvite[]>([]);
   const [dbNotifications, setDbNotifications] = useState<Array<{
-    id: string; icon: string; title: string; message: string; type: string; category?: string; priority?: string; read_at: string | null; created_at: string; data: any;
+    id: string; icon: string; title: string; message: string; type: string; category?: string; priority?: string; read_at: string | null; created_at: string; data: any; actions: any;
   }>>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [persistedReadKeys, setPersistedReadKeys] = useState<Set<string>>(new Set());
@@ -72,12 +80,12 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from('user_notifications')
-      .select('id, icon, title, message, type, category, priority, read_at, created_at, data')
+      .select('id, icon, title, message, type, category, priority, read_at, created_at, data, actions')
       .eq('user_id', userId)
       .gte('created_at', sevenDaysAgo)
       .order('created_at', { ascending: false })
       .limit(30);
-    if (data) setDbNotifications(data);
+    if (data) setDbNotifications(data as any);
   }, [userId]);
 
   const loadPersistedReadState = useCallback(async () => {
@@ -119,6 +127,62 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     loadInvites();
   };
 
+  const markAsRead = useCallback(async (id: string) => {
+    setPersistedReadKeys(prev => new Set(prev).add(id));
+    if (id.startsWith('db-')) {
+      const dbId = id.replace('db-', '');
+      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).eq('id', dbId);
+    }
+    await supabase.from('notification_read_state').upsert(
+      { user_id: userId, notification_key: id, read_at: new Date().toISOString() },
+      { onConflict: 'user_id,notification_key' }
+    );
+  }, [userId]);
+
+  const markAllAsRead = useCallback(async () => {
+    const allIds = notifications.map(n => n.id);
+    setPersistedReadKeys(new Set([...persistedReadKeys, ...allIds]));
+    const dbIds = dbNotifications.filter(d => !d.read_at).map(d => d.id);
+    if (dbIds.length > 0) {
+      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).in('id', dbIds);
+    }
+    if (allIds.length > 0) {
+      await supabase.from('notification_read_state').upsert(
+        allIds.map(key => ({ user_id: userId, notification_key: key, read_at: new Date().toISOString() })),
+        { onConflict: 'user_id,notification_key' }
+      );
+    }
+  }, [userId, dbNotifications, persistedReadKeys]); // Removed 'notifications' from deps to avoid circularity if possible, or just accept it's fine
+
+  const dispatchNotificationAction = useCallback(async (action: any, notificationId: string) => {
+    if (!action) return;
+    markAsRead(notificationId);
+    switch (action.type) {
+      case 'navigate':
+        if (action.payload.tab) window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: action.payload }));
+        if (action.payload.club_name) window.dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: action.payload.club_name } }));
+        if (action.payload.player_name) window.dispatchEvent(new CustomEvent('flm:market-negotiate', { detail: action.payload }));
+        break;
+      case 'invoke':
+        const { functionName, body } = action.payload;
+        if (functionName) {
+          const loadingToast = toast.loading('Processando...');
+          try {
+            const { data, error } = await supabase.functions.invoke(functionName, { body });
+            toast.dismiss(loadingToast);
+            if (error || data?.error) toast.error(data?.error || 'Erro ao processar');
+            else toast.success(data?.message || 'Sucesso!');
+          } catch (e) { toast.dismiss(loadingToast); toast.error('Erro de conexão'); }
+        }
+        break;
+      case 'open_modal':
+        if (action.payload.modal === 'match_report' && action.payload.matchId) {
+          window.dispatchEvent(new CustomEvent('flm:open-match-report', { detail: action.payload.matchId }));
+        }
+        break;
+    }
+  }, [userId, markAsRead]);
+
   // Build notifications list — only dynamic/relevant ones
   const notifications: Notification[] = [];
 
@@ -142,9 +206,16 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   });
 
   dbNotifications.forEach(dbN => {
-    const typeMap: Record<string, 'warning' | 'info' | 'danger' | 'success'> = {
-      warning: 'warning', info: 'info', danger: 'danger', success: 'success',
+    const typeMap: Record<string, any> = {
+      warning: 'warning', info: 'info', danger: 'danger', success: 'success', special: 'special', premium: 'premium'
     };
+
+    const actions = Array.isArray(dbN.actions) ? dbN.actions.map((act: any) => ({
+      label: act.label,
+      variant: (act.variant as any) || 'default',
+      onClick: () => dispatchNotificationAction(act, `db-${dbN.id}`)
+    })) : undefined;
+
     notifications.push({
       id: `db-${dbN.id}`,
       icon: dbN.icon,
@@ -155,6 +226,7 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       priority: (dbN.priority as any) || 'medium',
       createdAt: new Date(dbN.created_at),
       data: dbN.data ?? null,
+      actions
     });
   });
 
@@ -166,6 +238,10 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       id: 'expiring', icon: '📄', title: `${expiring.length} contrato(s) expirando`,
       message: `${names}${expiring.length > 3 ? ` e +${expiring.length - 3}` : ''} — renove!`,
       type: 'danger', category: 'Clube', priority: 'high', createdAt: new Date(),
+      actions: [
+        { label: 'Renovar Agora', variant: 'default', onClick: () => window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'squad' } })) },
+        { label: 'Ver Jogadores', variant: 'outline', onClick: () => window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'squad' } })) }
+      ]
     });
   }
 
@@ -185,6 +261,9 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
       id: 'budget', icon: '💰', title: 'Orçamento crítico!',
       message: `~${monthsLeft} meses de salários restantes.`,
       type: 'danger', category: 'Financeiro', priority: 'high', createdAt: new Date(),
+      actions: [
+        { label: 'Abrir Finanças', variant: 'default', onClick: () => window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: { tab: 'finance' } })) }
+      ]
     });
   }
 
@@ -210,34 +289,6 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
   const unreadCount = notifications.filter(n => !isRead(n)).length;
   const urgentCount = notifications.filter(n => (n.type === 'danger' || n.actions) && !isRead(n)).length;
 
-  const markAsRead = async (id: string) => {
-    setPersistedReadKeys(prev => new Set(prev).add(id));
-    if (id.startsWith('db-')) {
-      const dbId = id.replace('db-', '');
-      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).eq('id', dbId);
-    }
-    // Persist to DB so it survives logout
-    await supabase.from('notification_read_state').upsert(
-      { user_id: userId, notification_key: id, read_at: new Date().toISOString() },
-      { onConflict: 'user_id,notification_key' }
-    );
-  };
-
-  const markAllAsRead = async () => {
-    const allIds = notifications.map(n => n.id);
-    setPersistedReadKeys(new Set([...persistedReadKeys, ...allIds]));
-    const dbIds = dbNotifications.filter(d => !d.read_at).map(d => d.id);
-    if (dbIds.length > 0) {
-      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).in('id', dbIds);
-    }
-    // Persist all keys to DB
-    if (allIds.length > 0) {
-      await supabase.from('notification_read_state').upsert(
-        allIds.map(key => ({ user_id: userId, notification_key: key, read_at: new Date().toISOString() })),
-        { onConflict: 'user_id,notification_key' }
-      );
-    }
-  };
 
   return (
     <div className="relative">

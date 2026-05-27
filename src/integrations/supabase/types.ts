@@ -6181,6 +6181,7 @@ export type Database = {
       }
       user_notifications: {
         Row: {
+          actions: Json | null
           category: string | null
           created_at: string
           data: Json | null
@@ -6195,6 +6196,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actions?: Json | null
           category?: string | null
           created_at?: string
           data?: Json | null
@@ -6209,6 +6211,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actions?: Json | null
           category?: string | null
           created_at?: string
           data?: Json | null

@@ -984,6 +984,11 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           title: 'Bem-vindo ao FLM 26!',
           message: `Olá, Manager! Dicas: treine seus jogadores diariamente, melhore o CT e entre em ligas para competir online. Boa sorte! ⚽`,
           type: 'success',
+          category: 'Clube',
+          actions: [
+            { label: 'Ir para Elenco', type: 'navigate', payload: { tab: 'squad' } },
+            { label: 'Melhorar CT', type: 'navigate', payload: { tab: 'training' } }
+          ]
         });
       }
     };
