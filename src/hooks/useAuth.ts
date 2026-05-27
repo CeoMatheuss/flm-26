@@ -12,10 +12,10 @@ export function useAuth() {
     console.log('[useAuth] Verificando sessão inicial...');
     
     try {
-      // Timeout super curto de 4s para getSession (se falhar, o Index.tsx lida com isso)
+      // Timeout aumentado para 12s para lidar com picos de latência
       const sessionPromise = supabase.auth.getSession();
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT_GET_SESSION')), 4000)
+        setTimeout(() => reject(new Error('TIMEOUT_GET_SESSION')), 12000)
       );
 
       const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
