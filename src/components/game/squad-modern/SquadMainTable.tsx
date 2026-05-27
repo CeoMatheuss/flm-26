@@ -213,6 +213,18 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
   const isLoanedOut = player.isLoaned || status === 'emprestado';
   const isLoanedIn = player.isReceivedLoan || status === 'recebido-emprestimo';
 
+  // Badge "NOVO REFORÇO" - destaque temporário (7 dias)
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  const isNewSigning = !!player.signedAt && (Date.now() - player.signedAt) < SEVEN_DAYS;
+  const signingMetaMap: Record<string, { label: string; cls: string; tooltip: string }> = {
+    free_agent: { label: '🎁 JOGADOR LIVRE', cls: 'bg-amber-500/20 border-amber-500/40 text-amber-300', tooltip: 'Contratado sem custo de transferência' },
+    buy_now: { label: '⚡ COMPRA IMEDIATA', cls: 'bg-teal-500/20 border-teal-500/40 text-teal-300', tooltip: 'Adquirido via compra imediata' },
+    auction: { label: '✨ LEILÃO', cls: 'bg-fuchsia-500/20 border-fuchsia-500/40 text-fuchsia-300', tooltip: 'Vencido em leilão' },
+    transfer: { label: '✨ NOVO REFORÇO', cls: 'bg-sky-500/20 border-sky-500/40 text-sky-300', tooltip: 'Reforço chegou ao elenco' },
+    loan_in: { label: '🤝 NOVO EMPRÉSTIMO', cls: 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300', tooltip: 'Chegou por empréstimo' },
+  };
+  const signingMeta = player.signingType ? signingMetaMap[player.signingType] : signingMetaMap.transfer;
+
   return (
     <motion.button
       layout
