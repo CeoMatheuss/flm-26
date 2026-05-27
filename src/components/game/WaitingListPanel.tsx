@@ -29,14 +29,16 @@ export function WaitingListPanel({ userId, onExploreOtherModes }: Props) {
     if (!userId) return;
     setLoading(true);
 
-    // 🚫 Se o jogador JÁ está inscrito em alguma liga, não exibe a fila de espera.
-    const { count: memberCount } = await supabase
-      .from('league_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
+    // 🚫 Se o jogador JÁ está inscrito em alguma liga (legacy league_members OU world_teams), não exibe a fila.
+    const [{ count: memberCount }, { data: worldTeam }] = await Promise.all([
+      supabase.from('league_members').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('world_teams').select('id, league_id').eq('user_id', userId).maybeSingle(),
+    ]);
 
-    if ((memberCount ?? 0) > 0) {
-      // Usuário já está em uma liga → limpa fila órfã e esconde widget
+    const isInWorldLeague = !!(worldTeam && worldTeam.league_id);
+
+    if ((memberCount ?? 0) > 0 || isInWorldLeague) {
+      // Usuário já tem clube ativo em alguma liga → limpa fila órfã e esconde widget
       await supabase.from('league_waiting_list').delete().eq('user_id', userId);
       setEntry(null);
       setLoading(false);
