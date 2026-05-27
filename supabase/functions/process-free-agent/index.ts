@@ -304,6 +304,11 @@ Deno.serve(async (req) => {
         return json({ error: `Luvas (R$${(luvas/1000).toFixed(0)}k) excedem sua verba de transferências (R$${(transferBudgetAvailable/1000).toFixed(0)}k disponível).` }, 400);
       }
 
+      const playerSalary = agent.player_data?.salary || 500;
+      const isAutoAccept = offeredSalary >= playerSalary;
+      const now = new Date();
+      const deadline = isAutoAccept ? now : new Date(now.getTime() + 7 * 3600 * 1000);
+
       const { data: offer, error: offerError } = await adminClient
         .from('free_agent_offers')
         .insert({
@@ -313,6 +318,8 @@ Deno.serve(async (req) => {
           offered_salary: Math.max(0, offeredSalary),
           offered_contract_years: Math.min(5, Math.max(1, contractYears || 2)),
           signing_bonus: luvas,
+          status: isAutoAccept ? 'accepted' : 'pending',
+          decision_deadline: deadline.toISOString(),
         })
         .select()
         .single();
@@ -322,7 +329,7 @@ Deno.serve(async (req) => {
         return json({ error: 'Erro ao enviar proposta' }, 500);
       }
 
-      return json({ success: true, offer });
+      return json({ success: true, offer, isAutoAccept });
     }
 
     // ═══════════════════════════════════════════
