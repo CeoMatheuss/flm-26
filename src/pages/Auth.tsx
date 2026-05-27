@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import {
   Trophy, Users, Target, Swords, TrendingUp, Shield, Globe, GraduationCap,
   Mail, ArrowLeft, CheckCircle2, Clock, RefreshCw,
-  ChevronRight, Eye, EyeOff, UserPlus, LogIn, ShieldCheck
+  ChevronRight, Eye, EyeOff, UserPlus, LogIn, ShieldCheck, Loader2
 } from 'lucide-react';
 import { BetaAccessRequestForm } from '@/components/auth/BetaAccessRequestForm';
 import gamePreview1 from '@/assets/game-preview.jpg';
@@ -63,29 +63,110 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
   // Auto-rotate carousel
   useEffect(() => {
     const timer = setInterval(() => setSlideIndex(i => (i + 1) % slides.length), 4000);
+    
+    // Check for corrupted session on mount
+    const checkSession = async () => {
+      try {
+        const { error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('[Auth] Sessão corrompida detectada, limpando...', error);
+          localStorage.removeItem('supabase.auth.token');
+          // For Lovable Cloud specific key if different
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('lovable'))) {
+              console.log('[Auth] Removendo chave suspeita:', key);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Auth] Erro ao verificar sessão inicial:', e);
+      }
+    };
+    checkSession();
+
     return () => clearInterval(timer);
   }, []);
 
 
   const handleGoogleLogin = async () => {
+    if (loading) return;
     setLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin
-    });
-    if (error) {
-      toast.error('Erro ao entrar com Google');
+    console.log('[Auth] Login Google iniciado');
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin
+      }) as any;
+      if (error) {
+        console.error('[Auth] Erro no Google Login:', error);
+        toast.error('Erro ao entrar com Google. Tente novamente.');
+      }
+    } catch (err) {
+      console.error('[Auth] Erro inesperado no Google Login:', err);
+      toast.error('Erro ao conectar com Google.');
+    } finally {
       setLoading(false);
     }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+    
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(error.message);
+    const startTime = performance.now();
+    console.log('[Auth] Login iniciado', { email, timestamp: new Date().toISOString() });
+
+    try {
+      // Timeout de 10 segundos
+      const loginPromise = supabase.auth.signInWithPassword({ email, password });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 10000)
+      );
+
+      const result = await Promise.race([loginPromise, timeoutPromise]) as any;
+      const duration = (performance.now() - startTime).toFixed(2);
+      
+      if (result.error) {
+        console.error(`[Auth] Falha no login (${duration}ms):`, result.error);
+        
+        let message = 'Falha ao entrar. Verifique seus dados.';
+        if (result.error.status === 400) {
+          if (result.error.message.includes('Invalid login credentials')) {
+            message = 'Email ou senha incorretos.';
+          } else if (result.error.message.includes('Email not confirmed')) {
+            message = 'Por favor, confirme seu email antes de entrar.';
+          }
+        } else if (result.error.status === 429) {
+          message = 'Muitas tentativas. Tente novamente em alguns minutos.';
+        } else if (!window.navigator.onLine) {
+          message = 'Você parece estar offline. Verifique sua internet.';
+        }
+        
+        toast.error(message);
+      } else {
+        console.log(`[Auth] Login bem-sucedido (${duration}ms)`, { user: result.data.user?.id });
+        toast.success('Entrando...');
+        
+        // Pequeno delay para garantir que o redirect do onAuthStateChange aconteça ou forçar se necessário
+        setTimeout(() => {
+          if (window.location.pathname !== '/') {
+            window.location.href = '/';
+          }
+        }, 500);
+      }
+    } catch (err: any) {
+      const duration = (performance.now() - startTime).toFixed(2);
+      if (err.message === 'TIMEOUT_ERROR') {
+        console.error(`[Auth] Timeout no login (${duration}ms)`);
+        toast.error('O servidor demorou muito para responder. Tente novamente.');
+      } else {
+        console.error(`[Auth] Erro inesperado (${duration}ms):`, err);
+        toast.error('Erro inesperado no sistema. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSignup = async () => {
@@ -101,42 +182,71 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       toast.error('As senhas não coincidem');
       return;
     }
+    
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          display_name: displayName.trim() || 'Manager',
-        },
-      },
-    });
-    if (error) {
-      const msg = error.message || '';
-      const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
-      const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
-      if (isDuplicate) {
-        toast.error('Este email já está cadastrado. Tente fazer login.');
-      } else if (isBetaBlock) {
-        toast.error('Email não autorizado no BETA. Solicite acesso primeiro.');
-        setStep('beta-request');
-      } else {
-        toast.error(msg || 'Erro ao criar conta. Tente novamente.');
-      }
-    } else {
-      toast.success('Conta criada com sucesso! Redirecionando...');
-      // Como o auto-confirm está ligado, o usuário já pode logar ou já está logado
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.reload();
-      } else {
-        setStep('login');
-        setEmail(email);
-      }
-    }
-    setLoading(false);
+    const startTime = performance.now();
+    console.log('[Auth] Cadastro iniciado', { email, displayName, timestamp: new Date().toISOString() });
 
+    try {
+      // Timeout de 15 segundos para cadastro (pode demorar mais que login)
+      const signupPromise = supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            display_name: displayName.trim() || 'Manager',
+          },
+        },
+      });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 15000)
+      );
+
+      const result = await Promise.race([signupPromise, timeoutPromise]) as any;
+      const duration = (performance.now() - startTime).toFixed(2);
+
+      if (result.error) {
+        console.error(`[Auth] Falha no cadastro (${duration}ms):`, result.error);
+        const msg = result.error.message || '';
+        const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
+        const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
+        
+        if (isDuplicate) {
+          toast.error('Este email já está cadastrado. Tente fazer login.');
+          setStep('login');
+        } else if (isBetaBlock) {
+          toast.error('Email não autorizado no BETA. Solicite acesso primeiro.');
+          setStep('beta-request');
+        } else {
+          toast.error(msg || 'Erro ao criar conta. Tente novamente.');
+        }
+      } else {
+        console.log(`[Auth] Cadastro bem-sucedido (${duration}ms)`, { user: result.data.user?.id });
+        toast.success('Conta criada com sucesso! Redirecionando...');
+        
+        // Como o auto-confirm está ligado, o usuário já pode logar ou já está logado
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          window.location.reload();
+        } else {
+          setStep('login');
+          setEmail(email);
+        }
+      }
+    } catch (err: any) {
+      const duration = (performance.now() - startTime).toFixed(2);
+      if (err.message === 'TIMEOUT_ERROR') {
+        console.error(`[Auth] Timeout no cadastro (${duration}ms)`);
+        toast.error('O servidor demorou muito para responder o cadastro. Tente novamente.');
+      } else {
+        console.error(`[Auth] Erro inesperado no cadastro (${duration}ms):`, err);
+        toast.error('Erro inesperado ao criar conta. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -273,7 +383,17 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
               disabled={loading || !displayName.trim() || !email || password.length < 6 || password !== confirmPassword || !acceptedTerms || !acceptedPrivacy}
               className="w-full h-12 font-bold gap-2"
             >
-              {loading ? 'Criando conta...' : 'Criar Conta'} <ChevronRight className="w-4 h-4" />
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Criando conta...</span>
+                </>
+              ) : (
+                <>
+                  <span>Criar Conta</span>
+                  <ChevronRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
 
             <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="w-full text-xs text-muted-foreground gap-1">
@@ -321,7 +441,14 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                 </div>
               </div>
               <Button type="submit" className="w-full h-12 font-bold gap-2" disabled={loading}>
-                {loading ? 'Entrando...' : '🎮 Entrar'}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Entrando...</span>
+                  </>
+                ) : (
+                  <span>🎮 Entrar</span>
+                )}
               </Button>
             </form>
 
