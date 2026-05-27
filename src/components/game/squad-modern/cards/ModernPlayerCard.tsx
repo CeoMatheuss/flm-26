@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Player } from '@/types/game';
 import { Zap, Heart, Shield, Activity, TrendingUp, Sparkles, Tag, Handshake, ArrowLeftRight, X } from 'lucide-react';
 import { formatMoney } from '@/lib/formatMoney';

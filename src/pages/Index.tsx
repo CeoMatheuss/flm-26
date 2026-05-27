@@ -57,8 +57,6 @@ const Index = () => {
   return <GameApp userId={session.user.id} userEmail={session.user.email || ''} onSignOut={signOut} />;
 };
 
-import { PlayerHighlightProvider } from '@/contexts/PlayerHighlightContext';
-
 function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: string; onSignOut: () => void }) {
   const [loadedState, setLoadedState] = useState<GameState | undefined>(undefined);
   const [gameReady, setGameReady] = useState(false);
