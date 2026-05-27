@@ -54,7 +54,11 @@ const Index = () => {
   if (!session) return <AuthPage />;
   
 
-  return <GameApp userId={session.user.id} userEmail={session.user.email || ''} onSignOut={signOut} />;
+  return (
+    <PlayerHighlightProvider>
+      <GameApp userId={session.user.id} userEmail={session.user.email || ''} onSignOut={signOut} />
+    </PlayerHighlightProvider>
+  );
 };
 
 function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: string; onSignOut: () => void }) {
@@ -1094,8 +1098,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   const showAdmin = isAdminRole;
 
   return (
-    <PlayerHighlightProvider>
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {/* Club Profile Detail Modal — instantâneo via QuickClubProfile (clubs + world_teams) */}
       <Dialog open={!!viewingClubName} onOpenChange={(open) => !open && handleClubViewClose()}>
         <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background border-border max-h-[90vh] flex flex-col">
@@ -1228,7 +1231,6 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
         </Tabs>
       </main>
       </div>
-    </PlayerHighlightProvider>
   );
 }
 
