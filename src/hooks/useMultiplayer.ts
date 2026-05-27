@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { triggerAutoSim } from '@/hooks/useAutoSimulator';
@@ -227,6 +227,8 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
   const [leagueSquads, setLeagueSquads] = useState<LeagueSquad[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoJoining, setAutoJoining] = useState(false);
+  const autoJoinAttemptedRef = useRef<string | null>(null);
+  const autoJoinInFlightRef = useRef(false);
 
   // Load user's leagues
   const loadLeagues = useCallback(async () => {
@@ -315,7 +317,11 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
 
   // Auto-assign player to a league based on country
   const autoJoinLeague = useCallback(async () => {
-    if (!clubName || !clubCountry || autoJoining || !userId) return;
+    if (!clubName || !clubCountry || !userId) return;
+    if (autoJoinInFlightRef.current) return;
+    if (autoJoinAttemptedRef.current === userId) return;
+    autoJoinInFlightRef.current = true;
+    autoJoinAttemptedRef.current = userId;
     setAutoJoining(true);
 
     try {
@@ -398,18 +404,26 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
       }
     } catch (e) {
       console.error('[LeagueRegistration] Auto-join exception:', e);
+    } finally {
+      autoJoinInFlightRef.current = false;
+      setAutoJoining(false);
     }
-    setAutoJoining(false);
-  }, [userId, clubName, clubCountry, autoJoining, loadLeagues, enterLeague]);
+  }, [userId, clubName, clubCountry, loadLeagues, enterLeague]);
 
-  // Auto-join on mount if club info is available
+  // Reset attempt guard when user changes
   useEffect(() => {
-    if (clubName && clubCountry) {
+    autoJoinAttemptedRef.current = null;
+  }, [userId]);
+
+  // Auto-join on mount if club info is available (one attempt per user session)
+  useEffect(() => {
+    if (clubName && clubCountry && userId) {
       autoJoinLeague();
-    } else {
+    } else if (userId) {
       loadLeagues();
     }
-  }, [clubName, clubCountry, autoJoinLeague, loadLeagues]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubName, clubCountry, userId]);
 
   const leaveLeague = useCallback(() => { setCurrentLeague(null); }, []);
 
