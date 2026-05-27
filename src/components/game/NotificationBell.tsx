@@ -80,12 +80,12 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from('user_notifications')
-      .select('id, icon, title, message, type, category, priority, read_at, created_at, data')
+      .select('id, icon, title, message, type, category, priority, read_at, created_at, data, actions')
       .eq('user_id', userId)
       .gte('created_at', sevenDaysAgo)
       .order('created_at', { ascending: false })
       .limit(30);
-    if (data) setDbNotifications(data);
+    if (data) setDbNotifications(data as any);
   }, [userId]);
 
   const loadPersistedReadState = useCallback(async () => {
