@@ -17,6 +17,7 @@ import { BetaAccessRequestForm } from '@/components/auth/BetaAccessRequestForm';
 import gamePreview1 from '@/assets/game-preview.jpg';
 import gamePreview2 from '@/assets/game-preview-2.jpg';
 import gamePreview3 from '@/assets/game-preview-3.jpg';
+import flmLogo from '@/assets/flm26-logo.png';
 import { Link } from 'react-router-dom';
 
 const RESEND_COOLDOWN = 60;
