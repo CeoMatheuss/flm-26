@@ -57,7 +57,7 @@ const Index = () => {
     if (loading) {
       const timer = setTimeout(() => {
         setAuthStuck(true);
-      }, 7000);
+      }, 15000); // 15s antes de mostrar "Servidor Lento"
       return () => clearTimeout(timer);
     } else {
       setAuthStuck(false);
@@ -137,7 +137,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
           if (attempt > 1) {
             setLoadStage(`Reconectando aos servidores (tentativa ${attempt}/${maxRetries})`);
             console.warn(`[GameApp] Tentativa ${attempt}/${maxRetries} de carregar save...`);
-            await new Promise(r => setTimeout(r, 800 * (attempt - 1)));
+            await new Promise(r => setTimeout(r, 1500 * attempt)); // Backoff mais longo
           }
           const t0 = performance.now();
           const res: any = await withTimeout(
@@ -145,7 +145,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
               supabase.from('game_saves').select('club_data').eq('user_id', userId)
                 .order('updated_at', { ascending: false }).limit(1).maybeSingle()
             ),
-            25000,
+            35000, // 35s por tentativa
             'carregar save do clube',
           );
           const ms = Math.round(performance.now() - t0);
@@ -185,8 +185,8 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
 
         // 2) Buscar save com retry
         setLoadStage('Carregando dados do clube');
-        setLoadSubStage('Buscando o último save no servidor');
-        const saveRes = await fetchSaveWithRetry(3);
+        setLoadSubStage('Buscando o último save no servidor (isso pode levar um tempo)');
+        const saveRes = await fetchSaveWithRetry(5); // Aumentado para 5 retries
         if (cancelled) return;
 
         if (saveRes.data?.club_data) {
