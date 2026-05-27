@@ -634,25 +634,37 @@ Deno.serve(async (req) => {
           else if (personality === 'ambicioso' && offeredSalary <= currentSalary) reason = 'Jogador recusou: ambicioso, espera um salário maior.';
 
           const suggestedSalary = Math.round(currentSalary * 1.25);
-          const agentMessage = `Aqui é o empresário de ${listing.player_name}. ${reason} Para fecharmos negócio, sugerimos: salário de R$${suggestedSalary}/mês, contrato de 3+ anos e bônus de assinatura.`;
+          const suggestedYears = Math.max(3, (offer.offered_contract_years || 2) + 1);
+          const suggestedBonus = Math.max(offer.signing_bonus || 0, Math.round((offer.offered_price || 0) * 0.05));
+          const suggestedPrice = offer.offered_price;
+          const counterOffer = {
+            salary: suggestedSalary,
+            contract_years: suggestedYears,
+            signing_bonus: suggestedBonus,
+            price: suggestedPrice,
+            generated_at: new Date().toISOString(),
+          };
+          const agentMessage = `Empresário de ${listing.player_name}: ${reason} Contraproposta: salário R$${suggestedSalary}/mês, contrato ${suggestedYears} anos, luvas R$${(suggestedBonus/1000).toFixed(0)}k.`;
 
           await adminClient.from('transfer_offers').update({
             status: 'player_rejected',
             decision_status: 'player_rejected',
             rejection_reason: agentMessage,
+            counter_offer: counterOffer,
           }).eq('id', offer.id);
 
           await adminClient.from('user_notifications').insert({
             user_id: offer.buyer_id,
             icon: '🤵',
-            title: `Empresário de ${listing.player_name} respondeu`,
+            title: `Contraproposta — ${listing.player_name}`,
             message: agentMessage,
             type: 'warning',
             category: 'Transferências',
             priority: 'high',
             actions: [
+              { label: 'Aceitar Termos', type: 'navigate', payload: { tab: 'market', subtab: 'offers' } },
               { label: 'Renegociar', type: 'navigate', payload: { tab: 'market', subtab: 'browse', listing_id: listing.id, player_name: listing.player_name } },
-              { label: 'Ver Mercado', type: 'navigate', payload: { tab: 'market' } }
+              { label: 'Recusar', type: 'navigate', payload: { tab: 'market', subtab: 'offers' } }
             ]
           });
 
