@@ -7444,6 +7444,10 @@ export type Database = {
       }
       advance_scout_seasons: { Args: never; Returns: undefined }
       advance_world_system_day: { Args: never; Returns: undefined }
+      apply_title_bonus: {
+        Args: { _kind: string; _user_id: string }
+        Returns: undefined
+      }
       approve_beta_request: {
         Args: { _request_id: string }
         Returns: undefined
