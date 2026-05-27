@@ -1,0 +1,1 @@
+ALTER TABLE public.auth_verification_codes ADD COLUMN IF NOT EXISTS delivery_time_ms INTEGER;
