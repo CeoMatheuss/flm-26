@@ -34,6 +34,18 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
   const isLoanedOut = player.isLoaned || status === 'emprestado';
   const isLoanedIn = player.isReceivedLoan || status === 'recebido-emprestimo';
 
+  // Badge "NOVO REFORÇO" - visível por 7 dias após a chegada
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  const isNewSigning = !!player.signedAt && (Date.now() - player.signedAt) < SEVEN_DAYS;
+  const signingTypeLabel: Record<string, { label: string; color: string; bg: string; icon: JSX.Element; tooltip: string }> = {
+    free_agent: { label: 'JOGADOR LIVRE', color: 'text-amber-300', bg: 'bg-amber-500/20', icon: <Gift className="w-2 h-2" />, tooltip: 'Contratado como jogador livre (sem custo de transferência)' },
+    buy_now: { label: 'COMPRA IMEDIATA', color: 'text-teal-300', bg: 'bg-teal-500/20', icon: <Zap className="w-2 h-2" />, tooltip: 'Adquirido via compra imediata no mercado' },
+    auction: { label: 'LEILÃO', color: 'text-fuchsia-300', bg: 'bg-fuchsia-500/20', icon: <Sparkles className="w-2 h-2" />, tooltip: 'Vencido em leilão' },
+    transfer: { label: 'NOVO REFORÇO', color: 'text-sky-300', bg: 'bg-sky-500/20', icon: <Sparkles className="w-2 h-2" />, tooltip: 'Reforço chegou ao elenco' },
+    loan_in: { label: 'NOVO EMPRÉSTIMO', color: 'text-indigo-300', bg: 'bg-indigo-500/20', icon: <Handshake className="w-2 h-2" />, tooltip: 'Chegou por empréstimo' },
+  };
+  const signingMeta = player.signingType ? signingTypeLabel[player.signingType] : signingTypeLabel.transfer;
+
   return (
     <motion.button
       initial={{ opacity: 0, x: -10 }}
