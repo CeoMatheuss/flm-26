@@ -377,7 +377,10 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     }
   }, [clubName, clubCountry, autoJoinLeague, loadLeagues]);
 
+  const leaveLeague = useCallback(() => { setCurrentLeague(null); }, []);
+
   // Send chat
+
   const sendChat = useCallback(async (content: string) => {
     if (!currentLeague || !content.trim()) return;
     await supabase.from('chat_messages').insert([{
