@@ -203,7 +203,16 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     
     setLoading(true);
     const startTime = performance.now();
-    console.log('[Auth] Cadastro iniciado', { email, displayName, timestamp: new Date().toISOString() });
+    console.log('[Auth] 📝 Cadastro iniciado', { email, displayName, timestamp: new Date().toISOString() });
+    
+    // Proteção contra travamento
+    const signupSafetyTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('[Auth] ⚠️ Cadastro travado! Resetando estado.');
+        setLoading(false);
+        toast.error('O cadastro está demorando muito. Tente novamente.');
+      }
+    }, 20000);
 
     try {
       // Timeout de 15 segundos para cadastro (pode demorar mais que login)
@@ -226,7 +235,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       const duration = (performance.now() - startTime).toFixed(2);
 
       if (result.error) {
-        console.error(`[Auth] Falha no cadastro (${duration}ms):`, result.error);
+        console.error(`[Auth] ❌ Falha no cadastro (${duration}ms):`, result.error);
         const msg = result.error.message || '';
         const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
         const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
@@ -240,30 +249,35 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         } else {
           toast.error(msg || 'Erro ao criar conta. Tente novamente.');
         }
+        setLoading(false);
       } else {
-        console.log(`[Auth] Cadastro bem-sucedido (${duration}ms)`, { user: result.data.user?.id });
-        toast.success('Conta criada com sucesso! Redirecionando...');
+        console.log(`[Auth] ✅ Cadastro bem-sucedido (${duration}ms)`, { userId: result.data.user?.id });
+        toast.success('Conta criada! Entrando...');
         
-        // Como o auto-confirm está ligado, o usuário já pode logar ou já está logado
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          window.location.reload();
-        } else {
-          setStep('login');
-          setEmail(email);
-        }
+        // Pequeno delay para garantir persistência e tentar reload
+        setTimeout(async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            window.location.reload();
+          } else {
+            setStep('login');
+            setEmail(email);
+            setLoading(false);
+          }
+        }, 1500);
       }
     } catch (err: any) {
       const duration = (performance.now() - startTime).toFixed(2);
       if (err.message === 'TIMEOUT_ERROR') {
-        console.error(`[Auth] Timeout no cadastro (${duration}ms)`);
-        toast.error('O servidor demorou muito para responder o cadastro. Tente novamente.');
+        console.error(`[Auth] ⏳ Timeout no cadastro (${duration}ms)`);
+        toast.error('O servidor demorou muito para criar sua conta. Tente novamente.');
       } else {
-        console.error(`[Auth] Erro inesperado no cadastro (${duration}ms):`, err);
+        console.error(`[Auth] 💥 Erro inesperado no cadastro (${duration}ms):`, err);
         toast.error('Erro inesperado ao criar conta. Tente novamente.');
       }
-    } finally {
       setLoading(false);
+    } finally {
+      clearTimeout(signupSafetyTimeout);
     }
   };
 
