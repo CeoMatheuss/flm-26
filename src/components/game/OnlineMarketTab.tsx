@@ -100,13 +100,15 @@ interface Props {
   loanedPlayers?: LoanedPlayer[];
   onLoanOut?: (playerId: string) => void;
   onLoanIn?: (player: Player) => void;
+  onLoanFinalizeOut?: (playerId: string, fromClubName?: string) => void;
+  onLoanFinalizeIn?: (player: Player, fromClubName?: string) => void;
   onListedPlayer?: () => void;
   onAuction?: (player: Player) => void;
   activeMarketTab?: string;
   onMarketTabChange?: (tab: string) => void;
 }
 
-export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, isPremium = false, onPlayerSold: _onPlayerSold, onPlayerBought: _onPlayerBought, loanedPlayers = [], onLoanOut: _onLoanOut, onLoanIn: _onLoanIn, onListedPlayer, onAuction: _onAuction, activeMarketTab: activeMarketTabProp, onMarketTabChange }: Props) {
+export function OnlineMarketTab({ userId, clubName, players, budget, transferBudget, salaryBudget, currentMonthlyPayroll = 0, clubShield, isPremium = false, onPlayerSold: _onPlayerSold, onPlayerBought: _onPlayerBought, loanedPlayers = [], onLoanOut: _onLoanOut, onLoanIn: _onLoanIn, onLoanFinalizeOut, onLoanFinalizeIn, onListedPlayer, onAuction: _onAuction, activeMarketTab: activeMarketTabProp, onMarketTabChange }: Props) {
   const { guard } = useLiveMatchGuard();
   const onPlayerSold = guard(_onPlayerSold);
   const onPlayerBought = guard(_onPlayerBought);
