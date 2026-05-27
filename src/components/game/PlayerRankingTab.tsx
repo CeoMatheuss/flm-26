@@ -386,9 +386,23 @@ export function PlayerRankingTab() {
                       exit={{ opacity: 0, scale: 0.97 }}
                       transition={{ delay: Math.min(idx * 0.008, 0.15), duration: 0.18 }}
                       key={r.id}
-                      className="group flex items-center gap-3 px-3 sm:px-5 py-3 hover:bg-primary/[0.04] transition-all duration-200 relative"
+                      className={`group flex items-center gap-3 px-3 sm:px-5 py-3 transition-all duration-200 relative ${
+                        sale
+                          ? 'bg-amber-500/[0.06] hover:bg-amber-500/[0.12]'
+                          : loan
+                          ? 'bg-sky-500/[0.06] hover:bg-sky-500/[0.12]'
+                          : 'hover:bg-primary/[0.04]'
+                      }`}
                     >
-                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary scale-y-0 group-hover:scale-y-100 transition-transform origin-center" />
+                      <div
+                        className={`absolute left-0 top-0 bottom-0 w-[3px] transition-transform origin-center ${
+                          sale
+                            ? 'bg-amber-400 scale-y-100'
+                            : loan
+                            ? 'bg-sky-400 scale-y-100'
+                            : 'bg-primary scale-y-0 group-hover:scale-y-100'
+                        }`}
+                      />
 
                       <div className="w-9 flex-shrink-0 flex items-center justify-center">
                         <span className="text-xs font-black text-muted-foreground tabular-nums group-hover:text-primary transition-colors">
@@ -404,12 +418,22 @@ export function PlayerRankingTab() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="text-sm font-bold truncate">{p.name}</p>
                           {isYoung && (
                             <Sparkles className="h-3 w-3 text-emerald-400 flex-shrink-0" />
                           )}
                           {isHot && <Flame className="h-3 w-3 text-orange-400 flex-shrink-0" />}
+                          {sale && (
+                            <Badge className="h-4 px-1.5 text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 gap-0.5 rounded">
+                              <Tag className="h-2.5 w-2.5" /> À VENDA
+                            </Badge>
+                          )}
+                          {loan && (
+                            <Badge className="h-4 px-1.5 text-[9px] font-black bg-sky-500/20 text-sky-300 border border-sky-500/40 gap-0.5 rounded">
+                              <Handshake className="h-2.5 w-2.5" /> EMPRÉSTIMO
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wide">
                           {p.position} • {p.clubs?.name || 'Sem clube'}
