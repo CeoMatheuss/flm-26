@@ -7,38 +7,38 @@ export function GameNavBar() {
       <TabsList className="flex w-full h-auto gap-1 bg-card/60 backdrop-blur-sm p-1.5 border border-border/20 rounded-xl">
         <TabsTrigger 
           value="dashboard" 
-          className="nav-tab flex flex-col items-center justify-center gap-1.5 py-3 sm:py-4 flex-1 basis-0 min-w-0"
+          className="nav-tab flex flex-col items-center justify-center gap-1 py-2 sm:py-3 flex-1 basis-0 min-w-0"
         >
-          <LayoutDashboard className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span className="text-[11px] sm:text-sm leading-tight font-semibold">Início</span>
+          <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="text-[10px] sm:text-xs leading-tight font-semibold">Início</span>
         </TabsTrigger>
         <TabsTrigger 
           value="squad" 
-          className="nav-tab flex flex-col items-center justify-center gap-1.5 py-3 sm:py-4 flex-1 basis-0 min-w-0"
+          className="nav-tab flex flex-col items-center justify-center gap-1 py-2 sm:py-3 flex-1 basis-0 min-w-0"
         >
-          <Users className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span className="text-[11px] sm:text-sm leading-tight font-semibold">Elenco</span>
+          <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="text-[10px] sm:text-xs leading-tight font-semibold">Elenco</span>
         </TabsTrigger>
         <TabsTrigger 
           value="journal" 
-          className="nav-tab flex flex-col items-center justify-center gap-1.5 py-3 sm:py-4 flex-1 basis-0 min-w-0"
+          className="nav-tab flex flex-col items-center justify-center gap-1 py-2 sm:py-3 flex-1 basis-0 min-w-0"
         >
-          <Newspaper className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span className="text-[11px] sm:text-sm leading-tight font-semibold">Jornal</span>
+          <Newspaper className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="text-[10px] sm:text-xs leading-tight font-semibold">Jornal</span>
         </TabsTrigger>
         <TabsTrigger 
           value="tactics" 
-          className="nav-tab flex flex-col items-center justify-center gap-1.5 py-3 sm:py-4 flex-1 basis-0 min-w-0"
+          className="nav-tab flex flex-col items-center justify-center gap-1 py-2 sm:py-3 flex-1 basis-0 min-w-0"
         >
-          <Target className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span className="text-[11px] sm:text-sm leading-tight font-semibold">Táticas</span>
+          <Target className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="text-[10px] sm:text-xs leading-tight font-semibold">Táticas</span>
         </TabsTrigger>
         <TabsTrigger 
           value="league" 
-          className="nav-tab flex flex-col items-center justify-center gap-1.5 py-3 sm:py-4 flex-1 basis-0 min-w-0"
+          className="nav-tab flex flex-col items-center justify-center gap-1 py-2 sm:py-3 flex-1 basis-0 min-w-0"
         >
-          <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />
-          <span className="text-[11px] sm:text-sm leading-tight font-semibold">Liga</span>
+          <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
+          <span className="text-[10px] sm:text-xs leading-tight font-semibold">Liga</span>
         </TabsTrigger>
       </TabsList>
     </div>
