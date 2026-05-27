@@ -30,7 +30,7 @@ export function GameLoadingScreen({ message = 'Carregando...', subMessage, showP
       setProgress(prev => {
         const remaining = 99 - prev;
         if (remaining <= 0.1) return 99;
-        return prev + Math.max(0.2, remaining * 0.04);
+        return prev + Math.max(0.5, remaining * 0.08);
       });
     }, 80);
     return () => clearInterval(interval);
