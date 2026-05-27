@@ -161,10 +161,16 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         }
 
         if (data?.emailSent === false) {
-          console.error('Erro de envio:', data.details);
-          toast.error('Erro de Entrega: O domínio footballlifemanager.com.br não está verificado na Resend. E-mails para domínios externos (Gmail, etc) estão bloqueados até que o DNS (SPF, DKIM, DMARC) seja configurado.', {
-            duration: 10000,
-          });
+          const errorMsg = data.details?.error?.message || data.details?.error || '';
+          if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('only send testing emails')) {
+            toast.error('Conta em Sandbox: A Resend só permite enviar e-mails para fcmsistemas7@gmail.com. Verifique seu domínio na Resend para liberar envios gerais.', {
+              duration: 10000,
+            });
+          } else {
+            toast.error('Erro de Entrega: O domínio footballlifemanager.com.br não está verificado na Resend. Verifique o DNS (SPF, DKIM) no painel da Resend.', {
+              duration: 10000,
+            });
+          }
         } else {
           toast.success('Código enviado! Verifique sua caixa de entrada e spam.');
         }
