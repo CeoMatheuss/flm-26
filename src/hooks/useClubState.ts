@@ -740,16 +740,19 @@ export function useClubState(initialState: any, userId?: string) {
       const listingId = listings[0].id;
 
       // 2. Execute atomic RPC
-      const { data: result, error } = await supabase.rpc('finalize_player_transfer', {
+      const { data: rpcData, error } = await supabase.rpc('finalize_player_transfer', {
         p_listing_id: listingId,
         p_offer_id: null, // Buy now
         p_buyer_id: userId,
         p_buyer_club_name: club.name
       });
 
+      const result = rpcData as any;
+
       if (error || !result?.success) {
         throw new Error(error?.message || result?.error || 'Erro ao processar transferência');
       }
+
 
       toast.dismiss(loadingToast);
       toast.success(`${player.name} contratado com sucesso!`);
