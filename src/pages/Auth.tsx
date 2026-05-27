@@ -153,7 +153,11 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         });
         if (fnErr) throw fnErr;
         if (data?.emailSent === false) {
-          toast.warning(`Conta criada, mas falhou ao enviar o e-mail (${data.emailError || 'erro desconhecido'}). Use "Reenviar código".`);
+          if (data.emailError === 'DOMINIO_NAO_VERIFICADO') {
+            toast.error('Erro 403: Domínio não verificado no Resend. O administrador precisa configurar o domínio footballlifemanager.com.br no painel da Resend.');
+          } else {
+            toast.warning(`Conta criada, mas falhou ao enviar o e-mail (${data.emailError || 'erro desconhecido'}). Use "Reenviar código".`);
+          }
         } else {
           toast.success('Código de verificação enviado para seu email!');
         }

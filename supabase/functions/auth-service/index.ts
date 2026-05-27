@@ -263,40 +263,61 @@ serve(async (req) => {
       }
 
       const resendKey = Deno.env.get('RESEND_API_KEY')
+      const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'no-reply@footballlifemanager.com.br'
       let emailSent = false
       let emailError: string | null = null
 
       if (resendKey) {
-        try {
-          const resp = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${resendKey}`,
-            },
-            body: JSON.stringify({
-              from: 'Football Life Manager <onboarding@resend.dev>',
-              to: [email],
-              subject: `Seu código FLM: ${verificationCode}`,
-              html: PREMIUM_EMAIL_TEMPLATE(
-                'Bem-vindo ao Football Life Manager',
-                'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
-                verificationCode,
-                'Este código expira em 10 minutos por motivos de segurança.'
-              ),
-            }),
-          })
-          const body = await resp.text()
-          if (!resp.ok) {
-            emailError = `Resend ${resp.status}: ${body}`
-            console.error('[send-code] Resend failed:', emailError)
-          } else {
-            emailSent = true
-            console.log('[send-code] Resend OK')
+        const maxRetries = 3
+        let attempt = 0
+        let success = false
+
+        while (attempt < maxRetries && !success) {
+          attempt++
+          try {
+            console.log(`[send-code] Attempt ${attempt} for ${email}`)
+            const resp = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${resendKey}`,
+              },
+              body: JSON.stringify({
+                from: `Football Life Manager <${fromEmail}>`,
+                to: [email],
+                subject: `Seu código FLM: ${verificationCode}`,
+                html: PREMIUM_EMAIL_TEMPLATE(
+                  'Bem-vindo ao Football Life Manager',
+                  'Sua jornada no futebol começa agora. Monte seu elenco, dispute títulos e construa sua história.',
+                  verificationCode,
+                  'Este código expira em 10 minutos por motivos de segurança.'
+                ),
+              }),
+            })
+
+            const body = await resp.text()
+            if (!resp.ok) {
+              emailError = `Resend ${resp.status}: ${body}`
+              console.error(`[send-code] Attempt ${attempt} failed:`, emailError)
+              
+              // If it's a 403 (unverified domain), don't bother retrying
+              if (resp.status === 403) {
+                emailError = 'DOMINIO_NAO_VERIFICADO'
+                break
+              }
+            } else {
+              emailSent = true
+              success = true
+              console.log('[send-code] Resend OK')
+            }
+          } catch (e: any) {
+            emailError = e.message
+            console.error(`[send-code] Attempt ${attempt} threw:`, e)
           }
-        } catch (e: any) {
-          emailError = e.message
-          console.error('[send-code] Resend threw:', e)
+          
+          if (!success && attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+          }
         }
       } else {
         emailError = 'RESEND_API_KEY not configured'
