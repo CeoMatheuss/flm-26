@@ -114,6 +114,35 @@ function generateFreeAgentPlayer() {
   };
 }
 
+
+function calculateFreeAgentAcceptChance(params: {
+  offeredSalary: number;
+  currentSalary: number;
+  reputation: number;
+  age: number;
+  contractYears: number;
+  signingBonus: number;
+  personality: string;
+}) {
+  const { offeredSalary, currentSalary, reputation, age, contractYears, signingBonus, personality } = params;
+  let chance = 0.5;
+
+  const salaryRatio = offeredSalary / Math.max(1, currentSalary);
+  if (salaryRatio >= 1.4) chance += 0.35;
+  else if (salaryRatio >= 1.1) chance += 0.20;
+  else if (salaryRatio >= 0.95) chance += 0.10;
+  else if (salaryRatio >= 0.8) chance -= 0.15;
+  else chance -= 0.40;
+
+  if (reputation >= 70) chance += 0.15;
+  if (age >= 32 && contractYears >= 3) chance += 0.15;
+  if (signingBonus > currentSalary * 2) chance += 0.10;
+
+  if (personality === 'ambicioso') chance += (salaryRatio > 1.2 ? 0.1 : -0.2);
+  
+  return Math.max(0.05, Math.min(0.99, chance));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -275,6 +304,11 @@ Deno.serve(async (req) => {
         return json({ error: `Luvas (R$${(luvas/1000).toFixed(0)}k) excedem sua verba de transferências (R$${(transferBudgetAvailable/1000).toFixed(0)}k disponível).` }, 400);
       }
 
+      const playerSalary = agent.player_data?.salary || 500;
+      const isAutoAccept = offeredSalary >= playerSalary;
+      const now = new Date();
+      const deadline = isAutoAccept ? now : new Date(now.getTime() + 7 * 3600 * 1000);
+
       const { data: offer, error: offerError } = await adminClient
         .from('free_agent_offers')
         .insert({
@@ -284,6 +318,8 @@ Deno.serve(async (req) => {
           offered_salary: Math.max(0, offeredSalary),
           offered_contract_years: Math.min(5, Math.max(1, contractYears || 2)),
           signing_bonus: luvas,
+          status: isAutoAccept ? 'accepted' : 'pending',
+          decision_deadline: deadline.toISOString(),
         })
         .select()
         .single();
@@ -293,7 +329,7 @@ Deno.serve(async (req) => {
         return json({ error: 'Erro ao enviar proposta' }, 500);
       }
 
-      return json({ success: true, offer });
+      return json({ success: true, offer, isAutoAccept });
     }
 
     // ═══════════════════════════════════════════
@@ -314,22 +350,43 @@ Deno.serve(async (req) => {
       for (const offer of pending) {
         const agent = (offer as any).free_agents_market;
         const player = agent.player_data;
-        const salaryFloor = calcPlayerSalaryFloor(player);
+        
+        // Fetch buyer reputation
+        const { data: buyerSave } = await adminClient
+          .from('game_saves')
+          .select('club_data')
+          .eq('user_id', offer.buyer_id)
+          .maybeSingle();
+        
+        const reputation = buyerSave?.club_data?.club?.reputation || 50;
 
+        const acceptChance = calculateFreeAgentAcceptChance({
+          offeredSalary: offer.offered_salary,
+          currentSalary: player.salary || 500,
+          reputation,
+          age: player.age || 25,
+          contractYears: offer.offered_contract_years || 2,
+          signingBonus: offer.signing_bonus || 0,
+          personality: player.personality || 'calmo'
+        });
+
+        const playerAccepts = Math.random() < acceptChance;
+        const salaryFloor = player.salary || 500;
         const ratio = (offer.offered_salary || 0) / Math.max(1, salaryFloor);
+        
         let outcome: 'accepted' | 'rejected' | 'counter_salary' = 'rejected';
         let counterSalary: number | null = null;
         let reason: string | null = null;
 
-        if (ratio >= 1.0) {
+        if (playerAccepts) {
           outcome = 'accepted';
         } else if (ratio >= 0.7) {
           outcome = 'counter_salary';
-          counterSalary = Math.floor(salaryFloor * 1.05);
-          reason = `Empresário pede R$${counterSalary}/mês para fechar.`;
+          counterSalary = Math.floor(salaryFloor * 1.15);
+          reason = `Empresário de ${player.name}: O jogador gostou do projeto mas pede R$${counterSalary}/mês.`;
         } else {
           outcome = 'rejected';
-          reason = `Salário oferecido (R$${offer.offered_salary}) muito abaixo do mínimo aceitável (R$${salaryFloor}).`;
+          reason = `Salário oferecido (R$${offer.offered_salary}) muito baixo para um jogador do nível de ${player.name}.`;
         }
 
         if (outcome === 'accepted') {

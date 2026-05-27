@@ -51,6 +51,56 @@ function rejectionHeadlines(p: { player: string; ovr?: number; to: string }) {
   ]);
 }
 
+
+function calculateAcceptChance(params: {
+  offeredSalary: number;
+  currentSalary: number;
+  reputation: number;
+  age: number;
+  contractYears: number;
+  signingBonus: number;
+  personality: string;
+}) {
+  const { offeredSalary, currentSalary, reputation, age, contractYears, signingBonus, personality } = params;
+  let chance = 0.5;
+
+  // Salary impact (Core rule: >= current salary is usually accepted)
+  const salaryRatio = offeredSalary / Math.max(1, currentSalary);
+  if (salaryRatio >= 1.5) chance += 0.35;
+  else if (salaryRatio >= 1.2) chance += 0.20;
+  else if (salaryRatio >= 1.0) chance += 0.10;
+  else if (salaryRatio >= 0.8) chance -= 0.15;
+  else chance -= 0.40;
+
+  // Reputation impact (Club status)
+  if (reputation >= 80) chance += 0.15;
+  else if (reputation >= 60) chance += 0.05;
+  else if (reputation < 30) chance -= 0.10;
+
+  // Age impact (Younger players are more ambitious, older want stability)
+  if (age <= 22) {
+    if (salaryRatio > 1.2) chance += 0.10; // Ambitious young players
+  } else if (age >= 31) {
+    if (contractYears >= 3) chance += 0.10; // Older players want longer contracts
+  }
+
+  // Contract years
+  if (contractYears >= 3 && contractYears <= 4) chance += 0.05;
+  if (contractYears === 1) chance -= 0.10;
+
+  // Signing bonus (Luvas)
+  if (signingBonus > 0) {
+    chance += Math.min(0.15, (signingBonus / (currentSalary * 12)) * 0.1);
+  }
+
+  // Personality
+  if (personality === 'ambicioso') chance += (salaryRatio > 1.1 ? 0.1 : -0.2);
+  if (personality === 'leal') chance -= 0.2;
+  if (personality === 'festeiro') chance += (signingBonus > 0 ? 0.1 : 0);
+
+  return Math.max(0.05, Math.min(0.99, chance));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -268,6 +318,11 @@ Deno.serve(async (req) => {
         });
       }
 
+      const playerSalary = listing.player_data?.salary || 500;
+      const isAutoAccept = offeredSalary >= playerSalary;
+      const now = new Date();
+      const deadline = isAutoAccept ? now : new Date(now.getTime() + 7 * 3600 * 1000);
+
       const { data: offer, error: offerError } = await adminClient
         .from('transfer_offers')
         .insert({
@@ -282,6 +337,9 @@ Deno.serve(async (req) => {
           bonus_games: Math.max(0, bonusGames || 0),
           bonus_titles: Math.max(0, bonusTitles || 0),
           signing_bonus: Math.max(0, signingBonus || 0),
+          status: isAutoAccept ? 'awaiting_decision' : 'pending',
+          decision_status: isAutoAccept ? 'awaiting_decision' : 'pending',
+          decision_deadline: deadline.toISOString(),
         })
         .select()
         .single();
@@ -291,16 +349,16 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Erro ao enviar proposta. Tente novamente.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // Notify the seller about the new offer
+      // Notify the seller
       await adminClient.from('user_notifications').insert({
         user_id: listing.seller_id,
         icon: '📩',
         title: `Nova proposta por ${listing.player_name}!`,
-        message: `${(clubName || 'Um clube').slice(0, 50)} ofereceu R$${(Math.max(0, offeredPrice) / 1000).toFixed(0)}k por ${listing.player_name} (OVR ${listing.player_overall}). Salário: R$${Math.max(0, offeredSalary || 0)}/mês • Contrato: ${Math.min(5, Math.max(1, contractYears || 2))} anos. Confira na aba Propostas do Mercado!`,
-        type: 'warning',
+        message: `${(clubName || 'Um clube').slice(0, 50)} ofereceu R$${(Math.max(0, offeredPrice) / 1000).toFixed(0)}k por ${listing.player_name}. ${isAutoAccept ? 'O jogador ACEITOU os termos salariais!' : 'O jogador está analisando.'}`,
+        type: isAutoAccept ? 'success' : 'warning',
       });
 
-      return new Response(JSON.stringify({ success: true, offer }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ success: true, offer, isAutoAccept }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -713,24 +771,26 @@ Deno.serve(async (req) => {
         const currentSalary = playerData?.salary || 500;
         const offeredSalary = offer.offered_salary || 0;
         const signingBonus = offer.signing_bonus || 0;
-        const totalBonus = (offer.bonus_goals || 0) + (offer.bonus_assists || 0) + (offer.bonus_games || 0) + (offer.bonus_titles || 0);
+        
+        // Fetch buyer reputation
+        const { data: buyerSave } = await adminClient
+          .from('game_saves')
+          .select('club_data')
+          .eq('user_id', offer.buyer_id)
+          .maybeSingle();
+        
+        const buyerReputation = buyerSave?.club_data?.club?.reputation || 50;
+        const buyerLeague = buyerSave?.club_data?.club?.league_name || 'Desconhecida';
 
-        // Player acceptance logic (same as before)
-        let acceptChance = 0.5;
-        if (offeredSalary >= currentSalary * 1.5) acceptChance += 0.3;
-        else if (offeredSalary >= currentSalary) acceptChance += 0.15;
-        else if (offeredSalary >= currentSalary * 0.8) acceptChance += 0.0;
-        else acceptChance -= 0.2;
-        if (signingBonus > 0) acceptChance += Math.min(0.15, signingBonus / 1000000 * 0.05);
-        if (totalBonus > 0) acceptChance += Math.min(0.1, totalBonus / 500000 * 0.02);
-        const personality = playerData?.personality || 'calmo';
-        if (personality === 'ambicioso') acceptChance += (offeredSalary > currentSalary ? 0.1 : -0.15);
-        if (personality === 'leal') acceptChance -= 0.15;
-        if (personality === 'dedicado') acceptChance += 0.05;
-        const years = offer.offered_contract_years || 2;
-        if (years >= 2 && years <= 3) acceptChance += 0.05;
-        if (years >= 4) acceptChance -= 0.05;
-        acceptChance = Math.max(0.1, Math.min(0.95, acceptChance));
+        const acceptChance = calculateAcceptChance({
+          offeredSalary,
+          currentSalary,
+          reputation: buyerReputation,
+          age: playerData?.age || 25,
+          contractYears: offer.offered_contract_years || 2,
+          signingBonus,
+          personality: playerData?.personality || 'calmo'
+        });
 
         const playerAccepts = Math.random() < acceptChance;
 

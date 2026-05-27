@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, RefreshCw, Clock, EyeOff, AlertTriangle, CheckCircle, X, History, Inbox, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { NegotiationModal, NegotiationData } from './market/NegotiationModal';
 import { formatMoney } from '@/lib/formatMoney';
 import { cn } from '@/lib/utils';
 
@@ -72,9 +73,6 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
   const [historyFilter, setHistoryFilter] = useState<'all' | 'signed' | 'rejected'>('all');
   const [loading, setLoading] = useState(false);
   const [offerAgent, setOfferAgent] = useState<FreeAgent | null>(null);
-  const [offerSalary, setOfferSalary] = useState(500);
-  const [offerYears, setOfferYears] = useState(2);
-  const [signingBonus, setSigningBonus] = useState(0);
   const [now, setNow] = useState(Date.now());
 
   // ── Loaders ──
@@ -170,40 +168,39 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
   }, []);
 
   // ── Actions ──
-  const sendOffer = async () => {
+  const sendOffer = async (data: NegotiationData) => {
     if (!offerAgent) return;
-    if (offerSalary <= 0) { toast.error('Defina um salário'); return; }
-    if (signingBonus > transferBudget) {
-      toast.error(`Luvas excedem sua verba de transferências (${formatMoney(transferBudget)} disponível).`);
-      return;
-    }
-    const annualSalary = offerSalary * 12;
-    if (annualSalary > salaryBudgetRemaining) {
-      toast.error(`Salário anual (${formatMoney(annualSalary)}) excede sua verba de salários disponível.`);
-      return;
-    }
-
+    
     setLoading(true);
     const res = await supabase.functions.invoke('process-free-agent', {
       body: {
         action: 'make-offer',
         agentId: offerAgent.id,
-        offeredSalary: offerSalary,
-        contractYears: offerYears,
-        signingBonus,
+        offeredSalary: data.offeredSalary,
+        contractYears: data.contractYears,
+        signingBonus: data.signingBonus,
         clubName,
         transferBudgetAvailable: transferBudget,
       },
     });
     setLoading(false);
+    
     if (res.error || res.data?.error) {
       toast.error(res.data?.error || 'Erro ao enviar proposta');
     } else {
-      toast.success(`Proposta enviada para ${offerAgent.player_name}! Aguarde 7h.`);
+      if (res.data?.isAutoAccept) {
+        toast.success(`✅ ${offerAgent.player_name} aceitou a proposta imediatamente!`);
+      } else {
+        toast.success(`⏳ Proposta enviada para ${offerAgent.player_name}! Aguarde 7h.`);
+      }
       setOfferAgent(null);
       loadActiveOffers();
       loadHistory();
     }
+  };
+
+  const openOfferDialog = (agent: FreeAgent) => {
+    setOfferAgent(agent);
   };
 
   const acceptCounter = async (offer: FreeAgentOffer) => {
@@ -240,13 +237,6 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
     else { toast.info('Proposta cancelada'); loadActiveOffers(); loadHistory(); }
   };
 
-  const openOfferDialog = (agent: FreeAgent) => {
-    // Hidden suggested salary to make it a blind negotiation
-    setOfferAgent(agent);
-    setOfferSalary(1000); // Fixed default instead of revealing agent.player_data.salary
-    setOfferYears(2);
-    setSigningBonus(0);
-  };
 
   // ── Filters ──
   const filtered = useMemo(() => {
@@ -565,86 +555,19 @@ export function FreeAgentMarketPanel({ userId, clubName, transferBudget, salaryB
         </TabsContent>
       </Tabs>
 
-      {/* Offer Dialog */}
-      <Dialog open={!!offerAgent} onOpenChange={(o) => !o && setOfferAgent(null)}>
-        <DialogContent className="max-w-md border-teal-500/20 bg-gradient-to-br from-[hsl(220_45%_8%)] to-[hsl(150_45%_7%)] backdrop-blur-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-sm flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center">
-                <Send className="h-3.5 w-3.5 text-teal-300" />
-              </div>
-              Proposta para <span className="text-teal-300">{offerAgent?.player_name}</span>
-            </DialogTitle>
-            <DialogDescription className="text-[10px] flex items-center gap-1.5 mt-1">
-              <EyeOff className="h-3 w-3 text-amber-300" />
-              Atributos revelados após assinatura · Resposta em até <strong className="text-amber-300">7h</strong>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            {/* Salary */}
-            <div className="rounded-xl p-3 border border-white/5 bg-black/40 space-y-2">
-              <label className="text-[11px] font-bold flex items-center gap-1.5">💰 Salário mensal</label>
-              <Input type="number" value={offerSalary} onChange={e => setOfferSalary(Math.max(100, Number(e.target.value) || 100))}
-                className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-teal-500/20" />
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-muted-foreground">Anual: <strong className="text-foreground">{formatMoney(offerSalary * 12)}</strong></span>
-                <span className={cn("font-bold", offerSalary * 12 > salaryBudgetRemaining ? "text-red-400" : "text-teal-300")}>
-                  Verba: {formatMoney(salaryBudgetRemaining)}
-                </span>
-              </div>
-            </div>
-
-            {/* Contract */}
-            <div className="rounded-xl p-3 border border-white/5 bg-black/40 space-y-2">
-              <label className="text-[11px] font-bold">📄 Duração do contrato</label>
-              <div className="grid grid-cols-5 gap-1.5">
-                {[1, 2, 3, 4, 5].map(y => (
-                  <button key={y} onClick={() => setOfferYears(y)}
-                    className={cn("h-10 rounded-lg text-xs font-black transition border",
-                      offerYears === y
-                        ? "bg-gradient-to-br from-teal-500/15 to-teal-500/5 border-teal-500/25 text-teal-200 shadow-[0_0_15px_-5px_hsl(var(--primary))]"
-                        : "bg-black/40 border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
-                    )}>
-                    {y}a
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Signing Bonus */}
-            <div className="rounded-xl p-3 border border-white/5 bg-black/40 space-y-2">
-              <label className="text-[11px] font-bold flex items-center gap-1.5">🎁 Luvas</label>
-              <Input type="number" value={signingBonus} onChange={e => setSigningBonus(Math.max(0, Number(e.target.value) || 0))}
-                className="h-10 text-sm font-bold rounded-lg bg-black/40 border-white/10 focus-visible:border-amber-500/20" />
-              <div className="flex gap-1">
-                {[0, 50000, 200000, 500000].map(v => (
-                  <button key={v} onClick={() => setSigningBonus(v)}
-                    className={cn("flex-1 h-7 text-[10px] rounded-md border font-bold transition",
-                      signingBonus === v ? "bg-amber-500/15 border-amber-500/20 text-amber-200" : "bg-white/[0.03] border-white/5 text-muted-foreground hover:bg-white/10"
-                    )}>
-                    {v === 0 ? '—' : formatMoney(v)}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-muted-foreground">Verba transferências: <strong className="text-foreground">{formatMoney(transferBudget)}</strong></p>
-              {signingBonus > transferBudget && (
-                <div className="rounded-lg p-2 bg-red-500/10 border border-red-500/30">
-                  <p className="text-[10px] text-red-300 font-bold flex items-center gap-1.5">
-                    <AlertTriangle className="h-3 w-3" /> Luvas excedem verba de transferências
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" className="rounded-lg" onClick={() => setOfferAgent(null)}>Cancelar</Button>
-            <Button onClick={sendOffer} disabled={loading}
-              className="rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white font-black gap-1.5 shadow-[0_0_20px_-5px_hsl(var(--primary))]">
-              <Send className="h-4 w-4" /> Enviar Proposta
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NegotiationModal
+        isOpen={!!offerAgent}
+        onClose={() => setOfferAgent(null)}
+        player={offerAgent}
+        currentClubName={clubName}
+        onConfirm={sendOffer}
+        loading={loading}
+        type="free_agent"
+        budget={{
+          transfer: transferBudget,
+          salary: salaryBudgetRemaining
+        }}
+      />
     </div>
   );
 }
