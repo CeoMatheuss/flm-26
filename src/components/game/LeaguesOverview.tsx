@@ -126,15 +126,24 @@ export function LeaguesOverview({ currentCountry, clubName, onBack, onJoin, isJo
                 <TableBody>
                   {standings.map((row, i) => (
                     <TableRow key={row.id} className={row.world_teams?.name === clubName ? 'bg-primary/10' : ''}>
-                      <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                      <TableCell className="flex items-center gap-2 text-sm truncate cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: row.world_teams?.name } }))}>
+                      <TableCell className={cn(
+                        "text-xs font-bold text-center",
+                        i === 0 ? "text-yellow-500" : (i >= 1 && i < 8) ? "text-blue-400" : "text-muted-foreground"
+                      )}>
+                        {i + 1}
+                      </TableCell>
+                      <TableCell className="flex items-center gap-2 py-3 cursor-pointer hover:text-primary transition-colors" onClick={() => (window as any).dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: row.world_teams?.name } }))}>
                         <ClubShield club={{ logoUrl: row.world_teams?.logo } as any} size={24} />
-                        <span className="font-medium truncate">{row.world_teams?.name}</span>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm truncate">{row.world_teams?.name}</span>
+                          {i === 0 && <span className="text-[7px] font-black text-yellow-500 uppercase tracking-tighter">Mundial</span>}
+                          {i >= 1 && i < 8 && <span className="text-[7px] font-black text-blue-400 uppercase tracking-tighter">Continental</span>}
+                        </div>
                       </TableCell>
                       <TableCell className="text-center font-bold">{row.points}</TableCell>
                       <TableCell className="text-center text-xs">{row.played}</TableCell>
                       <TableCell className="text-center text-xs">{row.wins}</TableCell>
-                      <TableCell className="text-center text-xs">{row.goals_for - row.goals_against}</TableCell>
+                      <TableCell className="text-center text-xs font-bold text-emerald-400">{(row.goals_for || 0) - (row.goals_against || 0)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
