@@ -38,7 +38,7 @@ const features = [
   { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
 ];
 
-type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email' | 'beta-request';
+type AuthStep = 'welcome' | 'login' | 'signup-info' | 'beta-request';
 
 interface AuthPageProps {
   initialStep?: AuthStep;
@@ -55,9 +55,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(initialEmail);
-  const [verificationCode, setVerificationCode] = useState('');
 
-  const [resendTimer, setResendTimer] = useState(0);
   const [step, setStep] = useState<AuthStep>(initialStep);
   const [slideIndex, setSlideIndex] = useState(0);
 
@@ -67,13 +65,6 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (resendTimer <= 0) return;
-    const interval = setInterval(() => setResendTimer(prev => prev - 1), 1000);
-    return () => clearInterval(interval);
-  }, [resendTimer]);
-
-  const startResendTimer = useCallback(() => setResendTimer(RESEND_COOLDOWN), []);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -91,18 +82,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (error.message === 'Email not confirmed' || error.message?.includes('Email not confirmed')) {
-        setPendingEmail(email);
-        setStep('verify-email');
-        startResendTimer();
-        toast.info('Email não confirmado. Enviando código de verificação...');
-        // Envia o código customizado em vez do link do Supabase
-        await supabase.functions.invoke('auth-service', {
-          body: { action: 'send-code', email }
-        });
-      } else {
-        toast.error(error.message);
-      }
+      toast.error(error.message);
     }
     setLoading(false);
   };
@@ -144,126 +124,20 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         toast.error(msg || 'Erro ao criar conta. Tente novamente.');
       }
     } else {
-      setPendingEmail(email);
-      setStep('verify-email');
-      startResendTimer();
-      try {
-        const { data, error: fnErr } = await supabase.functions.invoke('auth-service', {
-          body: { action: 'send-code', email }
-        });
-        
-        if (fnErr) {
-          if (fnErr.status === 429) {
-            toast.warning('Aguarde um pouco antes de solicitar um novo código.');
-          } else {
-            throw fnErr;
-          }
-        }
-
-        if (data?.emailSent === false) {
-          const errorMsg = data.details?.error?.message || data.details?.error || '';
-          if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('RESEND_SANDBOX_LIMIT')) {
-            toast.error('Sistema em modo Teste: Como o domínio ainda não foi verificado na Resend, e-mails só podem ser enviados para o administrador (fcmsistemas7@gmail.com). Por favor, verifique seu domínio na Resend para liberar o acesso público.', {
-              duration: 15000,
-              action: {
-                label: 'Suporte',
-                onClick: () => window.open('https://resend.com/domains', '_blank')
-              }
-            });
-          } else {
-            toast.error(`Falha no envio: ${errorMsg || 'Erro desconhecido no serviço de e-mail.'}`, {
-              duration: 10000,
-            });
-          }
-        } else {
-          toast.success('Código enviado! Verifique sua caixa de entrada e spam.');
-        }
-      } catch (e: any) {
-        console.error('Erro ao enviar código:', e);
-        toast.error(`Não conseguimos enviar o código agora. Por favor, tente "Reenviar código" em alguns instantes.`);
+      toast.success('Conta criada com sucesso! Redirecionando...');
+      // Como o auto-confirm está ligado, o usuário já pode logar ou já está logado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.reload();
+      } else {
+        setStep('login');
+        setEmail(email);
       }
     }
     setLoading(false);
 
   };
 
-  const handleVerifyCode = async () => {
-    if (verificationCode.length !== 6) {
-      toast.error('O código deve ter 6 dígitos');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('auth-service', {
-        body: { action: 'verify-code', email: pendingEmail, code: verificationCode }
-      });
-
-      if (error || data?.error) throw new Error(error?.message || data?.error);
-
-      toast.success('Conta verificada com sucesso!');
-      
-      // Tenta atualizar a sessão local para refletir a confirmação
-      await supabase.auth.refreshSession();
-      
-      // Se já houver uma sessão (caso de redirecionamento do Index), recarrega a página
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.email_confirmed_at) {
-        window.location.reload();
-      } else {
-        setStep('login');
-        setEmail(pendingEmail);
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao verificar código');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendVerification = useCallback(async () => {
-    if (resendTimer > 0) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('auth-service', {
-        body: { action: 'send-code', email: pendingEmail }
-      });
-      
-      if (error) {
-        // Trata erro de status 429 (Muitas solicitações)
-        const status = (error as any).status;
-        if (status === 429) {
-          toast.warning('Aguarde um minuto para reenviar.');
-        } else {
-          console.error('Erro invoke:', error);
-          toast.error('Erro ao reenviar código. O serviço de autenticação encontrou um problema.');
-        }
-      } else if (data?.emailSent === false) {
-        const errorMsg = data.details?.error?.message || data.details?.error || '';
-        if (errorMsg.includes('Sandbox') || errorMsg.includes('verify your domain') || errorMsg.includes('RESEND_SANDBOX_LIMIT')) {
-          toast.error('A conta de e-mail está em modo de teste (Sandbox). No momento, e-mails só podem ser enviados para o administrador (fcmsistemas7@gmail.com). Verifique o domínio na Resend para liberar envios gerais.', {
-            duration: 10000
-          });
-        } else {
-          toast.warning(`Falha ao entregar e-mail: ${errorMsg || 'Tente novamente.'}`);
-        }
-      } else {
-        toast.success('Novo código enviado com sucesso!');
-        startResendTimer();
-      }
-    } catch (err: any) {
-      console.error('Erro catch:', err);
-      toast.error('Erro de conexão ao reenviar código.');
-    } finally {
-      setLoading(false);
-    }
-  }, [pendingEmail, resendTimer, startResendTimer]);
-
-  // Envia código automaticamente se cair direto na verificação (vindo do Index)
-  useEffect(() => {
-    if (step === 'verify-email' && pendingEmail && resendTimer === 0 && initialStep === 'verify-email') {
-      handleResendVerification();
-    }
-  }, [step, pendingEmail, resendTimer, initialStep, handleResendVerification]);
 
   // ── Carousel component ──
   const CarouselPanel = ({ className = '' }: { className?: string }) => (
@@ -294,84 +168,6 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     </div>
   );
 
-  // ── OTP STEP ──
-  if (step === 'verify-email') {
-    return (
-      <div className="min-h-screen relative flex items-center justify-center p-4">
-        <img src={slides[0].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
-        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10 overflow-hidden">
-          {/* Neon Top Bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse" />
-          
-          <CardContent className="p-6 space-y-6">
-            <div className="text-center space-y-3">
-              <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center relative transform rotate-3">
-                <ShieldCheck className="w-10 h-10 text-primary" />
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-success/20 flex items-center justify-center border-2 border-card">
-                  <CheckCircle2 className="w-4 h-4 text-success" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-black italic uppercase tracking-tighter">Validar Manager</h2>
-              <p className="text-sm text-muted-foreground">Enviamos um código de 6 dígitos para:</p>
-              <Badge variant="secondary" className="text-xs font-bold px-4 py-1.5 bg-primary/5 border-primary/20 text-primary">{pendingEmail}</Badge>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código de Verificação</label>
-                <div className="relative">
-                  <Input 
-                    placeholder="000000" 
-                    value={verificationCode} 
-                    onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="h-16 text-3xl font-black text-center tracking-[0.5em] bg-white/5 border-white/10 rounded-xl focus:border-primary/50 focus:ring-primary/20"
-                  />
-                  <div className="absolute -inset-1 bg-primary/5 blur-sm -z-10 rounded-xl" />
-                </div>
-              </div>
-
-              <Button 
-                onClick={handleVerifyCode} 
-                disabled={loading || verificationCode.length !== 6}
-                className="w-full h-14 text-sm font-black uppercase italic tracking-wider gap-3 rounded-xl shadow-[0_0_20px_rgba(0,242,255,0.2)]"
-              >
-                {loading ? 'Validando...' : 'Confirmar Acesso'} <ChevronRight className="w-5 h-5" />
-              </Button>
-            </div>
-
-            <div className="text-center space-y-4">
-              <p className="text-[11px] text-muted-foreground animate-pulse">
-                Não recebeu? Verifique sua caixa de <strong>SPAM</strong> ou <strong>Lixeira</strong>.
-              </p>
-              
-              <div className="flex items-center justify-center gap-4">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Problemas?</span>
-                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/10" />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {resendTimer > 0 ? (
-                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 font-bold">
-                    <Clock className="w-3.5 h-3.5" /> Reenviar código em <strong className="text-primary">{resendTimer}s</strong>
-                  </p>
-                ) : (
-                  <Button variant="ghost" size="sm" onClick={handleResendVerification} disabled={loading} className="text-xs font-bold gap-2 hover:bg-white/5">
-                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Reenviar código de verificação
-                  </Button>
-                )}
-                
-                <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 hover:text-foreground">
-                  <ArrowLeft className="w-3 h-3 mr-2" /> Alterar Email
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   // (signup-preferences step removed — preferences are no longer collected at signup)
 
