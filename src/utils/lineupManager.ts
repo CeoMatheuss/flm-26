@@ -113,7 +113,7 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
   }));
 
   // 3. Intelligent Balanced Reserves (max 7 usually in FLM, but keeping logic flexible)
-  const BENCH_LIMIT = 7;
+  const BENCH_LIMIT = 11;
   const posOrder = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
   
   const poolForReserves = availablePlayers
