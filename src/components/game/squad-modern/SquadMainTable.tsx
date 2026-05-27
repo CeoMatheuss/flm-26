@@ -233,7 +233,7 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
 
   const isForSale = player.onTransferList || status === 'lista-transferencia' || highlight?.type === 'listed_sale';
   const isForLoan = player.onLoanList || status === 'lista-emprestimo' || highlight?.type === 'listed_loan';
-  const isLoanedOut = player.isLoaned || status === 'emprestado';
+  const isLoanedOut = (player.isLoaned && !player.isReceivedLoan) || status === 'emprestado';
   const isLoanedIn = player.isReceivedLoan || status === 'recebido-emprestimo';
 
   const badgeLabels: Record<string, string> = {
