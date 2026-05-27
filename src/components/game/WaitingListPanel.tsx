@@ -28,7 +28,19 @@ export function WaitingListPanel({ userId, onExploreOtherModes }: Props) {
   const loadWaitingInfo = async () => {
     if (!userId) return;
     setLoading(true);
-    
+
+    // 🚫 Se o jogador JÁ está inscrito em alguma liga, não exibe a fila de espera.
+    const { count: memberCount } = await supabase
+      .from('league_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if ((memberCount ?? 0) > 0) {
+      setEntry(null);
+      setLoading(false);
+      return;
+    }
+
     // Get user's specific entry
     const { data: userEntry, error: entryError } = await supabase
       .from('league_waiting_list')
