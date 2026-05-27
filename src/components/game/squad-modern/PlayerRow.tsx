@@ -141,6 +141,22 @@ export function PlayerRow({ player, status, selected, onClick }: Props) {
               <Clock className="w-2 h-2" /> {player.loanWeeksRemaining} SEM
             </span>
           )}
+
+          {/* Badge "NOVO REFORÇO" - destaque temporário pós-contratação */}
+          {isNewSigning && signingMeta && (
+            <motion.span
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+              title={signingMeta.tooltip}
+              className={cn(
+                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border',
+                signingMeta.bg, signingMeta.color, 'border-current/30 animate-pulse'
+              )}
+            >
+              {signingMeta.icon} {signingMeta.label}
+            </motion.span>
+          )}
         </div>
       </div>
 
