@@ -1,51 +1,99 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const checkSession = useCallback(async () => {
+    const startTime = performance.now();
+    console.log('[useAuth] Verificando sessão inicial...');
+    
+    try {
+      // Timeout de 5s para getSession
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT_GET_SESSION')), 5000)
+      );
+
+      const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+      
+      const duration = (performance.now() - startTime).toFixed(2);
+      
+      if (error) {
+        console.error(`[useAuth] Erro ao carregar sessão (${duration}ms):`, error);
+        // Se houver erro de rede, não limpamos nada, apenas falhamos silenciosamente para tentar novamente via onAuthStateChange
+      } else {
+        console.log(`[useAuth] Sessão carregada com sucesso (${duration}ms):`, session?.user?.id || 'nenhuma');
+        setSession(session);
+      }
+    } catch (err: any) {
+      const duration = (performance.now() - startTime).toFixed(2);
+      console.warn(`[useAuth] Falha/Timeout ao verificar sessão (${duration}ms):`, err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
-    // Safety timeout to prevent infinite loading screen
+    // Safety timeout total de 10s (caso tudo falhe)
     const safetyTimeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('[useAuth] Verificação de sessão demorando muito, forçando carregamento finalizado.');
+        console.warn('[useAuth] ⚠️ Segurança: Verificação de sessão demorando muito, forçando desbloqueio.');
         setLoading(false);
       }
-    }, 8000);
+    }, 10000);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log(`[useAuth] Auth state changed: ${_event}`, session?.user?.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`[useAuth] 🔄 Evento Auth: ${event}`, { 
+        userId: session?.user?.id,
+        timestamp: new Date().toISOString() 
+      });
+      
       if (mounted) {
         setSession(session);
         setLoading(false);
+        
+        if (event === 'SIGNED_IN') {
+          console.log('[useAuth] ✅ Usuário entrou com sucesso.');
+        } else if (event === 'SIGNED_OUT') {
+          console.log('[useAuth] 🚪 Usuário saiu.');
+          // Limpar caches locais se necessário
+          // localStorage.removeItem('flm:club-cache');
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('[useAuth] 🔑 Token renovado.');
+        }
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) console.error('[useAuth] GetSession error:', error);
-      if (mounted) {
-        setSession(session);
-        setLoading(false);
-      }
-    }).catch(err => {
-      console.error('[useAuth] GetSession fatal error:', err);
-      if (mounted) setLoading(false);
-    });
+    checkSession();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
       clearTimeout(safetyTimeout);
     };
-  }, []);
+  }, [checkSession]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      console.log('[useAuth] Iniciando logout...');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setSession(null);
+      console.log('[useAuth] Logout concluído.');
+    } catch (err) {
+      console.error('[useAuth] Erro ao sair:', err);
+      toast.error('Erro ao sair da conta. Limpando dados locais...');
+      // Forçar limpeza se a API falhar
+      localStorage.clear();
+      window.location.href = '/';
+    }
   };
 
-  return { session, loading, signOut };
+  return { session, loading, signOut, refreshSession: checkSession };
 }
