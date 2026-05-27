@@ -504,7 +504,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           const lastDraw = localStorage.getItem(`cup_draw_${today.getMonth()}_${today.getFullYear()}`);
           if (!lastDraw) {
             console.log('[CupManager] Official Draw Day detected (10th). Running Global Draw...');
-            supabase.functions.invoke('national-cup-manager', { body: { action: 'generate_all_national_cups' } });
+            supabase.functions.invoke('national-cup-manager', { body: { action: 'generate_all_national_cups' } }).catch(() => {});
             localStorage.setItem(`cup_draw_${today.getMonth()}_${today.getFullYear()}`, 'done');
           }
         }
@@ -517,7 +517,7 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
             // Simular se passou das 12:05 (janela de 5 min para humanos entrarem)
             if (currentHour >= 12) {
               console.log('[CupManager] Daily Simulation window open. Checking for matches...');
-              supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' } });
+              supabase.functions.invoke('national-cup-manager', { body: { action: 'advance_phase' } }).catch(() => {});
               localStorage.setItem(`cup_sim_${day}_${today.getMonth()}_${today.getFullYear()}`, 'done');
             }
           }
