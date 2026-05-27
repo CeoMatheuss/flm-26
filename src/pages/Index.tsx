@@ -19,7 +19,7 @@ import { useVersionGuard } from '@/hooks/useVersionGuard';
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { initialClub } from '@/data/initialData';
 import { defaultTactics } from '@/types/tactics';
-import { getLeagueTeams } from '@/types/league';
+import { getLeagueTeams, countryNames } from '@/types/league';
 import { defaultInfrastructure, defaultSeason } from '@/types/infrastructure';
 import { generateSponsorOffers } from '@/types/sponsor';
 import { generateMarketPlayers, generateFreeAgents, generateInitialSquad } from '@/utils/playerGenerator';
