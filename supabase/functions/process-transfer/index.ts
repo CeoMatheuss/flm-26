@@ -678,49 +678,21 @@ Deno.serve(async (req) => {
             responded_at: now.toISOString(),
           }).eq('listing_id', listing.id).eq('status', 'pending').neq('id', offer.id);
 
-          // Log transfer
-          await adminClient.from('transfer_log').insert({
-            player_name: listing.player_name,
-            player_overall: listing.player_overall,
-            from_user_id: listing.seller_id,
-            to_user_id: offer.buyer_id,
-            from_club_name: listing.seller_club_name,
-            to_club_name: offer.buyer_club_name,
-            price: offer.offered_price,
-            salary: offer.offered_salary,
-            transfer_type: 'sale',
+          // 🔄 Finalização robusta via RPC (atômico)
+          const { data: rpcResult, error: rpcError } = await adminClient.rpc('finalize_player_transfer', {
+            p_listing_id: listing.id,
+            p_offer_id: offer.id,
+            p_buyer_id: offer.buyer_id
           });
 
-          // 🔄 Sincronização definitiva: Adicionar jogador ao elenco do comprador no game_saves
-          const { data: save } = await adminClient.from('game_saves').select('club_data').eq('user_id', offer.buyer_id).maybeSingle();
-          if (save?.club_data) {
-            const clubData = save.club_data as any;
-            const newPlayer = {
-              ...playerData,
-              salary: offer.offered_salary,
-              contract: offer.offered_contract_years,
-              squad_status: 'reserve',
-              squadRole: 'reserva',
-              onTransferList: false,
-              isLoaned: false
-            };
-            
-            // Anti-duplicação no save
-            if (!clubData.club.players.some((p: any) => p.id === newPlayer.id)) {
-              clubData.club.players.push(newPlayer);
-              clubData.club.budget = (clubData.club.budget || 0) - offer.offered_price;
-              await adminClient.from('game_saves').update({ club_data: clubData }).eq('user_id', offer.buyer_id);
-            }
+          if (rpcError || !rpcResult?.success) {
+            console.error('RPC Error (accept):', rpcError || rpcResult?.error);
+            // Even if it fails, we continue with notifications if the log was already inserted,
+            // but here we should ideally stop. However, finalize_player_transfer handles the log too.
+            // So we just skip if RPC failed.
+            continue; 
           }
 
-          // 🔄 Remover jogador do elenco do vendedor no game_saves
-          const { data: sellerSave } = await adminClient.from('game_saves').select('club_data').eq('user_id', listing.seller_id).maybeSingle();
-          if (sellerSave?.club_data) {
-            const sellerData = sellerSave.club_data as any;
-            sellerData.club.players = sellerData.club.players.filter((p: any) => p.id !== playerData.id);
-            sellerData.club.budget = (sellerData.club.budget || 0) + offer.offered_price;
-            await adminClient.from('game_saves').update({ club_data: sellerData }).eq('user_id', listing.seller_id);
-          }
 
           // Notify both
           await adminClient.from('user_notifications').insert({
