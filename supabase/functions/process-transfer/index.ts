@@ -453,13 +453,31 @@ Deno.serve(async (req) => {
         },
       ]);
 
-      // 10) Jornal
-      await adminClient.from('newspaper_entries').insert({
-        user_id: listing.seller_id,
-        category: 'TRANSFERÊNCIA',
-        text: `⚡ COMPRA IMEDIATA! ${listing.player_name} (${listing.player_position}, OVR ${listing.player_overall}) foi adquirido pelo ${(buyerClubName || 'novo clube')} junto ao ${listing.seller_club_name} por ${priceStr}.`,
-        is_event: true,
-      });
+      // 10) Jornal — manchete variada + importância (DESTAQUE)
+      {
+        const buyNowMeta = {
+          kind: 'buy_now',
+          player_name: listing.player_name,
+          player_position: listing.player_position,
+          player_overall: listing.player_overall,
+          from_club: listing.seller_club_name,
+          to_club: buyerClubName || 'novo clube',
+          value: price,
+        };
+        const buyNowImportance = newsImportance({ overall: listing.player_overall, value: price });
+        const headline = buyNowHeadlines({
+          player: listing.player_name,
+          ovr: listing.player_overall,
+          from: listing.seller_club_name,
+          to: buyerClubName || 'novo clube',
+          money: priceStr,
+        });
+        // Notícia pro vendedor e pro comprador (cada um vê no próprio feed)
+        await adminClient.from('newspaper_entries').insert([
+          { user_id: listing.seller_id, category: 'TRANSFERÊNCIA', text: headline, is_event: true, importance: buyNowImportance, metadata: buyNowMeta },
+          { user_id: userId,            category: 'TRANSFERÊNCIA', text: headline, is_event: true, importance: buyNowImportance, metadata: buyNowMeta },
+        ]);
+      }
 
       return new Response(JSON.stringify({
         success: true,
