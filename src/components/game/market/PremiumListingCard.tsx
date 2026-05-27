@@ -73,6 +73,11 @@ export const PremiumListingCard = memo(function PremiumListingCard({
 
       {/* Corner status pill */}
       <div className="absolute top-2 right-2 z-10 flex gap-1">
+        {!isOwn && (
+          <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider bg-gradient-to-r from-emerald-500 to-emerald-400 text-emerald-950 flex items-center gap-0.5 shadow-lg">
+            <Zap className="h-2.5 w-2.5 fill-current" /> COMPRA IMEDIATA
+          </span>
+        )}
         {isStar && (
           <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider bg-amber-500/90 text-amber-950 flex items-center gap-0.5 shadow-lg">
             <Star className="h-2.5 w-2.5 fill-current" /> CRAQUE
