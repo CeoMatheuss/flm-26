@@ -334,7 +334,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       clearInterval(backupInterval);
     };
 
-  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, loadLoanOffers, loadMyRenewals, resolveDecisions, userId]);
+  }, [loadListings, loadMyOffers, loadIncomingOffers, loadLoanListings, loadLoanOffers, loadMyRenewals, resolveDecisions, userId, syncFinalizedLoans, processFinalizedLoan]);
 
   const listPlayer = async (player: Player) => {
     setLoading(true);
