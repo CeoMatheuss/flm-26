@@ -61,6 +61,8 @@ interface TransferOffer {
   created_at: string;
   decision_deadline: string | null;
   decision_status: string | null;
+  counter_offer?: { salary?: number; contract_years?: number; signing_bonus?: number; price?: number } | null;
+  negotiation_closed?: boolean | null;
 }
 
 const posColors: Record<string, { bg: string; text: string; border: string }> = {
