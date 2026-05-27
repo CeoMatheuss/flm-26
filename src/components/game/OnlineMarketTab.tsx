@@ -1019,48 +1019,49 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                     Nenhum jogador disponível {hasFilters ? 'com esses filtros.' : 'no momento.'}
                   </div>
                 ) : (
-                  <div className="space-y-1.5">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     {filtered.map(l => {
                       const pos = posColors[l.player_position] || { bg: 'bg-muted/30', text: 'text-muted-foreground', border: 'border-border/30' };
                       return (
-                        <div
-                          key={l.id}
-                          className="group relative rounded-xl overflow-hidden border-2 border-dashed border-cyan-500/40 hover:border-cyan-400/80 hover:shadow-[0_0_22px_-6px_hsl(190_85%_55%/0.55)] transition-all duration-300 animate-fade-in"
-                          style={{ background: 'hsl(var(--card))' }}
-                        >
-                          {/* Diagonal stripe banner */}
-                          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-cyan-500 via-sky-300 to-cyan-500" />
+                        <div key={l.id}
+                          className="group relative rounded-xl overflow-hidden border border-cyan-500/25 backdrop-blur-sm hover:border-cyan-400/60 hover:shadow-[0_0_25px_-8px_hsl(190_85%_55%/0.6)] hover:-translate-y-0.5 transition-all duration-300"
+                          style={{ background: 'linear-gradient(135deg, hsl(190 40% 9% / 0.6), hsl(220 45% 8% / 0.85))' }}>
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 to-sky-600" />
                           <div className="absolute top-0 right-0 z-10">
-                            <div className="px-2 py-0.5 text-[8px] font-black tracking-widest uppercase rounded-bl-lg shadow-lg bg-cyan-500 text-cyan-950 flex items-center gap-1">
-                              <Handshake className="h-2.5 w-2.5" /> Empréstimo
+                            <div className="px-2 py-0.5 text-[8px] font-black tracking-widest uppercase rounded-bl-lg bg-gradient-to-r from-cyan-500 to-sky-500 text-cyan-950 flex items-center gap-1 shadow-lg">
+                              <Handshake className="h-2.5 w-2.5" /> Loan
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2.5 p-3 pt-3.5">
-                            <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border} shrink-0`}>
-                              <span className={`text-sm font-black ${getOvrColor(l.player_overall)}`}>{l.player_overall}</span>
-                              <span className={`text-[7px] font-bold ${pos.text} leading-none`}>{l.player_position}</span>
+                          <div className="flex items-start gap-2.5 p-3">
+                            <div className="relative shrink-0">
+                              <div className="absolute inset-0 rounded-xl bg-cyan-500/20 blur-sm" />
+                              <div className={`relative w-11 h-11 rounded-xl flex flex-col items-center justify-center ${pos.bg} border ${pos.border}`}>
+                                <span className={`text-sm font-black ${getOvrColor(l.player_overall)} leading-none`}>{l.player_overall}</span>
+                                <span className={`text-[7px] font-bold ${pos.text} mt-0.5`}>{l.player_position}</span>
+                              </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold truncate">{l.player_name}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">
-                                {l.player_age} anos • <span className="text-primary">{l.seller_club_name}</span>
+                              <p className="text-xs font-black truncate">{l.player_name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                {l.player_age}a • <span className="text-cyan-300">{l.seller_club_name}</span>
                               </p>
-                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[9px] font-bold text-cyan-300">
-                                  <DollarSign className="h-2.5 w-2.5" /> R${((l.salary || 0) / 1000).toFixed(1)}k/mês
+                              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[9px] font-black text-cyan-200">
+                                  <DollarSign className="h-2.5 w-2.5" /> {((l.salary || 0) / 1000).toFixed(1)}k
                                 </span>
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/30 text-[9px] font-bold text-sky-300">
-                                  <Timer className="h-2.5 w-2.5" /> 1 temporada
-                                </span>
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/30 border border-border/30 text-[9px] font-semibold text-muted-foreground">
-                                  Salário 100% pago pelo cessionário
+                                  <Timer className="h-2.5 w-2.5" /> 1 temp
                                 </span>
                               </div>
                             </div>
-                            <Button size="sm" className="h-8 px-2.5 text-[10px] rounded-lg gap-1 bg-cyan-600 hover:bg-cyan-500 text-white" disabled={loading} onClick={() => setNegotiateLoan(l)}>
-                              <Handshake className="h-3 w-3" /> Negociar
+                            <Button size="sm" disabled={loading} onClick={() => setNegotiateLoan(l)}
+                              className="h-9 px-3 text-[10px] rounded-lg gap-1.5 font-black bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-cyan-950 shadow-[0_0_15px_-5px_rgb(6_182_212)] shrink-0">
+                              <Handshake className="h-3.5 w-3.5" /> Negociar
                             </Button>
+                          </div>
+                          <div className="px-3 pb-2.5 -mt-1 text-[9px] text-muted-foreground/80">
+                            Salário 100% pago pelo cessionário durante o empréstimo
                           </div>
                         </div>
                       );
@@ -1072,48 +1073,53 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
           })()}
 
           {loanListings.filter(l => l.seller_id === userId).length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Seus jogadores no mercado de empréstimo</p>
-              {loanListings.filter(l => l.seller_id === userId).map(l => (
-                <div key={l.id} className="rounded-xl border border-cyan-500/20 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[l.player_position]?.bg || 'bg-muted/30'} ${posColors[l.player_position]?.text || ''}`}>{l.player_position}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate">{l.player_name}</p>
-                    <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-amber-300/80 uppercase tracking-wider">Seus anúncios ativos</p>
+              <div className="space-y-1.5">
+                {loanListings.filter(l => l.seller_id === userId).map(l => (
+                  <div key={l.id} className="rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/[0.06] to-transparent backdrop-blur-sm p-3 flex items-center gap-2.5">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black ${posColors[l.player_position]?.bg || 'bg-muted/30'} ${posColors[l.player_position]?.text || ''}`}>{l.player_position}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black truncate">{l.player_name}</p>
+                      <p className="text-[10px] text-muted-foreground">OVR {l.player_overall} • {l.player_age}a • R${((l.salary || 0) / 1000).toFixed(0)}k/mês</p>
+                    </div>
+                    <Badge className="text-[8px] bg-amber-500/15 text-amber-300 border-amber-500/30">📣 Anunciado</Badge>
+                    <Button size="sm" variant="ghost" className="h-8 px-2 text-[9px] rounded-lg hover:bg-red-500/15 hover:text-red-300" onClick={async () => {
+                      const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-delist', listingId: l.id } });
+                      if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
+                      else { toast.success('Retirado!'); loadLoanListings(); }
+                    }}>
+                      <X className="h-3 w-3 mr-0.5" /> Retirar
+                    </Button>
                   </div>
-                  <Button size="sm" variant="destructive" className="h-7 px-2.5 text-[9px] rounded-lg" onClick={async () => {
-                    const res = await supabase.functions.invoke('process-transfer', { body: { action: 'loan-delist', listingId: l.id } });
-                    if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro');
-                    else { toast.success('Retirado!'); loadLoanListings(); }
-                  }}>
-                    <X className="h-3 w-3 mr-0.5" /> Retirar
-                  </Button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Active loans (only outgoing) */}
           {loanedPlayers.filter(l => l.direction === 'out').length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Empréstimos cedidos ativos</p>
-              {loanedPlayers.filter(l => l.direction === 'out').map((loan, i) => (
-                <div key={i} className="rounded-xl border border-cyan-500/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${posColors[loan.player.position]?.bg || 'bg-muted/30'} ${posColors[loan.player.position]?.text || ''}`}>{loan.player.position}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold truncate">{loan.player.name}</p>
-                    <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • {loan.player.age}a</p>
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-orange-300/80 uppercase tracking-wider">Empréstimos cedidos ativos</p>
+              <div className="space-y-1.5">
+                {loanedPlayers.filter(l => l.direction === 'out').map((loan, i) => (
+                  <div key={i} className="rounded-xl border border-orange-500/20 bg-gradient-to-r from-orange-500/[0.06] to-transparent backdrop-blur-sm p-3 flex items-center gap-2.5">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black ${posColors[loan.player.position]?.bg || 'bg-muted/30'} ${posColors[loan.player.position]?.text || ''}`}>{loan.player.position}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black truncate">{loan.player.name}</p>
+                      <p className="text-[10px] text-muted-foreground">OVR {loan.player.overall} • {loan.player.age}a</p>
+                    </div>
+                    <Badge className="text-[8px] bg-orange-500/15 text-orange-300 border-orange-500/30">↗ Cedido</Badge>
                   </div>
-                  <Badge className="text-[8px] bg-orange-500/15 text-orange-400 border-orange-500/30">↗ Cedido</Badge>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
           {loanListings.filter(l => l.seller_id === userId).length === 0 && loanedPlayers.filter(l => l.direction === 'out').length === 0 && (
-            <div className="text-center py-10 text-xs text-muted-foreground rounded-xl border border-border/15" style={{ background: 'hsl(var(--card))' }}>
-              <ArrowLeftRight className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              Você ainda não cedeu nenhum jogador. Vá em <span className="text-foreground font-semibold">Elenco</span> para emprestar.
+            <div className="text-center py-10 text-xs text-muted-foreground rounded-2xl border border-white/5 bg-black/30">
+              <ArrowLeftRight className="h-10 w-10 mx-auto mb-2 opacity-30" />
+              Você ainda não cedeu nenhum jogador.<br />
+              <span className="text-foreground/80">Vá em <strong>Elenco</strong> para emprestar.</span>
             </div>
           )}
         </TabsContent>
