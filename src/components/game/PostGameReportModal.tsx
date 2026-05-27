@@ -27,6 +27,16 @@ interface ReportData {
   };
   tactical: string[];
   tacticalImpact?: Array<{ side: 'home'|'away'|'both'; name: string; impact: string; kind: string; detail?: string }>;
+  tacticalAnalysis?: {
+    formation: string;
+    style: string;
+    styleWorked: boolean;
+    sectorEfficiency: { defesa: number; meio: number; ataque: number };
+    summary: { possession: number; shots: number; shotsOnTarget: number; tackles: number; fouls: number };
+    whatWorked: string[];
+    whatFailed: string[];
+    assistantFeedback: string;
+  };
   impacts: {
     moraleChange: number;
     rankingChange: number;
@@ -280,6 +290,30 @@ export function PostGameReportModal({ matchDbId, onClose }: Props) {
                         <span className="flex-1"><span className="font-medium">{f.name}</span> <span className="text-amber-300">{f.impact}</span>{f.detail && <span className="block text-[9px] text-muted-foreground italic">{f.detail}</span>}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+                {report.tacticalAnalysis && (
+                  <div className="mt-2 pt-2 border-t border-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-semibold text-primary uppercase tracking-wide">Análise por setor</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${report.tacticalAnalysis.styleWorked ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
+                        {report.tacticalAnalysis.styleWorked ? '✓ Tática funcionou' : '✗ Tática não rendeu'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 text-[10px]">
+                      <div className="bg-white/5 rounded px-1.5 py-1 text-center"><div className="text-muted-foreground text-[9px]">🛡️ Defesa</div><div className="font-bold">{report.tacticalAnalysis.sectorEfficiency.defesa.toFixed(1)}</div></div>
+                      <div className="bg-white/5 rounded px-1.5 py-1 text-center"><div className="text-muted-foreground text-[9px]">⚙️ Meio</div><div className="font-bold">{report.tacticalAnalysis.sectorEfficiency.meio.toFixed(1)}</div></div>
+                      <div className="bg-white/5 rounded px-1.5 py-1 text-center"><div className="text-muted-foreground text-[9px]">⚔️ Ataque</div><div className="font-bold">{report.tacticalAnalysis.sectorEfficiency.ataque.toFixed(1)}</div></div>
+                    </div>
+                    {report.tacticalAnalysis.whatWorked.length > 0 && (
+                      <div className="text-[10px]"><span className="text-emerald-400 font-semibold">✓ </span>{report.tacticalAnalysis.whatWorked.join(' • ')}</div>
+                    )}
+                    {report.tacticalAnalysis.whatFailed.length > 0 && (
+                      <div className="text-[10px]"><span className="text-red-400 font-semibold">✗ </span>{report.tacticalAnalysis.whatFailed.join(' • ')}</div>
+                    )}
+                    <div className="text-[10px] italic text-amber-300/90 bg-amber-500/5 border-l-2 border-amber-500/40 px-2 py-1 rounded">
+                      💬 Auxiliar: "{report.tacticalAnalysis.assistantFeedback}"
+                    </div>
                   </div>
                 )}
               </CardContent>

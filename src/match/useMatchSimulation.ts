@@ -158,9 +158,28 @@ export function useMatchSimulation() {
   }, [currentTactics]);
 
   const updateTactics = useCallback((newTactics: TacticsConfig) => {
-    setCurrentTactics(newTactics);
-    // Em uma implementação real, aqui poderíamos enviar os novos dados para o servidor
-    // se for uma partida simulada em nuvem, ou ajustar as probabilidades locais.
+    setCurrentTactics(prev => {
+      // Emit a visible "Mudança tática" event in the feed when the user changes
+      // formation, play style or pressing mid-match.
+      if (prev && dataRef.current && (
+        prev.formation !== newTactics.formation ||
+        prev.playStyle !== newTactics.playStyle ||
+        prev.pressing !== newTactics.pressing ||
+        prev.intensity !== newTactics.intensity
+      )) {
+        const minute = Math.max(1, Math.min(90, Math.floor(((Date.now() - dataRef.current.startTime) / dataRef.current.durationMs) * 90)));
+        const ev: SimEvent = {
+          minute,
+          type: 'tactical_change',
+          team: 'home',
+          description: `🧠 MUDANÇA TÁTICA — Formação ${newTactics.formation} • Estilo ${newTactics.playStyle} • Pressing ${newTactics.pressing}`,
+          priority: 'medium',
+        };
+        // Insert into ordered event stream so it shows immediately
+        dataRef.current.allEvents = [...dataRef.current.allEvents, ev].sort((a, b) => a.minute - b.minute);
+      }
+      return newTactics;
+    });
     console.log("[TACTICS] Atualização em tempo real:", newTactics);
   }, []);
   const dataRef = useRef<MatchData | null>(null);
