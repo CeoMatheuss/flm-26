@@ -356,6 +356,17 @@ function PlayerListRow({ player, idx, isStarter, isNegotiating, delta, selected,
                  <ArrowLeftRight className="w-2.5 h-2.5" /> EMPRESTADO {player.loanedTo && `→ ${player.loanedTo}`}
                </span>
              )}
+             {isNewSigning && signingMeta && (
+               <motion.span
+                 initial={{ scale: 0, opacity: 0 }}
+                 animate={{ scale: 1, opacity: 1 }}
+                 transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                 title={signingMeta.tooltip + (player.signedFromClub ? ` • Origem: ${player.signedFromClub}` : '')}
+                 className={cn('flex items-center gap-0.5 px-1.5 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest animate-pulse', signingMeta.cls)}
+               >
+                 {signingMeta.label}
+               </motion.span>
+             )}
 
              <span className={cn("text-[8px] font-black uppercase tracking-widest opacity-60", sm.color)}>
                {sm.label}
