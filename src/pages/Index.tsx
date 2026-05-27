@@ -68,34 +68,76 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   const [displayName, setDisplayName] = useState('Manager');
 
   useEffect(() => {
+    let cancelled = false;
+
+    const withTimeout = async <T,>(promise: Promise<T>, timeoutMs = 10000): Promise<T> => {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          promise,
+          new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Tempo limite ao carregar os dados do clube.')), timeoutMs);
+          }),
+        ]);
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    };
+
     const load = async () => {
-      const [saveRes, profileRes, clubRes] = await Promise.all([
-        supabase.from('game_saves').select('club_data').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('profiles').select('display_name').eq('user_id', userId).maybeSingle(),
-        supabase.from('clubs').select('name, shield_config, bankrupt_at').eq('user_id', userId).maybeSingle(),
-      ]);
-      if (profileRes.data?.display_name) setDisplayName(profileRes.data.display_name);
-      
-      if (clubRes.data?.bankrupt_at) {
-        setIsBankrupt(true);
-        setBankruptClubData({ name: clubRes.data.name, shield_config: clubRes.data.shield_config });
-      }
-      if (saveRes.data?.club_data) {
-        try {
-          const loaded = saveRes.data.club_data as unknown as GameState;
-          if (loaded.infrastructure?.stadium && loaded.infrastructure.stadium.maxLevel < 15) {
-            loaded.infrastructure.stadium.maxLevel = 15;
+      setGameReady(false);
+      setLoadError(null);
+      setLoadedState(undefined);
+      setHasSave(false);
+
+      try {
+        const saveRes = await withTimeout(
+          supabase.from('game_saves').select('club_data').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+        );
+
+        if (cancelled) return;
+        if (saveRes.error) throw saveRes.error;
+
+        if (saveRes.data?.club_data) {
+          try {
+            const loaded = saveRes.data.club_data as unknown as GameState;
+            if (loaded.infrastructure?.stadium && loaded.infrastructure.stadium.maxLevel < 15) {
+              loaded.infrastructure.stadium.maxLevel = 15;
+            }
+            // Piso mínimo de 1000 torcedores (sem rebaixar quem já cresceu)
+            if (loaded.club && (loaded.club.fans ?? 0) < 1000) {
+              loaded.club.fans = 1000;
+            }
+            setLoadedState(loaded);
+            setHasSave(true);
+            toast.success('Save carregado!');
+          } catch {
+            throw new Error('Seu save foi encontrado, mas os dados não puderam ser preparados.');
           }
-          // Piso mínimo de 1000 torcedores (sem rebaixar quem já cresceu)
-          if (loaded.club && (loaded.club.fans ?? 0) < 1000) {
-            loaded.club.fans = 1000;
+        }
+
+        // Dados secundários não podem bloquear a entrada no jogo.
+        Promise.allSettled([
+          supabase.from('profiles').select('display_name').eq('user_id', userId).maybeSingle(),
+          supabase.from('clubs').select('name, shield_config, bankrupt_at').eq('user_id', userId).maybeSingle(),
+        ]).then(([profileResult, clubResult]) => {
+          if (cancelled) return;
+          if (profileResult.status === 'fulfilled' && profileResult.value.data?.display_name) {
+            setDisplayName(profileResult.value.data.display_name);
           }
-          setLoadedState(loaded);
-          setHasSave(true);
-          toast.success('Save carregado!');
-        } catch { /* ignore */ }
+          if (clubResult.status === 'fulfilled' && clubResult.value.data?.bankrupt_at) {
+            setIsBankrupt(true);
+            setBankruptClubData({ name: clubResult.value.data.name, shield_config: clubResult.value.data.shield_config });
+          }
+        });
+      } catch (err: any) {
+        if (!cancelled) {
+          console.error('[GameApp] Erro ao carregar save:', err);
+          setLoadError(err?.message || 'Erro ao carregar seus dados.');
+        }
+      } finally {
+        if (!cancelled) setGameReady(true);
       }
-      setGameReady(true);
     };
     load();
 
