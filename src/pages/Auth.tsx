@@ -432,7 +432,14 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
                 </div>
               </div>
               <Button type="submit" className="w-full h-12 font-bold gap-2" disabled={loading}>
-                {loading ? 'Entrando...' : '🎮 Entrar'}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Entrando...</span>
+                  </>
+                ) : (
+                  <span>🎮 Entrar</span>
+                )}
               </Button>
             </form>
 
