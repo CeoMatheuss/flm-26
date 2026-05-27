@@ -175,6 +175,7 @@ export function RankingTab({}: Props) {
                       {me?.ranking_points || 0}
                     </p>
                   </div>
+                  <RankingScoringInfo mode="clubs" />
                   <Button
                     variant="outline"
                     size="icon"
