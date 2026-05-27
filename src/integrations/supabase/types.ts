@@ -6861,6 +6861,7 @@ export type Database = {
           prizes_paid: boolean | null
           season_month: number | null
           season_year: number | null
+          status: string | null
           tier_level: number | null
           winner_processed: boolean | null
         }
@@ -6881,6 +6882,7 @@ export type Database = {
           prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
+          status?: string | null
           tier_level?: number | null
           winner_processed?: boolean | null
         }
@@ -6901,6 +6903,7 @@ export type Database = {
           prizes_paid?: boolean | null
           season_month?: number | null
           season_year?: number | null
+          status?: string | null
           tier_level?: number | null
           winner_processed?: boolean | null
         }
@@ -7318,6 +7321,36 @@ export type Database = {
           standings_checksum?: string | null
           sync_version?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      world_system_config: {
+        Row: {
+          created_at: string | null
+          current_season: number
+          global_round: number
+          id: string
+          last_processed_at: string | null
+          settings: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_season?: number
+          global_round?: number
+          id?: string
+          last_processed_at?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_season?: number
+          global_round?: number
+          id?: string
+          last_processed_at?: string | null
+          settings?: Json | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -7818,6 +7851,7 @@ export type Database = {
       }
       get_current_season_day: { Args: never; Returns: number }
       get_division_start_time: { Args: { div_level: number }; Returns: string }
+      get_global_server_round: { Args: never; Returns: number }
       get_league_match_time: {
         Args: { division_level: number }
         Returns: string
