@@ -38,7 +38,7 @@ const features = [
   { icon: Globe, title: 'Eventos Aleatórios', desc: 'Lesões, protestos e surpresas' },
 ];
 
-type AuthStep = 'welcome' | 'login' | 'signup-info' | 'verify-email' | 'beta-request';
+type AuthStep = 'welcome' | 'login' | 'signup-info' | 'beta-request';
 
 interface AuthPageProps {
   initialStep?: AuthStep;
@@ -254,84 +254,6 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     </div>
   );
 
-  // ── OTP STEP ──
-  if (step === 'verify-email') {
-    return (
-      <div className="min-h-screen relative flex items-center justify-center p-4">
-        <img src={slides[0].img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
-        <Card className="w-full max-w-md border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl relative z-10 overflow-hidden">
-          {/* Neon Top Bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse" />
-          
-          <CardContent className="p-6 space-y-6">
-            <div className="text-center space-y-3">
-              <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center relative transform rotate-3">
-                <ShieldCheck className="w-10 h-10 text-primary" />
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-success/20 flex items-center justify-center border-2 border-card">
-                  <CheckCircle2 className="w-4 h-4 text-success" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-black italic uppercase tracking-tighter">Validar Manager</h2>
-              <p className="text-sm text-muted-foreground">Enviamos um código de 6 dígitos para:</p>
-              <Badge variant="secondary" className="text-xs font-bold px-4 py-1.5 bg-primary/5 border-primary/20 text-primary">{pendingEmail}</Badge>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Código de Verificação</label>
-                <div className="relative">
-                  <Input 
-                    placeholder="000000" 
-                    value={verificationCode} 
-                    onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="h-16 text-3xl font-black text-center tracking-[0.5em] bg-white/5 border-white/10 rounded-xl focus:border-primary/50 focus:ring-primary/20"
-                  />
-                  <div className="absolute -inset-1 bg-primary/5 blur-sm -z-10 rounded-xl" />
-                </div>
-              </div>
-
-              <Button 
-                onClick={handleVerifyCode} 
-                disabled={loading || verificationCode.length !== 6}
-                className="w-full h-14 text-sm font-black uppercase italic tracking-wider gap-3 rounded-xl shadow-[0_0_20px_rgba(0,242,255,0.2)]"
-              >
-                {loading ? 'Validando...' : 'Confirmar Acesso'} <ChevronRight className="w-5 h-5" />
-              </Button>
-            </div>
-
-            <div className="text-center space-y-4">
-              <p className="text-[11px] text-muted-foreground animate-pulse">
-                Não recebeu? Verifique sua caixa de <strong>SPAM</strong> ou <strong>Lixeira</strong>.
-              </p>
-              
-              <div className="flex items-center justify-center gap-4">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Problemas?</span>
-                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/10" />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {resendTimer > 0 ? (
-                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 font-bold">
-                    <Clock className="w-3.5 h-3.5" /> Reenviar código em <strong className="text-primary">{resendTimer}s</strong>
-                  </p>
-                ) : (
-                  <Button variant="ghost" size="sm" onClick={handleResendVerification} disabled={loading} className="text-xs font-bold gap-2 hover:bg-white/5">
-                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Reenviar código de verificação
-                  </Button>
-                )}
-                
-                <Button variant="ghost" size="sm" onClick={() => setStep('welcome')} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 hover:text-foreground">
-                  <ArrowLeft className="w-3 h-3 mr-2" /> Alterar Email
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   // (signup-preferences step removed — preferences are no longer collected at signup)
 
