@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════
     // LIVE MATCH GUARD: bloqueia ações sensíveis durante partida ao vivo
     // ═══════════════════════════════════════════════════════════════
-    const SENSITIVE_ACTIONS = new Set(['list', 'offer', 'accept', 'respond', 'buy', 'cancel-listing', 'loan-list', 'loan-accept', 'loan-offer-create', 'loan-offer-accept']);
+    const SENSITIVE_ACTIONS = new Set(['list', 'offer', 'accept', 'respond', 'buy', 'buy-now', 'cancel-listing', 'loan-list', 'loan-accept', 'loan-offer-create', 'loan-offer-accept']);
     if (SENSITIVE_ACTIONS.has(action)) {
       const { data: liveMatch } = await adminClient
         .from('live_matches')
@@ -256,6 +256,174 @@ Deno.serve(async (req) => {
 
       return new Response(JSON.stringify({ success: true, offer }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ACTION: BUY NOW — compra automática de jogador anunciado
+    // ═══════════════════════════════════════════════════════════════
+    if (action === 'buy-now') {
+      const { listingId, clubName: buyerClubName } = body;
+      if (!listingId || typeof listingId !== 'string') {
+        return new Response(JSON.stringify({ error: 'Listing ID inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // 1) Carrega listing (sem lock ainda) só para validar dono e existência
+      const { data: preListing } = await adminClient
+        .from('transfer_listings')
+        .select('*')
+        .eq('id', listingId)
+        .maybeSingle();
+
+      if (!preListing) {
+        return new Response(JSON.stringify({ error: 'Anúncio não encontrado.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (preListing.status !== 'active') {
+        return new Response(JSON.stringify({ error: 'Este jogador já foi vendido.' }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (preListing.seller_id === userId) {
+        return new Response(JSON.stringify({ error: 'Você não pode comprar seu próprio jogador.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const price = Number(preListing.asking_price || 0);
+      const playerData = preListing.player_data || {};
+      const playerSalary = Number(playerData?.salary || 500);
+
+      // 2) Valida verba do comprador (transferência + salário)
+      const { data: buyerSave } = await adminClient
+        .from('game_saves')
+        .select('club_data')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!buyerSave?.club_data) {
+        return new Response(JSON.stringify({ error: 'Save do comprador não encontrado.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const buyerData: any = buyerSave.club_data;
+      const buyerBudget = Number(buyerData?.club?.budget || 0);
+      if (buyerBudget < price) {
+        return new Response(JSON.stringify({ error: `Verba insuficiente. Disponível: R$${(buyerBudget / 1000).toFixed(0)}k, necessário: R$${(price / 1000).toFixed(0)}k.` }), { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // 3) LOCK ATÔMICO — só uma compra vence a corrida
+      const { data: claimed, error: claimErr } = await adminClient
+        .from('transfer_listings')
+        .update({
+          status: 'sold',
+          buyer_id: userId,
+          buyer_club_name: (buyerClubName || '').slice(0, 50),
+          sold_at: new Date().toISOString(),
+          cooldown_until: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+        })
+        .eq('id', listingId)
+        .eq('status', 'active')
+        .select();
+
+      if (claimErr || !claimed || claimed.length === 0) {
+        return new Response(JSON.stringify({ error: 'Este jogador acabou de ser comprado por outro clube.' }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const listing = claimed[0];
+
+      const now = new Date();
+      const contractYears = 3;
+
+      // 4) Registra oferta sintética já aceita (para histórico/auditoria)
+      const { data: syntheticOffer } = await adminClient
+        .from('transfer_offers')
+        .insert({
+          listing_id: listing.id,
+          buyer_id: userId,
+          buyer_club_name: (buyerClubName || '').slice(0, 50),
+          offered_price: price,
+          offered_salary: playerSalary,
+          offered_contract_years: contractYears,
+          status: 'accepted',
+          decision_status: 'player_accepted',
+          responded_at: now.toISOString(),
+        })
+        .select()
+        .single();
+
+      // 5) Rejeita demais propostas pendentes do mesmo anúncio
+      await adminClient.from('transfer_offers').update({
+        status: 'rejected',
+        rejection_reason: 'Jogador comprado via Compra Imediata por outro clube.',
+        responded_at: now.toISOString(),
+      }).eq('listing_id', listing.id).eq('status', 'pending').neq('id', syntheticOffer?.id || '00000000-0000-0000-0000-000000000000');
+
+      // 6) Transfer log
+      await adminClient.from('transfer_log').insert({
+        player_name: listing.player_name,
+        player_overall: listing.player_overall,
+        from_user_id: listing.seller_id,
+        to_user_id: userId,
+        from_club_name: listing.seller_club_name,
+        to_club_name: (buyerClubName || '').slice(0, 50),
+        price,
+        salary: playerSalary,
+        transfer_type: 'sale',
+      });
+
+      // 7) Atualiza save do comprador (adiciona jogador + debita verba)
+      const newPlayer = {
+        ...playerData,
+        salary: playerSalary,
+        contract: contractYears,
+        squad_status: 'reserve',
+        squadRole: 'reserva',
+        onTransferList: false,
+        isLoaned: false,
+      };
+      if (!buyerData.club.players.some((p: any) => p.id === newPlayer.id)) {
+        buyerData.club.players.push(newPlayer);
+        buyerData.club.budget = buyerBudget - price;
+        await adminClient.from('game_saves').update({ club_data: buyerData }).eq('user_id', userId);
+      }
+
+      // 8) Atualiza save do vendedor (remove jogador + credita verba)
+      const { data: sellerSave } = await adminClient
+        .from('game_saves').select('club_data').eq('user_id', listing.seller_id).maybeSingle();
+      if (sellerSave?.club_data) {
+        const sellerData: any = sellerSave.club_data;
+        sellerData.club.players = (sellerData.club.players || []).filter((p: any) => p.id !== playerData.id);
+        sellerData.club.budget = Number(sellerData.club.budget || 0) + price;
+        await adminClient.from('game_saves').update({ club_data: sellerData }).eq('user_id', listing.seller_id);
+      }
+
+      // 9) Notificações
+      const priceStr = price >= 1000000 ? `R$${(price / 1000000).toFixed(1)}M` : `R$${(price / 1000).toFixed(0)}k`;
+      await adminClient.from('user_notifications').insert([
+        {
+          user_id: userId,
+          icon: '⚡',
+          title: `Compra Imediata concluída!`,
+          message: `${listing.player_name} (OVR ${listing.player_overall}) agora faz parte do seu clube por ${priceStr}.`,
+          type: 'success',
+        },
+        {
+          user_id: listing.seller_id,
+          icon: '💰',
+          title: `${listing.player_name} foi comprado!`,
+          message: `${(buyerClubName || 'Um clube')} adquiriu ${listing.player_name} via Compra Imediata por ${priceStr}.`,
+          type: 'success',
+        },
+      ]);
+
+      // 10) Jornal
+      await adminClient.from('newspaper_entries').insert({
+        user_id: listing.seller_id,
+        category: 'TRANSFERÊNCIA',
+        text: `⚡ COMPRA IMEDIATA! ${listing.player_name} (${listing.player_position}, OVR ${listing.player_overall}) foi adquirido pelo ${(buyerClubName || 'novo clube')} junto ao ${listing.seller_club_name} por ${priceStr}.`,
+        is_event: true,
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: `${listing.player_name} comprado com sucesso!`,
+        listing,
+        price,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+
 
     // ═══════════════════════════════════════════════════════════════
     // ACTION: RESPOND TO OFFER (accept/reject/counter)

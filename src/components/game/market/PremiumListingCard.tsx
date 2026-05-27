@@ -28,11 +28,12 @@ export interface PremiumListingCardProps {
   canAfford: boolean;
   loading?: boolean;
   onOffer: () => void;
+  onBuyNow?: () => void;
   onViewSeller: () => void;
 }
 
 export const PremiumListingCard = memo(function PremiumListingCard({
-  listing, isOwn, canAfford, loading, onOffer, onViewSeller,
+  listing, isOwn, canAfford, loading, onOffer, onBuyNow, onViewSeller,
 }: PremiumListingCardProps) {
   const pd = listing.player_data || {};
   const shield = listing.seller_shield as any;
@@ -72,6 +73,11 @@ export const PremiumListingCard = memo(function PremiumListingCard({
 
       {/* Corner status pill */}
       <div className="absolute top-2 right-2 z-10 flex gap-1">
+        {!isOwn && (
+          <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider bg-gradient-to-r from-emerald-500 to-emerald-400 text-emerald-950 flex items-center gap-0.5 shadow-lg">
+            <Zap className="h-2.5 w-2.5 fill-current" /> COMPRA IMEDIATA
+          </span>
+        )}
         {isStar && (
           <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider bg-amber-500/90 text-amber-950 flex items-center gap-0.5 shadow-lg">
             <Star className="h-2.5 w-2.5 fill-current" /> CRAQUE
@@ -184,23 +190,37 @@ export const PremiumListingCard = memo(function PremiumListingCard({
             )}
           </div>
           <div className="flex flex-col gap-1 w-full">
+            {!isOwn && onBuyNow && (
+              <Button
+                size="sm"
+                onClick={onBuyNow}
+                disabled={loading || !canAfford}
+                className={cn(
+                  'h-7 px-2.5 text-[10px] rounded-lg gap-1 font-black uppercase tracking-wider transition-all',
+                  'bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300',
+                  'text-emerald-950 shadow-[0_4px_14px_-4px_hsl(160_70%_45%/0.6)]',
+                )}
+                title="Compra automática — instantânea"
+              >
+                <Zap className="h-3 w-3 fill-current" /> Comprar Agora
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={onOffer}
               disabled={loading || isOwn}
+              variant="outline"
               className={cn(
                 'h-7 px-2.5 text-[10px] rounded-lg gap-1 font-bold transition-all',
-                'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400',
-                'text-white shadow-[0_4px_14px_-4px_hsl(150_70%_45%/0.6)] hover:shadow-[0_6px_20px_-4px_hsl(150_70%_45%/0.8)]',
-                'group-hover:scale-[1.02]',
+                'border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10',
               )}
             >
               <Send className="h-3 w-3" /> Proposta
             </Button>
             <Button
-              size="sm" variant="outline"
+              size="sm" variant="ghost"
               onClick={onViewSeller}
-              className="h-7 px-2 text-[10px] rounded-lg gap-1 border-white/10 hover:border-white/20 hover:bg-white/5"
+              className="h-7 px-2 text-[10px] rounded-lg gap-1 hover:bg-white/5"
             >
               <Eye className="h-3 w-3" /> Clube
             </Button>
