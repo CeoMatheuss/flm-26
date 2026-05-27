@@ -211,7 +211,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       const { data: existingWT } = await supabase.from('world_teams').select('id').eq('user_id', userId).maybeSingle();
       
       if (existingWT) {
-        finalWorldTeamId = existingWorldTeam.id;
+        finalWorldTeamId = existingWT.id;
         await supabase.from('world_teams').update({ name: config.name, logo: config.logoUrl, country: countryName, is_bot: false }).eq('id', finalWorldTeamId);
       } else {
         const { data: newWT, error: nwtErr } = await supabase.from('world_teams').insert({
