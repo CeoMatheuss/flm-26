@@ -72,17 +72,22 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   const [isBankrupt, setIsBankrupt] = useState(false);
   const [bankruptClubData, setBankruptClubData] = useState<{ name: string; shield_config: any } | null>(null);
   const [displayName, setDisplayName] = useState('Manager');
+  const [loadStage, setLoadStage] = useState<string>('Iniciando');
+  const [loadSubStage, setLoadSubStage] = useState<string>('');
+  const [isOfflineFallback, setIsOfflineFallback] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    const withTimeout = async <T,>(promise: Promise<T>, timeoutMs = 10000): Promise<T> => {
+    const CACHE_KEY = `flm:club-cache:${userId}`;
+
+    const withTimeout = async <T,>(promise: Promise<T>, timeoutMs = 25000, label = 'requisição'): Promise<T> => {
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
       try {
         return await Promise.race([
           promise,
           new Promise<never>((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('Tempo limite ao carregar os dados do clube.')), timeoutMs);
+            timeoutId = setTimeout(() => reject(new Error(`Tempo limite ao executar: ${label}`)), timeoutMs);
           }),
         ]);
       } finally {
@@ -90,39 +95,93 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       }
     };
 
+    const fetchSaveWithRetry = async (maxRetries = 3): Promise<any> => {
+      let lastErr: any = null;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 1) {
+            setLoadStage(`Reconectando aos servidores (tentativa ${attempt}/${maxRetries})`);
+            console.warn(`[GameApp] Tentativa ${attempt}/${maxRetries} de carregar save...`);
+            await new Promise(r => setTimeout(r, 800 * (attempt - 1)));
+          }
+          const t0 = performance.now();
+          const res: any = await withTimeout(
+            Promise.resolve(
+              supabase.from('game_saves').select('club_data').eq('user_id', userId)
+                .order('updated_at', { ascending: false }).limit(1).maybeSingle()
+            ),
+            25000,
+            'carregar save do clube',
+          );
+          const ms = Math.round(performance.now() - t0);
+          console.log(`[GameApp] Save carregado em ${ms}ms (tentativa ${attempt})`);
+          if (res.error) throw res.error;
+          return res;
+        } catch (err: any) {
+          lastErr = err;
+          console.error(`[GameApp] Falha na tentativa ${attempt}:`, err?.message || err);
+        }
+      }
+      throw lastErr || new Error('Falha desconhecida ao carregar o clube.');
+    };
+
     const load = async () => {
+      const startedAt = performance.now();
       setGameReady(false);
       setLoadError(null);
       setLoadedState(undefined);
       setHasSave(false);
+      setIsOfflineFallback(false);
+      setLoadStage('Verificando autenticação');
+      setLoadSubStage('');
 
       try {
-        const saveRes = await withTimeout(Promise.resolve(
-          supabase.from('game_saves').select('club_data').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-        ));
-
+        // 1) Validar sessão
+        const { data: sessionRes } = await supabase.auth.getSession();
+        if (!sessionRes.session) {
+          // Tentar refresh
+          const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+          if (refreshErr || !refreshed.session) {
+            throw new Error('Sua sessão expirou. Faça login novamente.');
+          }
+          console.log('[GameApp] Sessão renovada automaticamente.');
+        }
         if (cancelled) return;
-        if (saveRes.error) throw saveRes.error;
+
+        // 2) Buscar save com retry
+        setLoadStage('Carregando dados do clube');
+        setLoadSubStage('Buscando o último save no servidor');
+        const saveRes = await fetchSaveWithRetry(3);
+        if (cancelled) return;
 
         if (saveRes.data?.club_data) {
+          setLoadStage('Buscando elenco e infraestrutura');
           try {
             const loaded = saveRes.data.club_data as unknown as GameState;
             if (loaded.infrastructure?.stadium && loaded.infrastructure.stadium.maxLevel < 15) {
               loaded.infrastructure.stadium.maxLevel = 15;
             }
-            // Piso mínimo de 1000 torcedores (sem rebaixar quem já cresceu)
             if (loaded.club && (loaded.club.fans ?? 0) < 1000) {
               loaded.club.fans = 1000;
             }
             setLoadedState(loaded);
             setHasSave(true);
+            // Cache local para fallback offline
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), state: loaded }));
+            } catch (e) {
+              console.warn('[GameApp] Falha ao cachear save local:', e);
+            }
             toast.success('Save carregado!');
-          } catch {
+          } catch (parseErr) {
+            console.error('[GameApp] Erro ao preparar save:', parseErr);
             throw new Error('Seu save foi encontrado, mas os dados não puderam ser preparados.');
           }
         }
 
-        // Dados secundários não podem bloquear a entrada no jogo.
+        // 3) Dados secundários — paralelos, não bloqueantes
+        setLoadStage('Finalizando dados do clube');
+        setLoadSubStage('Sincronizando perfil e identidade');
         Promise.allSettled([
           supabase.from('profiles').select('display_name').eq('user_id', userId).maybeSingle(),
           supabase.from('clubs').select('name, shield_config, bankrupt_at').eq('user_id', userId).maybeSingle(),
@@ -135,12 +194,36 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
             setIsBankrupt(true);
             setBankruptClubData({ name: clubResult.value.data.name, shield_config: clubResult.value.data.shield_config });
           }
+        }).catch((err) => {
+          console.warn('[GameApp] Dados secundários falharam (não crítico):', err);
         });
+
+        const total = Math.round(performance.now() - startedAt);
+        console.log(`[GameApp] ✅ Carregamento concluído em ${total}ms`);
       } catch (err: any) {
-        if (!cancelled) {
-          console.error('[GameApp] Erro ao carregar save:', err);
-          setLoadError(err?.message || 'Erro ao carregar seus dados.');
+        if (cancelled) return;
+        console.error('[GameApp] ❌ Erro ao carregar save:', err);
+
+        // Tentar fallback offline com cache local
+        try {
+          const cachedRaw = localStorage.getItem(CACHE_KEY);
+          if (cachedRaw) {
+            const cached = JSON.parse(cachedRaw);
+            if (cached?.state) {
+              console.warn('[GameApp] Usando cache local como fallback offline.');
+              setLoadedState(cached.state as GameState);
+              setHasSave(true);
+              setIsOfflineFallback(true);
+              toast.warning('Modo offline temporário — exibindo último save local.');
+              return; // segue para gameReady=true no finally
+            }
+          }
+        } catch (cacheErr) {
+          console.error('[GameApp] Cache local corrompido:', cacheErr);
+          try { localStorage.removeItem(CACHE_KEY); } catch {}
         }
+
+        setLoadError(err?.message || 'Erro ao carregar seus dados.');
       } finally {
         if (!cancelled) setGameReady(true);
       }
@@ -161,6 +244,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
         console.log('[Realtime] Mudança detectada no save do servidor:', payload);
         if (payload.new && (payload.new as any).club_data) {
           setLoadedState((payload.new as any).club_data as GameState);
+          setIsOfflineFallback(false);
         }
       })
       .subscribe();
