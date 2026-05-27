@@ -78,6 +78,11 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   }, [infraState.trainingInvestment]);
 
   // 🔄 Reconstrói elenco completo: profissionais + juniores + banco + tática.
+  const squadHash = useMemo(() => {
+    return (clubState.club.players || []).map((p: any) => `${p.id}:${p.squad_status}`).join('|') + 
+           `|${infraState.youthProspects.length}|${tactics.formation}|${clubState.club.name}`;
+  }, [clubState.club.players, infraState.youthProspects.length, tactics.formation, clubState.club.name]);
+
   useEffect(() => {
     if (clubState.club.players.length === 0 && infraState.youthProspects.length === 0) return;
     
@@ -97,7 +102,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     if (JSON.stringify(rebuiltTactics) !== JSON.stringify(tactics)) {
       setTactics(rebuiltTactics);
     }
-  }, [tactics.formation, clubState.club.players.length, infraState.youthProspects.length, clubState.club.name]);
+  }, [squadHash]);
 
   // Bridged methods that need cross-hook access
   const applyServerResult = useCallback(({
