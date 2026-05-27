@@ -396,6 +396,21 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
   }, [userId, displayName]);
 
   if (!gameReady) return <GameLoadingScreen message="Carregando seu clube" subMessage="Preparando dados do jogo" />;
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4 text-center">
+          <h2 className="text-lg font-bold text-foreground">Não foi possível carregar o clube</h2>
+          <p className="text-sm text-muted-foreground">{loadError}</p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => setLoadAttempt((n) => n + 1)}>Tentar novamente</Button>
+            <Button variant="outline" onClick={onSignOut}>Sair</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   if (isBankrupt) {
     return (
