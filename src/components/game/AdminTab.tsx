@@ -32,6 +32,7 @@ import { AdminVersionPanel } from './admin/AdminVersionPanel';
 // import { ModerationPanel } from './admin/ModerationPanel';
 import { MaintenanceToggle } from './admin/MaintenanceToggle';
 import { AdminShopMonitor } from './admin/AdminShopMonitor';
+import { ResetCompetitionsPanel } from './admin/ResetCompetitionsPanel';
 
 
 interface PendingUser {
