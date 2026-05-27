@@ -58,6 +58,7 @@ const Index = () => {
 };
 
 function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: string; onSignOut: () => void }) {
+  const { addHighlight } = usePlayerHighlight();
   const [loadedState, setLoadedState] = useState<GameState | undefined>(undefined);
   const [gameReady, setGameReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -1166,6 +1167,13 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
           onClose={() => setPendingAwardsSeason(null)}
         />
       )}
+      {/* Celebratory Modal — Modificado para disparar o Destaque Visual */}
+      <useEffect(() => {
+        if (signingPlayer?.id) {
+          addHighlight(signingPlayer.id, signingPlayer.signingType === 'loan_in' ? 'listed_loan' : 'new_signing');
+        }
+      }, [signingPlayer?.id, addHighlight]);
+
       <PlayerSigningModal
         open={!!signingPlayer}
         onClose={() => setSigningPlayer(null)}

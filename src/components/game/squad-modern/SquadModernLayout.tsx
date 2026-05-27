@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { Users, Shield, Sparkles, Ban, Clock, Share2, LayoutDashboard, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePlayerHighlight } from '@/contexts/PlayerHighlightContext';
 
 interface SquadModernProps {
   club: Club;
@@ -53,6 +54,7 @@ export function SquadModernLayout({
   youthInvestment, onSetYouthInvestment,
   userId, infrastructure, lastYouthGenAt, isPremium, onSpendBudget, clubName
 }: SquadModernProps) {
+  const { addHighlight } = usePlayerHighlight();
   const [activeTab, setActiveTab] = useState<string>('titulares');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -447,6 +449,9 @@ export function SquadModernLayout({
         type === 'transfer'
           ? `Taxas de anúncio no mercado — ${player.name}`
           : `Taxas de listagem em empréstimos — ${player.name}`);
+
+      // Add visual highlight
+      addHighlight(player.id, type === 'transfer' ? 'listed_sale' : 'listed_loan');
 
       toast.success(type === 'transfer'
         ? `📢 ${player.name} anunciado no mercado por ${formatMoney(value)}!`
