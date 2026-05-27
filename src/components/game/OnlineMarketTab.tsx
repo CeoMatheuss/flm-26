@@ -240,9 +240,11 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
       if (listing.seller_id === userId && listing.player_id) {
         console.log('[loan-sync] finalizando saída:', listing.player_name);
         onLoanFinalizeOut?.(listing.player_id, listing.buyer_club_name || undefined);
+        toast.success(`${listing.player_name} foi emprestado para ${listing.buyer_club_name || 'outro clube'}.`);
       } else if (listing.buyer_id === userId && listing.player_data) {
         console.log('[loan-sync] finalizando entrada:', listing.player_name);
         onLoanFinalizeIn?.(listing.player_data as Player, listing.seller_club_name || undefined);
+        toast.success(`✅ ${listing.player_name} chegou ao seu elenco por empréstimo!`);
       }
     } catch (err) {
       console.error('[loan-sync] erro ao processar empréstimo:', err);
