@@ -227,6 +227,10 @@ export function MatchesTab({
                     fans={fans}
                   />
                 </TabsContent>
+
+                <TabsContent value="leagues" className="p-4 mt-0">
+                  <ChampionshipsTab />
+                </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
