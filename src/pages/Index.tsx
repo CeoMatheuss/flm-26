@@ -994,10 +994,19 @@ function GameUI({ userId, userEmail, displayName, onSignOut, initialState, isNew
   useEffect(() => {
     const checkAwards = async () => {
       const [{ data: latestAward }, { data: profile }] = await Promise.all([
-        supabase.from('season_awards').select('season').order('season', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('season_awards').select('season, created_at').order('season', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('profiles').select('viewed_awards_season').eq('user_id', userId).maybeSingle(),
       ]);
       if (!latestAward) return;
+      // Só exibe no MESMO DIA em que as premiações foram geradas.
+      const createdAt = (latestAward as any).created_at ? new Date((latestAward as any).created_at) : null;
+      if (!createdAt) return;
+      const now = new Date();
+      const sameDay =
+        createdAt.getFullYear() === now.getFullYear() &&
+        createdAt.getMonth() === now.getMonth() &&
+        createdAt.getDate() === now.getDate();
+      if (!sameDay) return;
       const lastSeen = (profile as any)?.viewed_awards_season ?? 0;
       if (latestAward.season > lastSeen) {
         setPendingAwardsSeason(latestAward.season);
