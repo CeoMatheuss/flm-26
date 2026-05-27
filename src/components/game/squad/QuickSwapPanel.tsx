@@ -28,7 +28,6 @@ export function QuickSwapPanel({ isOpen, onClose, players, onSwap }: QuickSwapPa
 
   const starters = useMemo(() => players.filter(p => p.squad_status === 'starter'), [players]);
   const reserves = useMemo(() => players.filter(p => p.squad_status === 'bench'), [players]);
-  const reserves = useMemo(() => players.filter(p => p.squad_status === 'bench'), [players]);
   const out = useMemo(() => players.filter(p => p.squad_status === 'reserve'), [players]);
   const youth = useMemo(() => players.filter(p => !!(p as any).isYouth && (p as any).contractStatus === 'base'), [players]);
 
