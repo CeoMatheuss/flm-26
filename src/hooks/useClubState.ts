@@ -878,9 +878,11 @@ export function useClubState(initialState: any, userId?: string) {
       if (!player) return prev;
       if (prev.players.length <= 11) { toast.error('Elenco muito pequeno para emprestar!'); return prev; }
       if (loanedPlayers.some(l => l.player.id === playerId)) { toast.error('Este jogador já está emprestado!'); return prev; }
-      setLoanedPlayers(lp => [...lp, { player, fromClub: 'player', direction: 'out', seasonStart: currentSeason }]);
+      const loanedOut = { ...player, isLoaned: true, onLoanList: false, squad_status: 'reserve' as const, squadRole: 'reserva' as const };
+      setLoanedPlayers(lp => [...lp, { player: loanedOut, fromClub: 'player', direction: 'out', seasonStart: currentSeason }]);
       toast.success(`${player.name} emprestado por 1 temporada! O clube receptor paga o salário.`);
-      return { ...prev, players: prev.players.filter(p => p.id !== playerId) };
+      // Mantém no elenco com flag isLoaned para aparecer na aba "Emprestados"
+      return { ...prev, players: prev.players.map(p => p.id === playerId ? loanedOut : p) };
     });
   }, [loansOut.length, loanedPlayers]);
 
