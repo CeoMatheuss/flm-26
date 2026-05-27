@@ -26,10 +26,7 @@ interface RankingEntry {
   club_name: string;
   ranking_points: number;
   prev_position?: number | null;
-  clubs?: {
-    shield_config: any;
-    logo_url: string | null;
-  };
+  clubs?: any;
 }
 
 interface Props {
@@ -64,15 +61,31 @@ export function RankingTab({}: Props) {
 
     if (!error && rankingData) {
       const userIds = rankingData.map((r: any) => r.user_id);
-      const { data: clubsData } = await (supabase
-        .from('clubs')
-        .select('user_id, shield_config, logo_url') as any)
-        .in('user_id', userIds);
 
-      const enhanced = rankingData.map((r: any) => ({
-        ...r,
-        clubs: clubsData?.find((c: any) => c.user_id === r.user_id),
-      }));
+      // Escudos vivem em game_saves.club_data.club (configuração real do clube)
+      const [savesRes, clubsRes] = await Promise.all([
+        (supabase.from('game_saves').select('user_id, club_data') as any).in('user_id', userIds),
+        (supabase.from('clubs').select('user_id, shield_config, logo_url, primary_color, secondary_color, detail_color') as any).in('user_id', userIds),
+      ]);
+
+      const savesMap = new Map<string, any>();
+      (savesRes.data || []).forEach((s: any) => {
+        const club = s?.club_data?.club;
+        if (club) savesMap.set(s.user_id, club);
+      });
+      const clubsMap = new Map<string, any>();
+      (clubsRes.data || []).forEach((c: any) => clubsMap.set(c.user_id, c));
+
+      const enhanced = rankingData.map((r: any) => {
+        const fromSave = savesMap.get(r.user_id);
+        const fromClubs = clubsMap.get(r.user_id);
+        // Mescla: shieldConfig do save tem prioridade (mais atualizado), depois clubs
+        const merged = {
+          ...(fromClubs || {}),
+          ...(fromSave || {}),
+        };
+        return { ...r, clubs: merged };
+      });
 
       setRankings(enhanced as any[]);
       if (userId) {
