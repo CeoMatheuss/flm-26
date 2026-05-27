@@ -84,6 +84,17 @@ Deno.serve(async (req) => {
   try {
     console.log("[WORKER] Iniciando processamento de partidas...");
 
+    // 0. WATCHDOG SYSTEM (Auto-recovery for world leagues)
+    try {
+      const { data: watchdogResult } = await sb.rpc('watchdog_simulate_world_matches', { p_batch_size: BATCH_SIZE });
+      if (watchdogResult && (watchdogResult[0]?.matches_simulated > 0 || watchdogResult[0]?.leagues_advanced > 0)) {
+        console.log(`[WATCHDOG] Recuperadas ${watchdogResult[0].matches_simulated} partidas e avançadas ${watchdogResult[0].leagues_advanced} ligas.`);
+      }
+    } catch (e) {
+      console.error("[WATCHDOG ERROR]", e);
+    }
+
+
     // 1. LEAGUE MATCHES
     const leagueTolerance = new Date(now.getTime() - MATCH_WAIT_TIME_MS).toISOString();
     const leagueStuck = new Date(now.getTime() - STUCK_THRESHOLD_MS).toISOString();
