@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const MASTER_COUNTRIES = [
   { code: "BR", name: "Brasil", d1_name: "Brasileirão Série A", flag: "🇧🇷" },
-  { code: "EN", name: "Inglaterra", d1_name: "Premier League", flag: "🏴" },
+  { code: "EN", name: "Inglaterra", d1_name: "Premier League", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
   { code: "ES", name: "Espanha", d1_name: "LaLiga", flag: "🇪🇸" },
   { code: "IT", name: "Itália", d1_name: "Serie A TIM", flag: "🇮🇹" },
   { code: "DE", name: "Alemanha", d1_name: "Bundesliga", flag: "🇩🇪" },
@@ -23,6 +23,21 @@ const MASTER_COUNTRIES = [
   { code: "US", name: "Estados Unidos", d1_name: "MLS", flag: "🇺🇸" },
   { code: "SA", name: "Arábia Saudita", d1_name: "Saudi Pro League", flag: "🇸🇦" },
   { code: "JP", name: "Japão", d1_name: "J1 League", flag: "🇯🇵" },
+  { code: "RU", name: "Rússia", d1_name: "Premier League", flag: "🇷🇺" },
+  { code: "GR", name: "Grécia", d1_name: "Super League Greece", flag: "🇬🇷" },
+  { code: "UA", name: "Ucrânia", d1_name: "Premier League", flag: "🇺🇦" },
+  { code: "CH", name: "Suíça", d1_name: "Super League", flag: "🇨🇭" },
+  { code: "AT", name: "Áustria", d1_name: "Bundesliga", flag: "🇦🇹" },
+  { code: "DK", name: "Dinamarca", d1_name: "Superliga", flag: "🇩🇰" },
+  { code: "NO", name: "Noruega", d1_name: "Eliteserien", flag: "🇳🇴" },
+  { code: "SE", name: "Suécia", d1_name: "Allsvenskan", flag: "🇸🇪" },
+  { code: "CL", name: "Chile", d1_name: "Primera División", flag: "🇨🇱" },
+  { code: "PY", name: "Paraguai", d1_name: "Primera División", flag: "🇵🇾" },
+  { code: "EC", name: "Equador", d1_name: "Serie A", flag: "🇪🇨" },
+  { code: "PE", name: "Peru", d1_name: "Liga 1", flag: "🇵🇪" },
+  { code: "EG", name: "Egito", d1_name: "Premier League", flag: "🇪🇬" },
+  { code: "KR", name: "Coreia do Sul", d1_name: "K League 1", flag: "🇰🇷" },
+  { code: "SC", name: "Escócia", d1_name: "Premiership", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
 ];
 
 const SCHEDULE_TIMES = {
