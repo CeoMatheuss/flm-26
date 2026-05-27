@@ -127,24 +127,41 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
     loadInvites();
   };
 
+  const markAsRead = useCallback(async (id: string) => {
+    setPersistedReadKeys(prev => new Set(prev).add(id));
+    if (id.startsWith('db-')) {
+      const dbId = id.replace('db-', '');
+      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).eq('id', dbId);
+    }
+    await supabase.from('notification_read_state').upsert(
+      { user_id: userId, notification_key: id, read_at: new Date().toISOString() },
+      { onConflict: 'user_id,notification_key' }
+    );
+  }, [userId]);
+
+  const markAllAsRead = useCallback(async () => {
+    const allIds = notifications.map(n => n.id);
+    setPersistedReadKeys(new Set([...persistedReadKeys, ...allIds]));
+    const dbIds = dbNotifications.filter(d => !d.read_at).map(d => d.id);
+    if (dbIds.length > 0) {
+      await supabase.from('user_notifications').update({ read_at: new Date().toISOString() }).in('id', dbIds);
+    }
+    if (allIds.length > 0) {
+      await supabase.from('notification_read_state').upsert(
+        allIds.map(key => ({ user_id: userId, notification_key: key, read_at: new Date().toISOString() })),
+        { onConflict: 'user_id,notification_key' }
+      );
+    }
+  }, [userId, dbNotifications, persistedReadKeys]); // Removed 'notifications' from deps to avoid circularity if possible, or just accept it's fine
+
   const dispatchNotificationAction = useCallback(async (action: any, notificationId: string) => {
     if (!action) return;
-
-    // Mark as read immediately when an action is clicked
     markAsRead(notificationId);
-
     switch (action.type) {
       case 'navigate':
-        if (action.payload.tab) {
-          window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: action.payload }));
-        }
-        if (action.payload.club_name) {
-          window.dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: action.payload.club_name } }));
-        }
-        if (action.payload.player_name) {
-           // Custom event for market negotiation or specific player view
-           window.dispatchEvent(new CustomEvent('flm:market-negotiate', { detail: action.payload }));
-        }
+        if (action.payload.tab) window.dispatchEvent(new CustomEvent('flm:navigate-to-tab', { detail: action.payload }));
+        if (action.payload.club_name) window.dispatchEvent(new CustomEvent('flm:open-club-profile', { detail: { club_name: action.payload.club_name } }));
+        if (action.payload.player_name) window.dispatchEvent(new CustomEvent('flm:market-negotiate', { detail: action.payload }));
         break;
       case 'invoke':
         const { functionName, body } = action.payload;
@@ -155,16 +172,11 @@ export function NotificationBell({ players, budget, listedPlayers, clubName, inf
             toast.dismiss(loadingToast);
             if (error || data?.error) toast.error(data?.error || 'Erro ao processar');
             else toast.success(data?.message || 'Sucesso!');
-          } catch (e) {
-            toast.dismiss(loadingToast);
-            toast.error('Erro de conexão');
-          }
+          } catch (e) { toast.dismiss(loadingToast); toast.error('Erro de conexão'); }
         }
         break;
       case 'open_modal':
         if (action.payload.modal === 'match_report' && action.payload.matchId) {
-          // This is handled via state in NotificationFullPage if match_db_id is in data,
-          // but we can also trigger it here via a custom event if needed.
           window.dispatchEvent(new CustomEvent('flm:open-match-report', { detail: action.payload.matchId }));
         }
         break;
