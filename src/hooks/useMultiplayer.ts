@@ -228,61 +228,6 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
   const [loading, setLoading] = useState(false);
   const [autoJoining, setAutoJoining] = useState(false);
 
-  // Auto-assign player to a league based on country
-  const autoJoinLeague = useCallback(async () => {
-    if (!clubName || !clubCountry || autoJoining) return;
-    setAutoJoining(true);
-    const loadingToast = toast.loading('Entrando na Liga...', {
-      description: `Buscando vaga no país: ${clubCountry}...`
-    });
-    
-    try {
-      console.log(`[LeagueRegistration] Attempting auto-join for user ${userId} in ${clubCountry}`);
-      
-      const { data: leagueId, error } = await supabase.rpc('auto_assign_league', {
-        _user_id: userId,
-        _club_name: clubName,
-        _country: clubCountry,
-      });
-
-      if (error) {
-        console.error('[LeagueRegistration] Auto-assign error:', error);
-        toast.error('Erro ao entrar na liga automaticamente', { id: loadingToast });
-        setAutoJoining(false);
-        return;
-      }
-
-      if (leagueId) {
-        console.log(`[LeagueRegistration] Successfully assigned to league: ${leagueId}`);
-        toast.success('Clube inscrito com sucesso!', { 
-          id: loadingToast,
-          description: 'Você já está ativo na liga e participando da temporada.'
-        });
-        
-        const { data: league } = await supabase
-          .from('multiplayer_leagues')
-          .select('*')
-          .eq('id', leagueId)
-          .single();
-
-        if (league) {
-          await loadLeagues();
-          await enterLeague(league as unknown as MultiplayerLeague);
-        }
-      } else {
-        console.log('[LeagueRegistration] No immediate space or bots available. Added to waiting list.');
-        toast.info('Inscrito na fila de espera', {
-          id: loadingToast,
-          description: 'Ligas cheias no momento. Você entrará assim que abrir uma vaga.'
-        });
-      }
-    } catch (e) {
-      console.error('[LeagueRegistration] Auto-join exception:', e);
-      toast.error('Falha crítica ao entrar na liga', { id: loadingToast });
-    }
-    setAutoJoining(false);
-  }, [userId, clubName, clubCountry, autoJoining, loadLeagues, enterLeague]);
-
   // Load user's leagues
   const loadLeagues = useCallback(async () => {
     const { data: memberOf } = await supabase
@@ -301,15 +246,6 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
       setLeagues([]);
     }
   }, [userId]);
-
-  // Auto-join on mount if club info is available
-  useEffect(() => {
-    if (clubName && clubCountry) {
-      autoJoinLeague();
-    } else {
-      loadLeagues();
-    }
-  }, [clubName, clubCountry]);
 
   // Enter league
   const enterLeague = useCallback(async (league: MultiplayerLeague) => {
@@ -377,7 +313,69 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
     return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
-  const leaveLeague = useCallback(() => { setCurrentLeague(null); }, []);
+  // Auto-assign player to a league based on country
+  const autoJoinLeague = useCallback(async () => {
+    if (!clubName || !clubCountry || autoJoining) return;
+    setAutoJoining(true);
+    const loadingToast = toast.loading('Entrando na Liga...', {
+      description: `Buscando vaga no país: ${clubCountry}...`
+    });
+    
+    try {
+      console.log(`[LeagueRegistration] Attempting auto-join for user ${userId} in ${clubCountry}`);
+      
+      const { data: leagueId, error } = await supabase.rpc('auto_assign_league', {
+        _user_id: userId,
+        _club_name: clubName,
+        _country: clubCountry,
+      });
+
+      if (error) {
+        console.error('[LeagueRegistration] Auto-assign error:', error);
+        toast.error('Erro ao entrar na liga automaticamente', { id: loadingToast });
+        setAutoJoining(false);
+        return;
+      }
+
+      if (leagueId) {
+        console.log(`[LeagueRegistration] Successfully assigned to league: ${leagueId}`);
+        toast.success('Clube inscrito com sucesso!', { 
+          id: loadingToast,
+          description: 'Você já está ativo na liga e participando da temporada.'
+        });
+        
+        const { data: league } = await supabase
+          .from('multiplayer_leagues')
+          .select('*')
+          .eq('id', leagueId)
+          .single();
+
+        if (league) {
+          await loadLeagues();
+          await enterLeague(league as unknown as MultiplayerLeague);
+        }
+      } else {
+        console.log('[LeagueRegistration] No immediate space or bots available. Added to waiting list.');
+        toast.info('Inscrito na fila de espera', {
+          id: loadingToast,
+          description: 'Ligas cheias no momento. Você entrará assim que abrir uma vaga.'
+        });
+      }
+    } catch (e) {
+      console.error('[LeagueRegistration] Auto-join exception:', e);
+      toast.error('Falha crítica ao entrar na liga', { id: loadingToast });
+    }
+    setAutoJoining(false);
+  }, [userId, clubName, clubCountry, autoJoining, loadLeagues, enterLeague]);
+
+  // Auto-join on mount if club info is available
+  useEffect(() => {
+    if (clubName && clubCountry) {
+      autoJoinLeague();
+    } else {
+      loadLeagues();
+    }
+  }, [clubName, clubCountry, autoJoinLeague, loadLeagues]);
 
   // Send chat
   const sendChat = useCallback(async (content: string) => {
