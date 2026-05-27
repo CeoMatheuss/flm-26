@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getVerificationEmailTemplate } from "../_shared/email-templates/verification.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,158 +29,16 @@ serve(async (req) => {
     )
 
     if (action === 'send-code') {
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-      const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1'
-      
-      console.log(`[send-code] IP Detectado: ${ipAddress}`)
-
-      // Anti-flood: Verificar se já houve um envio recente (últimos 45 segundos)
-      const { data: recentCode } = await supabaseAdmin
-        .from('auth_verification_codes')
-        .select('created_at')
-        .eq('email', email)
-        .gt('created_at', new Date(Date.now() - 45 * 1000).toISOString())
-        .limit(1)
-
-      if (recentCode && recentCode.length > 0) {
-        console.warn(`[send-code] Anti-flood atingido para ${email}`)
-        return new Response(JSON.stringify({ 
-          error: 'Muitas solicitações. Aguarde um momento.',
-          cooldown: true 
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-
-      // Invalida códigos anteriores
-      await supabaseAdmin
-        .from('auth_verification_codes')
-        .update({ used_at: new Date().toISOString() })
-        .eq('email', email)
-        .is('used_at', null)
-
-      // Salva novo código
-      const { data: insertedCode, error: dbError } = await supabaseAdmin
-        .from('auth_verification_codes')
-        .insert({
-          email,
-          code: verificationCode,
-          expires_at: new Date(Date.now() + 15 * 1000 * 60).toISOString(), // 15 mins
-          delivery_status: 'pending'
-        })
-        .select()
-        .single()
-
-      if (dbError) {
-        console.error('[send-code] Erro DB:', dbError)
-        throw dbError
-      }
-
-      const resendKey = Deno.env.get('RESEND_API_KEY')
-      // PRIORIDADE: Domínio verificado.
-      const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'no-reply@footballlifemanager.com.br'
-      
-      let emailSent = false
-      let finalError: any = null
-      let apiResponse: any = null
-
-      if (resendKey) {
-        const sendWithDomain = async (from: string) => {
-          const attemptStart = Date.now()
-          console.log(`[send-code] Tentando enviar de: ${from}`)
-          try {
-            const res = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${resendKey}`,
-              },
-              body: JSON.stringify({
-                from: `Football Life Manager <${from}>`,
-                to: [email],
-                subject: `Código de Acesso: ${verificationCode}`,
-                html: getVerificationEmailTemplate({
-                  userName: email.split('@')[0],
-                  verificationCode: verificationCode,
-                  expirationMinutes: 15,
-                  clubName: 'Manager em Pré-Temporada',
-                  ipAddress: ipAddress,
-                  creationDate: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-                  appUrl: 'https://footballlifemanager26.vercel.app'
-                }),
-              }),
-            })
-            const data = await res.json()
-            return { ok: res.ok, status: res.status, data, duration: Date.now() - attemptStart }
-          } catch (e) {
-            return { ok: false, status: 500, data: { message: e.message }, duration: Date.now() - attemptStart }
-          }
-        }
-
-        const primaryAttempt = await sendWithDomain(fromEmail)
-        apiResponse = primaryAttempt.data
-
-        if (primaryAttempt.ok) {
-          emailSent = true
-          console.log('[send-code] Envio bem-sucedido via domínio principal')
-        } else {
-          finalError = primaryAttempt.data
-          console.error(`[send-code] Erro no domínio principal (${primaryAttempt.status}):`, finalError)
-
-          // Fallback Automático para sandbox se for erro de validação de domínio ou 403
-          const isDomainError = primaryAttempt.status === 403 || 
-                                primaryAttempt.data?.name === 'validation_error' || 
-                                primaryAttempt.data?.message?.toLowerCase().includes('not verified') || 
-                                primaryAttempt.data?.message?.toLowerCase().includes('verify your domain')
-
-          if (isDomainError) {
-            console.warn('[send-code] Domínio não verificado ou conta em sandbox. Tentando fallback para onboarding@resend.dev...')
-            const fallbackAttempt = await sendWithDomain('onboarding@resend.dev')
-            if (fallbackAttempt.ok) {
-              emailSent = true
-              console.log('[send-code] Envio bem-sucedido via Sandbox (Apenas para o email da conta Resend)')
-            } else {
-              console.error('[send-code] Falha total no envio. Ambos domínios falharam.')
-              finalError = fallbackAttempt.data
-              
-              // Se falhou no sandbox também, o erro costuma ser que o destinatário não é o dono da conta
-              if (fallbackAttempt.data?.message?.toLowerCase().includes('only send testing emails')) {
-                finalError = { 
-                  message: 'A conta Resend está em modo Sandbox. No modo Sandbox, e-mails só podem ser enviados para o endereço que criou a conta (fcmsistemas7@gmail.com). Para enviar para outros usuários (Gmail, Outlook, etc), você PRECISA verificar um domínio próprio no painel da Resend.',
-                  code: 'RESEND_SANDBOX_LIMIT',
-                  status: 403
-                }
-              }
-            }
-          }
-        }
-      } else {
-        finalError = 'RESEND_API_KEY_MISSING'
-        console.error('[send-code] RESEND_API_KEY não encontrada nas secrets')
-      }
-
-      const totalDuration = Date.now() - startTime
-      
-      // Atualiza log no banco
-      await supabaseAdmin
-        .from('auth_verification_codes')
-        .update({ 
-          delivery_status: emailSent ? 'sent' : 'failed',
-          delivery_error: JSON.stringify(finalError),
-          delivery_time_ms: totalDuration
-        })
-        .eq('id', insertedCode.id)
-
-      console.log(`[send-code] Finalizado em ${totalDuration}ms. Sucesso: ${emailSent}`)
-
+      console.log(`[send-code] Verificação por e-mail desativada temporariamente para: ${email}`)
       return new Response(JSON.stringify({
         success: true,
-        emailSent,
+        emailSent: false,
+        bypassed: true,
+        message: 'Validação por e-mail temporariamente desativada.',
         details: {
-          duration: totalDuration,
-          status: emailSent ? 'sent' : 'error',
-          error: emailSent ? null : (finalError?.message || finalError)
+          duration: Date.now() - startTime,
+          status: 'bypassed',
+          error: null
         }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -189,31 +46,14 @@ serve(async (req) => {
     }
 
     if (action === 'verify-code') {
-      const { data: codeData, error: codeError } = await supabaseAdmin
-        .from('auth_verification_codes')
-        .select('*')
-        .eq('email', email)
-        .eq('code', code)
-        .is('used_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+      console.log(`[verify-code] Bypass temporário ativo para: ${email}`)
 
-      if (codeError || !codeData) {
-        return new Response(JSON.stringify({ error: 'Código inválido ou expirado' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-
-      // Marcar como usado
       await supabaseAdmin
         .from('auth_verification_codes')
-        .update({ used_at: new Date().toISOString() })
-        .eq('id', codeData.id)
+        .update({ used_at: new Date().toISOString(), delivery_status: 'bypassed' })
+        .eq('email', email)
+        .is('used_at', null)
 
-      // Confirmar usuário no Auth do Supabase
       const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
       if (listError) throw listError
       
@@ -222,10 +62,10 @@ serve(async (req) => {
         await supabaseAdmin.auth.admin.updateUserById(user.id, {
           email_confirm: true
         })
-        console.log(`[verify-code] Usuário ${email} confirmado com sucesso.`)
+        console.log(`[verify-code] Usuário ${email} confirmado por bypass temporário.`)
       }
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, bypassed: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
