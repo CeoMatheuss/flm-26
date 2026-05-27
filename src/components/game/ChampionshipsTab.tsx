@@ -218,43 +218,94 @@ export function ChampionshipsTab() {
           </TabsContent>
 
           <TabsContent value="matches" className="mt-4 space-y-3">
-             {leagueData.matches.map((m) => (
-               <div key={m.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-900/60 border border-white/5 hover:border-emerald-500/30 transition-all group">
-                 <div className="flex-1 flex items-center justify-end gap-3 text-right">
-                   <span className="text-sm font-bold text-white group-hover:text-emerald-200">{m.home_team?.name}</span>
-                   <ClubShield club={{ logoUrl: m.home_team?.logo } as any} size={24} />
+             {leagueData.matches.length === 0 ? (
+               <div className="text-center py-12 text-sm text-muted-foreground">Nenhum jogo cadastrado ainda.</div>
+             ) : (
+               Object.entries(
+                 leagueData.matches.reduce((acc: Record<number, any[]>, m: any) => {
+                   (acc[m.round] = acc[m.round] || []).push(m);
+                   return acc;
+                 }, {})
+               ).map(([round, ms]: any) => (
+                 <div key={round} className="space-y-2">
+                   <p className="text-[10px] uppercase font-black tracking-widest text-emerald-400/80 px-2">Rodada {round}</p>
+                   {ms.map((m: any) => (
+                     <div key={m.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-900/60 border border-white/5 hover:border-emerald-500/30 transition-all group">
+                       <div className="flex-1 flex items-center justify-end gap-3 text-right">
+                         <span className="text-sm font-bold text-white group-hover:text-emerald-200">{m.home_team?.name ?? '—'}</span>
+                         <ClubShield club={{ logoUrl: m.home_team?.logo } as any} size={24} />
+                       </div>
+                       <div className="mx-6 px-4 py-1.5 rounded-lg bg-black/40 border border-white/10 text-lg font-black text-emerald-400 min-w-[80px] text-center">
+                         {m.status === 'finished' ? `${m.home_goals} - ${m.away_goals}` : <span className="text-xs uppercase tracking-widest text-muted-foreground">VS</span>}
+                       </div>
+                       <div className="flex-1 flex items-center justify-start gap-3">
+                         <ClubShield club={{ logoUrl: m.away_team?.logo } as any} size={24} />
+                         <span className="text-sm font-bold text-white group-hover:text-emerald-200">{m.away_team?.name ?? '—'}</span>
+                       </div>
+                     </div>
+                   ))}
                  </div>
-                 <div className="mx-6 px-4 py-1.5 rounded-lg bg-black/40 border border-white/10 text-lg font-black text-emerald-400 min-w-[80px] text-center">
-                    {m.status === 'finished' ? `${m.home_goals} - ${m.away_goals}` : <span className="text-xs uppercase tracking-widest text-muted-foreground">VS</span>}
-                 </div>
-                 <div className="flex-1 flex items-center justify-start gap-3">
-                   <ClubShield club={{ logoUrl: m.away_team?.logo } as any} size={24} />
-                   <span className="text-sm font-bold text-white group-hover:text-emerald-200">{m.away_team?.name}</span>
-                 </div>
-               </div>
-             ))}
+               ))
+             )}
           </TabsContent>
 
           <TabsContent value="scorers" className="mt-4">
              <Card className="bg-slate-900/40 border-white/5 p-4">
-               <div className="space-y-2">
-                 {leagueData.scorers.map((s, i) => (
-                   <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5">
-                     <div className="flex items-center gap-4">
-                       <span className="text-lg font-black text-emerald-500/50 w-6">#{i+1}</span>
-                       <div>
-                         <p className="font-bold text-white text-sm">{s.world_players?.name}</p>
-                         <p className="text-[10px] text-muted-foreground uppercase font-black">{s.world_teams?.name}</p>
+               {leagueData.scorers.length === 0 ? (
+                 <div className="text-center py-12 text-sm text-muted-foreground">Ainda não há artilheiros registrados nesta temporada.</div>
+               ) : (
+                 <div className="space-y-2">
+                   {leagueData.scorers.map((s, i) => (
+                     <div key={s.id ?? i} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5">
+                       <div className="flex items-center gap-4">
+                         <span className="text-lg font-black text-emerald-500/50 w-6">#{i+1}</span>
+                         <div>
+                           <p className="font-bold text-white text-sm">{s.world_players?.name ?? 'Desconhecido'}</p>
+                           <p className="text-[10px] text-muted-foreground uppercase font-black">{s.world_teams?.name ?? '—'}</p>
+                         </div>
+                       </div>
+                       <div className="flex items-center gap-6 text-right">
+                         <div>
+                           <p className="text-xl font-black text-emerald-400">{s.goals}</p>
+                           <p className="text-[9px] text-muted-foreground uppercase">Gols</p>
+                         </div>
+                         <div>
+                           <p className="text-sm font-bold text-white">{s.assists ?? 0}</p>
+                           <p className="text-[9px] text-muted-foreground uppercase">Assist.</p>
+                         </div>
+                         <div>
+                           <p className="text-sm font-bold text-white">{Number(s.avg_rating ?? 0).toFixed(2)}</p>
+                           <p className="text-[9px] text-muted-foreground uppercase">Nota</p>
+                         </div>
                        </div>
                      </div>
-                     <div className="text-right">
-                       <p className="text-xl font-black text-emerald-400">{s.goals}</p>
-                       <p className="text-[9px] text-muted-foreground uppercase">Gols</p>
-                     </div>
-                   </div>
-                 ))}
-               </div>
+                   ))}
+                 </div>
+               )}
              </Card>
+          </TabsContent>
+
+          <TabsContent value="stats" className="mt-4">
+            <Card className="bg-slate-900/40 border-white/5 p-4">
+              {leagueData.stats.length === 0 ? (
+                <div className="text-center py-12 text-sm text-muted-foreground">Sem estatísticas disponíveis.</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {leagueData.stats.map((s: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-black/20 border border-white/5">
+                      <div className="flex items-center gap-3">
+                        {s.team?.world_teams && <ClubShield club={{ logoUrl: s.team.world_teams.logo } as any} size={28} />}
+                        <div>
+                          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{s.label}</p>
+                          <p className="text-sm font-bold text-white">{s.team?.world_teams?.name ?? '—'}</p>
+                        </div>
+                      </div>
+                      <p className="text-lg font-black text-emerald-400">{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
