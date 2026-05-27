@@ -151,18 +151,27 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         const { data, error: fnErr } = await supabase.functions.invoke('auth-service', {
           body: { action: 'send-code', email }
         });
-        if (fnErr) throw fnErr;
+        
+        if (fnErr) {
+          if (fnErr.status === 429) {
+            toast.warning('Aguarde um pouco antes de solicitar um novo código.');
+          } else {
+            throw fnErr;
+          }
+        }
+
         if (data?.emailSent === false) {
           if (data.emailError === 'DOMINIO_NAO_VERIFICADO') {
-            toast.error('Erro 403: Domínio não verificado no Resend. O administrador precisa configurar o domínio footballlifemanager.com.br no painel da Resend.');
+            toast.error('Erro de Domínio: O domínio footballlifemanager.com.br ainda não foi validado na Resend. E-mails para domínios externos (Gmail, etc) estão bloqueados.');
           } else {
-            toast.warning(`Conta criada, mas falhou ao enviar o e-mail (${data.emailError || 'erro desconhecido'}). Use "Reenviar código".`);
+            toast.warning(`Conta criada, mas o e-mail pode atrasar ou falhou (${data.emailError || 'erro temporário'}). Verifique sua caixa de spam e tente reenviar se necessário.`);
           }
         } else {
-          toast.success('Código de verificação enviado para seu email!');
+          toast.success('Código enviado! Verifique sua caixa de entrada e spam.');
         }
       } catch (e: any) {
-        toast.error(`Erro ao enviar código: ${e.message}. Clique em "Reenviar código".`);
+        console.error('Erro ao enviar código:', e);
+        toast.error(`Não conseguimos enviar o código agora. Por favor, tente "Reenviar código" em alguns instantes.`);
       }
     }
     setLoading(false);
@@ -205,15 +214,28 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
   const handleResendVerification = useCallback(async () => {
     if (resendTimer > 0) return;
     setLoading(true);
-    const { error } = await supabase.functions.invoke('auth-service', {
-      body: { action: 'send-code', email: pendingEmail }
-    });
-    if (error) toast.error('Erro ao reenviar código.');
-    else {
-      toast.success('Novo código enviado!');
-      startResendTimer();
+    try {
+      const { data, error } = await supabase.functions.invoke('auth-service', {
+        body: { action: 'send-code', email: pendingEmail }
+      });
+      
+      if (error) {
+        if (error.status === 429) {
+          toast.warning('Aguarde um minuto para reenviar.');
+        } else {
+          toast.error('Erro ao reenviar código. Tente novamente em instantes.');
+        }
+      } else if (data?.emailSent === false) {
+        toast.warning('Falha ao entregar e-mail. Verifique se o endereço está correto ou tente novamente.');
+      } else {
+        toast.success('Novo código enviado com sucesso!');
+        startResendTimer();
+      }
+    } catch (err) {
+      toast.error('Erro de conexão ao reenviar código.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [pendingEmail, resendTimer, startResendTimer]);
 
   // Envia código automaticamente se cair direto na verificação (vindo do Index)
@@ -299,6 +321,10 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
             </div>
 
             <div className="text-center space-y-4">
+              <p className="text-[11px] text-muted-foreground animate-pulse">
+                Não recebeu? Verifique sua caixa de <strong>SPAM</strong> ou <strong>Lixeira</strong>.
+              </p>
+              
               <div className="flex items-center justify-center gap-4">
                 <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Problemas?</span>
