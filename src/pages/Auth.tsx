@@ -180,7 +180,8 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         }
       }
     } catch (err: any) {
-      const duration = (performance.now() - startTime).toFixed(2);
+      const durationMs = performance.now() - startTime;
+      const duration = durationMs.toFixed(2);
       setLoading(false);
       
       if (err.message === 'TIMEOUT_ERROR') {
@@ -188,7 +189,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         toast.error('O servidor de autenticação não respondeu a tempo (Timeout).');
         
         // Tenta um "Soft Reset" se o timeout persistir
-        if (duration > 6500) {
+        if (durationMs > 6500) {
           console.log('[Auth] Sugerindo limpeza de sessão local...');
         }
       } else {
