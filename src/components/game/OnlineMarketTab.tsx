@@ -135,6 +135,7 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [loading, setLoading] = useState(false);
 
   const [offerDialogId, setOfferDialogId] = useState<string | null>(null);
+  const [buyConfirm, setBuyConfirm] = useState<TransferListing | null>(null);
   const [viewingSellerId, setViewingSellerId] = useState<{ id: string; name: string; shield?: any } | null>(null);
   const [posFilter, setPosFilter] = useState('all');
   const [searchText, setSearchText] = useState('');
