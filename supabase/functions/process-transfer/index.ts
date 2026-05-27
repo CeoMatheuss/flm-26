@@ -648,6 +648,12 @@ Deno.serve(async (req) => {
             title: `Empresário de ${listing.player_name} respondeu`,
             message: agentMessage,
             type: 'warning',
+            category: 'Transferências',
+            priority: 'high',
+            actions: [
+              { label: 'Renegociar', type: 'navigate', payload: { tab: 'market', subtab: 'browse', listing_id: listing.id, player_name: listing.player_name } },
+              { label: 'Ver Mercado', type: 'navigate', payload: { tab: 'market' } }
+            ]
           });
 
           // Newspaper: player rejected
