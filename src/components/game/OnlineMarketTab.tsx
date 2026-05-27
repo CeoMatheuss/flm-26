@@ -1326,48 +1326,149 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
                 Nenhuma proposta enviada.
               </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {myOffers.slice(0, 20).map(offer => {
                   const listing = listings.find(l => l.id === offer.listing_id);
-                  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-                    pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', label: '⏳ Pendente' },
-                    accepted: { bg: 'bg-teal-500/15', text: 'text-teal-400', label: '✅ Aceita' },
-                    awaiting_decision: { bg: 'bg-blue-500/15', text: 'text-blue-400', label: '⏳ Jogador decidindo...' },
-                    rejected: { bg: 'bg-red-500/15', text: 'text-red-400', label: '❌ Recusada' },
-                    player_rejected: { bg: 'bg-orange-500/15', text: 'text-orange-400', label: '🚫 Jogador recusou' },
-                    player_accepted: { bg: 'bg-teal-500/15', text: 'text-teal-400', label: '✅ Jogador aceitou!' },
-                  };
-                  const sc = statusConfig[offer.decision_status || offer.status] || statusConfig.pending;
+                  const playerName = listing?.player_name || 'Jogador';
+                  const status = offer.decision_status || offer.status;
+                  const isClosed = !!offer.negotiation_closed;
+                  const hasCounter = !!offer.counter_offer && status === 'player_rejected' && !isClosed;
+
+                  // Visual config: verde=aceitou, amarelo=contraproposta/pending, vermelho=recusou
+                  let toneBorder = 'border-border/15';
+                  let toneBg = 'bg-transparent';
+                  let icon = '⏳';
+                  let label = 'Pendente';
+                  let labelColor = 'text-amber-300';
+
+                  if (status === 'player_accepted' || status === 'accepted') {
+                    toneBorder = 'border-emerald-500/30';
+                    toneBg = 'bg-gradient-to-r from-emerald-500/[0.08] to-transparent';
+                    icon = '✅'; label = 'Jogador aceitou!'; labelColor = 'text-emerald-300';
+                  } else if (isClosed) {
+                    toneBorder = 'border-zinc-500/25';
+                    toneBg = 'bg-zinc-500/[0.04]';
+                    icon = '🔒'; label = 'Negociação encerrada'; labelColor = 'text-zinc-400';
+                  } else if (hasCounter) {
+                    toneBorder = 'border-amber-500/35';
+                    toneBg = 'bg-gradient-to-r from-amber-500/[0.10] to-transparent';
+                    icon = '🤵'; label = 'Contraproposta'; labelColor = 'text-amber-300';
+                  } else if (status === 'player_rejected' || status === 'rejected') {
+                    toneBorder = 'border-red-500/30';
+                    toneBg = 'bg-gradient-to-r from-red-500/[0.07] to-transparent';
+                    icon = '🚫'; label = 'Recusou'; labelColor = 'text-red-300';
+                  } else if (status === 'awaiting_decision') {
+                    toneBorder = 'border-blue-500/30';
+                    toneBg = 'bg-gradient-to-r from-blue-500/[0.08] to-transparent';
+                    icon = '⏳'; label = 'Jogador decidindo'; labelColor = 'text-blue-300';
+                  }
+
                   const deadlineStr = offer.decision_deadline;
                   let timeLeft = '';
-                  if (deadlineStr && (offer.decision_status === 'awaiting_decision' || offer.status === 'awaiting_decision')) {
+                  if (deadlineStr && status === 'awaiting_decision') {
                     const remaining = new Date(deadlineStr).getTime() - Date.now();
                     if (remaining > 0) {
                       const hours = Math.floor(remaining / 3600000);
                       const mins = Math.floor((remaining % 3600000) / 60000);
-                      timeLeft = `⏱️ ${hours}h${mins}m restantes`;
-                    } else {
-                      timeLeft = '⏱️ Decisão pendente...';
+                      timeLeft = `${hours}h${mins}m`;
                     }
                   }
 
+                  const co = offer.counter_offer || {};
+
                   return (
-                    <div key={offer.id} className="rounded-xl border border-border/15 p-3 flex items-center gap-2.5" style={{ background: 'hsl(var(--card))' }}>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold truncate">{listing?.player_name || 'Jogador'}</p>
-                        <p className="text-[10px] text-muted-foreground">R${(offer.offered_price / 1000).toFixed(0)}k • Sal: R${offer.offered_salary}/mês</p>
-                        {timeLeft && <p className="text-[9px] text-blue-400 mt-0.5 flex items-center gap-1"><Timer className="h-3 w-3" /> {timeLeft}</p>}
-                        {offer.rejection_reason && (
-                          <p className="text-[9px] text-orange-400 mt-1 leading-relaxed">💬 {offer.rejection_reason}</p>
-                        )}
+                    <div key={offer.id} className={`rounded-xl border ${toneBorder} overflow-hidden transition-all`} style={{ background: 'hsl(var(--card))' }}>
+                      {/* Top row: player + status */}
+                      <div className={`px-3 py-2.5 ${toneBg} flex items-center gap-2.5`}>
+                        <div className="text-base shrink-0">{icon}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-black truncate">{playerName}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            R${(offer.offered_price / 1000).toFixed(0)}k • Sal R${offer.offered_salary}/mês • {offer.offered_contract_years}a
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`text-[10px] font-black ${labelColor}`}>{label}</p>
+                          {timeLeft && <p className="text-[9px] text-blue-400 flex items-center gap-1 justify-end mt-0.5"><Timer className="h-3 w-3" /> {timeLeft}</p>}
+                        </div>
                       </div>
-                      <Badge className={`text-[8px] ${sc.bg} ${sc.text} border-0 shrink-0`}>{sc.label}</Badge>
+
+                      {/* Counter-proposal block */}
+                      {hasCounter && (
+                        <div className="px-3 pb-3 pt-1 border-t border-amber-500/15 space-y-2">
+                          <p className="text-[10px] text-amber-200/90 leading-snug">
+                            💬 {offer.rejection_reason}
+                          </p>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <div className="rounded-md p-1.5 text-center bg-amber-500/10 border border-amber-500/20">
+                              <p className="text-[8px] text-amber-200/70 uppercase tracking-wider">Salário</p>
+                              <p className="text-[10px] font-black text-amber-100">R${co.salary}</p>
+                            </div>
+                            <div className="rounded-md p-1.5 text-center bg-amber-500/10 border border-amber-500/20">
+                              <p className="text-[8px] text-amber-200/70 uppercase tracking-wider">Contrato</p>
+                              <p className="text-[10px] font-black text-amber-100">{co.contract_years}a</p>
+                            </div>
+                            <div className="rounded-md p-1.5 text-center bg-amber-500/10 border border-amber-500/20">
+                              <p className="text-[8px] text-amber-200/70 uppercase tracking-wider">Luvas</p>
+                              <p className="text-[10px] font-black text-amber-100">R${((co.signing_bonus || 0) / 1000).toFixed(0)}k</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 pt-0.5">
+                            <Button
+                              size="sm"
+                              className="flex-1 h-8 text-[10px] rounded-md gap-1 bg-emerald-600 hover:bg-emerald-500"
+                              onClick={async () => {
+                                const { data, error } = await supabase.functions.invoke('process-transfer', {
+                                  body: { action: 'accept-counter', offerId: offer.id }
+                                });
+                                if (error || data?.error) toast.error(data?.error || 'Erro ao aceitar contraproposta');
+                                else { toast.success(data?.message || 'Contraproposta aceita!'); loadMyOffers(); }
+                              }}
+                            >
+                              <Check className="h-3 w-3" /> Aceitar Termos
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 h-8 text-[10px] rounded-md gap-1 border-amber-500/40 text-amber-200 hover:bg-amber-500/10"
+                              onClick={() => {
+                                if (listing) setOfferDialogId(listing.id);
+                                else toast.info('Jogador não está mais no mercado.');
+                              }}
+                            >
+                              <RefreshCw className="h-3 w-3" /> Renegociar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 h-8 text-[10px] rounded-md gap-1 border-red-500/40 text-red-300 hover:bg-red-500/10"
+                              onClick={async () => {
+                                const { data, error } = await supabase.functions.invoke('process-transfer', {
+                                  body: { action: 'close-negotiation', offerId: offer.id }
+                                });
+                                if (error || data?.error) toast.error(data?.error || 'Erro');
+                                else { toast.message('Negociação encerrada'); loadMyOffers(); }
+                              }}
+                            >
+                              <X className="h-3 w-3" /> Recusar
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Closed / definitive rejection */}
+                      {isClosed && (
+                        <div className="px-3 pb-2.5 pt-1 border-t border-zinc-500/15">
+                          <p className="text-[10px] text-zinc-400">Jogador recusou negociar. Negociação encerrada.</p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
             )}
           </div>
+
 
           {/* Renovas (Próprios Jogadores) */}
           <div className="space-y-2">
