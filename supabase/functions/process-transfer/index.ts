@@ -583,6 +583,113 @@ Deno.serve(async (req) => {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // ACTION: ACCEPT COUNTER OFFER (buyer aceita contraproposta do jogador)
+    // ═══════════════════════════════════════════════════════════════
+    if (action === 'accept-counter') {
+      const { offerId } = body;
+      const { data: offer } = await adminClient
+        .from('transfer_offers')
+        .select('*, transfer_listings!inner(*)')
+        .eq('id', offerId)
+        .single();
+
+      if (!offer) {
+        return new Response(JSON.stringify({ error: 'Proposta não encontrada' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (offer.buyer_id !== userId) {
+        return new Response(JSON.stringify({ error: 'Apenas o comprador pode aceitar a contraproposta' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (offer.status !== 'player_rejected' || !offer.counter_offer || offer.negotiation_closed) {
+        return new Response(JSON.stringify({ error: 'Sem contraproposta disponível' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const listing = (offer as any).transfer_listings;
+      if (listing.status === 'sold') {
+        return new Response(JSON.stringify({ error: 'Jogador já foi vendido.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const co = offer.counter_offer as any;
+      const now = new Date();
+      const cooldownUntil = new Date(now.getTime() + 72 * 3600 * 1000);
+
+      // Aplica termos da contraproposta na própria oferta e marca como aceita
+      await adminClient.from('transfer_offers').update({
+        status: 'accepted',
+        decision_status: 'player_accepted',
+        offered_salary: co.salary ?? offer.offered_salary,
+        offered_contract_years: co.contract_years ?? offer.offered_contract_years,
+        signing_bonus: co.signing_bonus ?? offer.signing_bonus,
+        offered_price: co.price ?? offer.offered_price,
+        responded_at: now.toISOString(),
+      }).eq('id', offer.id);
+
+      await adminClient.from('transfer_listings').update({
+        status: 'sold',
+        buyer_id: offer.buyer_id,
+        buyer_club_name: offer.buyer_club_name,
+        sold_at: now.toISOString(),
+        cooldown_until: cooldownUntil.toISOString(),
+      }).eq('id', listing.id);
+
+      // Rejeita outras pendentes
+      await adminClient.from('transfer_offers').update({
+        status: 'rejected',
+        rejection_reason: 'Jogador já foi vendido para outro clube.',
+        responded_at: now.toISOString(),
+      }).eq('listing_id', listing.id).eq('status', 'pending').neq('id', offer.id);
+
+      const { data: rpcResult, error: rpcError } = await adminClient.rpc('finalize_player_transfer', {
+        p_listing_id: listing.id,
+        p_offer_id: offer.id,
+        p_buyer_id: offer.buyer_id
+      });
+      if (rpcError || !rpcResult?.success) {
+        return new Response(JSON.stringify({ error: rpcResult?.error || 'Falha ao finalizar transferência' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      await adminClient.from('user_notifications').insert({
+        user_id: offer.buyer_id,
+        icon: '✅',
+        title: `${listing.player_name} chegou ao clube!`,
+        message: `Você aceitou os termos da contraproposta. ${listing.player_name} assinou: R$${co.salary}/mês por ${co.contract_years} anos.`,
+        type: 'success',
+        category: 'Transferências',
+        priority: 'ultra',
+        actions: [{ label: 'Ver Elenco', type: 'navigate', payload: { tab: 'squad' } }]
+      });
+
+      return new Response(JSON.stringify({ success: true, message: 'Contraproposta aceita! Jogador chegou ao clube.' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ACTION: CLOSE NEGOTIATION (buyer recusa definitivamente)
+    // ═══════════════════════════════════════════════════════════════
+    if (action === 'close-negotiation') {
+      const { offerId } = body;
+      const { data: offer } = await adminClient
+        .from('transfer_offers')
+        .select('id, buyer_id, status')
+        .eq('id', offerId)
+        .single();
+
+      if (!offer) {
+        return new Response(JSON.stringify({ error: 'Proposta não encontrada' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (offer.buyer_id !== userId) {
+        return new Response(JSON.stringify({ error: 'Sem permissão' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      await adminClient.from('transfer_offers').update({
+        negotiation_closed: true,
+        status: offer.status === 'pending' ? 'rejected' : offer.status,
+        responded_at: new Date().toISOString(),
+      }).eq('id', offerId);
+
+      return new Response(JSON.stringify({ success: true, message: 'Negociação encerrada.' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
     // ACTION: RESOLVE PENDING DECISIONS (called on market load)
     // ═══════════════════════════════════════════════════════════════
     if (action === 'resolve-decisions') {
