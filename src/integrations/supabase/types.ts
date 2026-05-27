@@ -7786,6 +7786,10 @@ export type Database = {
       }
       fix_league_forcefully: { Args: { p_league_id: string }; Returns: Json }
       fix_world_leagues_kickoffs: { Args: never; Returns: undefined }
+      fix_world_match_schedules: {
+        Args: { p_league_id: string; p_target_time: string }
+        Returns: undefined
+      }
       force_advance_league_round: {
         Args: { _is_world?: boolean; _league_id: string }
         Returns: undefined
