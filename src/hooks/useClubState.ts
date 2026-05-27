@@ -12,6 +12,7 @@ import { getPlayerValue, generateMarketPlayers, generateFreeAgents, generateScou
 import { initialClub } from '@/data/initialData';
 import { autoLineup } from "@/utils/lineupManager";
 import { toast } from 'sonner';
+import { buildHeadline, computeImportance, categoryFor } from '@/lib/transferHeadlines';
 import {
   buildStadiumModules,
 } from '@/match/stadiumEconomics';
