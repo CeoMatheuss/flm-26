@@ -27,7 +27,7 @@ interface Props {
 }
 
 export function LoanNegotiationModal({ isOpen, open, onClose, onOpenChange, player, onConfirm, onSubmit, initialTerms, mode, isOwner, loading }: Props) {
-  const [terms, setTerms] = useState<LoanTerms>(initialTerms || defaultLoanTerms);
+  const [terms, setTerms] = useState<LoanTerms>({ ...(initialTerms || defaultLoanTerms), duration: 12 });
 
   const activeOpen = isOpen || open || false;
   const activeClose = onClose || (() => onOpenChange?.(false));
