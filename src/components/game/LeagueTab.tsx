@@ -343,8 +343,8 @@ export function LeagueTab({ clubName, clubPlayers }: Props) {
                       let posColor = "text-muted-foreground";
                       let rowBg = isPlayerTeam ? "bg-primary/10 hover:bg-primary/20" : "hover:bg-accent/50";
                       
-                      if (i < 1) posColor = "text-yellow-500 font-black"; // Mundial (Vaga Direta)
-                      else if (i < 8) posColor = "text-emerald-500 font-black"; // Libertadores (2º ao 8º)
+                      if (i < 1) posColor = "text-yellow-500 font-black"; // Mundial
+                      else if (i < 8) posColor = "text-blue-400 font-black"; // Continental (2º ao 8º)
                       else if (i >= 12) posColor = "text-red-500 font-bold"; // Rebaixamento (Z4: 13º, 14º, 15º, 16º)
 
                       return (
