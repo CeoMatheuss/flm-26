@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, RefreshCw, Clock, EyeOff, AlertTriangle, CheckCircle, X, History, Inbox, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { NegotiationModal, NegotiationData } from './market/NegotiationModal';
 import { formatMoney } from '@/lib/formatMoney';
 import { cn } from '@/lib/utils';
 
