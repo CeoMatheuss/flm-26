@@ -6075,11 +6075,13 @@ export type Database = {
           bonus_titles: number
           buyer_club_name: string
           buyer_id: string
+          counter_offer: Json | null
           created_at: string
           decision_deadline: string | null
           decision_status: string | null
           id: string
           listing_id: string
+          negotiation_closed: boolean
           offered_contract_years: number
           offered_price: number
           offered_salary: number
@@ -6095,11 +6097,13 @@ export type Database = {
           bonus_titles?: number
           buyer_club_name?: string
           buyer_id: string
+          counter_offer?: Json | null
           created_at?: string
           decision_deadline?: string | null
           decision_status?: string | null
           id?: string
           listing_id: string
+          negotiation_closed?: boolean
           offered_contract_years?: number
           offered_price: number
           offered_salary?: number
@@ -6115,11 +6119,13 @@ export type Database = {
           bonus_titles?: number
           buyer_club_name?: string
           buyer_id?: string
+          counter_offer?: Json | null
           created_at?: string
           decision_deadline?: string | null
           decision_status?: string | null
           id?: string
           listing_id?: string
+          negotiation_closed?: boolean
           offered_contract_years?: number
           offered_price?: number
           offered_salary?: number
