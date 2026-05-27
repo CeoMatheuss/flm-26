@@ -559,6 +559,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     finance_panel:     { label: 'Financeiro',     icon: Wallet },
     shop_monitor:      { label: 'Monitor Loja',    icon: ShoppingBag },
     customization_panel:{ label: 'Personalização', icon: Palette },
+    reset_competitions:{ label: 'Reset Competições', icon: RefreshCw },
   };
 
   return (
