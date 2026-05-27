@@ -694,6 +694,9 @@ export function useClubState(initialState: any, userId?: string) {
         squad_status: 'reserve' as const,
         squadRole: 'reserva' as const,
         contract: 2,
+        signedAt: Date.now(),
+        signingType: (player as any).signingType || 'transfer',
+        signedFromClub: (player as any).signedFromClub || (player as any).currentClubName,
         ...({ contractStatus: 'profissional' } as any)
       };
       
