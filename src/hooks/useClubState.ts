@@ -985,6 +985,11 @@ export function useClubState(initialState: any, userId?: string) {
       squad_status: 'reserve' as const,
       squadRole: 'reserva' as const,
       isLoaned: true,
+      isReceivedLoan: true,
+      signedAt: Date.now(),
+      signingType: 'loan_in' as const,
+      signedFromClub: fromClubName,
+      loanedFrom: fromClubName,
     };
     setLoanedPlayers(lp => {
       if (lp.some(l => l.player.id === player.id && l.direction === 'in')) return lp;
