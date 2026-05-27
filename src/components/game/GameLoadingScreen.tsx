@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import flmLogo from '@/assets/flm26-logo.png';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 
 interface GameLoadingScreenProps {
   message?: string;
   subMessage?: string;
   showProgress?: boolean;
+  onRetry?: () => void;
+  showRetryAfter?: number; // segundos
 }
 
 const TIPS = [
@@ -18,10 +22,18 @@ const TIPS = [
   'Dica: Jogadores com alto ritmo de trabalho pressionam melhor o adversário.',
 ];
 
-export function GameLoadingScreen({ message = 'Carregando...', subMessage, showProgress = true }: GameLoadingScreenProps) {
+export function GameLoadingScreen({ 
+  message = 'Carregando...', 
+  subMessage, 
+  showProgress = true,
+  onRetry,
+  showRetryAfter = 12
+}: GameLoadingScreenProps) {
   const [progress, setProgress] = useState(0);
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);
   const [dots, setDots] = useState('');
+  const [timer, setTimer] = useState(0);
+  const [showRetry, setShowRetry] = useState(false);
 
   // Asymptotic progress — never visually stuck, approaches 99% smoothly
   useEffect(() => {
@@ -44,6 +56,20 @@ export function GameLoadingScreen({ message = 'Carregando...', subMessage, showP
     return () => clearInterval(interval);
   }, []);
 
+  // Timer for retry button
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimer(t => t + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (timer >= showRetryAfter) {
+      setShowRetry(true);
+    }
+  }, [timer, showRetryAfter]);
+
   const clampedProgress = Math.min(progress, 99);
 
   return (
@@ -64,28 +90,56 @@ export function GameLoadingScreen({ message = 'Carregando...', subMessage, showP
       </h2>
 
       {/* Message */}
-      <p className="text-sm text-muted-foreground mb-6">
-        {message}{dots}
-      </p>
+      <div className="flex flex-col items-center gap-1 mb-6">
+        <p className="text-sm text-muted-foreground">
+          {message}{dots}
+        </p>
+        {subMessage && (
+          <p className="text-[11px] text-muted-foreground/60">{subMessage}</p>
+        )}
+      </div>
 
       {/* Progress bar */}
       {showProgress && (
-        <div className="w-64 sm:w-80 mb-6">
+        <div className="w-64 sm:w-80 mb-8">
           <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${clampedProgress}%` }}
             />
           </div>
-          <p className="text-[10px] text-muted-foreground/60 text-center mt-1.5 font-mono">
-            {Math.round(clampedProgress)}%
-          </p>
+          <div className="flex justify-between mt-1.5 px-0.5">
+            <span className="text-[9px] text-muted-foreground/40 font-mono">
+              ESTADO: {Math.round(timer)}s
+            </span>
+            <span className="text-[10px] text-muted-foreground/60 font-mono">
+              {Math.round(clampedProgress)}%
+            </span>
+          </div>
         </div>
       )}
 
-      {/* Sub-message */}
-      {subMessage && (
-        <p className="text-xs text-muted-foreground/70 mb-4">{subMessage}</p>
+      {/* Retry Button - Appears if taking too long */}
+      {showRetry && onRetry && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center gap-4 mb-8">
+          <div className="flex items-center gap-2 text-amber-500/80 bg-amber-500/5 px-4 py-2 rounded-full border border-amber-500/10">
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-medium">O servidor está demorando para responder...</span>
+          </div>
+          <Button 
+            onClick={() => {
+              setTimer(0);
+              setShowRetry(false);
+              onRetry();
+            }}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-primary/20 hover:bg-primary/5 px-6"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Tentar Novamente</span>
+          </Button>
+        </div>
       )}
 
       {/* Tip */}
@@ -95,9 +149,10 @@ export function GameLoadingScreen({ message = 'Carregando...', subMessage, showP
         </p>
       </div>
 
-      {/* Animated football */}
-      <div className="mt-8 text-2xl animate-bounce">
-        ⚽
+      {/* Footer Info */}
+      <div className="absolute bottom-6 flex flex-col items-center gap-1 opacity-40">
+        <div className="text-[10px] font-black tracking-widest text-foreground/40">FLM 2026</div>
+        <div className="w-4 h-[1px] bg-foreground/20" />
       </div>
     </div>
   );
