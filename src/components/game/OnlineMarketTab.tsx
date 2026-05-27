@@ -167,6 +167,18 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
   const [signingBonus, setSigningBonus] = useState(0);
   const [showBonusHelp, setShowBonusHelp] = useState(false);
 
+  // Listen for specific negotiation requests from notifications
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail?.listing_id) {
+        setOfferDialogId(e.detail.listing_id);
+        if (onMarketTabChange) onMarketTabChange('browse');
+      }
+    };
+    window.addEventListener('flm:market-negotiate', handler);
+    return () => window.removeEventListener('flm:market-negotiate', handler);
+  }, [onMarketTabChange]);
+
   const loadListings = useCallback(async () => {
     setIsLoadingListings(true);
     try {
