@@ -800,10 +800,11 @@ export function useClubState(initialState: any, userId?: string) {
           .maybeSingle();
           
         if (agents) {
-          const matchingOffer = offers.find(o => o.agent_id === agents.id);
+          const matchingOffer = offers.find((o: any) => o.agent_id === agents.id);
           if (matchingOffer) offerId = matchingOffer.id;
         }
       }
+
       
       if (!offerId && offers?.[0]) offerId = offers[0].id;
 
@@ -814,14 +815,17 @@ export function useClubState(initialState: any, userId?: string) {
       }
 
       // 2. Execute atomic RPC
-      const { data: result, error } = await supabase.rpc('finalize_free_agent_signing', {
+      const { data: rpcData, error } = await supabase.rpc('finalize_free_agent_signing', {
         p_offer_id: offerId,
         p_buyer_id: userId
       });
 
+      const result = rpcData as any;
+
       if (error || !result?.success) {
         throw new Error(error?.message || result?.error || 'Erro ao processar assinatura');
       }
+
 
       toast.dismiss(loadingToast);
       toast.success(`${player.name} assinou com o clube!`);

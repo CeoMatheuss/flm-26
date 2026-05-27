@@ -133,19 +133,21 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
   }, [generateFriendly]);
 
   // Bridged buyPlayer with finance
-  const buyPlayer = useCallback((player: Player) => {
-    const result = clubState.buyPlayer(player);
+  const buyPlayer = useCallback(async (player: Player) => {
+    const result = await clubState.buyPlayer(player);
     if (result) {
       financeState.addFinance('despesa', 'Transferência', result.value, `Compra: ${player.name}`);
     }
   }, [clubState.buyPlayer, financeState.addFinance]);
 
-  const signFreeAgent = useCallback((player: Player, offeredSalary?: number) => {
-    const result = clubState.signFreeAgent(player, offeredSalary);
+
+  const signFreeAgent = useCallback(async (player: Player, offeredSalary?: number) => {
+    const result = await clubState.signFreeAgent(player, offeredSalary);
     if (result) {
       financeState.addFinance('despesa', 'Transferência', result.salary * 3, `Assinatura: ${player.name} (3 meses adiantados)`);
     }
   }, [clubState.signFreeAgent, financeState.addFinance]);
+
 
   const renewContract = useCallback(async (playerId: string, newSalary: number, newDuration?: number) => {
     const result = await clubState.renewContract(playerId, newSalary, newDuration);
