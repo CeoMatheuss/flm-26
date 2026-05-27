@@ -15,6 +15,8 @@ import {
   TrendingUp,
   Medal,
   Flame,
+  Tag,
+  Handshake,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
