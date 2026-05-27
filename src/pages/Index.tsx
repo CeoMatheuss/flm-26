@@ -49,8 +49,21 @@ import { QuickClubProfile } from '@/components/game/QuickClubProfile';
 import { PurchaseSuccessOverlay } from '@/components/game/PurchaseSuccessOverlay';
 
 const Index = () => {
-  const { session, loading, signOut } = useAuth();
-  if (loading) return <GameLoadingScreen message="Conectando ao servidor" subMessage="Verificando sua sessão" />;
+  const { session, loading, signOut, refreshSession } = useAuth();
+  
+  if (loading) {
+    return (
+      <GameLoadingScreen 
+        message="Conectando ao servidor" 
+        subMessage="Verificando sua sessão ativa..." 
+        onRetry={() => {
+          console.log('[Index] Forçando recarregamento da sessão...');
+          refreshSession?.();
+        }}
+      />
+    );
+  }
+
   if (!session) return <AuthPage />;
   
 
