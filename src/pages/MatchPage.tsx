@@ -911,7 +911,12 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
           icon: '📊',
           title: `${resultIcon} Relatório: ${myClub} ${myGoals}x${oppGoals} ${oppClub}`,
           message: `${compLabel} • Toque para ver os detalhes da partida.`,
+          category: 'Jogos',
           data: { match_db_id: matchDbId, competition: compLabel, my_goals: myGoals, opp_goals: oppGoals },
+          actions: [
+            { label: 'Ver Estatísticas', type: 'open_modal', payload: { modal: 'match_report', matchId: matchDbId } },
+            { label: 'Ir para Táticas', type: 'navigate', payload: { tab: 'tactics' } }
+          ]
         });
 
         // 2) Update global ranking
