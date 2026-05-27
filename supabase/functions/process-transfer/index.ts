@@ -545,6 +545,10 @@ Deno.serve(async (req) => {
         title: `${listing.player_name} está decidindo!`,
         message: `O ${listing.seller_club_name} aceitou sua proposta por ${listing.player_name}! O jogador tem 7 horas para decidir. Resultado até ${deadline.toLocaleString('pt-BR')}.`,
         type: 'info',
+        category: 'Transferências',
+        actions: [
+          { label: 'Ver Proposta', type: 'navigate', payload: { tab: 'market', subtab: 'offers' } }
+        ]
       });
 
       // Create newspaper entry about the negotiation
