@@ -498,7 +498,18 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     toast.success(`${config.name} criado com sucesso! 🏆`);
   }, [userId, displayName]);
 
-  if (!gameReady) return <GameLoadingScreen message={loadStage || 'Carregando seu clube'} subMessage={loadSubStage || 'Preparando dados do jogo'} />;
+  if (!gameReady) {
+    return (
+      <GameLoadingScreen 
+        message={loadStage || 'Carregando seu clube'} 
+        subMessage={loadSubStage || 'Preparando dados do jogo'} 
+        onRetry={() => {
+          console.log('[GameApp] Reiniciando carregamento do clube...');
+          setLoadAttempt(prev => prev + 1);
+        }}
+      />
+    );
+  }
 
   if (loadError) {
     return (
