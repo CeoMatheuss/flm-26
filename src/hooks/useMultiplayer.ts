@@ -404,18 +404,26 @@ export function useMultiplayer(userId: string, displayName: string, clubName?: s
       }
     } catch (e) {
       console.error('[LeagueRegistration] Auto-join exception:', e);
+    } finally {
+      autoJoinInFlightRef.current = false;
+      setAutoJoining(false);
     }
-    setAutoJoining(false);
-  }, [userId, clubName, clubCountry, autoJoining, loadLeagues, enterLeague]);
+  }, [userId, clubName, clubCountry, loadLeagues, enterLeague]);
 
-  // Auto-join on mount if club info is available
+  // Reset attempt guard when user changes
   useEffect(() => {
-    if (clubName && clubCountry) {
+    autoJoinAttemptedRef.current = null;
+  }, [userId]);
+
+  // Auto-join on mount if club info is available (one attempt per user session)
+  useEffect(() => {
+    if (clubName && clubCountry && userId) {
       autoJoinLeague();
-    } else {
+    } else if (userId) {
       loadLeagues();
     }
-  }, [clubName, clubCountry, autoJoinLeague, loadLeagues]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubName, clubCountry, userId]);
 
   const leaveLeague = useCallback(() => { setCurrentLeague(null); }, []);
 
