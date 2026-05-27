@@ -1396,6 +1396,55 @@ export function OnlineMarketTab({ userId, clubName, players, budget, transferBud
             loading={loading}
           />
         )}
+
+        {counterLoanOffer && (
+          <LoanNegotiationModal
+            open={!!counterLoanOffer}
+            onOpenChange={(open) => { if (!open) setCounterLoanOffer(null); }}
+            mode="negotiate"
+            player={{
+              name: counterLoanOffer._listing?.player_name || 'Jogador',
+              position: counterLoanOffer._listing?.player_position,
+              age: counterLoanOffer._listing?.player_age,
+              overall: counterLoanOffer._listing?.player_overall,
+              salary: counterLoanOffer._listing?.salary || 0,
+            }}
+            initialTerms={{
+              duration: 12,
+              loanFee: counterLoanOffer.offered_loan_fee || 0,
+              salaryPercentageOwner: counterLoanOffer.offered_salary_payer === 'seller' ? (counterLoanOffer.offered_salary_split_pct || 100) : 100 - (counterLoanOffer.offered_salary_split_pct || 100),
+              salaryPercentageBorrower: counterLoanOffer.offered_salary_payer === 'buyer' ? (counterLoanOffer.offered_salary_split_pct || 100) : 100 - (counterLoanOffer.offered_salary_split_pct || 100),
+              obligatoryPurchase: false,
+              allowTermination: true,
+              minStayMonths: 0,
+              terminationFee: 0,
+              canPlayAgainstOwner: false,
+              usagePriority: 'none',
+              minMinutesRequired: 0,
+              performanceBonus: 0,
+            }}
+            onSubmit={async (terms: LoanTerms) => {
+              setLoading(true);
+              const res = await supabase.functions.invoke('process-transfer', {
+                body: {
+                  action: 'loan-offer-counter',
+                  offerId: counterLoanOffer.id,
+                  counterSalaryPayer: terms.salaryPercentageBorrower >= 100 ? 'buyer' : terms.salaryPercentageBorrower <= 0 ? 'seller' : 'split',
+                  counterSalarySplitPct: terms.salaryPercentageBorrower,
+                  counterLoanFee: terms.loanFee,
+                  counterOfferedTerms: terms,
+                }
+              });
+              if (res.error || res.data?.error) toast.error(res.data?.error || 'Erro ao enviar contraproposta');
+              else toast.success('Contraproposta enviada!');
+              setLoading(false);
+              setCounterLoanOffer(null);
+              loadLoanOffers();
+            }}
+            loading={loading}
+          />
+        )}
+
         </div>
       </Tabs>
     </div>
