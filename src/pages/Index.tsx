@@ -485,7 +485,7 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     toast.success(`${config.name} criado com sucesso! 🏆`);
   }, [userId, displayName]);
 
-  if (!gameReady) return <GameLoadingScreen message="Carregando seu clube" subMessage="Preparando dados do jogo" />;
+  if (!gameReady) return <GameLoadingScreen message={loadStage || 'Carregando seu clube'} subMessage={loadSubStage || 'Preparando dados do jogo'} />;
 
   if (loadError) {
     return (
@@ -493,6 +493,9 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
         <div className="max-w-md w-full bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4 text-center">
           <h2 className="text-lg font-bold text-foreground">Não foi possível carregar o clube</h2>
           <p className="text-sm text-muted-foreground">{loadError}</p>
+          <p className="text-[11px] text-muted-foreground/70">
+            Verifique sua conexão. Vamos tentar novamente automaticamente até 3 vezes ao clicar abaixo.
+          </p>
           <div className="flex gap-2 justify-center">
             <Button onClick={() => setLoadAttempt((n) => n + 1)}>Tentar novamente</Button>
             <Button variant="outline" onClick={onSignOut}>Sair</Button>
@@ -501,6 +504,13 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       </div>
     );
   }
+
+  // Banner discreto quando estamos exibindo dados do cache local
+  const offlineBanner = isOfflineFallback ? (
+    <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[200] px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-bold backdrop-blur-sm">
+      ⚠️ Modo offline temporário — exibindo último save local
+    </div>
+  ) : null;
   
   if (isBankrupt) {
     return (
