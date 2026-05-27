@@ -64,48 +64,44 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
   useEffect(() => {
     const timer = setInterval(() => setSlideIndex(i => (i + 1) % slides.length), 4000);
     
-    // Check for corrupted session on mount
-    const checkSession = async () => {
-      try {
-        const { error } = await supabase.auth.getSession();
-        if (error) {
-          console.warn('[Auth] Sessão corrompida detectada, limpando...', error);
-          localStorage.removeItem('supabase.auth.token');
-          // For Lovable Cloud specific key if different
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.includes('supabase') || key.includes('lovable'))) {
-              console.log('[Auth] Removendo chave suspeita:', key);
-            }
-          }
-        }
-      } catch (e) {
-        console.error('[Auth] Erro ao verificar sessão inicial:', e);
-      }
-    };
-    checkSession();
+    // Log de montagem para debug
+    console.log('[Auth] Página de Autenticação montada', { step, initialEmail });
 
-    return () => clearInterval(timer);
-  }, []);
+    return () => {
+      clearInterval(timer);
+      console.log('[Auth] Página de Autenticação desmontada');
+    };
+  }, [step, initialEmail]);
 
 
   const handleGoogleLogin = async () => {
     if (loading) return;
     setLoading(true);
-    console.log('[Auth] Login Google iniciado');
+    console.log('[Auth] Login Google iniciado', { timestamp: new Date().toISOString() });
+    
+    // Timeout de segurança para o botão
+    const oauthTimeout = setTimeout(() => {
+      setLoading(false);
+      console.warn('[Auth] OAuth demorando muito, resetando loading state.');
+    }, 10000);
+
     try {
       const { error } = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin
       }) as any;
+      
       if (error) {
         console.error('[Auth] Erro no Google Login:', error);
         toast.error('Erro ao entrar com Google. Tente novamente.');
+        setLoading(false);
       }
+      // O OAuth redireciona a página, então não chamamos setLoading(false) em caso de sucesso aqui
     } catch (err) {
       console.error('[Auth] Erro inesperado no Google Login:', err);
       toast.error('Erro ao conectar com Google.');
-    } finally {
       setLoading(false);
+    } finally {
+      clearTimeout(oauthTimeout);
     }
   };
 
@@ -115,10 +111,21 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     
     setLoading(true);
     const startTime = performance.now();
-    console.log('[Auth] Login iniciado', { email, timestamp: new Date().toISOString() });
+    console.log('[Auth] 🚀 Iniciando tentativa de login...', { email, timestamp: new Date().toISOString() });
+    
+    // Proteção contra travamento do botão (reset forçado após 12s)
+    const buttonSafetyTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('[Auth] ⚠️ Botão de login travado! Forçando reset do estado.');
+        setLoading(false);
+        toast.error('O login está demorando mais que o esperado. Tente novamente.');
+      }
+    }, 12000);
 
     try {
-      // Timeout de 10 segundos
+      console.log('[Auth] 📡 Enviando credenciais para o Supabase...');
+      
+      // Timeout de 10 segundos para a requisição
       const loginPromise = supabase.auth.signInWithPassword({ email, password });
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 10000)
@@ -128,7 +135,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       const duration = (performance.now() - startTime).toFixed(2);
       
       if (result.error) {
-        console.error(`[Auth] Falha no login (${duration}ms):`, result.error);
+        console.error(`[Auth] ❌ Falha no login (${duration}ms):`, result.error);
         
         let message = 'Falha ao entrar. Verifique seus dados.';
         if (result.error.status === 400) {
@@ -144,28 +151,39 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         }
         
         toast.error(message);
+        setLoading(false); // Reset imediato em caso de erro conhecido
       } else {
-        console.log(`[Auth] Login bem-sucedido (${duration}ms)`, { user: result.data.user?.id });
-        toast.success('Entrando...');
+        console.log(`[Auth] ✅ Login bem-sucedido (${duration}ms)`, { 
+          userId: result.data.user?.id,
+          session: !!result.data.session 
+        });
         
-        // Pequeno delay para garantir que o redirect do onAuthStateChange aconteça ou forçar se necessário
+        toast.success('Login realizado! Entrando no clube...');
+        
+        // Em vez de window.location.href, vamos confiar no onAuthStateChange do useAuth
+        // Mas se não redirecionar em 2s, forçamos um reload
         setTimeout(() => {
+          console.log('[Auth] Verificando se o sistema redirecionou...');
           if (window.location.pathname !== '/') {
+            console.log('[Auth] Forçando redirecionamento para Home');
             window.location.href = '/';
           }
-        }, 500);
+        }, 2000);
       }
     } catch (err: any) {
       const duration = (performance.now() - startTime).toFixed(2);
       if (err.message === 'TIMEOUT_ERROR') {
-        console.error(`[Auth] Timeout no login (${duration}ms)`);
-        toast.error('O servidor demorou muito para responder. Tente novamente.');
+        console.error(`[Auth] ⏳ Timeout no login (${duration}ms)`);
+        toast.error('O servidor demorou muito para responder. Verifique sua conexão.');
       } else {
-        console.error(`[Auth] Erro inesperado (${duration}ms):`, err);
+        console.error(`[Auth] 💥 Erro inesperado (${duration}ms):`, err);
         toast.error('Erro inesperado no sistema. Tente novamente.');
       }
-    } finally {
       setLoading(false);
+    } finally {
+      clearTimeout(buttonSafetyTimeout);
+      // Não colocamos setLoading(false) aqui se o login foi bem sucedido, 
+      // pois queremos manter o estado de "Entrando..." até que o Index.tsx desmonte este componente
     }
   };
 
@@ -185,7 +203,16 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     
     setLoading(true);
     const startTime = performance.now();
-    console.log('[Auth] Cadastro iniciado', { email, displayName, timestamp: new Date().toISOString() });
+    console.log('[Auth] 📝 Cadastro iniciado', { email, displayName, timestamp: new Date().toISOString() });
+    
+    // Proteção contra travamento
+    const signupSafetyTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('[Auth] ⚠️ Cadastro travado! Resetando estado.');
+        setLoading(false);
+        toast.error('O cadastro está demorando muito. Tente novamente.');
+      }
+    }, 20000);
 
     try {
       // Timeout de 15 segundos para cadastro (pode demorar mais que login)
@@ -208,7 +235,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       const duration = (performance.now() - startTime).toFixed(2);
 
       if (result.error) {
-        console.error(`[Auth] Falha no cadastro (${duration}ms):`, result.error);
+        console.error(`[Auth] ❌ Falha no cadastro (${duration}ms):`, result.error);
         const msg = result.error.message || '';
         const isBetaBlock = /BETA_NOT_WHITELISTED|whitelist|não autorizado|Database error saving new user|unexpected_failure/i.test(msg);
         const isDuplicate = /already registered|already exists|duplicate|User already/i.test(msg);
@@ -222,30 +249,35 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
         } else {
           toast.error(msg || 'Erro ao criar conta. Tente novamente.');
         }
+        setLoading(false);
       } else {
-        console.log(`[Auth] Cadastro bem-sucedido (${duration}ms)`, { user: result.data.user?.id });
-        toast.success('Conta criada com sucesso! Redirecionando...');
+        console.log(`[Auth] ✅ Cadastro bem-sucedido (${duration}ms)`, { userId: result.data.user?.id });
+        toast.success('Conta criada! Entrando...');
         
-        // Como o auto-confirm está ligado, o usuário já pode logar ou já está logado
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          window.location.reload();
-        } else {
-          setStep('login');
-          setEmail(email);
-        }
+        // Pequeno delay para garantir persistência e tentar reload
+        setTimeout(async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            window.location.reload();
+          } else {
+            setStep('login');
+            setEmail(email);
+            setLoading(false);
+          }
+        }, 1500);
       }
     } catch (err: any) {
       const duration = (performance.now() - startTime).toFixed(2);
       if (err.message === 'TIMEOUT_ERROR') {
-        console.error(`[Auth] Timeout no cadastro (${duration}ms)`);
-        toast.error('O servidor demorou muito para responder o cadastro. Tente novamente.');
+        console.error(`[Auth] ⏳ Timeout no cadastro (${duration}ms)`);
+        toast.error('O servidor demorou muito para criar sua conta. Tente novamente.');
       } else {
-        console.error(`[Auth] Erro inesperado no cadastro (${duration}ms):`, err);
+        console.error(`[Auth] 💥 Erro inesperado no cadastro (${duration}ms):`, err);
         toast.error('Erro inesperado ao criar conta. Tente novamente.');
       }
-    } finally {
       setLoading(false);
+    } finally {
+      clearTimeout(signupSafetyTimeout);
     }
   };
 

@@ -49,8 +49,21 @@ import { QuickClubProfile } from '@/components/game/QuickClubProfile';
 import { PurchaseSuccessOverlay } from '@/components/game/PurchaseSuccessOverlay';
 
 const Index = () => {
-  const { session, loading, signOut } = useAuth();
-  if (loading) return <GameLoadingScreen message="Conectando ao servidor" subMessage="Verificando sua sessão" />;
+  const { session, loading, signOut, refreshSession } = useAuth();
+  
+  if (loading) {
+    return (
+      <GameLoadingScreen 
+        message="Conectando ao servidor" 
+        subMessage="Verificando sua sessão ativa..." 
+        onRetry={() => {
+          console.log('[Index] Forçando recarregamento da sessão...');
+          refreshSession?.();
+        }}
+      />
+    );
+  }
+
   if (!session) return <AuthPage />;
   
 
@@ -485,7 +498,18 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
     toast.success(`${config.name} criado com sucesso! 🏆`);
   }, [userId, displayName]);
 
-  if (!gameReady) return <GameLoadingScreen message={loadStage || 'Carregando seu clube'} subMessage={loadSubStage || 'Preparando dados do jogo'} />;
+  if (!gameReady) {
+    return (
+      <GameLoadingScreen 
+        message={loadStage || 'Carregando seu clube'} 
+        subMessage={loadSubStage || 'Preparando dados do jogo'} 
+        onRetry={() => {
+          console.log('[GameApp] Reiniciando carregamento do clube...');
+          setLoadAttempt(prev => prev + 1);
+        }}
+      />
+    );
+  }
 
   if (loadError) {
     return (
