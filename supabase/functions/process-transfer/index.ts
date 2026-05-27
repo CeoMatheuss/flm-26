@@ -711,6 +711,12 @@ Deno.serve(async (req) => {
             title: `${listing.player_name} aceitou!`,
             message: `${listing.player_name} aceitou sua proposta e agora faz parte do ${offer.buyer_club_name}! Salário: R$${offer.offered_salary}/mês, contrato de ${offer.offered_contract_years} ano(s).`,
             type: 'success',
+            category: 'Transferências',
+            priority: 'ultra',
+            actions: [
+              { label: 'Ir para Elenco', type: 'navigate', payload: { tab: 'squad' } },
+              { label: 'Ver Táticas', type: 'navigate', payload: { tab: 'tactics' } }
+            ]
           });
 
           await adminClient.from('user_notifications').insert({
@@ -719,6 +725,10 @@ Deno.serve(async (req) => {
             title: `${listing.player_name} vendido!`,
             message: `${listing.player_name} aceitou a proposta do ${offer.buyer_club_name} por R$${(offer.offered_price / 1000).toFixed(0)}k.`,
             type: 'success',
+            category: 'Transferências',
+            actions: [
+              { label: 'Ver Finanças', type: 'navigate', payload: { tab: 'finance' } }
+            ]
           });
 
           // Newspaper: transfer completed — manchete variada + DESTAQUE para grandes negociações
