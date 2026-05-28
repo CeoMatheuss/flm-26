@@ -418,7 +418,52 @@ export function AdminTab({ userId, isFounder }: Props) {
         setGiftUserId('');
         if (giftType === 'premium') loadPremiumUsers();
       } else {
-        toast.error(result.error || 'Erro ao processar presente');
+    } catch {
+      toast.error('Erro ao processar presente');
+    }
+    setLoading(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetEmail.trim() || !resetPassword.trim()) {
+      return toast.error('Preencha o e-mail e a nova senha');
+    }
+    
+    if (resetPassword.length < 6) {
+      return toast.error('A senha deve ter pelo menos 6 caracteres');
+    }
+
+    setResettingPassword(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão expirada');
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ 
+          email: resetEmail.trim(), 
+          newPassword: resetPassword.trim() 
+        }),
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        toast.success('✅ Senha redefinida com sucesso!');
+        setResetEmail('');
+        setResetPassword('');
+      } else {
+        toast.error(result.error || 'Erro ao redefinir senha');
+      }
+    } catch (err: any) {
+      toast.error('Erro de conexão: ' + err.message);
+    } finally {
+      setResettingPassword(false);
+    }
+  };
       }
     } catch {
       toast.error('Erro ao processar presente');
