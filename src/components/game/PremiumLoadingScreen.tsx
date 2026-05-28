@@ -83,9 +83,19 @@ export function PremiumLoadingScreen({
       
       {/* 1. BACKGROUND LAYER - Stadium with cinematic zoom */}
       <motion.div 
-        initial={{ scale: 1.1, opacity: 0 }}
-        animate={{ scale: 1, opacity: 0.4 }}
-        transition={{ duration: 2.5, ease: "easeOut" }}
+        initial={{ scale: 1.15, opacity: 0 }}
+        animate={{ 
+          scale: [1.15, 1.05],
+          opacity: 0.4,
+          x: [-10, 10, -10],
+          y: [-5, 5, -5]
+        }}
+        transition={{ 
+          scale: { duration: 5, ease: "easeOut" },
+          opacity: { duration: 2 },
+          x: { duration: 20, repeat: Infinity, ease: "linear" },
+          y: { duration: 15, repeat: Infinity, ease: "linear" }
+        }}
         className="absolute inset-0 z-0"
       >
         <div 
