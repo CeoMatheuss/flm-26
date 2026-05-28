@@ -783,10 +783,6 @@ export function AdminTab({ userId, isFounder }: Props) {
                 </p>
               </CardContent>
             </Card>
-
-            <Card>
-              </Card>
-            )}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
