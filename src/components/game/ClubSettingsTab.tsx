@@ -39,6 +39,33 @@ export function ClubSettingsTab({
   const [hasColorProduct, setHasColorProduct] = useState(false);
   const [newDetailColor, setNewDetailColor] = useState(detailColor || '#ffffff');
 
+  // Password change
+  const [pwd, setPwd] = useState('');
+  const [pwd2, setPwd2] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const [savingPwd, setSavingPwd] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (pwd.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+    if (pwd !== pwd2) {
+      toast.error('As senhas não coincidem.');
+      return;
+    }
+    setSavingPwd(true);
+    const { error } = await supabase.auth.updateUser({ password: pwd });
+    setSavingPwd(false);
+    if (error) {
+      toast.error(`Erro ao alterar senha: ${error.message}`);
+    } else {
+      toast.success('Senha alterada com sucesso!');
+      setPwd('');
+      setPwd2('');
+    }
+  };
+
   useEffect(() => {
     async function checkProduct() {
       const { data: { user } } = await supabase.auth.getUser();
