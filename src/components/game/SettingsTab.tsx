@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Settings, Sun, Moon, Monitor, GraduationCap, Bell, BellOff, Volume2, VolumeX, Download, Smartphone, Share2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Settings, Sun, Moon, Monitor, GraduationCap, Bell, BellOff, Volume2, VolumeX, Download, Smartphone, Share2, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,6 +28,13 @@ export function SettingsTab() {
   const [gameSounds, setGameSounds] = useState<boolean>(() => {
     return localStorage.getItem('flm-game-sounds') !== 'false'; // Default true
   });
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -142,6 +150,66 @@ export function SettingsTab() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Preencha todos os campos de senha.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      // First, we need to verify the current password. 
+      // Supabase auth doesn't have a direct "verify password" for the current session without re-signing in or using updateCredentials which might trigger other flows.
+      // The standard way in Supabase to update password is using updateUser.
+      // However, for extra security (ensuring they know the current password), we can try to sign in again with the current password.
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('Usuário não encontrado.');
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast.error('Senha atual incorreta.');
+        setIsChangingPassword(false);
+        return;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      toast.success('Senha alterada com sucesso!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswords(false);
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast.error(error.message || 'Erro ao alterar a senha. Tente novamente.');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-4 pb-10">
       <div className="flex items-center gap-2">
@@ -217,6 +285,121 @@ export function SettingsTab() {
               )}
             </button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Lock className="h-4 w-4 text-primary" />
+            Segurança
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Mantenha sua conta protegida.</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Senha Atual</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPasswords(!showPasswords)}
+                    className="text-[10px] text-primary hover:underline flex items-center gap-1"
+                  >
+                    {showPasswords ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {showPasswords ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    type={showPasswords ? "text" : "password"}
+                    placeholder="Sua senha atual"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="pl-10 h-11 bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Nova Senha</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                      type={showPasswords ? "text" : "password"}
+                      placeholder="Mínimo 6 caracteres"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-10 h-11 bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl text-sm"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Confirmar Nova Senha</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                      type={showPasswords ? "text" : "password"}
+                      placeholder="Repita a nova senha"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`pl-10 h-11 bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl text-sm ${
+                        confirmPassword && newPassword !== confirmPassword ? 'border-destructive/50' : ''
+                      }`}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {confirmPassword && newPassword !== confirmPassword && (
+                <div className="flex items-center gap-1.5 px-1">
+                  <AlertCircle className="h-3 w-3 text-destructive" />
+                  <p className="text-[10px] text-destructive font-medium">As senhas não coincidem.</p>
+                </div>
+              )}
+
+              {newPassword && newPassword.length < 6 && (
+                <div className="flex items-center gap-1.5 px-1">
+                  <AlertCircle className="h-3 w-3 text-orange-400" />
+                  <p className="text-[10px] text-orange-400 font-medium">A senha está muito curta (mínimo 6).</p>
+                </div>
+              )}
+              
+              {newPassword && newPassword.length >= 6 && newPassword === confirmPassword && (
+                <div className="flex items-center gap-1.5 px-1">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                  <p className="text-[10px] text-emerald-500 font-medium">Nova senha válida!</p>
+                </div>
+              )}
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 font-bold transition-all shadow-lg shadow-primary/20 group overflow-hidden"
+              disabled={isChangingPassword || !currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 6}
+            >
+              {isChangingPassword ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Atualizando...
+                </>
+              ) : (
+                <>
+                  Alterar Senha
+                  <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 
@@ -345,3 +528,21 @@ export function SettingsTab() {
     </div>
   );
 }
+
+// Helper to keep imports clean
+const ChevronRight = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="m9 18 6-6-6-6"/>
+  </svg>
+);
