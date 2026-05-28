@@ -17,6 +17,8 @@ import { TrainingFocus } from '@/components/game/TrainingTab';
 import { getTrainingManager } from '@/training/TrainingManager';
 import { useState } from 'react';
 import { rebuildClubSquad, squadsDiffer, syncTacticsWithSquad } from '@/utils/squadSync';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 import { useClubState, LoanedPlayer } from './useClubState';
 import { useFinanceState } from './useFinanceState';
@@ -408,6 +410,21 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
     loanInPlayer,
     finalizeLoanOut,
     finalizeLoanIn,
+
+    // Migration V2
+    migrateToV2: async () => {
+      if (!userId) return;
+      toast.loading('Migrando dados para a nova estrutura...', { id: 'migration-v2' });
+      const { data, error } = await supabase.functions.invoke('migrate-club-data', {
+        body: { user_id: userId }
+      });
+      if (error) {
+        toast.error('Erro na migração: ' + error.message, { id: 'migration-v2' });
+      } else {
+        toast.success('Dados migrados com sucesso!', { id: 'migration-v2' });
+      }
+      return { data, error };
+    },
     setPlayerTrainingFocus: clubState.setPlayerTrainingFocus,
     setPlayerTrainingIntensity: clubState.setPlayerTrainingIntensity,
     changeShirtNumber: clubState.changeShirtNumber,
