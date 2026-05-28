@@ -13,12 +13,11 @@ Deno.serve(async (req) => {
     const now = new Date();
 
     // 1. Get matches that should start but aren't finished
-    // 1. Get matches that should start but aren't finished
     const { data: matches, error: fetchError } = await sb.from("world_matches")
       .select("*, home_team:world_teams(*), away_team:world_teams(*), league:world_leagues(*)")
       .or('status.eq.scheduled,simulated.eq.false')
       .lte("scheduled_at", now.toISOString())
-      .limit(50);
+      .limit(500);
 
     if (fetchError) throw fetchError;
 
