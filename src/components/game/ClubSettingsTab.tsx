@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
-import { Pencil, Landmark, Check, Shield, X, Palette } from 'lucide-react';
+import { Pencil, Landmark, Check, Shield, X, Palette, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ShieldCrest, ShieldConfig } from './ShieldCrest';
@@ -38,6 +38,33 @@ export function ClubSettingsTab({
   const [shieldOpen, setShieldOpen] = useState(false);
   const [hasColorProduct, setHasColorProduct] = useState(false);
   const [newDetailColor, setNewDetailColor] = useState(detailColor || '#ffffff');
+
+  // Password change
+  const [pwd, setPwd] = useState('');
+  const [pwd2, setPwd2] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const [savingPwd, setSavingPwd] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (pwd.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+    if (pwd !== pwd2) {
+      toast.error('As senhas não coincidem.');
+      return;
+    }
+    setSavingPwd(true);
+    const { error } = await supabase.auth.updateUser({ password: pwd });
+    setSavingPwd(false);
+    if (error) {
+      toast.error(`Erro ao alterar senha: ${error.message}`);
+    } else {
+      toast.success('Senha alterada com sucesso!');
+      setPwd('');
+      setPwd2('');
+    }
+  };
 
   useEffect(() => {
     async function checkProduct() {
@@ -196,6 +223,52 @@ export function ClubSettingsTab({
           </CardContent>
         </Card>
       )}
+
+
+      {/* Change Password */}
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-amber-500" /> Alterar Senha
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="relative">
+            <Input
+              type={showPwd ? 'text' : 'password'}
+              placeholder="Nova senha (mín. 6 caracteres)"
+              value={pwd}
+              onChange={(e) => setPwd(e.target.value)}
+              className="text-sm pr-9"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPwd(s => !s)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <Input
+            type={showPwd ? 'text' : 'password'}
+            placeholder="Confirmar nova senha"
+            value={pwd2}
+            onChange={(e) => setPwd2(e.target.value)}
+            className="text-sm"
+          />
+          <Button
+            size="sm"
+            onClick={handleChangePassword}
+            disabled={savingPwd || !pwd || !pwd2}
+            className="w-full"
+          >
+            <Check className="h-3 w-3 mr-1" /> {savingPwd ? 'Salvando...' : 'Salvar Nova Senha'}
+          </Button>
+          <p className="text-[11px] text-muted-foreground">
+            A nova senha passa a valer imediatamente. Use uma senha forte que você lembre.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Shield Editor Sheet */}
       <Sheet open={shieldOpen} onOpenChange={setShieldOpen}>
