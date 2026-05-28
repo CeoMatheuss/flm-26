@@ -624,6 +624,8 @@ export function DashboardTab({ club, events, infrastructure, onOpenNewspaper, on
         </Card>
       </div>
 
+      <MatchCountdownWidget userId={userId} />
+
       <MatchDashboardCard club={club} userId={userId} onGoToFriendly={onGoToFriendly} onViewClub={onViewClub} stadiumLevel={stadiumLevel} />
 
       {/* Ranking Mundial */}
