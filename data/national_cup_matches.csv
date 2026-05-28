@@ -1,0 +1,1 @@
+id,cup_id,round,bracket_pos,home_team_id,away_team_id,home_score,away_score,home_penalties,away_penalties,status,winner_team_id,scheduled_at,stadium,match_data,created_at,updated_at,phase_name,is_second_leg,aggregate_home_score,aggregate_away_score,synced

@@ -1,0 +1,9 @@
+id,user_id,name,country,level,specialization,efficiency,is_busy,avatar_url,created_at,updated_at,seasons_remaining,is_free_agent,market_available_at,last_mission_completed_at,potential_evaluation,technical_evaluation,analysis_speed,regional_knowledge,youth_discovery,reputation,salary,contract_start,contract_end,preferred_region
+f979b9de-db65-4272-816f-4901003d1c5a,,Hans Müller,Inglaterra,baixo,defesa,0.375735137502172,f,,2026-05-11 02:12:07.061074+00,2026-05-11 02:12:07.061074+00,5,t,,,10,10,10,[],10,10,0,,,
+5a48101b-ffc2-4dba-882a-c29ffca38b1b,,Marco Rossi,Itália,baixo,ataque,0.498760187356696,f,,2026-05-11 02:12:07.061074+00,2026-05-11 02:12:07.061074+00,5,t,,,10,10,10,[],10,10,0,,,
+f77d301e-eb59-41ed-9a57-dcfc1b993458,,Jean Pierre,Itália,baixo,jovens,0.483595862474312,f,,2026-05-11 02:12:07.061074+00,2026-05-11 02:12:07.061074+00,5,t,,,10,10,10,[],10,10,0,,,
+3e1db9dd-4fa8-48aa-a4f7-1c41e019b100,,Marco Rossi,Brasil,baixo,ataque,0.416633048720865,f,,2026-05-11 02:12:07.061074+00,2026-05-11 02:12:07.061074+00,5,t,,,10,10,10,[],10,10,0,,,
+9a291b98-bc8f-46e6-bb77-d7b8141d38d8,,Marco Rossi,Brasil,médio,jovens,0.661013827994158,f,,2026-05-11 02:12:07.061074+00,2026-05-11 02:12:07.061074+00,5,t,,,10,10,10,[],10,10,0,,,
+4d43737d-375e-44f0-8975-d887900196f1,68123140-4a25-44c0-adff-ea148c54423c,Ricardo Silva,Argentina,baixo,geral,0.5,t,,2026-05-11 02:13:23.372693+00,2026-05-11 02:13:23.372693+00,5,f,,,10,10,10,[],10,10,0,,,
+07d59b89-a96e-4a44-ba2d-ae68226b1cfb,68123140-4a25-44c0-adff-ea148c54423c,Ricardo Silva,Espanha,baixo,geral,0.5,t,,2026-05-11 02:13:19.060869+00,2026-05-11 02:13:19.060869+00,5,f,,,10,10,10,[],10,10,0,,,
+28be1080-ef29-4a8f-bbbc-bbac2a1bd739,68123140-4a25-44c0-adff-ea148c54423c,Marcos Scout,Brasil,baixo,geral,0.5,t,,2026-05-11 02:13:21.305792+00,2026-05-11 02:13:21.305792+00,5,f,,,10,10,10,[],10,10,0,,,

@@ -1,0 +1,57 @@
+id,country_id,name,division,active,created_at,division_level,max_teams,current_round,season_month,season_year,country,prizes_paid,is_finished,winner_processed,tier_level,division_number,division_name,status,total_matchdays,total_slots
+26c2d5d7-63cf-422c-aa3e-395a0d13c2ff,87bc2287-b9a8-4749-bae6-0692d1e47689,Brasil Série B,2,f,2026-05-10 17:37:18.508668+00,2,16,26,5,2026,Brasil,f,f,f,1,1,,inactive,38,20
+2ea8c253-baa6-4b61-938b-f05bc7e69928,87bc2287-b9a8-4749-bae6-0692d1e47689,Brasil Série C,3,f,2026-05-10 17:37:18.508668+00,3,16,26,5,2026,Brasil,f,f,f,1,1,,inactive,38,20
+08284dd1-9064-4950-8f33-6c91cb68d532,e2edd87d-0518-4176-8ee4-18198e42ae27,Espanha Série C,3,f,2026-05-10 17:37:18.508668+00,3,16,26,5,2026,Espanha,f,f,f,1,1,,inactive,38,20
+baaeea96-d1e0-4914-9255-8008a3059fb4,e2edd87d-0518-4176-8ee4-18198e42ae27,Espanha Série B,2,f,2026-05-10 17:37:18.508668+00,2,16,26,5,2026,Espanha,f,f,f,1,1,,inactive,38,20
+9aae628c-fe5d-4c4b-a20d-ac978d00b3a6,0be1f523-39dd-4b35-b5dd-547d6d83965c,Premier League,1,f,2026-05-06 22:09:41.932284+00,1,20,27,5,2026,Inglaterra,f,f,f,1,1,,inactive,38,20
+c8fd86b1-50fd-4dd0-aa63-576d3028bf2e,,Süper Lig,1,t,2026-05-27 17:37:19.775891+00,1,16,27,1,2026,Turquia,f,f,f,1,1,,active,30,16
+c6633490-aa31-4fe7-a342-42bfe744343b,,Brasileirão Série A,1,t,2026-05-27 18:03:00.763219+00,1,16,27,1,2026,Brasil,f,f,f,1,1,,active,30,16
+2e8ece26-676a-4998-bbd4-c07fa5e49694,,Liga Portugal,1,t,2026-05-27 18:03:01.878088+00,1,16,27,1,2026,Portugal,f,f,f,1,1,,active,30,16
+964f7ec5-ecdc-4294-bfe9-719a6557722a,28f9805c-d3a9-4afb-8128-c04aaa5e8266,Liga Portugal,1,f,2026-05-06 22:09:41.932284+00,1,20,27,5,2026,Portugal,f,f,f,1,1,,inactive,38,20
+50c28c45-bd75-4608-bc94-05e8dca7e2bd,,Jupiler Pro League,1,t,2026-05-27 17:37:19.585556+00,1,16,27,1,2026,Bélgica,f,f,f,1,1,,active,30,16
+5fcb1150-e2f4-461d-a294-1ca566b59b50,,J1 League,1,t,2026-05-27 17:37:20.411976+00,1,16,27,1,2026,Japão,f,f,f,1,1,,active,30,16
+64c7f702-f2e2-4987-b82a-9d550d446f2e,,Liga Profesional,1,t,2026-05-27 18:03:02.009275+00,1,16,27,1,2026,Argentina,f,f,f,1,1,,active,30,16
+85e98474-9e1e-422a-a371-96f0209b7a4a,,Eredivisie,1,t,2026-05-27 17:37:19.453782+00,1,16,28,1,2026,Holanda,f,f,f,1,1,,active,30,16
+e7a86a61-9a63-45ad-9e1b-a76dee440860,,Serie A TIM,1,t,2026-05-27 18:03:01.471436+00,1,16,28,1,2026,Itália,f,f,f,1,1,,active,30,16
+084b02de-b070-4ab8-a952-9290fb2646cd,,Premier League,1,t,2026-05-27 18:03:02.628004+00,1,16,27,1,2026,Rússia,f,f,f,1,1,,active,30,16
+1a8524d5-c4b1-4487-8718-dfedc8ea76ef,,Liga 1,1,t,2026-05-27 18:03:03.718002+00,1,16,27,1,2026,Peru,f,f,f,1,1,,active,30,16
+2b83984c-107c-4d30-8c53-95c2a46c397f,,Colômbia - Série A,1,t,2026-05-27 17:37:20.003942+00,1,16,27,1,2026,Colômbia,f,f,f,1,1,,active,30,16
+302c0d3e-1ed4-4794-a61d-be1f6a748f6d,,Bundesliga,1,t,2026-05-27 18:03:01.581059+00,1,16,27,1,2026,Alemanha,f,f,f,1,1,,active,30,16
+49a69c34-b1c3-49d0-80a5-70bcc69e6408,,Primera División,1,t,2026-05-27 18:03:03.56826+00,1,16,27,1,2026,Paraguai,f,f,f,1,1,,active,30,16
+4a9301d7-f57d-4ca2-ab67-59dbdd450074,,Eliteserien,1,t,2026-05-27 18:03:03.309546+00,1,16,27,1,2026,Noruega,f,f,f,1,1,,active,30,16
+bfcbb2dc-20ea-4129-8d0a-66beb1d8138a,,MLS,1,t,2026-05-27 17:37:20.231425+00,1,16,27,1,2026,Estados Unidos,f,f,f,1,1,,active,30,16
+d1f21b06-0e13-4b57-97c2-36a37e5a33f4,,Saudi Pro League,1,t,2026-05-27 17:37:20.324558+00,1,16,27,1,2026,Arábia Saudita,f,f,f,1,1,,active,30,16
+64e5de8e-a3ed-4c96-9172-8865d31ab74d,,Premier League,1,t,2026-05-27 18:03:03.784064+00,1,16,27,1,2026,Egito,f,f,f,1,1,,active,30,16
+2e864139-4374-4014-bae5-2a992fc0b007,28f9805c-d3a9-4afb-8128-c04aaa5e8266,Portugal Série B,2,f,2026-05-10 17:37:18.508668+00,2,16,26,5,2026,Portugal,f,f,f,1,1,,inactive,38,20
+57e43d90-fe3d-4965-b4a3-e3c2e1096cdb,,Premier League,1,t,2026-05-27 18:03:01.037633+00,1,16,27,1,2026,Inglaterra,f,f,f,1,1,,active,30,16
+5a4a45be-5695-475d-b0c1-38896c4e48c1,,Superliga,1,t,2026-05-27 18:03:03.221737+00,1,16,27,1,2026,Dinamarca,f,f,f,1,1,,active,30,16
+804b1ca5-8e2c-4210-b7bb-19a1a2d65bcd,,Super League Greece,1,t,2026-05-27 18:03:02.707702+00,1,16,27,1,2026,Grécia,f,f,f,1,1,,active,30,16
+d4398ee7-b67f-4e96-babd-7443ea048870,,Super League,1,t,2026-05-27 18:03:03.001747+00,1,16,27,1,2026,Suíça,f,f,f,1,1,,active,30,16
+9cbe7f9c-b797-445b-b209-dd59f9915a26,28f9805c-d3a9-4afb-8128-c04aaa5e8266,Portugal Série C,3,f,2026-05-10 17:37:18.508668+00,3,16,26,5,2026,Portugal,f,f,f,1,1,,inactive,38,20
+52ae47c3-02a1-4058-8003-367c58317a60,847b6579-047b-4802-b09f-30c799e7e0a1,Argentina Série B,2,f,2026-05-10 17:37:18.508668+00,2,16,26,5,2026,Argentina,f,f,f,1,1,,inactive,38,20
+639c6199-4369-41a3-ae57-83ae616adf52,847b6579-047b-4802-b09f-30c799e7e0a1,Argentina Série C,3,f,2026-05-10 17:37:18.508668+00,3,16,26,5,2026,Argentina,f,f,f,1,1,,inactive,38,20
+ce983ef5-fe82-4ce5-aa47-dff6c58918a9,ace21a9e-436f-4f8e-a5a6-3a8d9811e716,Alemanha Série C,3,f,2026-05-10 17:37:18.508668+00,3,16,26,5,2026,Alemanha,f,f,f,1,1,,inactive,38,20
+d2df8a17-eb16-4b1a-9e12-77fbb1cc8c50,0be1f523-39dd-4b35-b5dd-547d6d83965c,Inglaterra Série B,2,f,2026-05-10 17:37:18.508668+00,2,16,26,5,2026,Inglaterra,f,f,f,1,1,,inactive,38,20
+6a7c234b-1bbf-4416-a950-cf924ea21818,0be1f523-39dd-4b35-b5dd-547d6d83965c,Inglaterra Série C,3,f,2026-05-10 17:37:18.508668+00,3,16,26,5,2026,Inglaterra,f,f,f,1,1,,inactive,38,20
+a372f5bf-8f99-484c-96ff-3cd62c2035a8,47724095-709a-440f-b741-699cb8d1bdf8,Itália Série B,2,f,2026-05-10 17:37:18.508668+00,2,16,26,5,2026,Itália,f,f,f,1,1,,inactive,38,20
+25adeed2-b6ab-48a2-8f49-f6eda800347b,47724095-709a-440f-b741-699cb8d1bdf8,Itália Série C,3,f,2026-05-10 17:37:18.508668+00,3,16,26,5,2026,Itália,f,f,f,1,1,,inactive,38,20
+90f328ef-8d6d-4330-9837-e106c733caf4,b81b8671-cf40-4c83-bcdc-1300e42f4a70,França Série B,2,f,2026-05-10 17:37:18.508668+00,2,16,26,5,2026,França,f,f,f,1,1,,inactive,38,20
+80a3131f-a6b1-4937-94eb-2d3581d8bc4b,47724095-709a-440f-b741-699cb8d1bdf8,Serie A TIM,1,f,2026-05-10 17:37:18.508668+00,1,20,27,5,2026,Itália,f,f,f,1,1,,inactive,38,20
+1d781ccd-1c61-4cfe-bef0-255535467026,ace21a9e-436f-4f8e-a5a6-3a8d9811e716,Alemanha Série B,2,f,2026-05-10 17:37:18.508668+00,2,16,26,5,2026,Alemanha,f,f,f,1,1,,inactive,38,20
+59ebc862-3b89-44cd-aafa-814e55c22c9a,b81b8671-cf40-4c83-bcdc-1300e42f4a70,França Série C,3,f,2026-05-10 17:37:18.508668+00,3,16,26,5,2026,França,f,f,f,1,1,,inactive,38,20
+7aa825f2-541c-45aa-a1b9-f6f246cef603,,México - Série A,1,t,2026-05-27 17:37:20.117023+00,1,16,28,1,2026,México,f,f,f,1,1,,active,30,16
+93fd0ad6-688d-44bc-a701-3152afe1b197,,Premiership,1,t,2026-05-27 18:03:03.991271+00,1,16,28,1,2026,Escócia,f,f,f,1,1,,active,30,16
+ea55523a-ea06-4df5-9a35-57015ba3b315,,Primera División,1,t,2026-05-27 18:03:03.504771+00,1,16,28,1,2026,Chile,f,f,f,1,1,,active,30,16
+79f27b92-63fa-4fe7-8b0d-49d1fd9a3951,,Uruguai - Série A,1,t,2026-05-27 17:37:19.901395+00,1,16,28,1,2026,Uruguai,f,f,f,1,1,,active,30,16
+bfb3dd23-0355-4393-a36d-a6fbe4b1859f,847b6579-047b-4802-b09f-30c799e7e0a1,Liga Profesional,1,f,2026-05-06 22:09:41.932284+00,1,20,27,5,2026,Argentina,f,f,f,1,1,,inactive,38,20
+b01ef2e0-298f-4313-a093-680715e25fec,e2edd87d-0518-4176-8ee4-18198e42ae27,LaLiga,1,f,2026-05-06 22:09:41.932284+00,1,20,27,5,2026,Espanha,f,f,f,1,1,,inactive,38,20
+7c63df6b-bd80-4245-9129-e90193879589,ace21a9e-436f-4f8e-a5a6-3a8d9811e716,Bundesliga,1,f,2026-05-06 22:09:41.932284+00,1,20,27,5,2026,Alemanha,f,f,f,1,1,,inactive,38,20
+33363f68-fc09-4fc7-941f-4ca6b89d4101,b81b8671-cf40-4c83-bcdc-1300e42f4a70,Ligue 1,1,f,2026-05-06 22:09:41.932284+00,1,20,27,5,2026,França,f,f,f,1,1,,inactive,38,20
+d38e0b1b-3e3a-4e1e-bdb1-63b660a45f87,,Ligue 1,1,t,2026-05-27 18:03:01.704452+00,1,16,27,1,2026,França,f,f,f,1,1,,active,30,16
+b7a15c6f-9e3d-4a07-a0bf-cd6dc1586953,,Bundesliga,1,t,2026-05-27 18:03:03.113759+00,1,16,27,1,2026,Áustria,f,f,f,1,1,,active,30,16
+ae1f4d86-4a28-406c-907f-abce9c7e15f2,,K League 1,1,t,2026-05-27 18:03:03.919024+00,1,16,27,1,2026,Coreia do Sul,f,f,f,1,1,,active,30,16
+07253b9f-5456-4514-9d9c-b50187d63967,,Serie A,1,t,2026-05-27 18:03:03.641105+00,1,16,27,1,2026,Equador,f,f,f,1,1,,active,30,16
+0769b8c1-4e8d-496b-998b-ab26b2b0d1fa,,Premier League,1,t,2026-05-27 18:03:02.844363+00,1,16,27,1,2026,Ucrânia,f,f,f,1,1,,active,30,16
+243d4d25-b6b7-4466-9f8e-557c4ecbb1b5,,Allsvenskan,1,t,2026-05-27 18:03:03.435906+00,1,16,27,1,2026,Suécia,f,f,f,1,1,,active,30,16
+5e43c346-16d9-464e-952e-9b0468d5e880,,LaLiga,1,t,2026-05-27 18:03:01.222407+00,1,16,27,1,2026,Espanha,f,f,f,1,1,,active,30,16
+edb83ebc-95c3-4f26-99b3-0b758a5d08c6,87bc2287-b9a8-4749-bae6-0692d1e47689,Brasileirão Série A,1,f,2026-05-06 22:09:41.932284+00,1,20,27,5,2026,Brasil,f,f,f,1,1,,inactive,38,20

@@ -1,0 +1,9 @@
+id,name,country_code,season,current_round,total_rounds,status,winner_team_id,created_at,updated_at,kickoff_time,total_teams,season_start_date,prize_pool,prizes_paid_current_round
+d21e5082-97c6-4393-a192-9b81a9a6fb4e,Copa de Itália,Itália,1,5,6,in_progress,,2026-05-11 04:10:03.270902+00,2026-05-15 19:00:02.241606+00,12:00:00,64,,,4
+866ea51e-8235-4c93-95cc-cc51ab9b631f,Copa de Argentina,Argentina,1,5,6,in_progress,,2026-05-11 04:10:04.115513+00,2026-05-15 19:00:02.642955+00,12:00:00,64,,,4
+8773b86c-e7b2-4fef-b921-449fdab3c2bd,Copa de França,França,1,5,6,in_progress,,2026-05-11 04:10:03.68639+00,2026-05-15 19:00:02.981063+00,12:00:00,64,,,4
+709d8efa-17a1-4516-8674-c19b35d45668,Copa de Portugal,Portugal,1,5,6,in_progress,,2026-05-11 04:10:03.908823+00,2026-05-15 19:00:03.36251+00,12:00:00,64,,,4
+247c5df5-c17b-4873-911a-24419e30d2a6,Copa de Brasil,Brasil,1,4,4,finished,22460cb8-1771-4681-b229-aeb9d7fdbf82,2026-05-11 04:10:02.585404+00,2026-05-15 19:00:03.694954+00,12:00:00,16,,,4
+525a0a84-8980-46ff-ac79-aa36777ba89d,Copa de Espanha,Espanha,1,5,6,in_progress,,2026-05-11 04:10:02.810992+00,2026-05-15 19:00:03.915798+00,12:00:00,64,,,4
+93e7baa6-b215-453b-a88d-dbaa3312e41a,Copa de Alemanha,Alemanha,1,5,6,in_progress,,2026-05-11 04:10:03.478832+00,2026-05-15 19:00:04.298099+00,12:00:00,64,,,4
+ae0c118a-c866-4203-a3ed-03d7e7be70bb,Copa de Inglaterra,Inglaterra,1,5,6,in_progress,,2026-05-11 04:10:03.041247+00,2026-05-15 19:00:04.692614+00,12:00:00,64,,,4

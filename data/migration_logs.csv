@@ -1,0 +1,4 @@
+id,user_id,from_version,to_version,status,changes,error_message,duration_ms,created_at
+1aa20a08-b5d2-4b2f-beb9-dd926d13d0a4,68123140-4a25-44c0-adff-ea148c54423c,1.5.0,2.4.1,success,[],,596,2026-05-18 21:30:16.956266+00
+fca3f649-52fd-4725-a1d1-0f227119a846,c9544dd0-3729-480b-bd00-315d75a45711,1.5.0,2.4.1,success,[],,352,2026-05-18 22:27:37.128149+00
+cb7cc2a7-d574-40de-9c72-7ad109319d9e,320fcbb8-c3eb-43e7-a3eb-0f302b46897f,1.5.0,2.4.1,success,[],,1569,2026-05-20 21:11:27.655156+00

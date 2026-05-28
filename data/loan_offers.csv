@@ -1,0 +1,2 @@
+id,listing_id,seller_id,buyer_id,buyer_club_name,offered_salary_payer,offered_salary_split_pct,offered_loan_fee,message,counter_salary_payer,counter_salary_split_pct,counter_loan_fee,counter_message,status,expires_at,resolved_at,created_at,updated_at
+80835741-155c-4a90-9014-553b6b9006f8,71e55df1-d037-47b8-8a77-c1225336f1ac,68123140-4a25-44c0-adff-ea148c54423c,c9544dd0-3729-480b-bd00-315d75a45711,ABC FC,buyer,0,0,"",,,,,accepted,2026-05-22 00:21:57.444497+00,2026-05-27 01:59:25.75+00,2026-05-21 00:21:57.444497+00,2026-05-27 01:59:26.034374+00

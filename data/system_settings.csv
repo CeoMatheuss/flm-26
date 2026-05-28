@@ -1,0 +1,4 @@
+key,value,updated_at,updated_by
+maintenance_mode,"{""active"": false, ""blocked_tabs"": [""shop"", ""ranking"", ""ctrooms"", ""continental""]}",2026-05-27 00:27:42.445+00,68123140-4a25-44c0-adff-ea148c54423c
+national_cup_automation,"{""enabled"": true, ""last_processed"": null}",2026-05-10 21:19:51.193998+00,
+mercadopago_public_key,"{""key"": ""TEST-58611384-9334-4b5a-9334-PLACEHOLDER""}",2026-05-14 00:29:53.466006+00,

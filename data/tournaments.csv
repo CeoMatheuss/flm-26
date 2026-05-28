@@ -1,0 +1,7 @@
+id,name,type,season,host_country,status,winner_id,created_at,updated_at,continent
+e9cc2888-0c31-4c50-84c1-54a20389105f,Libertadores,continental,1,,in_progress,,2026-05-24 23:55:56.333848+00,2026-05-24 23:55:56.333848+00,south_america
+90a9910a-9b74-49b3-a823-0eaec88a5bc1,Champions League,continental,1,,in_progress,,2026-05-24 23:55:56.442162+00,2026-05-24 23:55:56.442162+00,europe
+277eaf9f-cb0e-4edf-82ae-f07f23f29365,CONCACAF Champions,continental,1,,in_progress,,2026-05-24 23:55:56.515043+00,2026-05-24 23:55:56.515043+00,north_america
+ced6bc4d-07a1-4289-b4e5-dfedbe8b3768,AFC Champions League,continental,1,,in_progress,,2026-05-24 23:55:56.618459+00,2026-05-24 23:55:56.618459+00,asia
+dbc3736c-61a9-4e57-8cc7-4c38dea122c9,CAF Champions League,continental,1,,in_progress,,2026-05-24 23:55:56.692628+00,2026-05-24 23:55:56.692628+00,africa
+3ff33da9-02d5-4d8d-8612-ab5d0dc52b80,OFC Champions League,continental,1,,in_progress,,2026-05-24 23:55:56.767512+00,2026-05-24 23:55:56.767512+00,oceania
