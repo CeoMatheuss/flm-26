@@ -122,7 +122,9 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [directMsgTitle, setDirectMsgTitle] = useState('');
   const [directMsgContent, setDirectMsgContent] = useState('');
   const [sendingMsg, setSendingMsg] = useState(false);
-
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
   useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
       leagues:       ['leagues_overview'],
@@ -424,6 +426,47 @@ export function AdminTab({ userId, isFounder }: Props) {
     setLoading(false);
   };
 
+  const handleResetPassword = async () => {
+    if (!resetEmail.trim() || !resetPassword.trim()) {
+      return toast.error('Preencha o e-mail e a nova senha');
+    }
+    
+    if (resetPassword.length < 6) {
+      return toast.error('A senha deve ter pelo menos 6 caracteres');
+    }
+
+    setResettingPassword(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sessão expirada');
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ 
+          email: resetEmail.trim(), 
+          newPassword: resetPassword.trim() 
+        }),
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        toast.success('✅ Senha redefinida com sucesso!');
+        setResetEmail('');
+        setResetPassword('');
+      } else {
+        toast.error(result.error || 'Erro ao redefinir senha');
+      }
+    } catch (err: any) {
+      toast.error('Erro de conexão: ' + err.message);
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('ID copiado!');
@@ -698,6 +741,48 @@ export function AdminTab({ userId, isFounder }: Props) {
                 </CardContent>
               </Card>
             )}
+
+            <Card className="border-primary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-primary" />
+                  Redefinir Senha de Usuário
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">E-mail do Usuário</label>
+                  <Input
+                    placeholder="exemplo@gmail.com"
+                    value={resetEmail}
+                    onChange={e => setResetEmail(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Nova Senha</label>
+                  <Input
+                    type="text"
+                    placeholder="Mínimo 6 caracteres"
+                    value={resetPassword}
+                    onChange={e => setResetPassword(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                </div>
+                <Button 
+                  size="sm" 
+                  className="w-full h-8 text-xs bg-primary hover:bg-primary/90 text-white gap-1" 
+                  onClick={handleResetPassword} 
+                  disabled={resettingPassword}
+                >
+                  {resettingPassword ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                  Redefinir Senha
+                </Button>
+                <p className="text-[9px] text-muted-foreground text-center italic">
+                  Isso alterará a senha do usuário imediatamente.
+                </p>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
