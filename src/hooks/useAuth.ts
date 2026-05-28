@@ -12,10 +12,10 @@ export function useAuth() {
     console.log('[useAuth] Verificando sessão inicial...');
     
     try {
-      // Timeout aumentado para 12s para lidar com picos de latência
+      // Timeout reduzido para 8s para falhar mais rápido e permitir retry ou skip
       const sessionPromise = supabase.auth.getSession();
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT_GET_SESSION')), 12000)
+        setTimeout(() => reject(new Error('TIMEOUT_GET_SESSION')), 8000)
       );
 
       const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
@@ -25,13 +25,10 @@ export function useAuth() {
         const { session } = result.data;
         console.log(`[useAuth] Sessão carregada (${duration}ms):`, session?.user?.id || 'nenhuma');
         setSession(session);
-      } else if (result && result.error) {
-        console.error(`[useAuth] Erro na API de sessão (${duration}ms):`, result.error);
-        // Em caso de erro 504 ou 500, tentamos manter o que temos ou falhar graciosamente
       }
     } catch (err: any) {
       const duration = (performance.now() - startTime).toFixed(2);
-      console.warn(`[useAuth] Falha/Timeout ao verificar sessão (${duration}ms). Servidor possivelmente lento.`);
+      console.warn(`[useAuth] Latência na sessão (${duration}ms). Prosseguindo...`);
     } finally {
       setLoading(false);
     }

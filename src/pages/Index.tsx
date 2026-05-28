@@ -171,15 +171,9 @@ function GameApp({ userId, userEmail, onSignOut }: { userId: string; userEmail: 
       setLoadSubStage('');
 
       try {
-        // 1) Validar sessão
-        const { data: sessionRes } = await supabase.auth.getSession();
-        if (!sessionRes.session) {
-          // Tentar refresh
-          const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
-          if (refreshErr || !refreshed.session) {
-            throw new Error('Sua sessão expirou. Faça login novamente.');
-          }
-          console.log('[GameApp] Sessão renovada automaticamente.');
+        // 1) Usar a sessão já validada pelo hook useAuth no componente Index
+        if (!session) {
+          throw new Error('Sua sessão expirou. Faça login novamente.');
         }
         if (cancelled) return;
 
