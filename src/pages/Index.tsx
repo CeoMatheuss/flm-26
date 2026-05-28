@@ -201,10 +201,54 @@ function GameApp({ userId, userEmail, session, onSignOut }: { userId: string; us
             } catch (e) {
               console.warn('[GameApp] Falha ao cachear save local:', e);
             }
+            
+            // 🔄 TRIGGER ESTRUTURADO: Se houver save no game_saves mas não na tabela 'clubs', migrar.
+            supabase.from('clubs').select('id').eq('user_id', userId).maybeSingle().then(({ data: clubRow }) => {
+              if (!clubRow) {
+                console.log('[GameApp] 🔄 Save bruto detectado, mas tabelas estruturadas vazias. Iniciando migração interna...');
+                supabase.functions.invoke('migrate-club-data', { body: { user_id: userId } });
+              }
+            });
+
             toast.success('Save carregado!');
           } catch (parseErr) {
             console.error('[GameApp] Erro ao preparar save:', parseErr);
             throw new Error('Seu save foi encontrado, mas os dados não puderam ser preparados.');
+          }
+        } else {
+          // 🚀 MIGRATION BRIDGE: Se não houver save no Supabase, verificar legacy localStorage
+          const legacyKey = 'flm-game-state'; // Chave padrão da versão anterior
+          const legacyRaw = localStorage.getItem(legacyKey);
+          
+          if (legacyRaw) {
+            setLoadStage('Migrando dados legados');
+            setLoadSubStage('Sincronizando seu progresso local com a nuvem...');
+            
+            try {
+              const legacyData = JSON.parse(legacyRaw);
+              // Salva no game_saves como backup inicial
+              await supabase.from('game_saves').upsert({ 
+                user_id: userId, 
+                club_data: legacyData 
+              }, { onConflict: 'user_id' });
+              
+              // Dispara migração estruturada (Edge Function)
+              const { data: migRes, error: migErr } = await supabase.functions.invoke('migrate-club-data', {
+                body: { user_id: userId }
+              });
+              
+              if (migErr) throw migErr;
+              
+              setLoadedState(legacyData);
+              setHasSave(true);
+              toast.success('Seus dados foram migrados com sucesso para o Supabase!');
+              
+              // Limpa legacy key após sucesso para evitar re-migração
+              localStorage.removeItem(legacyKey);
+            } catch (migError) {
+              console.error('[GameApp] Falha na migração legado -> supabase:', migError);
+              toast.error('Não foi possível migrar seus dados legados automaticamente.');
+            }
           }
         }
 
