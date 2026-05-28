@@ -24,12 +24,13 @@ Deno.serve(async (req) => {
     }
 
     const results = [];
+    const uniqueLeagues = new Set<string>();
+    
+    // Batch update matches
     for (const match of matches) {
-      // Basic simulation logic (can be expanded with tactical impact)
       const homeStrength = match.home_team?.strength || 70;
       const awayStrength = match.away_team?.strength || 70;
       
-      // Simple random result for now
       const homeScore = Math.floor(Math.random() * (homeStrength / 20 + 2));
       const awayScore = Math.floor(Math.random() * (awayStrength / 20 + 2));
 
@@ -40,12 +41,13 @@ Deno.serve(async (req) => {
         played_at: now.toISOString()
       }).eq("id", match.id);
 
-      // Sync standings
-      if (match.league_id) {
-        await sb.rpc("sync_world_league_standings", { _league_id: match.league_id });
-      }
-
+      if (match.league_id) uniqueLeagues.add(match.league_id);
       results.push({ id: match.id, result: `${homeScore}-${awayScore}` });
+    }
+
+    // Sync standings once per league
+    for (const leagueId of uniqueLeagues) {
+      await sb.rpc("sync_world_league_standings", { _league_id: leagueId });
     }
 
     return new Response(JSON.stringify({ ok: true, simulated: results.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
