@@ -359,13 +359,10 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       const diff = scheduledTime - now;
       const isLive = nextMatch.status === 'live';
 
-      // Horário chegou OU já em simulação no servidor: força auto-sim imediato
+      // Horário chegou OU já em simulação no servidor: dispara auto-sim silenciosamente,
+      // sem exibir mensagem de "Simulando automaticamente" no card.
       if (diff <= 0 || isLive) {
-        const elapsedMin = Math.floor(Math.abs(diff) / 60000);
-        const elapsedTxt = elapsedMin >= 60
-          ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m`
-          : elapsedMin > 0 ? `${elapsedMin}m` : 'agora';
-        setTimeLeft(isLive ? `🔴 Ao vivo (${elapsedTxt})` : `⚡ Simulando automaticamente (${elapsedTxt})`);
+        setTimeLeft('');
         setIsReady(false);
 
         if (!autoSimTriggered) {
