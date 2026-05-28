@@ -426,7 +426,7 @@ export function useGame(initialState?: GameState, userId?: string, isPremium: bo
         toast.success('Dados migrados com sucesso!', { id: 'migration-v2' });
       }
       return { data, error };
-    }
+    },
     setPlayerTrainingFocus: clubState.setPlayerTrainingFocus,
     setPlayerTrainingIntensity: clubState.setPlayerTrainingIntensity,
     changeShirtNumber: clubState.changeShirtNumber,
