@@ -257,7 +257,7 @@ export function PremiumLoadingScreen({
               className="flex items-center gap-6"
             >
               <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 shadow-inner">
-                <activeTip.icon className="w-6 h-6 md:w-8 md:h-8 text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                {activeTip && <activeTip.icon className="w-6 h-6 md:w-8 md:h-8 text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />}
               </div>
               <div className="flex-1">
                 <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">
