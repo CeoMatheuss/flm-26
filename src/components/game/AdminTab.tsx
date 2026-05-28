@@ -122,7 +122,9 @@ export function AdminTab({ userId, isFounder }: Props) {
   const [directMsgTitle, setDirectMsgTitle] = useState('');
   const [directMsgContent, setDirectMsgContent] = useState('');
   const [sendingMsg, setSendingMsg] = useState(false);
-
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
   useEffect(() => {
     const map: Record<AdminCategory, string[]> = {
       leagues:       ['leagues_overview'],
