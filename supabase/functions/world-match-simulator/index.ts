@@ -16,7 +16,8 @@ Deno.serve(async (req) => {
     const { data: matches, error: fetchError } = await sb.from("world_matches")
       .select("*, home_team:home_team_id(*), away_team:away_team_id(*), league:league_id(*)")
       .or('status.eq.scheduled,simulated.eq.false')
-      .lte("scheduled_at", now.toISOString())
+      .gte("scheduled_at", "2026-05-28T00:00:00Z")
+      .lte("scheduled_at", "2026-05-28T23:59:59Z")
       .limit(500);
 
     if (fetchError) throw fetchError;
