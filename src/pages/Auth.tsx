@@ -115,24 +115,24 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     const startTime = performance.now();
     console.log('[Auth] 🚀 Iniciando tentativa de login...', { email, timestamp: new Date().toISOString() });
     
-    // Proteção ultra-agressiva contra travamento do botão (reset forçado após 8s)
+    // Proteção ultra-agressiva contra travamento do botão (reset forçado após 12s)
     const buttonSafetyTimeout = setTimeout(() => {
       if (loading) {
         console.warn('[Auth] ⚠️ LOGIN TRAVADO NO BOTÃO! Forçando reset.');
         setLoading(false);
-        toast.error('O sistema de autenticação está instável ou lento. Tentando diagnóstico...');
-        // Tenta limpar sessão local se estiver travado
-        supabase.auth.signOut().catch(() => {});
+        toast.error('O servidor de autenticação está demorando muito para responder. Tente novamente em alguns segundos.');
+        // Limpar tentativas pendentes
+        try { localStorage.removeItem('supabase.auth.token'); } catch {}
       }
-    }, 15000);
+    }, 12000);
 
     try {
       console.log('[Auth] 📡 Verificando conexão com Supabase Auth...');
       
-      // Timeout de 15 segundos para a requisição (mais tolerante a rede lenta)
+      // Timeout de 12 segundos para a requisição
       const loginPromise = supabase.auth.signInWithPassword({ email, password });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 15000)
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 12000)
       );
 
       const result = await Promise.race([loginPromise, timeoutPromise]) as any;
