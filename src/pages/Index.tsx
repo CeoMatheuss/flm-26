@@ -13,6 +13,7 @@ import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { BankruptcyScreen } from '@/components/game/BankruptcyScreen';
 import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
+import { PremiumLoadingScreen } from '@/components/game/PremiumLoadingScreen';
 import { SeasonAwardsModal } from '@/components/game/SeasonAwardsModal';
 import { VersionUpdateOverlay } from '@/components/game/VersionUpdateOverlay';
 import { PromotionManager } from '@/components/game/promotion/PromotionManager';
@@ -66,18 +67,18 @@ const Index = () => {
   
   if (loading && !authStuck) {
     return (
-      <GameLoadingScreen 
-        message="Conectando ao servidor" 
-        subMessage="Validando credenciais..." 
+      <PremiumLoadingScreen 
+        message="Conectando aos servidores" 
+        subMessage="Validando credenciais do manager..." 
       />
     );
   }
 
   if (authStuck) {
     return (
-      <GameLoadingScreen 
-        message="Servidor Lento" 
-        subMessage="O banco de dados está demorando para responder. Deseja tentar novamente?" 
+      <PremiumLoadingScreen 
+        message="O servidor não respondeu" 
+        subMessage="O banco de dados está processando muitas requisições. Deseja tentar novamente?" 
         onRetry={() => {
           console.log('[Index] Forçando recarregamento manual...');
           window.location.reload();
@@ -560,9 +561,9 @@ function GameApp({ userId, userEmail, session, onSignOut }: { userId: string; us
 
   if (!gameReady) {
     return (
-      <GameLoadingScreen 
-        message={loadStage || 'Carregando seu clube'} 
-        subMessage={loadSubStage || 'Preparando dados do jogo'} 
+      <PremiumLoadingScreen 
+        message={loadStage || 'Carregando temporada'} 
+        subMessage={loadSubStage || 'Sincronizando dados com o servidor...'} 
         onRetry={() => {
           console.log('[GameApp] Reiniciando carregamento do clube...');
           setLoadAttempt(prev => prev + 1);
