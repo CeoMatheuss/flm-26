@@ -87,7 +87,6 @@ async function migrateTable(tableName: string) {
         
       if (targetError) {
         console.error(`Error inserting into ${tableName} (batch ${i}):`, targetError.message)
-        // If it fails, we continue to next table but log the issue
       }
     }
     
@@ -105,16 +104,6 @@ async function start() {
   }
   
   console.log("Full migration finished.")
-}
-
-start().catch(console.error)
-
-  
-  for (const table of priorityTables) {
-    await migrateTable(table)
-  }
-  
-  console.log("Core migration finished.")
 }
 
 start().catch(console.error)
