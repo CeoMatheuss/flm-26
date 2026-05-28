@@ -115,20 +115,16 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     const startTime = performance.now();
     console.log('[Auth] 🚀 Iniciando tentativa de login...', { email, timestamp: new Date().toISOString() });
     
-    // Proteção ultra-agressiva contra travamento do botão (reset forçado após 12s)
+    // Proteção ultra-agressiva contra travamento do botão (reset forçado após 15s)
     const buttonSafetyTimeout = setTimeout(() => {
       if (loading) {
         console.warn('[Auth] ⚠️ LOGIN TRAVADO NO BOTÃO! Forçando reset.');
         setLoading(false);
-        toast.error('O servidor de autenticação está demorando muito para responder. Tente novamente em alguns segundos.');
-        // Limpar tentativas pendentes
-        try { localStorage.removeItem('supabase.auth.token'); } catch {}
+        toast.error('O servidor de autenticação está demorando muito. Tente novamente.');
       }
-    }, 12000);
+    }, 15000);
 
     try {
-      console.log('[Auth] 📡 Verificando conexão com Supabase Auth...');
-      
       // Timeout de 12 segundos para a requisição
       const loginPromise = supabase.auth.signInWithPassword({ email, password });
       const timeoutPromise = new Promise((_, reject) => 
@@ -152,51 +148,42 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
           }
         } else if (result.error.status === 429) {
           message = 'Muitas tentativas. Aguarde um momento.';
-        } else if (errorMsg.includes('Database error') || result.error.status === 500 || result.error.status === 504) {
-          message = 'O banco de dados está sobrecarregado (Erro 504). Tente novamente em instantes.';
-        } else if (!window.navigator.onLine) {
-          message = 'Sem conexão com a internet.';
+        } else if (errorMsg.includes('Database error') || [500, 502, 503, 504].includes(result.error.status)) {
+          message = 'Servidor sobrecarregado. Tente novamente em alguns segundos.';
         }
         
         toast.error(message);
         setLoading(false);
-      } else {
-        console.log(`[Auth] ✅ Autenticação Supabase OK (${duration}ms)`, { 
-          userId: result.data.user?.id,
-          session: !!result.data.session 
-        });
+      } else if (result.data?.session) {
+        console.log(`[Auth] ✅ Autenticação Supabase OK (${duration}ms)`);
+        toast.success('Login aceito! Entrando...');
         
-        toast.success('Login aceito! Carregando dados do clube...');
-        
-        // Persistir que logamos com sucesso para ajudar o Index.tsx a saber que deve insistir
+        // Persistir sucesso para ajudar o carregamento inicial
         localStorage.setItem('flm:last-login-success', Date.now().toString());
 
-        // Forçamos o carregamento da sessão no context
+        // Redirecionamento direto usando a sessão já obtida
+        console.log('[Auth] Sessão confirmada. Redirecionando...');
+        window.location.href = '/';
+      } else {
+        // Caso bizarro onde não há erro mas não há sessão
+        console.warn('[Auth] Login sem sessão. Tentando recuperar...');
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-           console.log('[Auth] Sessão confirmada. Redirecionando...');
-           window.location.href = '/';
+          window.location.href = '/';
         } else {
-           console.warn('[Auth] Sessão não encontrada após login com sucesso. Forçando reload.');
-           window.location.reload();
+          throw new Error('SESSION_NOT_FOUND');
         }
       }
     } catch (err: any) {
-      const durationMs = performance.now() - startTime;
-      const duration = durationMs.toFixed(2);
+      const duration = (performance.now() - startTime).toFixed(2);
       setLoading(false);
       
       if (err.message === 'TIMEOUT_ERROR') {
-        console.error(`[Auth] ⏳ Timeout Crítico no servidor (${duration}ms)`);
-        toast.error('O servidor de autenticação não respondeu a tempo (Timeout).');
-        
-        // Tenta um "Soft Reset" se o timeout persistir
-        if (durationMs > 6500) {
-          console.log('[Auth] Sugerindo limpeza de sessão local...');
-        }
+        console.error(`[Auth] ⏳ Timeout no servidor (${duration}ms)`);
+        toast.error('O servidor não respondeu a tempo. Tente novamente.');
       } else {
-        console.error(`[Auth] 💥 Erro de sistema (${duration}ms):`, err);
-        toast.error('Erro de conexão com o banco de dados.');
+        console.error(`[Auth] 💥 Erro (${duration}ms):`, err);
+        toast.error('Erro de conexão. Verifique sua internet.');
       }
     } finally {
       clearTimeout(buttonSafetyTimeout);
