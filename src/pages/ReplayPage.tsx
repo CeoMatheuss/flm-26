@@ -13,6 +13,8 @@ import { SimEvent, MatchStats } from '@/match';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
 import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { useMatchShields } from '@/hooks/useMatchShields';
+import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
+
 
 interface ReplayPageState {
   matchData: {
@@ -79,9 +81,10 @@ export default function ReplayPage() {
 
   if (phase === 'idle' || phase === 'loading') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-sm text-muted-foreground animate-pulse">📺 Carregando replay...</p>
-      </div>
+      <GameLoadingScreen 
+        message="Preparando Replay" 
+        subMessage={locState ? `${locState.homeTeamName} vs ${locState.awayTeamName}` : "Recuperando dados da partida"} 
+      />
     );
   }
 
