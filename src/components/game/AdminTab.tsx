@@ -468,12 +468,6 @@ export function AdminTab({ userId, isFounder }: Props) {
       setResettingPassword(false);
     }
   };
-      }
-    } catch {
-      toast.error('Erro ao processar presente');
-    }
-    setLoading(false);
-  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
