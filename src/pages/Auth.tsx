@@ -125,10 +125,10 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
     }, 15000);
 
     try {
-      // Timeout de 12 segundos para a requisição
+      // Timeout estendido para 30 segundos para lidar com latência do banco de dados
       const loginPromise = supabase.auth.signInWithPassword({ email, password });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 12000)
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 30000)
       );
 
       const result = await Promise.race([loginPromise, timeoutPromise]) as any;
@@ -231,7 +231,7 @@ export default function AuthPage({ initialStep = 'welcome', initialEmail = '' }:
       });
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 30000)
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 45000)
       );
 
       const result = await Promise.race([signupPromise, timeoutPromise]) as any;
