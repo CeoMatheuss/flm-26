@@ -224,6 +224,52 @@ export function ClubSettingsTab({
         </Card>
       )}
 
+
+      {/* Change Password */}
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-amber-500" /> Alterar Senha
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="relative">
+            <Input
+              type={showPwd ? 'text' : 'password'}
+              placeholder="Nova senha (mín. 6 caracteres)"
+              value={pwd}
+              onChange={(e) => setPwd(e.target.value)}
+              className="text-sm pr-9"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPwd(s => !s)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <Input
+            type={showPwd ? 'text' : 'password'}
+            placeholder="Confirmar nova senha"
+            value={pwd2}
+            onChange={(e) => setPwd2(e.target.value)}
+            className="text-sm"
+          />
+          <Button
+            size="sm"
+            onClick={handleChangePassword}
+            disabled={savingPwd || !pwd || !pwd2}
+            className="w-full"
+          >
+            <Check className="h-3 w-3 mr-1" /> {savingPwd ? 'Salvando...' : 'Salvar Nova Senha'}
+          </Button>
+          <p className="text-[11px] text-muted-foreground">
+            A nova senha passa a valer imediatamente. Use uma senha forte que você lembre.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Shield Editor Sheet */}
       <Sheet open={shieldOpen} onOpenChange={setShieldOpen}>
         <SheetContent side="right" className="w-full sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl overflow-y-auto">
