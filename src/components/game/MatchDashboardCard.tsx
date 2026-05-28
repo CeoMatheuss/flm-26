@@ -597,16 +597,14 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
             </p>
           </div>
         )}
-        <div className="flex items-center justify-center gap-1.5">
-          {autoSimTriggered ? (
-            <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
-          ) : (
+        {!autoSimTriggered && (
+          <div className="flex items-center justify-center gap-1.5">
             <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
-          )}
-          <p className={`text-[10px] font-bold ${autoSimTriggered ? 'text-amber-500' : isReady ? 'text-destructive' : 'text-muted-foreground'}`}>
-            {autoSimTriggered ? timeLeft.replace('⌛ ', '') : `⏱️ ${timeLeft}`}
-          </p>
-        </div>
+            <p className={`text-[10px] font-bold ${isReady ? 'text-destructive' : 'text-muted-foreground'}`}>
+              ⏱️ {timeLeft}
+            </p>
+          </div>
+        )}
 
 
         <div className="flex flex-col gap-1.5 pt-1">
@@ -618,15 +616,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
               </p>
             </div>
           )}
-          {autoSimTriggered ? (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded p-2 flex items-center gap-2 justify-center">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500 shrink-0" />
-              <p className="text-[10px] font-bold text-amber-200 leading-tight">
-                ⚡ Simulando automaticamente...
-              </p>
-            </div>
-
-          ) : (
+          {autoSimTriggered ? null : (
             <Button
               size="sm"
               variant={isReady ? 'default' : 'outline'}
