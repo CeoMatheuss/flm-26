@@ -14,6 +14,7 @@ import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/compo
 import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { useMatchShields } from '@/hooks/useMatchShields';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
+import { PremiumLoadingScreen } from '@/components/game/PremiumLoadingScreen';
 
 
 interface ReplayPageState {
@@ -81,7 +82,7 @@ export default function ReplayPage() {
 
   if (phase === 'idle' || phase === 'loading') {
     return (
-      <GameLoadingScreen 
+      <PremiumLoadingScreen 
         message="Preparando Replay" 
         subMessage={locState ? `${locState.homeTeamName} vs ${locState.awayTeamName}` : "Recuperando dados da partida"} 
       />

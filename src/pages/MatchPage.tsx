@@ -18,6 +18,7 @@ import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { computeLiveStamina, staminaColorClass } from '@/match/liveStamina';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
 import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
+import { PremiumLoadingScreen } from '@/components/game/PremiumLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType, getHighlightOutcome } from '@/components/game/HighlightMiniCanvas';
 import { MatchSidebar } from '@/components/game/MatchSidebar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -378,13 +379,13 @@ export default function MatchPage() {
   }
 
   if (!initDone || state.phase === 'loading') {
-    return <GameLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
+    return <PremiumLoadingScreen message={loadingMsg} subMessage={locState ? `${locState.homeTeam} vs ${locState.awayTeam}` : undefined} />;
   }
 
   // (bloco de erro duplicado removido — agora prioritário no topo)
 
   if (state.phase === 'idle') {
-    return <GameLoadingScreen message="Preparando campo" showProgress={false} />;
+    return <PremiumLoadingScreen message="Preparando campo" />;
   }
 
   const handleExit = () => {
