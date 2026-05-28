@@ -741,6 +741,52 @@ export function AdminTab({ userId, isFounder }: Props) {
                 </CardContent>
               </Card>
             )}
+
+            <Card className="border-primary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-primary" />
+                  Redefinir Senha de Usuário
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">E-mail do Usuário</label>
+                  <Input
+                    placeholder="exemplo@gmail.com"
+                    value={resetEmail}
+                    onChange={e => setResetEmail(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Nova Senha</label>
+                  <Input
+                    type="text"
+                    placeholder="Mínimo 6 caracteres"
+                    value={resetPassword}
+                    onChange={e => setResetPassword(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                </div>
+                <Button 
+                  size="sm" 
+                  className="w-full h-8 text-xs bg-primary hover:bg-primary/90 text-white gap-1" 
+                  onClick={handleResetPassword} 
+                  disabled={resettingPassword}
+                >
+                  {resettingPassword ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                  Redefinir Senha
+                </Button>
+                <p className="text-[9px] text-muted-foreground text-center italic">
+                  Isso alterará a senha do usuário imediatamente.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              </Card>
+            )}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
