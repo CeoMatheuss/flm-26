@@ -19,8 +19,6 @@ import { useState } from 'react';
 import { rebuildClubSquad, squadsDiffer, syncTacticsWithSquad } from '@/utils/squadSync';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useState } from 'react';
-import { rebuildClubSquad, squadsDiffer, syncTacticsWithSquad } from '@/utils/squadSync';
 
 import { useClubState, LoanedPlayer } from './useClubState';
 import { useFinanceState } from './useFinanceState';
