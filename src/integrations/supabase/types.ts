@@ -974,82 +974,154 @@ export type Database = {
       }
       clubs: {
         Row: {
+          achievements: Json | null
           bankrupt_at: string | null
           budget: number | null
           cash: number | null
+          club_profile: Json | null
           consecutive_negative_days: number | null
           country: string
           created_at: string
+          ct_rooms_config: Json | null
+          current_season: number | null
           current_uniform_launch_id: string | null
+          current_week: number | null
           detail_color: string | null
           engagement_rate: number | null
           fans: number | null
+          free_agents: Json | null
+          friendlies_played_season: number | null
+          friendlies_played_today: number | null
           id: string
+          last_friendly_date: string | null
+          last_match_report: Json | null
+          last_training_cycle_at: string | null
+          last_youth_gen_at: string | null
           last_youth_generation_at: string | null
           logo_url: string | null
+          market_players: Json | null
           name: string
+          physiotherapy_level: number | null
           primary_color: string | null
+          ranking: number | null
+          ranking_history: Json | null
           reputation: number | null
           sales_bonus_multiplier: number | null
+          season_history: Json | null
           secondary_color: string | null
           shield_config: Json | null
+          stadium_level: number | null
           stadium_name: string | null
+          tactics_config: Json | null
           total_members: number | null
+          training_center_level: number | null
+          training_investment: number | null
           uniform_launches_available: number | null
           updated_at: string
           user_id: string | null
+          youth_academy_level: number | null
+          youth_investment: number | null
+          youth_promoted_count: number | null
         }
         Insert: {
+          achievements?: Json | null
           bankrupt_at?: string | null
           budget?: number | null
           cash?: number | null
+          club_profile?: Json | null
           consecutive_negative_days?: number | null
           country?: string
           created_at?: string
+          ct_rooms_config?: Json | null
+          current_season?: number | null
           current_uniform_launch_id?: string | null
+          current_week?: number | null
           detail_color?: string | null
           engagement_rate?: number | null
           fans?: number | null
+          free_agents?: Json | null
+          friendlies_played_season?: number | null
+          friendlies_played_today?: number | null
           id?: string
+          last_friendly_date?: string | null
+          last_match_report?: Json | null
+          last_training_cycle_at?: string | null
+          last_youth_gen_at?: string | null
           last_youth_generation_at?: string | null
           logo_url?: string | null
+          market_players?: Json | null
           name: string
+          physiotherapy_level?: number | null
           primary_color?: string | null
+          ranking?: number | null
+          ranking_history?: Json | null
           reputation?: number | null
           sales_bonus_multiplier?: number | null
+          season_history?: Json | null
           secondary_color?: string | null
           shield_config?: Json | null
+          stadium_level?: number | null
           stadium_name?: string | null
+          tactics_config?: Json | null
           total_members?: number | null
+          training_center_level?: number | null
+          training_investment?: number | null
           uniform_launches_available?: number | null
           updated_at?: string
           user_id?: string | null
+          youth_academy_level?: number | null
+          youth_investment?: number | null
+          youth_promoted_count?: number | null
         }
         Update: {
+          achievements?: Json | null
           bankrupt_at?: string | null
           budget?: number | null
           cash?: number | null
+          club_profile?: Json | null
           consecutive_negative_days?: number | null
           country?: string
           created_at?: string
+          ct_rooms_config?: Json | null
+          current_season?: number | null
           current_uniform_launch_id?: string | null
+          current_week?: number | null
           detail_color?: string | null
           engagement_rate?: number | null
           fans?: number | null
+          free_agents?: Json | null
+          friendlies_played_season?: number | null
+          friendlies_played_today?: number | null
           id?: string
+          last_friendly_date?: string | null
+          last_match_report?: Json | null
+          last_training_cycle_at?: string | null
+          last_youth_gen_at?: string | null
           last_youth_generation_at?: string | null
           logo_url?: string | null
+          market_players?: Json | null
           name?: string
+          physiotherapy_level?: number | null
           primary_color?: string | null
+          ranking?: number | null
+          ranking_history?: Json | null
           reputation?: number | null
           sales_bonus_multiplier?: number | null
+          season_history?: Json | null
           secondary_color?: string | null
           shield_config?: Json | null
+          stadium_level?: number | null
           stadium_name?: string | null
+          tactics_config?: Json | null
           total_members?: number | null
+          training_center_level?: number | null
+          training_investment?: number | null
           uniform_launches_available?: number | null
           updated_at?: string
           user_id?: string | null
+          youth_academy_level?: number | null
+          youth_investment?: number | null
+          youth_promoted_count?: number | null
         }
         Relationships: [
           {
@@ -1606,6 +1678,47 @@ export type Database = {
           },
         ]
       }
+      finances: {
+        Row: {
+          amount: number
+          category: string
+          club_id: string
+          created_at: string
+          date: string | null
+          description: string | null
+          id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          club_id: string
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          club_id?: string
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finances_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       free_agent_offers: {
         Row: {
           agent_id: string
@@ -1819,6 +1932,7 @@ export type Database = {
           created_at: string
           game_state: Json | null
           id: string
+          is_legacy: boolean | null
           last_match_timestamp: string | null
           last_youth_gen_at: string | null
           save_name: string
@@ -1831,6 +1945,7 @@ export type Database = {
           created_at?: string
           game_state?: Json | null
           id?: string
+          is_legacy?: boolean | null
           last_match_timestamp?: string | null
           last_youth_gen_at?: string | null
           save_name?: string
@@ -1843,6 +1958,7 @@ export type Database = {
           created_at?: string
           game_state?: Json | null
           id?: string
+          is_legacy?: boolean | null
           last_match_timestamp?: string | null
           last_youth_gen_at?: string | null
           save_name?: string
@@ -2692,6 +2808,33 @@ export type Database = {
         }
         Relationships: []
       }
+      legacy_user_migrations: {
+        Row: {
+          created_at: string | null
+          email: string
+          hash_algorithm: string
+          id: string
+          migrated_at: string | null
+          password_hash: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          hash_algorithm?: string
+          id?: string
+          migrated_at?: string | null
+          password_hash: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          hash_algorithm?: string
+          id?: string
+          migrated_at?: string | null
+          password_hash?: string
+        }
+        Relationships: []
+      }
       live_match_substitutions: {
         Row: {
           created_at: string
@@ -3412,6 +3555,59 @@ export type Database = {
           status?: string | null
         }
         Relationships: []
+      }
+      matches: {
+        Row: {
+          away_score: number | null
+          club_id: string
+          created_at: string
+          home_score: number | null
+          id: string
+          is_home: boolean | null
+          match_date: string
+          opponent: string
+          opponent_logo: string | null
+          opponent_strength: number | null
+          played: boolean | null
+          stadium: string | null
+        }
+        Insert: {
+          away_score?: number | null
+          club_id: string
+          created_at?: string
+          home_score?: number | null
+          id?: string
+          is_home?: boolean | null
+          match_date: string
+          opponent: string
+          opponent_logo?: string | null
+          opponent_strength?: number | null
+          played?: boolean | null
+          stadium?: string | null
+        }
+        Update: {
+          away_score?: number | null
+          club_id?: string
+          created_at?: string
+          home_score?: number | null
+          id?: string
+          is_home?: boolean | null
+          match_date?: string
+          opponent?: string
+          opponent_logo?: string | null
+          opponent_strength?: number | null
+          played?: boolean | null
+          stadium?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       membership_plans: {
         Row: {
@@ -4459,6 +4655,152 @@ export type Database = {
           week?: number | null
         }
         Relationships: []
+      }
+      players: {
+        Row: {
+          age: number
+          assists: number | null
+          attributes: Json
+          club_id: string
+          contract: number | null
+          contract_status: string | null
+          created_at: string
+          disciplinary_data: Json | null
+          dominant_foot: string | null
+          energy: number | null
+          evolution_history: Json | null
+          evolution_status: string | null
+          fatigue: number | null
+          games_played: number | null
+          goals: number | null
+          height: number | null
+          highlight_streak: number | null
+          history: Json | null
+          id: string
+          injured_cycles: number | null
+          injury: Json | null
+          is_youth: boolean | null
+          market_value: number | null
+          morale: number | null
+          name: string
+          nationality: string | null
+          overall: number
+          player_expectation: string | null
+          position: string
+          potential: number | null
+          potential_tier: string | null
+          rarity: string | null
+          salary: number
+          secondary_positions: string[] | null
+          stagnation_cycles: number | null
+          stamina: number | null
+          tactical_iq: number | null
+          training_focus: string | null
+          training_intensity: string | null
+          training_progress: number | null
+          updated_at: string
+          weight: number | null
+          youth_tag: string | null
+        }
+        Insert: {
+          age: number
+          assists?: number | null
+          attributes: Json
+          club_id: string
+          contract?: number | null
+          contract_status?: string | null
+          created_at?: string
+          disciplinary_data?: Json | null
+          dominant_foot?: string | null
+          energy?: number | null
+          evolution_history?: Json | null
+          evolution_status?: string | null
+          fatigue?: number | null
+          games_played?: number | null
+          goals?: number | null
+          height?: number | null
+          highlight_streak?: number | null
+          history?: Json | null
+          id?: string
+          injured_cycles?: number | null
+          injury?: Json | null
+          is_youth?: boolean | null
+          market_value?: number | null
+          morale?: number | null
+          name: string
+          nationality?: string | null
+          overall: number
+          player_expectation?: string | null
+          position: string
+          potential?: number | null
+          potential_tier?: string | null
+          rarity?: string | null
+          salary: number
+          secondary_positions?: string[] | null
+          stagnation_cycles?: number | null
+          stamina?: number | null
+          tactical_iq?: number | null
+          training_focus?: string | null
+          training_intensity?: string | null
+          training_progress?: number | null
+          updated_at?: string
+          weight?: number | null
+          youth_tag?: string | null
+        }
+        Update: {
+          age?: number
+          assists?: number | null
+          attributes?: Json
+          club_id?: string
+          contract?: number | null
+          contract_status?: string | null
+          created_at?: string
+          disciplinary_data?: Json | null
+          dominant_foot?: string | null
+          energy?: number | null
+          evolution_history?: Json | null
+          evolution_status?: string | null
+          fatigue?: number | null
+          games_played?: number | null
+          goals?: number | null
+          height?: number | null
+          highlight_streak?: number | null
+          history?: Json | null
+          id?: string
+          injured_cycles?: number | null
+          injury?: Json | null
+          is_youth?: boolean | null
+          market_value?: number | null
+          morale?: number | null
+          name?: string
+          nationality?: string | null
+          overall?: number
+          player_expectation?: string | null
+          position?: string
+          potential?: number | null
+          potential_tier?: string | null
+          rarity?: string | null
+          salary?: number
+          secondary_positions?: string[] | null
+          stagnation_cycles?: number | null
+          stamina?: number | null
+          tactical_iq?: number | null
+          training_focus?: string | null
+          training_intensity?: string | null
+          training_progress?: number | null
+          updated_at?: string
+          weight?: number | null
+          youth_tag?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       premium_sponsorships: {
         Row: {
