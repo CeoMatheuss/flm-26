@@ -13,7 +13,6 @@ import { SimEvent, MatchStats } from '@/match';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType } from '@/components/game/HighlightMiniCanvas';
 import { ShieldCrest } from '@/components/game/ShieldCrest';
 import { useMatchShields } from '@/hooks/useMatchShields';
-import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { PremiumLoadingScreen } from '@/components/game/PremiumLoadingScreen';
 
 

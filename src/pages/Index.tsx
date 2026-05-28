@@ -12,7 +12,6 @@ import { TutorialModal } from '@/components/game/TutorialModal';
 import { ClubCreation, ClubConfig } from '@/components/game/ClubCreation';
 import { BankruptcyScreen } from '@/components/game/BankruptcyScreen';
 import { PlayerSigningModal } from '@/components/game/PlayerSigningModal';
-import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { PremiumLoadingScreen } from '@/components/game/PremiumLoadingScreen';
 import { SeasonAwardsModal } from '@/components/game/SeasonAwardsModal';
 import { VersionUpdateOverlay } from '@/components/game/VersionUpdateOverlay';

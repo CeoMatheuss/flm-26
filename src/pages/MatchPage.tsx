@@ -17,7 +17,6 @@ import { ArrowLeft, Film, LogOut, BarChart3, Users, Shirt, Activity, Star, Arrow
 import { useMatchSimulation, SimEvent, MatchStats, MatchState } from '@/match';
 import { computeLiveStamina, staminaColorClass } from '@/match/liveStamina';
 import { PostGameReportModal } from '@/components/game/PostGameReportModal';
-import { GameLoadingScreen } from '@/components/game/GameLoadingScreen';
 import { PremiumLoadingScreen } from '@/components/game/PremiumLoadingScreen';
 import { HighlightMiniCanvas, isHighlightEvent, getHighlightType, getHighlightOutcome } from '@/components/game/HighlightMiniCanvas';
 import { MatchSidebar } from '@/components/game/MatchSidebar';
