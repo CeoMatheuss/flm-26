@@ -1,3 +1,28 @@
+-- CUSTOM TYPES
+CREATE TYPE public.app_role AS ENUM ('admin', 'moderator', 'user');
+
+CREATE TYPE public.world_league_status AS ENUM ('pending', 'in_progress', 'finished');
+
+CREATE TYPE public.world_match_status AS ENUM ('scheduled', 'live', 'finished', 'postponed');
+
+CREATE TYPE public.world_competition_status AS ENUM ('locked', 'pending', 'in_progress', 'finished');
+
+CREATE TYPE scout_level AS ENUM ('baixo', 'médio', 'alto', 'elite');
+
+CREATE TYPE scout_specialization AS ENUM ('ataque', 'defesa', 'meio', 'jovens', 'geral');
+
+CREATE TYPE mission_type AS ENUM ('local', 'global', 'posição', 'promessas');
+
+CREATE TYPE mission_status AS ENUM ('em_andamento', 'concluída', 'cancelada');
+
+CREATE TYPE public.card_type AS ENUM ('yellow', 'red');
+
+CREATE TYPE squad_status_type AS ENUM ('starter', 'bench', 'reserve', 'injured', 'suspended');
+
+CREATE TYPE squad_status_type AS ENUM ('starter', 'bench', 'reserve', 'injured', 'suspended');
+
+CREATE TYPE tournament_type AS ENUM ('world_cup', 'continental', 'national');
+
 -- ==================== TABLE: public.chat_messages ====================
 -- Chat messages (global per league)
 CREATE TABLE public.chat_messages (

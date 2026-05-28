@@ -8,6 +8,13 @@ core_tables = [
 
 with open('final_schema.sql', 'r') as f:
     content = f.read()
+    
+    # Extract types
+    print("-- CUSTOM TYPES")
+    for match in re.finditer(r'CREATE TYPE.*?;', content, re.DOTALL | re.IGNORECASE):
+        print(match.group(0))
+        print()
+
     sections = content.split('-- ==================== TABLE: ')
     for section in sections:
         table_name = section.split(' ')[0].strip().lower()
