@@ -13,11 +13,14 @@ Deno.serve(async (req) => {
     const now = new Date();
 
     // 1. Get matches that should start but aren't finished
-    const { data: matches } = await sb.from("world_matches")
+    // 1. Get matches that should start but aren't finished
+    const { data: matches, error: fetchError } = await sb.from("world_matches")
       .select("*, home_team:world_teams(*), away_team:world_teams(*), league:world_leagues(*)")
-      .eq("status", "scheduled")
+      .or('status.eq.scheduled,simulated.eq.false')
       .lte("scheduled_at", now.toISOString())
-      .limit(20);
+      .limit(50);
+
+    if (fetchError) throw fetchError;
 
     if (!matches || matches.length === 0) {
       return new Response(JSON.stringify({ ok: true, message: "No matches to simulate" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
