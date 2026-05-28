@@ -25,7 +25,76 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <style>
+        body { background: #0c0f1a; margin: 0; }
+        .initial-splash {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: #0c0f1a;
+          color: white;
+          font-family: system-ui, -apple-system, sans-serif;
+          z-index: 9999;
+        }
+        .splash-logo {
+          width: 80px;
+          height: 80px;
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 900;
+          font-size: 24px;
+          box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+          margin-bottom: 24px;
+          animation: pulse-logo 2s ease-in-out infinite;
+        }
+        .splash-text {
+          font-weight: 800;
+          letter-spacing: 0.2em;
+          font-size: 14px;
+          color: #3b82f6;
+          text-transform: uppercase;
+        }
+        .splash-loader {
+          width: 140px;
+          height: 2px;
+          background: rgba(255,255,255,0.1);
+          margin-top: 32px;
+          border-radius: 1px;
+          overflow: hidden;
+          position: relative;
+        }
+        .splash-loader::after {
+          content: '';
+          position: absolute;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: #3b82f6;
+          animation: splash-loading 1.5s infinite;
+        }
+        @keyframes pulse-logo {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        @keyframes splash-loading {
+          0% { left: -100%; }
+          50% { left: 0; }
+          100% { left: 100%; }
+        }
+      </style>
+      <div class="initial-splash">
+        <div class="splash-logo">FLM</div>
+        <div class="splash-text">Football Life Manager 26</div>
+        <div class="splash-loader"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
