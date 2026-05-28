@@ -359,13 +359,10 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
       const diff = scheduledTime - now;
       const isLive = nextMatch.status === 'live';
 
-      // Horário chegou OU já em simulação no servidor: força auto-sim imediato
+      // Horário chegou OU já em simulação no servidor: dispara auto-sim silenciosamente,
+      // sem exibir mensagem de "Simulando automaticamente" no card.
       if (diff <= 0 || isLive) {
-        const elapsedMin = Math.floor(Math.abs(diff) / 60000);
-        const elapsedTxt = elapsedMin >= 60
-          ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m`
-          : elapsedMin > 0 ? `${elapsedMin}m` : 'agora';
-        setTimeLeft(isLive ? `🔴 Ao vivo (${elapsedTxt})` : `⚡ Simulando automaticamente (${elapsedTxt})`);
+        setTimeLeft('');
         setIsReady(false);
 
         if (!autoSimTriggered) {
@@ -600,16 +597,14 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
             </p>
           </div>
         )}
-        <div className="flex items-center justify-center gap-1.5">
-          {autoSimTriggered ? (
-            <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
-          ) : (
+        {!autoSimTriggered && (
+          <div className="flex items-center justify-center gap-1.5">
             <Clock className={`h-3 w-3 ${isReady ? 'text-destructive' : 'text-muted-foreground'}`} />
-          )}
-          <p className={`text-[10px] font-bold ${autoSimTriggered ? 'text-amber-500' : isReady ? 'text-destructive' : 'text-muted-foreground'}`}>
-            {autoSimTriggered ? timeLeft.replace('⌛ ', '') : `⏱️ ${timeLeft}`}
-          </p>
-        </div>
+            <p className={`text-[10px] font-bold ${isReady ? 'text-destructive' : 'text-muted-foreground'}`}>
+              ⏱️ {timeLeft}
+            </p>
+          </div>
+        )}
 
 
         <div className="flex flex-col gap-1.5 pt-1">
@@ -621,15 +616,7 @@ function NextTournamentMatch({ userId, club, onGoToFriendly, stadiumLevel }: { u
               </p>
             </div>
           )}
-          {autoSimTriggered ? (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded p-2 flex items-center gap-2 justify-center">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500 shrink-0" />
-              <p className="text-[10px] font-bold text-amber-200 leading-tight">
-                ⚡ Simulando automaticamente...
-              </p>
-            </div>
-
-          ) : (
+          {autoSimTriggered ? null : (
             <Button
               size="sm"
               variant={isReady ? 'default' : 'outline'}
