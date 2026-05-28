@@ -425,8 +425,6 @@ export function AdminTab({ userId, isFounder }: Props) {
     }
     setLoading(false);
   };
-    setLoading(false);
-  };
 
   const handleResetPassword = async () => {
     if (!resetEmail.trim() || !resetPassword.trim()) {
