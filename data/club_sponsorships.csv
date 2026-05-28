@@ -1,0 +1,2 @@
+id,club_id,sponsor_name,contract_value_cents,payment_type,bonus_data,started_at,expires_at,is_active,created_at
+693ab9a8-ffbe-4ec2-8b63-78594e3a0c4c,ff6acf96-e975-48cb-87dc-53a4e354fd44,NovaSports Master,7000000,weekly,"{""sub_type"": ""master"", ""winBonus"": 5000, ""daily_cash"": 10000, ""titleBonus"": 50000, ""immediate_cash"": 50000, ""dinheiroSemanal"": 70000}",2026-05-17 21:30:11.195135+00,2026-06-16 21:30:11.195135+00,t,2026-05-17 21:30:11.195135+00

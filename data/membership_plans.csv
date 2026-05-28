@@ -1,0 +1,5 @@
+id,name,monthly_price,benefits,min_reputation_required,bonus_multiplier,created_at
+6dda56da-ee6c-47ee-a585-7ae31a3a7959,Bronze,20.00,"{""Desconto em ingressos"",""Acesso a conteúdos exclusivos""}",0,1.00,2026-05-24 22:30:08.741981+00
+47dd57d2-4d03-4663-a504-03e16999a6d1,Prata,50.00,"{""Desconto maior em ingressos"",""Prioridade na compra"",""Camisa retrô anual""}",20,1.05,2026-05-24 22:30:08.741981+00
+ed16effd-2ef5-495c-ba2d-4f103d793dbc,Ouro,120.00,"{""Ingressos grátis (setor lateral)"",""Acesso ao CT"",""Voto em consultas do clube""}",50,1.15,2026-05-24 22:30:08.741981+00
+c4e2ff8c-db0d-42ba-a0f1-f89ca167a2f1,Diamante,350.00,"{""Camarote em todos os jogos"",""Experiências VIP"",""Kit oficial anual completo""}",80,1.30,2026-05-24 22:30:08.741981+00

@@ -1,0 +1,1 @@
+id,tournament_id,group_id,stage,home_team_id,away_team_id,home_goals,away_goals,is_penalty_shootout,home_penalty_goals,away_penalty_goals,status,scheduled_at,winner_id,created_at

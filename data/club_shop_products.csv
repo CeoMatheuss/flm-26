@@ -1,0 +1,8 @@
+id,name,base_price_cents,category,min_level,image_url,created_at,stock_quantity,max_stock,popularity_score,is_limited_edition,rarity,updated_at
+shirt_official,Camisa Oficial,19900,clothing,1,,2026-05-16 00:21:00.235556+00,100,1000,1,f,comum,2026-05-24 21:17:03.544825+00
+scarf_fan,Cachecol do Torcedor,4900,accessory,1,,2026-05-16 00:21:00.235556+00,100,1000,1,f,comum,2026-05-24 21:17:03.544825+00
+cap_club,Boné do Clube,7900,accessory,1,,2026-05-16 00:21:00.235556+00,100,1000,1,f,comum,2026-05-24 21:17:03.544825+00
+uniform_retro,Uniforme Retrô,24900,clothing,3,,2026-05-16 00:21:00.235556+00,100,1000,1,f,comum,2026-05-24 21:17:03.544825+00
+special_kit,Kit Comemorativo,39900,special,5,,2026-05-16 00:21:00.235556+00,100,1000,1,f,comum,2026-05-24 21:17:03.544825+00
+mug_club,Caneca Oficial,3500,home,1,,2026-05-16 00:21:00.235556+00,100,1000,1,f,comum,2026-05-24 21:17:03.544825+00
+keychain_club,Chaveiro do Clube,1500,accessory,1,,2026-05-16 00:21:00.235556+00,100,1000,1,f,comum,2026-05-24 21:17:03.544825+00

@@ -1,0 +1,19 @@
+id,country,tier_level,division_name,match_time,max_teams
+34d03860-17d5-4ba0-9271-9e14af380f1d,Brasil,1,Campeonato Brasileiro Série A,21:00:00,16
+009cb6e4-6557-454e-b879-71c51de100b7,Brasil,2,Campeonato Brasileiro Série B,20:30:00,16
+22403c37-93bb-4bb7-9f22-fdfec3b3ab37,Brasil,3,Campeonato Brasileiro Série C,19:30:00,16
+63f32b68-5057-46a4-a5de-42ac78c6b674,Brasil,4,Campeonato Brasileiro Série D,18:30:00,16
+90a646ec-1153-4cac-b438-87521a64841a,Brasil,5,Campeonato Brasileiro Série E,17:00:00,16
+60286851-8e51-4bbc-8c8e-ecf2d6a2ffdd,Inglaterra,1,Premier League,20:00:00,16
+e81aef13-1534-4856-bb9d-2aef023bf6f3,Inglaterra,2,EFL Championship,19:30:00,16
+be8f7a24-2d08-44e0-929e-919dcf40a059,Inglaterra,3,League One,18:30:00,16
+08e6609e-7343-4c83-bc03-f91afa13d848,Inglaterra,4,League Two,17:30:00,16
+d49be870-6206-42ec-8ca5-bd8a4507dd22,Inglaterra,5,National League,16:30:00,16
+0b859e6f-0445-4333-a2fb-b11998b147a4,Espanha,1,LaLiga,21:30:00,16
+16732a68-332b-4afe-8034-9fd26cafdf63,Espanha,2,LaLiga 2,20:00:00,16
+36f2363f-0a41-4fcc-9885-b974639933b5,Itália,1,Serie A,20:45:00,16
+e56e113c-bd9f-4bd1-94e5-7d60db487fcf,Itália,2,Serie B,19:00:00,16
+e1f52eef-d536-4fd3-a572-874ec6e47b0d,Alemanha,1,Bundesliga,20:30:00,16
+69991eaf-d6b1-4f22-84ac-3e70c55590c0,Alemanha,2,Bundesliga 2,18:30:00,16
+3a5116c8-2ed9-4bf8-b2e6-7d39c45a0490,França,1,Ligue 1,21:00:00,16
+5ef22b0b-5eec-423a-a0d2-6c639cd70f91,França,2,Ligue 2,19:00:00,16

@@ -1,0 +1,3 @@
+id,club_id,total_members,active_plan_id,monthly_revenue_cents,churn_rate,happiness,updated_at,plan_id,member_count
+854978ed-8bf1-4351-acc9-4e0d48530bd3,7023709c-4da5-4585-8c22-f3802940255b,2000,socio_ouro,4500000,0,100,2026-05-17 20:38:34.027194+00,,0
+c4accbdc-0404-41b0-bc89-f1d648d709c0,ff6acf96-e975-48cb-87dc-53a4e354fd44,2000,socio_ouro,4500000,0,100,2026-05-17 22:02:53.18005+00,,0

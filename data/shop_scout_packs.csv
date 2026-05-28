@@ -1,0 +1,4 @@
+id,name,description,price_cents,min_rarity,max_rarity,chance_elite,chance_mundial,icon,created_at
+07355a80-01d8-4d69-8a94-6040cf46260a,Pack Básico,Recrutamento local de olheiros iniciantes.,5000,Médio,Bom,0,0,Search,2026-05-24 21:46:43.608104+00
+d983f1a4-a3f5-46e5-bac5-da7c00348ce1,Pack Internacional,Busca olheiros com experiência em outros continentes.,25000,Bom,Elite,0.1,0.02,Globe,2026-05-24 21:46:43.608104+00
+ed3418bb-4718-47ba-8f7d-bd714eb99f22,Pack Elite,Contrata os melhores analistas de mercado disponíveis.,100000,Excelente,Mundial,0.4,0.15,Crown,2026-05-24 21:46:43.608104+00

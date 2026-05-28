@@ -1,0 +1,2 @@
+id,agent_id,buyer_id,buyer_club_name,offered_salary,offered_contract_years,signing_bonus,status,decision_deadline,rejection_reason,counter_salary,resolved_at,created_at
+e1dde97b-9bbd-4edf-8584-4247b7d516a4,ba844c15-7358-4c4b-a5a9-93d4838e5b7c,c9544dd0-3729-480b-bd00-315d75a45711,ABC FC,1000,2,0,pending,2026-05-27 07:46:50.318201+00,,,,2026-05-27 00:46:50.318201+00
