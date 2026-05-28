@@ -19,6 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { NewspaperCard } from './NewspaperCard';
 import { MatchDashboardCard } from './MatchDashboardCard';
+import { MatchCountdownWidget } from './MatchCountdownWidget';
 import { TournamentDashboardCard } from './TournamentDashboardCard';
 import { WorldCupTeaser } from './WorldCupTeaser';
 
