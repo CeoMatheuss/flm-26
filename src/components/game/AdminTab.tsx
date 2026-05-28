@@ -418,9 +418,13 @@ export function AdminTab({ userId, isFounder }: Props) {
         setGiftUserId('');
         if (giftType === 'premium') loadPremiumUsers();
       } else {
+        toast.error(result.error || 'Erro ao processar presente');
+      }
     } catch {
       toast.error('Erro ao processar presente');
     }
+    setLoading(false);
+  };
     setLoading(false);
   };
 
