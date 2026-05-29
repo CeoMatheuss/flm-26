@@ -640,7 +640,7 @@ export function SquadModernLayout({
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="h-full min-h-[60vh] p-2 sm:p-6"
+                    className="h-auto min-h-[60vh] p-2 sm:p-6"
                   >
                     {activeTab === 'base' ? (
                       <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
