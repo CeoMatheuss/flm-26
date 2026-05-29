@@ -156,12 +156,15 @@
     /* Evita scroll horizontal acidental causado por elementos saindo do container */
     max-width: 100vw;
     overflow-x: hidden;
+    min-height: 100%;
+    min-height: -webkit-fill-available;
   }
 
   html {
     /* Suporte a notch/safe-area no iOS */
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    height: 100%;
   }
 
   body {
@@ -170,7 +173,6 @@
     /* Respeita safe-area do iPhone */
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
-    overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
   }
 

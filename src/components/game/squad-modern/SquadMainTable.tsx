@@ -123,7 +123,7 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
 
   return (
     <div className={cn(
-      "flex flex-col h-full overflow-hidden min-w-[700px] bg-zinc-950/20 rounded-[2rem] transition-all duration-500",
+      "flex flex-col min-w-[700px] bg-zinc-950/20 rounded-[2rem] transition-all duration-500",
       pendingSwapId && "ring-4 ring-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.3)] bg-emerald-500/10"
     )}>
       {/* Filters */}
@@ -172,7 +172,7 @@ export function SquadMainTable({ players, starterIds, benchIds, selectedId, onSe
       </div>
 
       {/* List Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 sm:p-4 space-y-2">
+      <div className="flex-1 p-2 sm:p-4 space-y-2">
         <AnimatePresence mode="popLayout">
           {filtered.map((p, idx) => (
             <PlayerListRow 
