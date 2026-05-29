@@ -633,7 +633,7 @@ export function SquadModernLayout({
               </TabsList>
             </div>
 
-            <div ref={mainContentRef} className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative">
+            <div ref={mainContentRef} className="flex-1 overflow-x-auto relative">
               <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
