@@ -170,7 +170,6 @@
     /* Respeita safe-area do iPhone */
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
-    overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
   }
 

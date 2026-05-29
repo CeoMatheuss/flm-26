@@ -145,7 +145,7 @@ export function GameTabRouter({ game, mp, userId, displayName, showAdmin, isFoun
         )}
       </TabsContent>
 
-      <TabsContent value="squad" className="m-0 h-full">
+      <TabsContent value="squad" className="m-0">
         {isTabBlocked('squad') ? <BlockedMessage /> : (
           <SquadModernLayout
             club={game.club}
