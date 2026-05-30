@@ -15,24 +15,29 @@ export function SqlMigrationPanel() {
 -- FLM FULL SCHEMA MIGRATION
 -- Gerado em 30/05/2026
 
-CREATE TABLE public.profiles (
+-- 1. TABELA PROFILES
+CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
+  user_id uuid NOT NULL UNIQUE,
   display_name text,
   avatar_url text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now()
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE public.game_saves (
+-- 2. TABELA GAME_SAVES
+CREATE TABLE IF NOT EXISTS public.game_saves (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   club_data jsonb NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now()
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE public.clubs (
+-- 3. TABELA CLUBS
+CREATE TABLE IF NOT EXISTS public.clubs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   name text NOT NULL,
@@ -41,10 +46,12 @@ CREATE TABLE public.clubs (
   strength integer DEFAULT 60,
   is_bot boolean DEFAULT false,
   bankrupt_at timestamp with time zone,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE public.world_teams (
+-- 4. TABELA WORLD_TEAMS
+CREATE TABLE IF NOT EXISTS public.world_teams (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid,
   name text NOT NULL,
@@ -53,10 +60,12 @@ CREATE TABLE public.world_teams (
   strength integer DEFAULT 60,
   is_bot boolean DEFAULT true,
   logo text,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE public.players (
+-- 5. TABELA PLAYERS
+CREATE TABLE IF NOT EXISTS public.players (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   club_id uuid,
   name text NOT NULL,
@@ -65,18 +74,22 @@ CREATE TABLE public.players (
   age integer NOT NULL,
   nationality text,
   market_value bigint DEFAULT 0,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE public.global_chat_messages (
+-- 6. TABELA GLOBAL_CHAT_MESSAGES
+CREATE TABLE IF NOT EXISTS public.global_chat_messages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   sender_name text NOT NULL,
   content text NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE public.player_auctions (
+-- 7. TABELA PLAYER_AUCTIONS
+CREATE TABLE IF NOT EXISTS public.player_auctions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   player_id uuid NOT NULL,
   seller_id uuid NOT NULL,
@@ -85,21 +98,45 @@ CREATE TABLE public.player_auctions (
   current_bidder_id uuid,
   status text DEFAULT 'active'::text,
   expires_at timestamp with time zone NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE public.user_roles (
+-- 8. TABELA USER_ROLES
+CREATE TABLE IF NOT EXISTS public.user_roles (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   role text NOT NULL DEFAULT 'user'::text,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
--- Permissões básicas
-GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
-GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO authenticated;
+-- HABILITAR RLS (Segurança em Nível de Linha)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.game_saves ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.world_teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.global_chat_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.player_auctions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+-- PERMISSÕES (GRANTs)
+GRANT ALL ON public.profiles TO authenticated, service_role;
+GRANT ALL ON public.game_saves TO authenticated, service_role;
+GRANT ALL ON public.clubs TO authenticated, service_role;
+GRANT ALL ON public.world_teams TO authenticated, service_role;
+GRANT ALL ON public.players TO authenticated, service_role;
+GRANT ALL ON public.global_chat_messages TO authenticated, service_role;
+GRANT ALL ON public.player_auctions TO authenticated, service_role;
+GRANT ALL ON public.user_roles TO authenticated, service_role;
+
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+
+-- POLÍTICAS DE ACESSO BÁSICAS (EXEMPLOS)
+CREATE POLICY "Users can view their own profiles" ON public.profiles FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can update their own profiles" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
+
 `;
     setSql(hardcodedSql);
   }, []);
