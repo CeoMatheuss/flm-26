@@ -137,6 +137,7 @@ export function AdminTab({ userId, isFounder }: Props) {
       system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
       maintenance:   ['maintenance', 'direct_msg', 'reset_competitions'],
       simulation:    ['simulation_panel', 'auto_test'],
+      export:        ['export_data'],
     };
     const list = map[activeCategory] || ['users'];
     setActiveTab(prev => list.includes(prev) ? prev : list[0]);

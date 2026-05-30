@@ -20,7 +20,7 @@ export function ExportDataPanel() {
   const exportToCSV = async (tableName: string, label: string) => {
     setExporting(label);
     try {
-      const { data, error } = await supabase.from(tableName).select('*').limit(5000);
+      const { data, error } = await (supabase.from(tableName as any) as any).select('*').limit(5000);
       
       if (error) throw error;
       if (!data || data.length === 0) {
