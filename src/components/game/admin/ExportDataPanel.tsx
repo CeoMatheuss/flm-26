@@ -44,7 +44,41 @@ export function ExportDataPanel() {
     { id: 'user_presence', name: 'USER PRESENCE', table: 'user_presence' },
   ];
 
-  const tablesToExport = [...mainTables, ...newTables];
+  const hiddenTables = [
+    { id: 'abuse_alerts', name: 'ABUSE ALERTS', table: 'abuse_alerts' },
+    { id: 'admin_finance_logs', name: 'FINANCE LOGS', table: 'admin_finance_logs' },
+    { id: 'admin_login_attempts', name: 'LOGIN ATTEMPTS', table: 'admin_login_attempts' },
+    { id: 'admin_shop_activity', name: 'SHOP ACTIVITY', table: 'admin_shop_activity' },
+    { id: 'auction_history', name: 'AUCTION HISTORY', table: 'auction_history' },
+    { id: 'beta_access_requests', name: 'BETA REQUESTS', table: 'beta_access_requests' },
+    { id: 'club_active_effects', name: 'CLUB EFFECTS', table: 'club_active_effects' },
+    { id: 'club_ranking_history', name: 'CLUB RANKING HIST', table: 'club_ranking_history' },
+    { id: 'club_shop_orders', name: 'SHOP ORDERS', table: 'club_shop_orders' },
+    { id: 'continental_qualifications', name: 'CONT. QUALIFICATIONS', table: 'continental_qualifications' },
+    { id: 'custom_tournaments', name: 'CUSTOM TOURNAMENTS', table: 'custom_tournaments' },
+    { id: 'daily_training_sessions', name: 'TRAINING SESSIONS', table: 'daily_training_sessions' },
+    { id: 'free_agents_market', name: 'FREE AGENTS', table: 'free_agents_market' },
+    { id: 'global_ranking', name: 'GLOBAL RANKING', table: 'global_ranking' },
+    { id: 'international_competition_clubs', name: 'INTL COMP CLUBS', table: 'international_competition_clubs' },
+    { id: 'league_registration_logs', name: 'LEAGUE REG LOGS', table: 'league_registration_logs' },
+    { id: 'membership_revenue_history', name: 'MEMBERSHIP REVENUE', table: 'membership_revenue_history' },
+    { id: 'national_cups', name: 'NATIONAL CUPS', table: 'national_cups' },
+    { id: 'notification_read_state', name: 'NOTIFICATION STATE', table: 'notification_read_state' },
+    { id: 'payment_orders', name: 'PAYMENT ORDERS', table: 'payment_orders' },
+    { id: 'player_competition_stats', name: 'COMPETITION STATS', table: 'player_competition_stats' },
+    { id: 'player_negotiations', name: 'PLAYER NEGOTIATIONS', table: 'player_negotiations' },
+    { id: 'premium_sponsorships', name: 'PREMIUM SPONSORS', table: 'premium_sponsorships' },
+    { id: 'scout_missions', name: 'SCOUT MISSIONS', table: 'scout_missions' },
+    { id: 'season_awards', name: 'SEASON AWARDS', table: 'season_awards' },
+    { id: 'shop_products', name: 'SHOP PRODUCTS', table: 'shop_products' },
+    { id: 'suspicious_activity', name: 'SUSPICIOUS ACT', table: 'suspicious_activity' },
+    { id: 'tournament_stats', name: 'TOURNAMENT STATS', table: 'tournament_stats' },
+    { id: 'user_notifications', name: 'USER NOTIFICATIONS', table: 'user_notifications' },
+    { id: 'world_player_stats', name: 'WORLD PLAYER STATS', table: 'world_player_stats' },
+    { id: 'youth_prospects', name: 'YOUTH PROSPECTS', table: 'youth_prospects' },
+  ];
+
+  const tablesToExport = [...mainTables, ...newTables, ...hiddenTables];
 
   const exportToCSV = async (tableName: string, label: string) => {
     setExporting(label);
@@ -174,6 +208,37 @@ export function ExportDataPanel() {
                     <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
                   ) : (
                     <Download className="h-4 w-4 text-purple-400/70 group-hover:text-purple-400" />
+                  )}
+                </Button>
+              ))}
+            </div>
+          </section>
+
+          <section className="pt-4 border-t border-border/10">
+            <h3 className="text-sm font-semibold text-blue-400 mb-3 flex items-center gap-2">
+              <Table className="h-4 w-4" />
+              Tabelas de Infraestrutura & Backend (Sistema)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {hiddenTables.filter(t => 
+                t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                t.table.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((item) => (
+                <Button
+                  key={item.id}
+                  variant="outline"
+                  className="flex items-center justify-between h-auto py-3 px-4 bg-background/40 hover:bg-blue-500/10 border-blue-500/20 transition-all"
+                  onClick={() => exportToCSV(item.table, item.name)}
+                  disabled={exporting !== null}
+                >
+                  <div className="flex items-center gap-3">
+                    <Table className="h-4 w-4 text-blue-400/70" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </div>
+                  {exporting === item.name ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                  ) : (
+                    <Download className="h-4 w-4 text-blue-400/70 group-hover:text-blue-400" />
                   )}
                 </Button>
               ))}
