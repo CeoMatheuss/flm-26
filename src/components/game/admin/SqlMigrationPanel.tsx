@@ -105,7 +105,7 @@ Deseja que eu gere os scripts de carga de dados iniciais (Seed Data) para todas 
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    printWindow.document.write(\`
+    const htmlContent = `
       <html>
         <head>
           <title>Super PDF - Migração FLM</title>
@@ -131,7 +131,7 @@ Deseja que eu gere os scripts de carga de dados iniciais (Seed Data) para todas 
           
           <h2>1. Estrutura do Banco de Dados (SQL)</h2>
           <p>Execute o código abaixo no editor SQL do seu banco de dados para criar as tabelas, habilitar RLS e definir permissões.</p>
-          <pre><code>\${sql.replace(/</g, '&lt;')}</code></pre>
+          <pre><code>${sql.replace(/</g, '&lt;')}</code></pre>
           
           <h2>2. O que cada tabela faz (Novos Módulos)</h2>
           <ul>
@@ -144,15 +144,17 @@ Deseja que eu gere os scripts de carga de dados iniciais (Seed Data) para todas 
           <h2>3. Super Prompt para IA (Copie para ChatGPT/Claude)</h2>
           <div class="prompt-box">
             <p>Copie o texto abaixo e cole em uma IA para que ela entenda e ajude a gerenciar este banco de dados:</p>
-            <pre><code>\${prompt.replace(/</g, '&lt;')}</code></pre>
+            <pre><code>${prompt.replace(/</g, '&lt;')}</code></pre>
           </div>
 
           <div class="footer">
-            Gerado automaticamente pelo Painel Administrativo FLM - \${new Date().toLocaleDateString()}
+            Gerado automaticamente pelo Painel Administrativo FLM - ${new Date().toLocaleDateString()}
           </div>
         </body>
       </html>
-    \`);
+    `;
+
+    printWindow.document.write(htmlContent);
     printWindow.document.close();
     printWindow.print();
   };
