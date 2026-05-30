@@ -11,6 +11,8 @@ import NotFound from "./pages/NotFound";
 import TrailerGallery from "./pages/TrailerGallery";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import AdminPage from "./pages/AdminPage";
+
 
 const queryClient = new QueryClient();
 
@@ -35,8 +37,11 @@ const App = () => {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacidade" element={<Privacy />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/adm" element={<AdminPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
+
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
