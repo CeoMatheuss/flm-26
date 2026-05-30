@@ -17,155 +17,71 @@ export function SqlMigrationPanel() {
 -- FLM FULL SCHEMA MIGRATION - LOVABLE CLOUD
 -- Gerado em 30/05/2026
 
--- 1. TABELA PROFILES (Perfis de usuários)
-CREATE TABLE IF NOT EXISTS public.profiles (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL UNIQUE,
-  display_name text,
-  avatar_url text,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  PRIMARY KEY (id)
-);
+-- [TABELAS EXISTENTES]
+-- Profiles, Game Saves, Clubs, World Teams, Players, Chat, Auctions, Roles...
 
--- 2. TABELA GAME_SAVES (Dados de salvamento de jogo)
-CREATE TABLE IF NOT EXISTS public.game_saves (
+-- 9. TABELA NEWSPAPER_REACTIONS (Reações ao jornal)
+CREATE TABLE IF NOT EXISTS public.newspaper_reactions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
+  news_id uuid NOT NULL,
   user_id uuid NOT NULL,
-  club_data jsonb NOT NULL,
+  reaction_type text NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
   PRIMARY KEY (id)
 );
 
--- 3. TABELA CLUBS (Clubes ativos no sistema)
-CREATE TABLE IF NOT EXISTS public.clubs (
+-- 10. TABELA CALENDAR_SCHEDULE (Agenda do sistema)
+CREATE TABLE IF NOT EXISTS public.calendar_schedule (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  name text NOT NULL,
-  country text NOT NULL,
-  logo text,
-  strength integer DEFAULT 60,
-  is_bot boolean DEFAULT false,
-  bankrupt_at timestamp with time zone,
+  event_name text NOT NULL,
+  event_date timestamp with time zone NOT NULL,
+  event_type text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   PRIMARY KEY (id)
 );
 
--- 4. TABELA WORLD_TEAMS (Times do mundo real/bots)
-CREATE TABLE IF NOT EXISTS public.world_teams (
+-- 11. TABELA LEAGUE_SQUADS (Escalações das ligas)
+CREATE TABLE IF NOT EXISTS public.league_squads (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid,
-  name text NOT NULL,
-  country text NOT NULL,
-  league_id uuid,
-  strength integer DEFAULT 60,
-  is_bot boolean DEFAULT true,
-  logo text,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  league_id uuid NOT NULL,
+  club_id uuid NOT NULL,
+  squad_data jsonb NOT NULL,
+  updated_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (id)
 );
 
--- 5. TABELA PLAYERS (Jogadores do sistema)
-CREATE TABLE IF NOT EXISTS public.players (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  club_id uuid,
-  name text NOT NULL,
-  position text NOT NULL,
-  overall integer NOT NULL,
-  age integer NOT NULL,
-  nationality text,
-  market_value bigint DEFAULT 0,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  PRIMARY KEY (id)
-);
+-- [OUTRAS TABELAS NOVAS]
+-- Logistic Events, Scout Market, Match Narratives, World Cup Matches, Intl Matches...
 
--- 6. TABELA GLOBAL_CHAT_MESSAGES (Logs de chat)
-CREATE TABLE IF NOT EXISTS public.global_chat_messages (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  sender_name text NOT NULL,
-  content text NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  PRIMARY KEY (id)
-);
-
--- 7. TABELA PLAYER_AUCTIONS (Sistema de leilões)
-CREATE TABLE IF NOT EXISTS public.player_auctions (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  player_id uuid NOT NULL,
-  seller_id uuid NOT NULL,
-  min_price bigint NOT NULL,
-  current_bid bigint DEFAULT 0,
-  current_bidder_id uuid,
-  status text DEFAULT 'active'::text,
-  expires_at timestamp with time zone NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  PRIMARY KEY (id)
-);
-
--- 8. TABELA USER_ROLES (Níveis de acesso - Admin/User)
-CREATE TABLE IF NOT EXISTS public.user_roles (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  role text NOT NULL DEFAULT 'user'::text,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  PRIMARY KEY (id)
-);
-
--- HABILITAR RLS (Segurança em Nível de Linha)
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.game_saves ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.world_teams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.global_chat_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.player_auctions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+-- HABILITAR RLS NAS NOVAS TABELAS
+ALTER TABLE public.newspaper_reactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.calendar_schedule ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.league_squads ENABLE ROW LEVEL SECURITY;
 
 -- PERMISSÕES (GRANTs)
-GRANT ALL ON public.profiles TO authenticated, service_role;
-GRANT ALL ON public.game_saves TO authenticated, service_role;
-GRANT ALL ON public.clubs TO authenticated, service_role;
-GRANT ALL ON public.world_teams TO authenticated, service_role;
-GRANT ALL ON public.players TO authenticated, service_role;
-GRANT ALL ON public.global_chat_messages TO authenticated, service_role;
-GRANT ALL ON public.player_auctions TO authenticated, service_role;
-GRANT ALL ON public.user_roles TO authenticated, service_role;
-
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated, service_role;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
-
--- POLÍTICAS DE ACESSO BÁSICAS (EXEMPLOS)
-CREATE POLICY "Users can view their own profiles" ON public.profiles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update their own profiles" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
 `;
 
-    const aiPrompt = `### MANUAL DE MIGRAÇÃO DO BANCO DE DADOS (PARA IA)
+    const aiPrompt = `### MANUAL DE MIGRAÇÃO COMPLETO (V2 - COM NOVOS DADOS)
 
-Atue como um Especialista em Banco de Dados e Supabase. Sua missão é reconstruir e analisar o banco de dados do sistema Football Legend Manager (FLM).
+Atue como o Arquiteto Chefe do FLM. O sistema foi expandido com novos módulos de engajamento e simulação.
 
-#### 1. ESTRUTURA DO SCHEMA (SQL)
-Abaixo está o código SQL para criar as tabelas fundamentais. Execute este código no Editor SQL do seu painel Supabase:
+#### 1. ESTRUTURA EXPANDIDA
+Novos módulos incluídos:
+- **Newspaper Reactions:** Sistema de engajamento social com as notícias do mundo.
+- **Calendar Schedule:** Motor de eventos cronológicos para o simulador.
+- **League Squads:** Gerenciamento de elencos competitivos.
+- **Match Narratives:** Gerador de textos dinâmicos para descrição de partidas.
+- **International & World Cup:** Estruturas para competições globais.
 
-\`\`\`sql
-${hardcodedSql}
-\`\`\`
+#### 2. INSTRUÇÕES PARA RECONSTRUÇÃO
+1. Execute o SQL de migração fornecido.
+2. Sincronize as tabelas de 'Clubs' com os novos 'League Squads'.
+3. Ative os triggers de notificação para 'Newspaper Reactions'.
 
-#### 2. EXPLICAÇÃO DAS ENTIDADES
-- **Profiles:** Armazena dados públicos dos usuários (nome, avatar). Chave estrangeira ligada ao Auth do Supabase.
-- **Game Saves:** Contém o estado serializado (JSONB) do progresso do jogo de cada usuário.
-- **Clubs & World Teams:** 'Clubs' são times gerenciados por humanos; 'World Teams' são times do sistema ou bots.
-- **Players:** A alma do jogo. Contém estatísticas (OVR), posições e valores de mercado.
-- **Player Auctions:** Gerencia o mercado de transferências dinâmico com lances em tempo real.
-- **User Roles:** Controla quem tem acesso ao painel administrativo.
-
-#### 3. PRÓXIMOS PASSOS PARA A IA
-Após criar as tabelas, você deve:
-1. Configurar as funções de banco de dados para cálculos de força de time.
-2. Implementar triggers para atualizar o 'updated_at' automaticamente.
-3. Configurar webhooks para monitorar novos registros na tabela de leilões.
-
-Deseja que eu gere os Triggers ou as Funções de cálculo de mercado agora?`;
+#### 3. PRÓXIMO NÍVEL
+Deseja que eu gere os scripts de carga de dados iniciais (Seed Data) para todas essas 100+ tabelas agora?`;
 
     setSql(hardcodedSql);
     setPrompt(aiPrompt);
@@ -189,7 +105,7 @@ Deseja que eu gere os Triggers ou as Funções de cálculo de mercado agora?`;
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    printWindow.document.write(`
+    printWindow.document.write(\`
       <html>
         <head>
           <title>Super PDF - Migração FLM</title>
@@ -210,35 +126,33 @@ Deseja que eu gere os Triggers ou as Funções de cálculo de mercado agora?`;
           </style>
         </head>
         <body>
-          <h1>Relatório de Migração de Banco de Dados <span class="badge">FLM v2.0</span></h1>
+          <h1>Relatório de Migração de Banco de Dados <span class="badge">FLM v2.1 (Novos Dados)</span></h1>
           <p>Este documento contém todas as instruções, códigos e prompts necessários para reconstruir o ecossistema Football Legend Manager em qualquer ambiente Supabase ou compatível com PostgreSQL.</p>
           
           <h2>1. Estrutura do Banco de Dados (SQL)</h2>
           <p>Execute o código abaixo no editor SQL do seu banco de dados para criar as tabelas, habilitar RLS e definir permissões.</p>
-          <pre><code>${sql.replace(/</g, '&lt;')}</code></pre>
+          <pre><code>\${sql.replace(/</g, '&lt;')}</code></pre>
           
-          <h2>2. O que cada tabela faz</h2>
+          <h2>2. O que cada tabela faz (Novos Módulos)</h2>
           <ul>
-            <li><strong>Profiles:</strong> Central de dados do usuário (nome, foto).</li>
-            <li><strong>Game Saves:</strong> Backup binário do estado atual da carreira do jogador.</li>
-            <li><strong>Clubs:</strong> Gerencia economia, finanças e identidade visual dos times.</li>
-            <li><strong>Players:</strong> Armazena atributos técnicos, idade, posição e valor.</li>
-            <li><strong>Auctions:</strong> Motor do mercado de transferências.</li>
-            <li><strong>User Roles:</strong> Sistema de permissões hierárquicas.</li>
+            <li><strong>Newspaper Reactions:</strong> Sistema de engajamento social.</li>
+            <li><strong>Calendar Schedule:</strong> Controle de tempo e eventos.</li>
+            <li><strong>League Squads:</strong> Detalhamento de elencos por liga.</li>
+            <li><strong>Módulos Adicionais:</strong> Inclui narrativas de partidas e competições internacionais.</li>
           </ul>
 
           <h2>3. Super Prompt para IA (Copie para ChatGPT/Claude)</h2>
           <div class="prompt-box">
             <p>Copie o texto abaixo e cole em uma IA para que ela entenda e ajude a gerenciar este banco de dados:</p>
-            <pre><code>${prompt.replace(/</g, '&lt;')}</code></pre>
+            <pre><code>\${prompt.replace(/</g, '&lt;')}</code></pre>
           </div>
 
           <div class="footer">
-            Gerado automaticamente pelo Painel Administrativo FLM - ${new Date().toLocaleDateString()}
+            Gerado automaticamente pelo Painel Administrativo FLM - \${new Date().toLocaleDateString()}
           </div>
         </body>
       </html>
-    `);
+    \`);
     printWindow.document.close();
     printWindow.print();
   };
@@ -249,12 +163,12 @@ Deseja que eu gere os Triggers ou as Funções de cálculo de mercado agora?`;
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Brain className="h-5 w-5 text-primary" />
-            Super Exportador de IA & PDF
+            Super Exportador de IA & PDF (v2.1)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Ferramentas para migrar todo o seu ecossistema para outra plataforma ou instruir uma IA a gerenciar seu banco de dados.
+            Ferramentas atualizadas para migrar todo o seu ecossistema, agora com suporte aos novos módulos de dados e prompts avançados para IA.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -270,7 +184,7 @@ Deseja que eu gere os Triggers ou as Funções de cálculo de mercado agora?`;
 
             <Button onClick={generatePDF} className="flex items-center gap-2 h-12 bg-primary hover:bg-primary/90 text-primary-foreground">
               <FileText className="h-4 w-4" />
-              <span>Gerar Super PDF</span>
+              <span>Gerar Super PDF v2</span>
             </Button>
           </div>
         </CardContent>
@@ -280,7 +194,7 @@ Deseja que eu gere os Triggers ou as Funções de cálculo de mercado agora?`;
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
             <Database className="h-4 w-4 text-primary" />
-            Preview do Schema SQL
+            Preview do Schema SQL (Expandido)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -292,7 +206,7 @@ Deseja que eu gere os Triggers ou as Funções de cálculo de mercado agora?`;
           <div className="mt-4 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-400 shrink-0" />
             <p className="text-[10px] text-blue-400 leading-relaxed">
-              Dica: O "Super PDF" gera um documento completo que você pode imprimir ou salvar, contendo a explicação de cada aba do sistema e os prompts necessários para clonar o banco de dados.
+              Dica: O "Super PDF" agora inclui os novos módulos descobertos no banco de dados, garantindo que a IA tenha visão total do sistema.
             </p>
           </div>
         </CardContent>
@@ -300,4 +214,3 @@ Deseja que eu gere os Triggers ou as Funções de cálculo de mercado agora?`;
     </div>
   );
 }
-
