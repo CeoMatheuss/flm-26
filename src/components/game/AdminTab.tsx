@@ -19,7 +19,7 @@ import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
   AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy,
-  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench, Send, Loader2, ShoppingBag
+  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench, Send, Loader2, ShoppingBag, Download
 } from 'lucide-react';
 
 
