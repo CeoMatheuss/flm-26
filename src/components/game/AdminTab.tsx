@@ -580,6 +580,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
     maintenance:   ['maintenance', 'direct_msg', 'reset_competitions'],
     simulation:    ['simulation_panel'],
+    export:        ['export_data'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
 
@@ -606,6 +607,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     shop_monitor:      { label: 'Monitor Loja',    icon: ShoppingBag },
     customization_panel:{ label: 'Personalização', icon: Palette },
     reset_competitions:{ label: 'Reset Competições', icon: RefreshCw },
+    export_data:       { label: 'Exportar Dados',  icon: Download },
   };
 
   return (
