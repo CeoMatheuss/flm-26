@@ -7,6 +7,7 @@ import { AdminSupportPanel } from './admin/AdminSupportPanel';
 import { FinancePanel } from './admin/FinancePanel';
 import { CustomizationPanel } from './admin/CustomizationPanel';
 import { ExportDataPanel } from './admin/ExportDataPanel';
+import { SqlMigrationPanel } from './admin/SqlMigrationPanel';
 import { AdminLayout, type AdminCategory } from './AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1015,8 +1016,9 @@ export function AdminTab({ userId, isFounder }: Props) {
           <TabsContent value="versions" className="space-y-3 mt-3">
             <AdminVersionPanel />
           </TabsContent>
-          <TabsContent value="export_data" className="mt-3">
+          <TabsContent value="export_data" className="space-y-3 mt-3">
             <ExportDataPanel />
+            <SqlMigrationPanel />
           </TabsContent>
         </Tabs>
 
