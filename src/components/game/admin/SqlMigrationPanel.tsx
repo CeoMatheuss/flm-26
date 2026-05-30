@@ -142,7 +142,7 @@ Estou pronto para gerar os scripts SQL específicos para qualquer um desses mód
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const htmlContent = \`
+    const htmlContent = `
       <html>
         <head>
           <title>SUPER PDF - MIGRATION MASTER PLAN FLM</title>
@@ -199,7 +199,7 @@ Estou pronto para gerar os scripts SQL específicos para qualquer um desses mód
 
           <h2>2. SCHEMA SQL (EXEMPLO CORE)</h2>
           <p>Utilize este SQL inicial para estabelecer as bases do banco de dados. Para o schema completo, consulte a pasta <code>supabase/migrations</code> no repositório do projeto.</p>
-          <pre><code>\${sql.replace(/</g, '&lt;')}</code></pre>
+          <pre><code>${sql.replace(/</g, '&lt;')}</code></pre>
           
           <h2>3. ESTRATÉGIA DE DADOS</h2>
           <p>Para migrar os dados existentes:</p>
@@ -214,15 +214,15 @@ Estou pronto para gerar os scripts SQL específicos para qualquer um desses mód
               <span>🤖 SUPER PROMPT PARA IA (CLAUDE / CHATGPT)</span>
             </div>
             <p>Copie e cole o texto abaixo em uma IA para que ela ajude você a configurar todo o sistema em minutos:</p>
-            <pre><code>\${prompt.replace(/</g, '&lt;')}</code></pre>
+            <pre><code>${prompt.replace(/</g, '&lt;')}</code></pre>
           </div>
 
           <div class="footer">
-            Relatório de Migração Gerado em \${new Date().toLocaleDateString()} - Football Legend Manager Admin Panel
+            Relatório de Migração Gerado em ${new Date().toLocaleDateString()} - Football Legend Manager Admin Panel
           </div>
         </body>
       </html>
-    \`;
+    `;
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
