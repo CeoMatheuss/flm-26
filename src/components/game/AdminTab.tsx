@@ -1015,6 +1015,9 @@ export function AdminTab({ userId, isFounder }: Props) {
           <TabsContent value="versions" className="space-y-3 mt-3">
             <AdminVersionPanel />
           </TabsContent>
+          <TabsContent value="export_data" className="mt-3">
+            <ExportDataPanel />
+          </TabsContent>
         </Tabs>
 
       </AdminLayout>
