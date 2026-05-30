@@ -181,17 +181,16 @@ export function ExportDataPanel() {
           </section>
         </div>
           
-          <div className="col-span-full mt-4 p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
-            <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-              <FileJson className="h-3 w-3" />
-              Observação sobre Storage & Functions
-            </h4>
-            <p className="text-[10px] text-amber-500/80 leading-relaxed">
-              Diferente das tabelas do banco de dados, dados de <strong>Storage</strong>, <strong>Secrets</strong> e <strong>Edge Functions</strong> 
-              não podem ser exportados via CSV diretamente por questões de segurança e estrutura de arquivos. 
-              Para gerenciar estes recursos, utilize o painel do Supabase.
-            </p>
-          </div>
+        <div className="col-span-full mt-4 p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
+          <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <FileJson className="h-3 w-3" />
+            Observação sobre Storage & Functions
+          </h4>
+          <p className="text-[10px] text-amber-500/80 leading-relaxed">
+            Diferente das tabelas do banco de dados, dados de <strong>Storage</strong>, <strong>Secrets</strong> e <strong>Edge Functions</strong> 
+            não podem ser exportados via CSV diretamente por questões de segurança e estrutura de arquivos. 
+            Para gerenciar estes recursos, utilize o painel do Supabase.
+          </p>
         </div>
       </CardContent>
     </Card>
