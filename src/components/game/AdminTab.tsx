@@ -6,6 +6,7 @@ import { AutoTestSystem } from './admin/AutoTestSystem';
 import { AdminSupportPanel } from './admin/AdminSupportPanel';
 import { FinancePanel } from './admin/FinancePanel';
 import { CustomizationPanel } from './admin/CustomizationPanel';
+import { ExportDataPanel } from './admin/ExportDataPanel';
 import { AdminLayout, type AdminCategory } from './AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +19,7 @@ import {
   Shield, CheckCircle, XCircle, Crown, Users, Clock, MessageCircle,
   Ban, RefreshCw, Trash2, Trophy, Gavel, BarChart3, UserX, UserPlus, Star, Gift, Copy,
   AlertTriangle, Eye, EyeOff, Activity, Newspaper, Wand2, Lock, Image, Megaphone, Globe, Sparkles, LifeBuoy,
-  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench, Send, Loader2, ShoppingBag
+  BookOpen, FlaskConical, Calendar, ShieldCheck, Wallet, Palette, Wrench, Send, Loader2, ShoppingBag, Download
 } from 'lucide-react';
 
 
@@ -136,6 +137,7 @@ export function AdminTab({ userId, isFounder }: Props) {
       system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
       maintenance:   ['maintenance', 'direct_msg', 'reset_competitions'],
       simulation:    ['simulation_panel', 'auto_test'],
+      export:        ['export_data'],
     };
     const list = map[activeCategory] || ['users'];
     setActiveTab(prev => list.includes(prev) ? prev : list[0]);
@@ -578,6 +580,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     system:        ['beta_access', ...(isFounder ? ['team'] : []), 'updates_mgmt', 'announcements', 'support', 'versions'],
     maintenance:   ['maintenance', 'direct_msg', 'reset_competitions'],
     simulation:    ['simulation_panel'],
+    export:        ['export_data'],
   };
   const tabsForCategory = CATEGORY_TABS[activeCategory] || ['users'];
 
@@ -604,6 +607,7 @@ export function AdminTab({ userId, isFounder }: Props) {
     shop_monitor:      { label: 'Monitor Loja',    icon: ShoppingBag },
     customization_panel:{ label: 'Personalização', icon: Palette },
     reset_competitions:{ label: 'Reset Competições', icon: RefreshCw },
+    export_data:       { label: 'Exportar Dados',  icon: Download },
   };
 
   return (
@@ -1010,6 +1014,9 @@ export function AdminTab({ userId, isFounder }: Props) {
 
           <TabsContent value="versions" className="space-y-3 mt-3">
             <AdminVersionPanel />
+          </TabsContent>
+          <TabsContent value="export_data" className="mt-3">
+            <ExportDataPanel />
           </TabsContent>
         </Tabs>
 

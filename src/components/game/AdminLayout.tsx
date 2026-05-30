@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Globe, Trophy, Users, UserCog, Settings, FlaskConical, Menu, Wallet, Palette, Wrench } from 'lucide-react';
+import { Globe, Trophy, Users, UserCog, Settings, FlaskConical, Menu, Wallet, Palette, Wrench, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,7 +14,8 @@ export type AdminCategory =
   | 'customization'
   | 'system'
   | 'simulation'
-  | 'maintenance';
+  | 'maintenance'
+  | 'export';
 
 interface CategoryDef {
   id: AdminCategory;
@@ -32,6 +33,7 @@ const CATEGORIES: CategoryDef[] = [
   { id: 'system',        label: 'Sistema',        icon: Settings },
   { id: 'maintenance',   label: 'Manutenção',     icon: Wrench },
   { id: 'simulation',    label: 'Simulação',      icon: FlaskConical },
+  { id: 'export',        label: 'Exportar Dados', icon: Download },
 ];
 
 interface Props {
