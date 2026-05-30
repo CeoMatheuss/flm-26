@@ -117,26 +117,69 @@ export function ExportDataPanel() {
         <p className="text-sm text-muted-foreground">
           Baixe os dados do sistema em formato CSV para análise externa. Total: {tablesToExport.length} tabelas.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredTables.map((item) => (
-            <Button
-              key={item.id}
-              variant="outline"
-              className="flex items-center justify-between h-auto py-3 px-4 bg-background/40 hover:bg-primary/10 border-border/10 transition-all"
-              onClick={() => exportToCSV(item.table, item.name)}
-              disabled={exporting !== null}
-            >
-              <div className="flex items-center gap-3">
-                <Table className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{item.name}</span>
-              </div>
-              {exporting === item.name ? (
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              ) : (
-                <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-              )}
-            </Button>
-          ))}
+        <div className="space-y-6">
+          <section>
+            <h3 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
+              <Table className="h-4 w-4" />
+              Tabelas Principais
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {mainTables.filter(t => 
+                t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                t.table.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((item) => (
+                <Button
+                  key={item.id}
+                  variant="outline"
+                  className="flex items-center justify-between h-auto py-3 px-4 bg-background/40 hover:bg-primary/10 border-border/10 transition-all"
+                  onClick={() => exportToCSV(item.table, item.name)}
+                  disabled={exporting !== null}
+                >
+                  <div className="flex items-center gap-3">
+                    <Table className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </div>
+                  {exporting === item.name ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : (
+                    <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                  )}
+                </Button>
+              ))}
+            </div>
+          </section>
+
+          <section className="pt-4 border-t border-border/10">
+            <h3 className="text-sm font-semibold text-purple-400 mb-3 flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Novos Dados Separados (Recém Adicionados)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {newTables.filter(t => 
+                t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                t.table.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((item) => (
+                <Button
+                  key={item.id}
+                  variant="outline"
+                  className="flex items-center justify-between h-auto py-3 px-4 bg-background/40 hover:bg-purple-500/10 border-purple-500/20 transition-all"
+                  onClick={() => exportToCSV(item.table, item.name)}
+                  disabled={exporting !== null}
+                >
+                  <div className="flex items-center gap-3">
+                    <Table className="h-4 w-4 text-purple-400/70" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </div>
+                  {exporting === item.name ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                  ) : (
+                    <Download className="h-4 w-4 text-purple-400/70 group-hover:text-purple-400" />
+                  )}
+                </Button>
+              ))}
+            </div>
+          </section>
+        </div>
           
           <div className="col-span-full mt-4 p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
             <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center gap-2">
