@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 export function ExportDataPanel() {
   const [exporting, setExporting] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const tablesToExport = [
     { id: 'profiles', name: 'DATABASE (Profiles)', table: 'profiles' },
@@ -94,20 +95,36 @@ export function ExportDataPanel() {
     }
   };
 
+  const filteredTables = tablesToExport.filter(t => 
+    t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    t.table.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Card className="bg-card/50 border-border/20">
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Download className="h-5 w-5 text-primary" />
-          Exportar Dados Lovable Cloud
-        </CardTitle>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Download className="h-5 w-5 text-primary" />
+            Exportar Dados Lovable Cloud
+          </CardTitle>
+          <div className="relative w-full md:w-64">
+            <input
+              type="text"
+              placeholder="Buscar tabela..."
+              className="w-full bg-background/50 border border-border/20 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Baixe os dados do sistema em formato CSV para análise externa.
+          Baixe os dados do sistema em formato CSV para análise externa. Total: {tablesToExport.length} tabelas.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {tablesToExport.map((item) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredTables.map((item) => (
             <Button
               key={item.id}
               variant="outline"
