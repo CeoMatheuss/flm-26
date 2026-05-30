@@ -11,10 +11,20 @@ export function ExportDataPanel() {
   const tablesToExport = [
     { id: 'profiles', name: 'DATABASE (Profiles)', table: 'profiles' },
     { id: 'game_saves', name: 'USERS (Game Saves)', table: 'game_saves' },
-    { id: 'global_chat_messages', name: 'LOGS (Chat Messages)', table: 'global_chat_messages' },
+    { id: 'admin_logs', name: 'LOGS (Admin Activity)', table: 'admin_logs' },
+    { id: 'global_chat_messages', name: 'CHAT LOGS', table: 'global_chat_messages' },
     { id: 'player_auctions', name: 'APPOINMENTS (Auctions)', table: 'player_auctions' },
     { id: 'world_teams', name: 'TEAMS', table: 'world_teams' },
+    { id: 'players', name: 'PLAYERS', table: 'players' },
+    { id: 'clubs', name: 'CLUBS', table: 'clubs' },
     { id: 'multiplayer_leagues', name: 'LEAGUES', table: 'multiplayer_leagues' },
+    { id: 'shop_products', name: 'SHOP PRODUCTS', table: 'shop_products' },
+    { id: 'shop_purchases', name: 'SHOP PURCHASES', table: 'shop_purchases' },
+    { id: 'transfer_listings', name: 'TRANSFER LISTINGS', table: 'transfer_listings' },
+    { id: 'transfer_log', name: 'TRANSFER LOGS', table: 'transfer_log' },
+    { id: 'match_history', name: 'MATCH HISTORY', table: 'match_history' },
+    { id: 'system_settings', name: 'SYSTEM SETTINGS', table: 'system_settings' },
+    { id: 'user_roles', name: 'USER ROLES', table: 'user_roles' },
   ];
 
   const exportToCSV = async (tableName: string, label: string) => {
