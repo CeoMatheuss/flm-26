@@ -50,6 +50,17 @@ export function ExportDataPanel() {
     { id: 'trade_proposals', name: 'TRADE PROPOSALS', table: 'trade_proposals' },
     { id: 'daily_training', name: 'TRAINING SESSIONS', table: 'daily_training_sessions' },
     { id: 'tournament_stats', name: 'TOURNAMENT STATS', table: 'tournament_stats' },
+    { id: 'youth_prospects', name: 'YOUTH PROSPECTS', table: 'youth_prospects' },
+    { id: 'scout_reports', name: 'SCOUT REPORTS', table: 'scout_reports' },
+    { id: 'club_sponsorships', name: 'CLUB SPONSORSHIPS', table: 'club_sponsorships' },
+    { id: 'club_shop_orders', name: 'SHOP ORDERS', table: 'club_shop_orders' },
+    { id: 'user_notifications', name: 'NOTIFICATIONS', table: 'user_notifications' },
+    { id: 'countries', name: 'COUNTRIES', table: 'countries' },
+    { id: 'world_players', name: 'WORLD PLAYERS', table: 'world_players' },
+    { id: 'match_context', name: 'MATCH CONTEXT', table: 'match_context_modifiers' },
+    { id: 'player_missions', name: 'PLAYER MISSIONS', table: 'player_missions' },
+    { id: 'season_calendar', name: 'SEASON CALENDAR', table: 'season_calendar' },
+    { id: 'rivalries', name: 'CLUB RIVALRIES', table: 'rivalries' },
   ];
 
   const exportToCSV = async (tableName: string, label: string) => {
