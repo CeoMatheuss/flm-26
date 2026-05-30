@@ -6,6 +6,7 @@ import { AutoTestSystem } from './admin/AutoTestSystem';
 import { AdminSupportPanel } from './admin/AdminSupportPanel';
 import { FinancePanel } from './admin/FinancePanel';
 import { CustomizationPanel } from './admin/CustomizationPanel';
+import { ExportDataPanel } from './admin/ExportDataPanel';
 import { AdminLayout, type AdminCategory } from './AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
