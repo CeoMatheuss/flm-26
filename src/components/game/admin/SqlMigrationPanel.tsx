@@ -15,10 +15,22 @@ export function SqlMigrationPanel() {
     const hardcodedSql = `
 -- ==========================================================
 -- FLM MASTER SCHEMA MIGRATION - STANDALONE VERSION
--- Gerado em 30/05/2026 para Independência do Lovable Cloud
+-- Gerado em 31/05/2026 para Independência do Lovable Cloud
 -- ==========================================================
 
--- 1. CORE & AUTH
+-- 0. EXTENSÕES E FUNÇÕES BASE
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Função para atualizar timestamps (padrão Supabase)
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 1. CORE & AUTH (PROFILES)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   username text UNIQUE,
@@ -26,74 +38,132 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   avatar_url text,
   club_id uuid,
   role text DEFAULT 'user',
-  created_at timestamp with time zone DEFAULT now()
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
 );
 
 -- 2. GAMEPLAY CORE (CLUBS & PLAYERS)
 CREATE TABLE IF NOT EXISTS public.clubs (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   name text NOT NULL,
-  shield_url text,
+  country text DEFAULT 'Brasil',
   budget bigint DEFAULT 1000000,
-  fans integer DEFAULT 0,
-  manager_id uuid REFERENCES public.profiles(id),
-  created_at timestamp with time zone DEFAULT now()
+  cash bigint DEFAULT 0,
+  fans integer DEFAULT 1000,
+  reputation integer DEFAULT 65,
+  stadium_name text DEFAULT 'Estádio Municipal',
+  primary_color text DEFAULT '#2563EB',
+  secondary_color text DEFAULT '#FFFFFF',
+  shield_config jsonb,
+  tactics_config jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS public.players (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  club_id uuid REFERENCES public.clubs(id) ON DELETE CASCADE,
   name text NOT NULL,
-  overall integer NOT NULL,
+  age integer DEFAULT 20,
   position text NOT NULL,
-  club_id uuid REFERENCES public.clubs(id),
-  market_value bigint,
-  attributes jsonb,
-  created_at timestamp with time zone DEFAULT now()
+  overall integer NOT NULL,
+  potential integer DEFAULT 80,
+  market_value bigint DEFAULT 0,
+  wage bigint DEFAULT 0,
+  attributes jsonb DEFAULT '{}'::jsonb,
+  skills jsonb DEFAULT '[]'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
 );
 
--- 3. COMPETITIONS
-CREATE TABLE IF NOT EXISTS public.world_leagues (
+-- 3. COMPETITIONS & LIGAS
+CREATE TABLE IF NOT EXISTS public.multiplayer_leagues (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   name text NOT NULL,
-  division integer NOT NULL,
+  code text UNIQUE NOT NULL,
+  division integer DEFAULT 1,
   season integer DEFAULT 1,
-  status text DEFAULT 'active'
-);
-
--- 4. MATCH ENGINE & SOCIAL
-CREATE TABLE IF NOT EXISTS public.live_matches (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  home_team_id uuid REFERENCES public.clubs(id),
-  away_team_id uuid REFERENCES public.clubs(id),
-  score_home integer DEFAULT 0,
-  score_away integer DEFAULT 0,
-  status text DEFAULT 'scheduled',
-  match_data jsonb,
-  kickoff_at timestamp with time zone
-);
-
-CREATE TABLE IF NOT EXISTS public.newspaper_reactions (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  news_id uuid NOT NULL,
-  user_id uuid REFERENCES public.profiles(id),
-  reaction_type text NOT NULL,
+  max_members integer DEFAULT 20,
+  status text DEFAULT 'active',
   created_at timestamp with time zone DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS public.league_members (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  league_id uuid REFERENCES public.multiplayer_leagues(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  club_name text,
+  joined_at timestamp with time zone DEFAULT now(),
+  UNIQUE(league_id, user_id)
+);
+
+-- 4. VIEWS (LÓGICA DE NEGÓCIO)
+CREATE OR REPLACE VIEW public.league_standings AS
+ WITH team_stats AS (
+         SELECT league_matches.league_id,
+            league_matches.home_user_id AS team_id,
+            count(*) FILTER (WHERE (league_matches.status = 'played'::text)) AS played,
+            count(*) FILTER (WHERE ((league_matches.status = 'played'::text) AND (league_matches.home_goals > league_matches.away_goals))) AS wins,
+            count(*) FILTER (WHERE ((league_matches.status = 'played'::text) AND (league_matches.home_goals = league_matches.away_goals))) AS draws,
+            count(*) FILTER (WHERE ((league_matches.status = 'played'::text) AND (league_matches.home_goals < league_matches.away_goals))) AS losses,
+            sum(COALESCE(league_matches.home_goals, 0)) AS goals_for,
+            sum(COALESCE(league_matches.away_goals, 0)) AS goals_against
+           FROM league_matches
+          GROUP BY league_matches.league_id, league_matches.home_user_id
+        UNION ALL
+         SELECT league_matches.league_id,
+            league_matches.away_user_id AS team_id,
+            count(*) FILTER (WHERE (league_matches.status = 'played'::text)) AS played,
+            count(*) FILTER (WHERE ((league_matches.status = 'played'::text) AND (league_matches.away_goals > league_matches.home_goals))) AS wins,
+            count(*) FILTER (WHERE ((league_matches.status = 'played'::text) AND (league_matches.away_goals = league_matches.home_goals))) AS draws,
+            count(*) FILTER (WHERE ((league_matches.status = 'played'::text) AND (league_matches.away_goals < league_matches.home_goals))) AS losses,
+            sum(COALESCE(league_matches.away_goals, 0)) AS goals_for,
+            sum(COALESCE(league_matches.home_goals, 0)) AS goals_against
+           FROM league_matches
+          GROUP BY league_matches.league_id, league_matches.away_user_id
+        ), aggregated_stats AS (
+         SELECT team_stats.league_id,
+            team_stats.team_id,
+            sum(team_stats.played) AS played,
+            sum(team_stats.wins) AS wins,
+            sum(team_stats.draws) AS draws,
+            sum(team_stats.losses) AS losses,
+            sum(team_stats.goals_for) AS goals_for,
+            sum(team_stats.goals_against) AS goals_against,
+            ((sum(team_stats.wins) * (3)::numeric) + sum(team_stats.draws)) AS points,
+            (sum(team_stats.goals_for) - sum(team_stats.goals_against)) AS goals_diff
+           FROM team_stats
+          GROUP BY team_stats.league_id, team_stats.team_id
+        )
+ SELECT m.id,
+    m.league_id,
+    m.user_id,
+    m.club_name,
+    s.played,
+    s.wins,
+    s.draws,
+    s.losses,
+    s.goals_for,
+    s.goals_against,
+    s.points,
+    s.goals_diff,
+    row_number() OVER (PARTITION BY s.league_id ORDER BY s.points DESC, s.goals_diff DESC, s.goals_for DESC) AS "position"
+   FROM (aggregated_stats s
+     JOIN league_members m ON ((s.team_id = m.id)));
 
 -- 5. RLS & PERMISSIONS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.live_matches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.newspaper_reactions ENABLE ROW LEVEL SECURITY;
 
--- Exemplo de Política RLS
-CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
-
--- Permissões Universais
+-- Permissões Universais para PostgREST
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated, service_role;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO authenticated, service_role;
 `;
+
 
     const aiPrompt = `### MANUAL DE RECONSTRUÇÃO DO ECOSSISTEMA FLM (FOOTBALL LEGEND MANAGER)
 
