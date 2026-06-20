@@ -1832,7 +1832,13 @@ export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFr
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 pb-3 pt-0">
-                  <LiveTacticsView tactics={liveTactics} onUpdate={setLiveTactics} />
+                  <LiveTacticsView
+                    tactics={liveTactics}
+                    onUpdate={setLiveTactics}
+                    currentMinute={currentMinute}
+                    matchPhase={phase}
+                    onApplied={refreshEvents}
+                  />
                 </CardContent>
               </Card>
             )}
