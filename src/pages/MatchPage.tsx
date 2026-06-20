@@ -165,7 +165,7 @@ export default function MatchPage() {
     return true;
   };
 
-  const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, resumeFromBreak, destroy } = useMatchSimulation();
+  const { state, startMatch, loadMatch, loadMatchSnapshot, findActiveMatch, resumeFromBreak, destroy, refreshEvents } = useMatchSimulation();
 
   // Fallback: se reconectou em uma partida sem locState.homePlayers, busca o elenco real do clube salvo.
   useEffect(() => {
