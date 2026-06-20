@@ -586,7 +586,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
           gamesPlayed: 0, 
           trainingProgress: 0, 
           personality: prospect.personality,
-          isYouth: true,
+          isYouth: false,
           squadRole: 'reserva', // Default to reserve on promotion
           squad_status: 'reserve',
           contractStatus: 'profissional',
