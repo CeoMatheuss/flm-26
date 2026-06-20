@@ -70,15 +70,10 @@ export const rebuildClubSquad = (players: Player[], youthProspects: YouthProspec
     } as Player);
   });
 
-  // 2. Process youth prospects only IF club has youth academy (level >= 1)
-  const hasYouthAcademy = infrastructure?.youthAcademy?.level >= 1;
-  if (hasYouthAcademy && youthProspects && Array.isArray(youthProspects)) {
-    youthProspects.forEach(prospect => {
-      if (byId.has(prospect.id)) return;
-      const player = youthProspectToPlayer(prospect);
-      byId.set(prospect.id, player);
-    });
-  }
+  // 2. ⚠️ Jogadores da Base/Juniores (youthProspects) NÃO entram no elenco principal.
+  //    Eles vivem exclusivamente na aba "Juniores" (tabela youth_prospects).
+  //    Apenas após PROMOÇÃO explícita são adicionados a clubs.players com isYouth=false / contractStatus='profissional'.
+  void youthProspects; void infrastructure;
 
   const all = Array.from(byId.values());
   if (all.length === 0) return [];
