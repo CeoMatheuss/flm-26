@@ -2005,15 +2005,48 @@ function MatchMiniWidgets({
 
 /* ── LIVE TACTICS VIEW ──────────────────────────────────────── */
 
-function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpdate: (t: TacticsConfig) => void }) {
+function LiveTacticsView({ tactics, onUpdate, currentMinute, matchPhase, onApplied }: {
+  tactics: TacticsConfig;
+  onUpdate: (t: TacticsConfig) => void;
+  currentMinute?: number;
+  matchPhase?: MatchState['phase'];
+  onApplied?: () => Promise<boolean> | void;
+}) {
   const [applying, setApplying] = useState(false);
+  const [lastAppliedAt, setLastAppliedAt] = useState<number | null>(null);
+  const initialSigRef = useRef<string>('');
+  const lastSigRef = useRef<string>('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const applyLive = async () => {
+  // Assinatura "tática" usada para detectar mudanças relevantes
+  const signature = useMemo(() => JSON.stringify({
+    f: tactics.formation,
+    p: tactics.playStyle,
+    pr: tactics.pressing,
+    t: tactics.tempo,
+    i: (tactics as any).intensity,
+    m: (tactics as any).mentality,
+    df: (tactics as any).defensiveLine,
+    mk: (tactics as any).marking,
+  }), [tactics]);
+
+  // Captura assinatura inicial uma única vez (não dispara apply ao montar)
+  useEffect(() => {
+    if (!initialSigRef.current) {
+      initialSigRef.current = signature;
+      lastSigRef.current = signature;
+    }
+  }, [signature]);
+
+  const applyLive = useCallback(async (overrideTactics?: TacticsConfig) => {
+    const tacticsToSend = overrideTactics || tactics;
+    if (matchPhase && matchPhase !== 'live' && matchPhase !== 'halftime') {
+      return;
+    }
     try {
       setApplying(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error('Sessão expirada'); return; }
-      // Find current live match for this user
       const { data: live } = await supabase
         .from('live_matches')
         .select('id, current_minute, status')
@@ -2024,13 +2057,16 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
         .maybeSingle();
       if (!live) { toast.error('Nenhuma partida ao vivo encontrada'); return; }
 
+      // IMPORTANTE: usar o minuto atualmente exibido no cliente (DB fica em 0 até o fim).
+      const fromMin = Math.max(0, Math.min(89, Math.floor(currentMinute ?? live.current_minute ?? 0)));
+
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/re-simulate-from-minute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
         body: JSON.stringify({
           live_match_id: live.id,
-          from_minute: live.current_minute || 0,
-          new_tactics: tactics,
+          from_minute: fromMin,
+          new_tactics: tacticsToSend,
         }),
       });
       const data = await res.json();
@@ -2038,18 +2074,41 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
         toast.error(data.error || 'Erro ao aplicar tática');
         return;
       }
-      toast.success(`🔄 Tática aplicada — efeito a partir do minuto ${data.from_minute}'`);
+
+      // Recarrega `events` no cliente para que a engine de revelação use os novos lances.
+      if (onApplied) await onApplied();
+
+      setLastAppliedAt(Date.now());
+      lastSigRef.current = signature;
+      toast.success(`⚡ Tática aplicada a partir do ${data.from_minute}'`);
     } catch (e: any) {
       toast.error(e?.message || 'Erro de conexão');
     } finally {
       setApplying(false);
     }
-  };
+  }, [tactics, currentMinute, matchPhase, onApplied, signature]);
+
+  // Auto-apply: dispara 1.2s após a última alteração — não precisa de botão.
+  useEffect(() => {
+    if (!initialSigRef.current) return;
+    if (signature === lastSigRef.current) return;
+    if (matchPhase && matchPhase !== 'live' && matchPhase !== 'halftime') return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      applyLive();
+    }, 1200);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [signature, matchPhase, applyLive]);
 
   return (
     <div className="space-y-4">
       <p className="text-base font-black text-primary flex items-center gap-1.5">
         <Settings2 className="h-5 w-5" /> Ajustes Táticos
+        {applying && <span className="text-xs font-normal text-muted-foreground ml-auto">aplicando…</span>}
+        {!applying && lastAppliedAt && <span className="text-xs font-normal text-emerald-500 ml-auto">✓ ativo</span>}
       </p>
 
       <div>
@@ -2104,13 +2163,13 @@ function LiveTacticsView({ tactics, onUpdate }: { tactics: TacticsConfig; onUpda
         </Select>
       </div>
 
-      <Button onClick={applyLive} disabled={applying} className="w-full h-10 gap-2 bg-gradient-to-r from-primary to-primary/80">
+      <Button onClick={() => applyLive()} disabled={applying} className="w-full h-10 gap-2 bg-gradient-to-r from-primary to-primary/80">
         {applying ? '⏳ Aplicando...' : '⚡ Aplicar Tática AGORA'}
       </Button>
 
       <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
         <p className="text-xs text-muted-foreground">
-          ⚡ Mudanças geram nova simulação dos minutos restantes • Cooldown 15min
+          ⚡ Alterações aplicam-se automaticamente nos lances seguintes • cooldown 5 min entre re-simulações
         </p>
       </div>
     </div>
