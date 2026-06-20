@@ -722,5 +722,43 @@ export function useMatchSimulation() {
   const destroy = useCallback(() => { stopTick(); dataRef.current = null; }, [stopTick]);
 
   const onAnimationComplete = useCallback(() => { isAnimatingRef.current = false; }, []);
-  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, resumeFromBreak, destroy, onAnimationComplete };
+
+  /**
+   * Recarrega `events` direto do DB e substitui `dataRef.current.allEvents`
+   * sem reiniciar o cronômetro nem a fase. Usado após mudança de tática
+   * em tempo real (re-simulate-from-minute) para que os próximos lances
+   * passem a usar os eventos recém-gerados pela engine.
+   */
+  const refreshEvents = useCallback(async () => {
+    const id = dataRef.current?.matchDbId;
+    if (!id) return false;
+    const { data, error } = await supabase
+      .from('live_matches')
+      .select('events, home_goals, away_goals')
+      .eq('id', id)
+      .maybeSingle();
+    if (error || !data) return false;
+    const events = ((data.events as any) as SimEvent[]) || [];
+    if (!dataRef.current) return false;
+
+    dataRef.current.allEvents = events;
+    dataRef.current.finalHomeGoals = (data.home_goals as number) || dataRef.current.finalHomeGoals;
+    dataRef.current.finalAwayGoals = (data.away_goals as number) || dataRef.current.finalAwayGoals;
+
+    // Recalcula o cursor com base no minuto atualmente exibido para não re-emitir eventos do passado.
+    setState(prev => {
+      const cutoff = prev.currentMinute;
+      let idx = 0;
+      for (const e of events) {
+        if ((Number(e.minute) || 0) <= cutoff) idx++; else break;
+      }
+      nextVisibleEventIdxRef.current = Math.max(prev.visibleEvents.length, idx);
+      console.log('[MATCH] refreshEvents: total=', events.length, 'cursor=', nextVisibleEventIdxRef.current, 'cutoff=', cutoff);
+      return prev;
+    });
+
+    return true;
+  }, []);
+
+  return { state, startMatch, loadMatch, loadMatchSnapshot: hydrateMatchRow, findActiveMatch, resumeFromBreak, destroy, onAnimationComplete, refreshEvents };
 }

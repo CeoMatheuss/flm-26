@@ -88,8 +88,8 @@ Deno.serve(async (req) => {
 
     const tactics = (match.tactics as any) || {};
     const lastChanged = typeof tactics.lastChangedAt === 'number' ? tactics.lastChangedAt : -999;
-    if (fromMin - lastChanged < 15) {
-      return new Response(JSON.stringify({ error: `Cooldown ativo. Aguarde até o minuto ${lastChanged + 15}'.` }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (fromMin - lastChanged < 5) {
+      return new Response(JSON.stringify({ error: `Cooldown ativo. Aguarde até o minuto ${lastChanged + 5}'.` }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const events: any[] = Array.isArray(match.events) ? (match.events as any[]) : [];
