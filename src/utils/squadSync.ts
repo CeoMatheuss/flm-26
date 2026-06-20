@@ -5,9 +5,22 @@ import { autoLineup } from '@/utils/lineupManager';
 
 const NORMALIZED_POSITIONS: Player['position'][] = ['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'ATA'];
 
+/**
+ * Jogador da Base/Juniores NÃO pertence ao elenco profissional.
+ * Critério: contractStatus === 'base' OU (isYouth === true E contractStatus !== 'profissional').
+ */
+export const isBaseOrYouthPlayer = (player: any): boolean => {
+  if (!player) return false;
+  const cs = String(player.contractStatus ?? '').toLowerCase();
+  if (cs === 'base' || cs === 'juniores' || cs === 'youth') return true;
+  if (player.isYouth === true && cs !== 'profissional') return true;
+  return false;
+};
+
 const isAvailableForSquad = (player: Player) => {
   const raw = player as any;
   const status = String(raw.status ?? raw.contractStatus ?? player.squad_status ?? '').toLowerCase();
+  if (isBaseOrYouthPlayer(raw)) return false; // ⚠️ Base/Juniores NÃO entram no elenco principal
   // Jogadores emprestados (isLoaned) DEVEM estar disponíveis para aparecerem na aba "Emprestados" do elenco.
   // Eles serão filtrados visualmente nas abas de Titulares/Reservas.
   return !raw.removed && !raw.inactive && !raw.sold && status !== 'sold' && status !== 'removed';
