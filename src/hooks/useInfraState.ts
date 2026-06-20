@@ -503,7 +503,7 @@ export function useInfraState(initialState: any, userId?: string, isPremium: boo
         age: prospect.age, salary: prospect.salary,
         stamina: prospect.stamina, morale: 90, goals: 0, assists: 0,
         contract: 3, gamesPlayed: 0, trainingProgress: 0, personality: prospect.personality,
-        isYouth: true, squadRole: 'reserva', squad_status: 'reserve',
+        isYouth: false, squadRole: 'reserva', squad_status: 'reserve',
         contractStatus: 'profissional',
         marketValue: prospect.marketValue, potential: prospect.potential,
       };
