@@ -797,11 +797,12 @@ function SubstitutionBanner({ data, onDone }: { data: SubBannerData; onDone: () 
 
 /* ── MATCH VIEWER ─────────────────────────────────────────── */
 
-export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFromBreak, awayStrength = 60 }: {
+export function MatchViewer({ matchState, onExit, homePlayers, tactics, resumeFromBreak, awayStrength = 60, refreshEvents }: {
   matchState: MatchState; onExit: () => void;
   homePlayers?: Player[]; tactics?: TacticsConfig;
   resumeFromBreak?: () => void;
   awayStrength?: number;
+  refreshEvents?: () => Promise<boolean>;
 }) {
   const {
     phase, currentMinute, progress, homeTeam, awayTeam,
