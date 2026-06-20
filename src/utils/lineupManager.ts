@@ -38,6 +38,10 @@ export function autoLineup(players: Player[], formation: Formation): Player[] {
 
   const canPlayMatch = (player: Player) => {
     const raw = player as any;
+    // ⚠️ Jogadores da Base/Juniores NUNCA podem atuar em partidas oficiais ou amistosos.
+    const cs = String(raw.contractStatus ?? '').toLowerCase();
+    if (cs === 'base' || cs === 'juniores' || cs === 'youth') return false;
+    if (raw.isYouth === true && cs !== 'profissional') return false;
     if (player.injury || player.disciplinary?.isSuspended || raw.squad_status === 'injured' || raw.squad_status === 'suspended') return false;
     if (raw.isLoaned || raw.loanedOut || raw.inactive || raw.removed) return false;
     return true;
